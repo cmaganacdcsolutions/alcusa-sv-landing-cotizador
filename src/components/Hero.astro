@@ -8,48 +8,16 @@
 // hero CTA row (WhatsApp lives in TopBar/Drawer instead), desktop-01-inicio
 // shows both above the 1080 fold.
 import { buildWaLink } from '@integrations/whatsapp/waLink';
-import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
+import { getCategoryTeasers } from '@content/categoryTeasers';
 
 const waHref = buildWaLink();
-
-interface CategoryTeaser {
-  productId: ProductId;
-  label: string;
-  subtitle: string;
-  imageBase: string;
-}
 
 // Display grouping + copy per the boards (Main.dc.html / desktop-01-inicio).
 // Catalog names are the finer-grained per-model names shown later in
 // Catálogo (S4); these three are the broader category labels for the hero.
-const CATEGORY_TEASERS: readonly CategoryTeaser[] = [
-  {
-    productId: 'recta',
-    label: 'Puertas de baño',
-    subtitle: 'Rectas, en L y templado',
-    imageBase: 'card-puertas-bano',
-  },
-  {
-    productId: 'ventana',
-    label: 'Ventanas',
-    subtitle: 'Francesas y Bilbao a tu medida',
-    imageBase: 'card-ventanas',
-  },
-  {
-    productId: 'jardin',
-    label: 'Puertas de jardín',
-    subtitle: 'Una, dos o tres hojas corredizas',
-    imageBase: 'card-puertas-jardin',
-  },
-] as const;
-
-const teasers = CATEGORY_TEASERS.map((teaser) => {
-  const product = CATALOG_PRODUCTS.find((p) => p.id === teaser.productId);
-  if (!product) {
-    throw new Error(`Hero category teaser references unknown product id "${teaser.productId}"`);
-  }
-  return { ...teaser, fromPrice: product.fromPrice };
-});
+// Shared with CotizadorTeaser's desktop product-list column — see
+// @content/categoryTeasers.
+const teasers = getCategoryTeasers();
 ---
 
 <section id="inicio" class="hero" aria-labelledby="hero-title">

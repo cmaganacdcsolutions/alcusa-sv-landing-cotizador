@@ -2,11 +2,13 @@
 // Galeria — real-project photo strip (spec §1 item 4 / S4 T4.2). Exactly the
 // 6 real WhatsApp customer photos (product-whatsapp-01..06.jpeg) — no
 // AI-generated or third-party-rights image (see prototype-spec.md §1 item 4
-// rationale + open question #11). Horizontal snap-scroll on all 3 viewports:
-// the desktop board's 5-col masonry mixes in more photos than the 6 the AC
-// allows, so this keeps the iOS/Android strip layout at desktop too
-// (deviation, flagged in the slice summary) rather than under/over-filling
-// a masonry grid.
+// rationale + open question #11).
+// Mobile/tablet (<1024px): horizontal snap-scroll strip (Main.dc.html /
+// android-01). Desktop (>=1024px): desktop-01-inicio's masonry — the board
+// curates 10 photos across 5 columns, but our AC caps this gallery at
+// exactly these 6 real photos, so it's a CSS multi-column masonry (each
+// photo's own aspect ratio staggers the column heights) instead of the
+// board's fixed 5-col/10-photo composition.
 const PHOTOS = [
   { src: '/images/galeria-01.jpeg', alt: 'Puerta de baño con vidrio decorado instalada', width: 934, height: 1280 },
   { src: '/images/galeria-02.jpeg', alt: 'División de vidrio esmerilado instalada', width: 1600, height: 1200 },
@@ -232,12 +234,29 @@ const PHOTOS = [
       font-size: var(--font-size-body-lg-desktop);
     }
 
+    .galeria__strip {
+      display: block;
+      column-count: 3;
+      column-gap: var(--space-6);
+      overflow: visible;
+      scroll-snap-type: none;
+      scroll-padding: 0;
+    }
+
     .galeria__item {
-      flex-basis: 320px;
+      display: block;
+      flex: none;
+      break-inside: avoid;
+      margin-bottom: var(--space-6);
+      scroll-snap-align: none;
     }
 
     .galeria__trigger {
-      height: 380px;
+      height: auto;
+    }
+
+    .galeria__img {
+      height: auto;
     }
   }
 </style>
