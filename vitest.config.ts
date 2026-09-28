@@ -16,7 +16,11 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['src/engine/**/*.test.ts', 'src/integrations/**/*.test.ts', 'src/content/**/*.test.ts'],
+    // S6: added src/islands/**/*.test.ts so the pure state/quoteWindowGarden.ts
+    // aggregation layer (ventana/jardin) is unit-tested too — it lives beside
+    // cotizadorStore.ts, not under engine/, since it's UI-state aggregation,
+    // not a pricing formula.
+    include: ['src/engine/**/*.test.ts', 'src/integrations/**/*.test.ts', 'src/content/**/*.test.ts', 'src/islands/**/*.test.ts'],
     environment: 'node',
     coverage: {
       provider: 'v8',

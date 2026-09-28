@@ -252,7 +252,11 @@ test.describe('cotizador — hinged (Puerta con bisagra)', () => {
     await page.getByRole('button', { name: /Puerta con bisagra/ }).click();
     await page.locator('#ancho').fill('40');
     await page.getByRole('button', { name: 'Blanco' }).click();
-    await page.getByRole('button', { name: 'Decorado' }).click();
+    // Scoped to cotizador-root: Galeria's lightbox trigger aria-labels also
+    // contain "Decorado" (e.g. "...vidrio decorado instalada"), which makes
+    // the unscoped locator ambiguous (strict-mode violation) now that the
+    // gallery section renders on the same page.
+    await page.getByTestId('cotizador-root').getByRole('button', { name: 'Decorado' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$449.00');
   });

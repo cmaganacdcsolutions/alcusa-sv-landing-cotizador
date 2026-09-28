@@ -2,11 +2,12 @@ import type { Dispatch, ReactElement } from 'react';
 import type { CatalogProduct } from '@content/catalog';
 import type { CotizadorAction, CotizadorState } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
-import ComingSoonForm from './measures/ComingSoonForm';
 import CornerForm from './measures/CornerForm';
+import GardenForm from './measures/GardenForm';
 import HingedForm from './measures/HingedForm';
 import StraightForm from './measures/StraightForm';
 import TemperedForm from './measures/TemperedForm';
+import WindowForm from './measures/WindowForm';
 
 export interface Step1MedidasProps {
   product: CatalogProduct;
@@ -29,8 +30,11 @@ export default function Step1Medidas({ product, state, dispatch, quote, onBack, 
       return <TemperedForm product={product} state={state} dispatch={dispatch} quote={quote} onBack={onBack} onNext={onNext} />;
     case 'bisagra':
       return <HingedForm product={product} state={state} dispatch={dispatch} quote={quote} onBack={onBack} onNext={onNext} />;
-    // 'jardin' / 'ventana' — S6 plugs its own form in here at merge.
+    case 'ventana':
+      return <WindowForm state={state} dispatch={dispatch} onBack={onBack} onNext={onNext} />;
+    case 'jardin':
+      return <GardenForm state={state} dispatch={dispatch} onBack={onBack} onNext={onNext} />;
     default:
-      return <ComingSoonForm product={product} onBack={onBack} />;
+      return <StraightForm product={product} state={state} dispatch={dispatch} quote={quote} onBack={onBack} onNext={onNext} />;
   }
 }

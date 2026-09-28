@@ -18,6 +18,10 @@ export interface Step2PrecioProps {
 export default function Step2Precio({ product, state, quote, onBack, onNext }: Step2PrecioProps): ReactElement {
   const { requiresQuote, amount: price } = quote;
   const { detail } = buildLineItem(state);
+  // S6 — ventana/jardin: requiresQuote never hard-blocks "Siguiente" (T6.3);
+  // Step1's own row/field validation already gated entry into this step.
+  const isWindowOrGarden = product.id === 'ventana' || product.id === 'jardin';
+  const nextDisabled = isWindowOrGarden ? false : requiresQuote;
 
   return (
     <section aria-labelledby="step2-heading">
@@ -28,7 +32,22 @@ export default function Step2Precio({ product, state, quote, onBack, onNext }: S
         Precio estimado
       </h2>
 
-      {requiresQuote ? (
+      {isWindowOrGarden ? (
+        <div className="price-card">
+          <p style={{ margin: 0, fontWeight: 700 }}>{product.name}</p>
+          <span className="price-card__label">ESTIMADO SIN TRANSPORTE</span>
+          <span className="price-card__value" data-testid="step2-price-value">
+            {price !== null ? `$${price.toFixed(2)}` : 'Por WhatsApp'}
+          </span>
+          <p className="price-card__note">El costo final incluye transporte según tu zona.</p>
+          {requiresQuote && (
+            <p className="price-card__note" style={{ color: 'var(--color-warning)' }}>
+              Algunos acabados elegidos requieren cotización personalizada — puedes continuar y confirmarlos por
+              WhatsApp.
+            </p>
+          )}
+        </div>
+      ) : requiresQuote ? (
         <div className="callout" role="status">
           <span className="callout__title">Cotización personalizada por WhatsApp</span>
           <p className="callout__body">{outOfRangeCopy(state.productId)}</p>
@@ -48,9 +67,9 @@ export default function Step2Precio({ product, state, quote, onBack, onNext }: S
       <div className="bottom-bar" style={{ marginTop: 24 }}>
         <div className="bottom-bar__price">
           <span className="bottom-bar__price-label">Estimado sin transporte</span>
-          <span className="bottom-bar__price-value">{requiresQuote ? 'Por WhatsApp' : `$${(price ?? 0).toFixed(2)}`}</span>
+          <span className="bottom-bar__price-value">{price !== null ? `$${price.toFixed(2)}` : 'Por WhatsApp'}</span>
         </div>
-        <button type="button" className="btn btn-primary" disabled={requiresQuote} onClick={onNext}>
+        <button type="button" className="btn btn-primary" disabled={nextDisabled} onClick={onNext}>
           Siguiente
         </button>
       </div>

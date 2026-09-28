@@ -21,6 +21,7 @@ import {
   parseWidthCm,
   type CotizadorState,
 } from './cotizadorStore';
+import { computeGardenQuote, computeWindowQuote } from './quoteWindowGarden';
 
 export interface QuoteResult {
   /** Unified amount: `price` for straight/corner/tempered, `subtotal` for hinged. */
@@ -63,7 +64,15 @@ export function computeQuote(state: CotizadorState): QuoteResult {
       const r = priceHinged({ widthCm, color: state.color, glass: state.glass, qty, fixedPanel });
       return { amount: r.subtotal, requiresQuote: r.requiresQuote };
     }
-    // 'jardin' / 'ventana' (S6) and null (no product yet) — not priceable here.
+    case 'ventana': {
+      const r = computeWindowQuote(state);
+      return { amount: r.subtotal, requiresQuote: r.requiresQuote };
+    }
+    case 'jardin': {
+      const r = computeGardenQuote(state);
+      return { amount: r.subtotal, requiresQuote: r.requiresQuote };
+    }
+    // null (no product selected yet).
     default:
       return NO_QUOTE;
   }
@@ -135,6 +144,37 @@ export function buildLineItem(state: CotizadorState): LineItemView {
         color: COLOR_LABELS[state.color],
         vidrio: GLASS_LABELS[state.glass],
         cantidad: qty,
+      };
+    }
+    // S6 — ventana (repeatable rows: summarized by row count + the first
+    // row's dimensions) / jardin (single line). Neither is currently
+    // rendered via this `detail`/`vidrio` shape in the UI (Step2's
+    // ventana/jardin branch skips `detail`; Step4/Step5 build their own
+    // per-row WhatsApp items via state/quoteWindowGarden.ts +
+    // integrations/whatsapp/windowGardenMessageItems.ts) — kept here so
+    // `buildLineItem` never silently falls through to the 'recta' default
+    // for these two products.
+    case 'ventana': {
+      const q = computeWindowQuote(state);
+      const first = q.rows[0];
+      const rowCount = q.rows.length;
+      return {
+        detail: `${rowCount} ventana${rowCount === 1 ? '' : 's'} · ${COLOR_LABELS[state.windowFrame]} · ${state.windowGlass}`,
+        anchoM: first?.widthM ?? 0,
+        altoM: first?.heightM ?? 0,
+        color: COLOR_LABELS[state.windowFrame],
+        vidrio: state.windowGlass,
+      };
+    }
+    case 'jardin': {
+      const q = computeGardenQuote(state);
+      return {
+        detail: `${q.widthM.toFixed(2)} × ${q.heightM.toFixed(2)} m · ${COLOR_LABELS[state.gardenColor]} · ${state.gardenGlass}`,
+        anchoM: q.widthM,
+        altoM: q.heightM,
+        color: COLOR_LABELS[state.gardenColor],
+        vidrio: state.gardenGlass,
+        cantidad: q.qty > 1 ? q.qty : undefined,
       };
     }
     // 'recta' and any not-yet-priced product fall back to the S1 shape.

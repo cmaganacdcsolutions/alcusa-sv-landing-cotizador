@@ -627,3 +627,100 @@
     padding: 0;
   }
 }
+
+/* S6 — ventana (repeatable rows) + shared "requiresQuote" selection-time
+   badge (prototype-spec.md §2.3, first use of this pattern). Appended at the
+   end of the file to keep the merge with S5's Step1Medidas refactor small. */
+.chip__badge {
+  font-size: var(--font-size-caption-mobile);
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border-radius: var(--radius-xs);
+  padding: 0 6px;
+  margin-left: var(--space-2);
+}
+
+.window-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.window-row {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr 1fr auto;
+  align-items: end;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.window-row__index {
+  font-size: var(--font-size-caption-mobile);
+  color: var(--color-ink-muted);
+  font-weight: var(--font-weight-body-bold);
+}
+
+.window-row__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-size-caption-mobile);
+  color: var(--color-ink-muted);
+}
+
+.window-row__input {
+  height: 44px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-input);
+  background: var(--color-surface);
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+
+.window-row__remove {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.row-add-btn {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border-input);
+  background: transparent;
+  color: var(--color-accent);
+  font-weight: var(--font-weight-body-bold);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.extras-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink);
+}
+
+@media (max-width: 480px) {
+  .window-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .window-row__index {
+    grid-column: 1 / -1;
+  }
+}
