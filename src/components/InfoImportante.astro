@@ -1,8 +1,209 @@
 ---
-// InfoImportante — static component, no business logic. Full content in S4.
+// InfoImportante — payment/policy copy (spec §1 item 7 / §2.7). Single
+// source of truth for this wording; the cotizador payment step (S8) must
+// reuse the exact same strings for the 80/20 + AMEX-exclusion lines (T3.4
+// AC) — don't fork the copy.
+const ITEMS = [
+  {
+    icon: 'split',
+    title: 'Anticipo 80% · saldo 20%',
+    detail: 'Pagas el 20% restante al recibir tu producto.',
+    placeholder: false,
+  },
+  {
+    icon: 'card',
+    title: 'Pago con tarjeta vía Wompi',
+    detail: 'Crédito y débito, excepto American Express.',
+    placeholder: false,
+  },
+  {
+    icon: 'card',
+    title: '[Tasa 0% — confirmar si se mantiene]',
+    detail: 'Únicamente con tarjeta de crédito.',
+    placeholder: true,
+  },
+  {
+    icon: 'invoice',
+    title: 'Factura o crédito fiscal',
+    detail: 'Indícalo al confirmar tu pedido.',
+    placeholder: false,
+  },
+  {
+    icon: 'store',
+    title: 'Retiro en tienda −15%',
+    detail: 'Aplica a puertas de baño rectas, sin transporte.',
+    placeholder: false,
+    wide: true,
+  },
+] as const;
+
+const ICON_PATHS: Record<string, string> = {
+  split: 'M6 18L18 6M7.5 9.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM16.5 18.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  card: 'M3 5.5h18v13H3zM3 10h18M7 15h4',
+  invoice: 'M7 3.5h7l4 4v13H7zM14 3.5v4h4M9.5 12.5h6M9.5 16h6',
+  store: 'M4 9.5l1.5-5h13l1.5 5M4 9.5h16M5 9.5v10h14v-10M10 19.5v-5h4v5',
+};
 ---
 
-<section id="info" class="placeholder-section">
-  <h2>Información importante</h2>
-  <p>Próximamente.</p>
+<section id="info" class="info" aria-labelledby="info-title">
+  <div class="info__inner">
+    <p class="info__kicker">Antes de comprar</p>
+    <h2 id="info-title" class="info__title">Informaci&oacute;n importante</h2>
+    <ul class="info__list">
+      {
+        ITEMS.map((item) => (
+          <li class:list={['info__item', { 'info__item--wide': item.wide }]}>
+            <span class="info__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                <path d={ICON_PATHS[item.icon]} />
+              </svg>
+            </span>
+            <span class="info__copy">
+              <span class="info__item-title">
+                {item.placeholder ? <span class="info__placeholder">{item.title}</span> : item.title}
+              </span>
+              <span class="info__detail">{item.detail}</span>
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
 </section>
+
+<style>
+  .info {
+    padding: var(--space-8) var(--space-6) var(--space-10);
+  }
+
+  .info__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .info__kicker {
+    margin: 0;
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-bold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .info__title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-h2-mobile);
+    font-weight: var(--font-weight-display-medium);
+    color: var(--color-ink);
+  }
+
+  .info__list {
+    margin: 0;
+    padding: 0 var(--space-5);
+    list-style: none;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info__item {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--color-border);
+    line-height: 1.45;
+  }
+
+  .info__item:last-child {
+    border-bottom: none;
+  }
+
+  .info__icon {
+    display: none;
+  }
+
+  .info__item-title {
+    font-size: var(--font-size-body-mobile);
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-ink);
+  }
+
+  .info__placeholder {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    border-radius: var(--radius-xs);
+    padding: 0 var(--space-2);
+  }
+
+  .info__detail {
+    font-size: var(--font-size-body-sm-mobile);
+    color: var(--color-ink-muted);
+  }
+
+  @media (min-width: 1024px) {
+    .info {
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      padding: var(--space-24) var(--space-6);
+    }
+
+    .info__inner {
+      max-width: var(--container-xl);
+      margin: 0 auto;
+      gap: var(--space-8);
+    }
+
+    .info__title {
+      font-size: var(--font-size-h2-desktop);
+    }
+
+    .info__list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-5);
+      padding: 0;
+    }
+
+    .info__item {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: var(--space-6);
+      border-bottom: none;
+      border-radius: var(--radius-lg);
+      background: var(--color-bg);
+    }
+
+    .info__item--wide {
+      grid-column: span 2;
+    }
+
+    .info__icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-full);
+      background: var(--color-surface);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .info__copy {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .info__item-title {
+      font-size: var(--font-size-body-lg-desktop);
+    }
+
+    .info__detail {
+      font-size: var(--font-size-body-sm-desktop);
+    }
+  }
+</style>

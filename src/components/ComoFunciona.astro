@@ -1,8 +1,140 @@
 ---
-// ComoFunciona — static component, no business logic. Full content in S3.
+// ComoFunciona — 4-step trust strip (spec §1 item 2). Previously
+// `display:none` in legacy; must render visibly on all 3 viewports (T3.2).
+const STEPS = [
+  { n: '01', title: 'Selecciona', copy: 'Elige el producto y el acabado para tu espacio.' },
+  { n: '02', title: 'Cotiza', copy: 'Ingresa tus medidas y ve el precio al instante.' },
+  { n: '03', title: 'Confirma', copy: 'Aparta tu pedido con un anticipo del 80%.' },
+  { n: '04', title: 'Recibe', copy: 'Instalamos y pagas el 20% al entregar.' },
+] as const;
 ---
 
-<section id="proceso" class="placeholder-section">
-  <h2>Cómo funciona</h2>
-  <p>Próximamente.</p>
+<section id="proceso" class="proceso" aria-labelledby="proceso-title">
+  <div class="proceso__inner">
+    <p class="proceso__kicker">C&oacute;mo funciona</p>
+    <h2 id="proceso-title" class="proceso__title">Tu pedido, en cuatro pasos claros</h2>
+    <ol class="proceso__list">
+      {
+        STEPS.map((step) => (
+          <li class="proceso__step">
+            <span class="proceso__step-number">{step.n}</span>
+            <span class="proceso__step-title">{step.title}</span>
+            <span class="proceso__step-copy">{step.copy}</span>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
 </section>
+
+<style>
+  .proceso {
+    padding: var(--space-8) var(--space-6);
+  }
+
+  .proceso__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .proceso__kicker {
+    margin: 0;
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-bold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .proceso__title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-h2-mobile);
+    font-weight: var(--font-weight-display-medium);
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  .proceso__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .proceso__step {
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .proceso__step-number {
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-h3-mobile);
+    font-weight: var(--font-weight-display-medium);
+    color: var(--color-accent);
+    line-height: var(--font-line-height-display);
+  }
+
+  .proceso__step-title {
+    font-size: var(--font-size-body-mobile);
+    font-weight: var(--font-weight-body-bold);
+    line-height: var(--font-line-height-heading);
+  }
+
+  .proceso__step-copy {
+    font-size: var(--font-size-body-sm-mobile);
+    line-height: var(--font-line-height-body);
+    color: var(--color-ink-muted);
+  }
+
+  @media (min-width: 1024px) {
+    .proceso {
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      padding: var(--space-24) var(--space-6);
+    }
+
+    .proceso__inner {
+      max-width: var(--container-xl);
+      margin: 0 auto;
+      gap: var(--space-16);
+    }
+
+    .proceso__title {
+      font-size: var(--font-size-h2-desktop);
+      max-width: var(--container-md);
+    }
+
+    .proceso__list {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-8);
+    }
+
+    .proceso__step-number {
+      width: 64px;
+      height: 64px;
+      border-radius: var(--radius-full);
+      background: var(--color-surface-tint);
+      font-size: var(--font-size-h2-desktop);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .proceso__step-title {
+      font-size: var(--font-size-h3-desktop);
+    }
+
+    .proceso__step-copy {
+      font-size: var(--font-size-body-lg-desktop);
+    }
+  }
+</style>
