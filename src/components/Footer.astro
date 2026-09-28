@@ -1,42 +1,94 @@
 ---
-// Footer — static component, no business logic. Full content (reviews,
-// info-importante recap, etc.) arrives in S4; this is the legal/contact stub.
+// Footer — final landing section (spec §1 item 9, T9.3). Legal name, quick
+// links to every in-page anchor, socials, WhatsApp CTA repeat, NIT
+// placeholder (client-questions.md #10).
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 const waHref = buildWaLink();
 ---
 
 <footer class="site-footer">
-  <div class="site-footer__brand">
-    <img src="/images/logo-primary.png" alt="" width="36" height="36" />
-    <div>
-      <p class="site-footer__wordmark">Alcusa</p>
-      <p class="site-footer__tagline">Disfrutar con calidad</p>
+  <div class="site-footer__inner">
+    <div class="site-footer__brand-col">
+      <div class="site-footer__brand">
+        <img src="/images/logo-primary.png" alt="" width="36" height="36" />
+        <div>
+          <p class="site-footer__wordmark">Alcusa</p>
+          <p class="site-footer__tagline">Disfrutar con calidad</p>
+        </div>
+      </div>
+      <p class="site-footer__legal">Aluminios Cuzcatlán, S.A. de C.V. — ALCUSA · Calle El Pedregal, Ciudad Merliot</p>
+      <p class="site-footer__nit">NIT / Registro fiscal: <span class="site-footer__badge">[NIT — confirmar]</span></p>
+    </div>
+
+    <nav aria-label="Enlaces del pie" class="site-footer__nav">
+      <p class="site-footer__col-title">Navegación</p>
+      <a href="#inicio">Inicio</a>
+      <a href="#modelos">Catálogo</a>
+      <a href="#proceso">Cómo funciona</a>
+      <a href="#galeria">Galería</a>
+      <a href="#cotizador">Cotizar</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+
+    <div class="site-footer__social-col">
+      <p class="site-footer__col-title">Síguenos</p>
+      <div class="site-footer__social">
+        <a href="https://instagram.com/alcusasv" aria-label="Instagram @alcusasv" rel="noopener" class="site-footer__social-icon"
+          ><svg width="20" height="20" viewBox="0 0 24 24"
+            ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
+            ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
+          ></a
+        >
+        <a href="https://tiktok.com/@alcusaes" aria-label="TikTok @alcusaes" rel="noopener" class="site-footer__social-icon"
+          ><svg width="20" height="20" viewBox="0 0 24 24"
+            ><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path><path d="M14 4c.4 2.6 2.2 4.3 5 4.5"></path></svg
+          ></a
+        >
+        <a
+          href="https://youtube.com/@alcusaelsalvador8209"
+          aria-label="YouTube @alcusaelsalvador8209"
+          rel="noopener"
+          class="site-footer__social-icon"
+          ><svg width="20" height="20" viewBox="0 0 24 24"
+            ><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="M10.5 9.5v5l4.3-2.5z"></path></svg
+          ></a
+        >
+      </div>
+    </div>
+
+    <div class="site-footer__wa-col">
+      <p class="site-footer__col-title">Cotiza por WhatsApp</p>
+      <a href={waHref} class="site-footer__whatsapp">Cotizar por WhatsApp · 7680-2410</a>
+      <span class="site-footer__phones">Teléfonos 2278-2460 · 2208-4101 · 2563-7742</span>
     </div>
   </div>
-  <p class="site-footer__legal">Aluminios Cuzcatlán, S.A. de C.V. — ALCUSA · Calle El Pedregal, Ciudad Merliot</p>
-  <nav aria-label="Enlaces del pie" class="site-footer__nav">
-    <a href="#inicio">Inicio</a>
-    <a href="#cotizador/0-producto">Cotizar</a>
-    <a href="#contacto">Contacto</a>
-  </nav>
-  <div class="site-footer__social">
-    <a href="https://instagram.com/alcusasv" aria-label="Instagram @alcusasv">IG</a>
-    <a href="https://tiktok.com/@alcusaes" aria-label="TikTok @alcusaes">TT</a>
-    <a href="https://youtube.com/@alcusaelsalvador8209" aria-label="YouTube @alcusaelsalvador8209">YT</a>
+
+  <div class="site-footer__bottom">
+    <p class="site-footer__copy">© 2026 ALCUSA. Todos los derechos reservados.</p>
   </div>
-  <a href={waHref} class="site-footer__whatsapp">Cotizar por WhatsApp · 7680-2410</a>
-  <p class="site-footer__copy">© 2026 ALCUSA. Todos los derechos reservados.</p>
 </footer>
 
 <style>
   .site-footer {
-    padding: var(--space-10) var(--space-6) var(--space-12);
+    padding: var(--space-10) var(--space-6) var(--space-8);
     background: var(--color-ink);
     color: #c9d3e3;
+  }
+
+  .site-footer__inner {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    gap: var(--space-6);
+  }
+
+  .site-footer__brand-col,
+  .site-footer__nav,
+  .site-footer__social-col,
+  .site-footer__wa-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
   }
 
   .site-footer__brand {
@@ -64,21 +116,40 @@ const waHref = buildWaLink();
   }
 
   .site-footer__legal,
-  .site-footer__copy {
+  .site-footer__nit,
+  .site-footer__copy,
+  .site-footer__phones {
     margin: 0;
     font-size: var(--font-size-body-sm-mobile);
   }
 
+  .site-footer__badge {
+    display: inline-block;
+    background: #fff4e0;
+    color: #8a5a00;
+    border-radius: var(--radius-xs);
+    padding: 0 var(--space-2);
+  }
+
+  .site-footer__col-title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--color-surface);
+  }
+
   .site-footer__nav {
-    display: flex;
-    gap: var(--space-5);
     font-size: var(--font-size-body-sm-mobile);
     font-weight: var(--font-weight-body-bold);
   }
 
   .site-footer__nav a,
-  .site-footer__social a {
+  .site-footer__whatsapp {
     color: var(--color-surface);
+    min-height: 32px;
+    display: flex;
+    align-items: center;
   }
 
   .site-footer__social {
@@ -86,15 +157,61 @@ const waHref = buildWaLink();
     gap: var(--space-2);
   }
 
-  .site-footer__whatsapp {
-    min-height: 48px;
+  .site-footer__social-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    border: 1px solid #33456a;
+    color: var(--color-surface);
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .site-footer__social-icon svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .site-footer__whatsapp {
+    min-height: 48px;
+    justify-content: center;
     border-radius: var(--radius-md);
     background: var(--color-whatsapp-strong);
-    color: var(--color-surface);
     font-weight: var(--font-weight-body-bold);
     text-decoration: none;
+  }
+
+  .site-footer__bottom {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid #33456a;
+  }
+
+  .site-footer__copy {
+    color: #9fb0c9;
+  }
+
+  @media (min-width: 1024px) {
+    .site-footer {
+      padding: var(--space-16) var(--space-8) var(--space-8);
+    }
+
+    .site-footer__inner {
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1.3fr;
+      gap: var(--space-16);
+    }
+
+    .site-footer__bottom {
+      max-width: 1600px;
+      margin: var(--space-6) auto 0;
+    }
   }
 </style>

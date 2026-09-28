@@ -1,0 +1,127 @@
+/* ContactForm island (T9.2). Scoped to this component only — does not
+   reuse cotizador.css (that stylesheet is scoped to the Cotizador island). */
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 8px 20px rgba(16, 33, 61, 0.1);
+}
+
+.contact-form__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contact-form__title {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-weight: 500;
+  font-size: 1.375rem;
+  line-height: 1.3;
+}
+
+.contact-form__subtitle {
+  margin: 0;
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink-muted);
+}
+
+.contact-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.contact-form__label {
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: 700;
+}
+
+.contact-form__input {
+  height: 48px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid #cfd8e5;
+  background: var(--color-surface);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-body-mobile);
+  color: var(--color-ink);
+}
+
+.contact-form__input--textarea {
+  height: auto;
+  padding: var(--space-3) var(--space-4);
+  resize: none;
+  line-height: 1.5;
+}
+
+.contact-form__input[data-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.contact-form__input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.contact-form__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: 600;
+  color: var(--color-error);
+}
+
+.contact-form__submit,
+.contact-form__submit--disabled {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-body-mobile);
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.contact-form__submit {
+  background: var(--color-whatsapp-strong);
+  color: var(--color-surface);
+}
+
+.contact-form__submit:hover {
+  background: var(--color-whatsapp-strong-hover);
+}
+
+.contact-form__submit--disabled {
+  background: #dfe6ef;
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
+.contact-form__submit-disabled-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.contact-form__submit-helper {
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .contact-form {
+    padding: var(--space-8);
+  }
+}
