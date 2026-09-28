@@ -7,10 +7,10 @@ import ComoFunciona from '@components/ComoFunciona.astro';
 import Catalogo from '@components/Catalogo.astro';
 import Galeria from '@components/Galeria.astro';
 import Confianza from '@components/Confianza.astro';
+import CotizadorTeaser from '@components/CotizadorTeaser.astro';
 import InfoImportante from '@components/InfoImportante.astro';
-import Contacto from '@components/Contacto.astro';
+import ContactoTeaser from '@components/ContactoTeaser.astro';
 import Footer from '@components/Footer.astro';
-import Cotizador from '@islands/Cotizador/Cotizador';
 ---
 
 <BaseLayout
@@ -26,37 +26,10 @@ import Cotizador from '@islands/Cotizador/Cotizador';
     <Catalogo />
     <Galeria />
     <Confianza />
-
-    <section id="cotizador" class="placeholder-section placeholder-section--cotizador">
-      <h2 class="visually-hidden">Cotizador en línea</h2>
-      <Cotizador client:load />
-    </section>
-
+    <CotizadorTeaser />
     <InfoImportante />
-    <Contacto />
+    <ContactoTeaser />
   </main>
 
   <Footer />
 </BaseLayout>
-
-<style is:global>
-  .placeholder-section {
-    padding: var(--space-8) var(--space-6);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  .placeholder-section--cotizador {
-    padding: 0;
-  }
-
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
-</style>

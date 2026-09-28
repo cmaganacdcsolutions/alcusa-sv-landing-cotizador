@@ -1,0 +1,109 @@
+---
+// CotizadorTeaser — landing "COTIZADOR EN LÍNEA" CTA card (spec §1 item 6 /
+// Main.dc.html #cotizador, desktop-01-inicio #cotizador). The real cotizador
+// now lives on its own route (/cotizador, S5 page split) — this card is the
+// landing's only mention of it, linking out.
+---
+
+<section id="cotizador" class="cotizador-teaser" aria-labelledby="cotizador-teaser-title">
+  <div class="cotizador-teaser__card">
+    <p class="cotizador-teaser__kicker">Cotizador en línea</p>
+    <h2 id="cotizador-teaser-title" class="cotizador-teaser__title">
+      Conoce tu precio antes de dar tu dirección
+    </h2>
+    <p class="cotizador-teaser__lead">
+      Elige el producto, ingresa tus medidas y ve el estimado al instante. Puertas, ventanas y jardín en una sola
+      cotización.
+    </p>
+    <a href="/cotizador" class="cotizador-teaser__cta">
+      Empezar mi cotización
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+    </a>
+  </div>
+</section>
+
+<style>
+  .cotizador-teaser {
+    padding: var(--space-8) var(--space-6);
+  }
+
+  .cotizador-teaser__card {
+    padding: var(--space-8) var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-primary);
+    color: var(--color-surface);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .cotizador-teaser__kicker {
+    margin: 0;
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-bold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #cfe0ff;
+  }
+
+  .cotizador-teaser__title {
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-medium);
+    font-size: var(--font-size-h2-mobile);
+    line-height: var(--font-line-height-heading);
+    text-wrap: balance;
+  }
+
+  .cotizador-teaser__lead {
+    margin: 0 0 var(--space-2);
+    color: #e3ecfb;
+  }
+
+  .cotizador-teaser__cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 52px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-body-bold);
+    text-decoration: none;
+  }
+
+  .cotizador-teaser__cta:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  @media (min-width: 1024px) {
+    .cotizador-teaser {
+      padding: var(--space-16) var(--space-6) var(--space-24);
+    }
+
+    .cotizador-teaser__card {
+      max-width: var(--container-page);
+      margin: 0 auto;
+      padding: var(--space-20);
+      gap: var(--space-4);
+    }
+
+    .cotizador-teaser__title {
+      font-size: var(--font-size-display-lg-desktop);
+    }
+
+    .cotizador-teaser__lead {
+      max-width: 640px;
+      font-size: var(--font-size-body-lg-desktop);
+    }
+
+    .cotizador-teaser__cta {
+      align-self: flex-start;
+      padding: 0 var(--space-6);
+      margin-top: var(--space-2);
+    }
+  }
+</style>

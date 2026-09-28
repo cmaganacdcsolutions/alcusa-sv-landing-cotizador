@@ -15,7 +15,7 @@ async function waitForFormReady(page: Page): Promise<void> {
 // fixtures.ts also aborts wa.me/wompi network routes as an independent guard.
 test.describe('contacto — info block + socials', () => {
   test('social row links to the exact 3 handles', async ({ page }) => {
-    await page.goto('/#contacto');
+    await page.goto('/contacto');
     await expect(page.getByRole('link', { name: 'Instagram @alcusasv' }).first()).toHaveAttribute(
       'href',
       'https://instagram.com/alcusasv',
@@ -31,13 +31,13 @@ test.describe('contacto — info block + socials', () => {
   });
 
   test('WhatsApp quick link in the info block is a bare wa.me URL', async ({ page }) => {
-    await page.goto('/#contacto');
+    await page.goto('/contacto');
     const href = await page.getByRole('link', { name: '7680-2410', exact: true }).getAttribute('href');
     expect(href).toBe('https://wa.me/50376802410');
   });
 
   test('hours and email show the literal placeholder text', async ({ page }) => {
-    await page.goto('/#contacto');
+    await page.goto('/contacto');
     await expect(page.getByText('[HORARIO — confirmar]')).toBeVisible();
     await expect(page.getByText('[correo — confirmar]')).toBeVisible();
   });
@@ -45,13 +45,13 @@ test.describe('contacto — info block + socials', () => {
 
 test.describe('contacto — webform lifecycle', () => {
   test('empty state: submit is disabled with no name/phone', async ({ page }) => {
-    await page.goto('/#contacto');
+    await page.goto('/contacto');
     await expect(page.getByRole('button', { name: 'Enviar por WhatsApp' })).toBeDisabled();
     await expect(page.getByText('Completa tu nombre y teléfono para enviar.')).toBeVisible();
   });
 
   test('error state: invalid phone shows the inline helper text', async ({ page }) => {
-    await page.goto('/#contacto');
+    await page.goto('/contacto');
     await waitForFormReady(page);
     await page.getByLabel('Nombre').fill('María');
     await page.getByLabel('Teléfono').fill('777');
@@ -62,7 +62,7 @@ test.describe('contacto — webform lifecycle', () => {
   });
 
   test('success: valid name + phone enables a link that builds the exact §2.9 message', async ({ page }) => {
-    await page.goto('/#contacto');
+    await page.goto('/contacto');
     await waitForFormReady(page);
     await page.getByLabel('Nombre').fill('María');
     await page.getByLabel('Teléfono').fill('77778888');
@@ -81,7 +81,7 @@ test.describe('contacto — webform lifecycle', () => {
   });
 
   test('producto/mensaje are optional: link still builds once nombre+telefono are valid', async ({ page }) => {
-    await page.goto('/#contacto');
+    await page.goto('/contacto');
     await waitForFormReady(page);
     await page.getByLabel('Nombre').fill('Luis');
     await page.getByLabel('Teléfono').fill('77778888');
@@ -98,12 +98,12 @@ test.describe('footer — quick links + legal', () => {
   test('quick links jump to their in-page anchors', async ({ page }) => {
     await page.goto('/');
     const footerNav = page.getByRole('navigation', { name: 'Enlaces del pie' });
-    await expect(footerNav.getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '#inicio');
-    await expect(footerNav.getByRole('link', { name: 'Catálogo' })).toHaveAttribute('href', '#modelos');
-    await expect(footerNav.getByRole('link', { name: 'Cómo funciona' })).toHaveAttribute('href', '#proceso');
-    await expect(footerNav.getByRole('link', { name: 'Galería' })).toHaveAttribute('href', '#galeria');
-    await expect(footerNav.getByRole('link', { name: 'Cotizar' })).toHaveAttribute('href', '#cotizador');
-    await expect(footerNav.getByRole('link', { name: 'Contacto' })).toHaveAttribute('href', '#contacto');
+    await expect(footerNav.getByRole('link', { name: 'Inicio' })).toHaveAttribute('href', '/#inicio');
+    await expect(footerNav.getByRole('link', { name: 'Catálogo' })).toHaveAttribute('href', '/#modelos');
+    await expect(footerNav.getByRole('link', { name: 'Cómo funciona' })).toHaveAttribute('href', '/#proceso');
+    await expect(footerNav.getByRole('link', { name: 'Proyectos reales' })).toHaveAttribute('href', '/#galeria');
+    await expect(footerNav.getByRole('link', { name: 'Cotizar' })).toHaveAttribute('href', '/cotizador');
+    await expect(footerNav.getByRole('link', { name: 'Contacto' })).toHaveAttribute('href', '/contacto');
   });
 
   test('legal name + NIT placeholder + WhatsApp CTA repeat', async ({ page }) => {
