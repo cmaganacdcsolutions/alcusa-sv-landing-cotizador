@@ -7,7 +7,9 @@ import {
   type StraightGlass,
   type StraightPriceResult,
 } from '@engine/pricing';
-import { COLOR_LABELS, GLASS_LABELS, parseWidthCm, type CotizadorState } from '../state/cotizadorStore';
+import { COLOR_LABELS, GLASS_LABELS, parseWidthCm, type CotizadorAction, type CotizadorState } from '../state/cotizadorStore';
+import WindowForm from './measures/WindowForm';
+import GardenForm from './measures/GardenForm';
 
 const COLORS: { id: AluminumColor; dot: string }[] = [
   { id: 'natural', dot: '#c9ced6' },
@@ -34,10 +36,17 @@ export interface Step1MedidasProps {
   onGlassChange: (glass: StraightGlass) => void;
   onBack: () => void;
   onNext: () => void;
+  // S6 — appended: full state + dispatch, used only by the ventana/jardin
+  // early-return branch below. S5 folds this into its own per-product
+  // dispatcher at merge time; kept as an additive prop so "recta" (below)
+  // is untouched otherwise.
+  cotizadorState?: CotizadorState;
+  dispatch?: (action: CotizadorAction) => void;
 }
 
 // Step 1 — medidas y acabado for "recta" (T1.2 scope). Entrega toggle is
-// deferred to Step 3 (T1.3).
+// deferred to Step 3 (T1.3). S6 adds ventana/jardin as an early return —
+// see WindowForm.tsx / GardenForm.tsx in ./measures.
 export default function Step1Medidas({
   product,
   width,
@@ -49,7 +58,16 @@ export default function Step1Medidas({
   onGlassChange,
   onBack,
   onNext,
+  cotizadorState,
+  dispatch,
 }: Step1MedidasProps): ReactElement {
+  if (product.id === 'ventana' && cotizadorState && dispatch) {
+    return <WindowForm state={cotizadorState} dispatch={dispatch} onBack={onBack} onNext={onNext} />;
+  }
+  if (product.id === 'jardin' && cotizadorState && dispatch) {
+    return <GardenForm state={cotizadorState} dispatch={dispatch} onBack={onBack} onNext={onNext} />;
+  }
+
   const widthCm = parseWidthCm(width);
   const invalid = priceResult.requiresQuote;
 

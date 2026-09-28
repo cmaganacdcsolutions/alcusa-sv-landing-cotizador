@@ -1,7 +1,7 @@
 // Reducer + hash/history slug map for the cotizador wizard (ADR-005).
 // Pure — the hash/history side effects themselves live in Cotizador.tsx
 // (islands are the only layer allowed to touch window/history).
-import type { AluminumColor, StraightGlass } from '@engine/pricing';
+import type { AluminumColor, GardenColor, GardenGlass, GardenHojas, StraightGlass, WindowGlass, WindowModel } from '@engine/pricing';
 import type { ProductId } from '@content/catalog';
 
 export type CotizadorStep =
@@ -58,6 +58,19 @@ export const GLASS_LABELS: Readonly<Record<StraightGlass, string>> = {
   duplex: 'Dúplex',
 };
 
+// S6 — one repeatable "ventana" row (cantidad/ancho/alto only; modelo, color,
+// vidrio, zaranda, desmontaje are shared across rows per prototype-spec.md
+// §2.2). Values are kept as raw strings for editing, parsed in
+// state/quoteWindowGarden.ts.
+export interface WindowRowState {
+  id: string;
+  qty: string;
+  widthM: string;
+  heightM: string;
+}
+
+export type GardenHeightOption = '2.10' | '2.40' | 'otra';
+
 export interface CotizadorState {
   step: CotizadorStep;
   productId: ProductId | null;
@@ -66,6 +79,21 @@ export interface CotizadorState {
   glass: StraightGlass;
   entrega: Entrega;
   zone: string;
+  // --- S6: ventana (Francesa/Bilbao) ---
+  windowModel: WindowModel;
+  windowFrame: AluminumColor;
+  windowGlass: WindowGlass;
+  windowZaranda: boolean;
+  windowDesmontaje: boolean;
+  windowRows: WindowRowState[];
+  // --- S6: jardín (puerta de jardín) ---
+  gardenHojas: GardenHojas;
+  gardenWidth: string;
+  gardenHeightOption: GardenHeightOption;
+  gardenHeightOtra: string;
+  gardenColor: GardenColor;
+  gardenGlass: GardenGlass;
+  gardenQty: string;
 }
 
 export const initialCotizadorState: CotizadorState = {
@@ -76,6 +104,21 @@ export const initialCotizadorState: CotizadorState = {
   glass: 'claro',
   entrega: 'instalacion',
   zone: '',
+  // --- S6: ventana ---
+  windowModel: 'francesa',
+  windowFrame: 'blanco',
+  windowGlass: 'claro',
+  windowZaranda: false,
+  windowDesmontaje: false,
+  windowRows: [{ id: 'row-1', qty: '1', widthM: '1.20', heightM: '1.00' }],
+  // --- S6: jardín ---
+  gardenHojas: 1,
+  gardenWidth: '1.00',
+  gardenHeightOption: '2.10',
+  gardenHeightOtra: '',
+  gardenColor: 'blanco',
+  gardenGlass: 'claro',
+  gardenQty: '1',
 };
 
 export type CotizadorAction =
@@ -87,7 +130,24 @@ export type CotizadorAction =
   | { type: 'SET_ZONE'; zone: string }
   | { type: 'GOTO_STEP'; step: CotizadorStep }
   | { type: 'NEXT' }
-  | { type: 'BACK' };
+  | { type: 'BACK' }
+  // --- S6: ventana ---
+  | { type: 'SET_WINDOW_MODEL'; model: WindowModel }
+  | { type: 'SET_WINDOW_FRAME'; frame: AluminumColor }
+  | { type: 'SET_WINDOW_GLASS'; glass: WindowGlass }
+  | { type: 'SET_WINDOW_ZARANDA'; value: boolean }
+  | { type: 'SET_WINDOW_DESMONTAJE'; value: boolean }
+  | { type: 'ADD_WINDOW_ROW' }
+  | { type: 'REMOVE_WINDOW_ROW'; id: string }
+  | { type: 'SET_WINDOW_ROW'; id: string; field: 'qty' | 'widthM' | 'heightM'; value: string }
+  // --- S6: jardín ---
+  | { type: 'SET_GARDEN_HOJAS'; hojas: GardenHojas }
+  | { type: 'SET_GARDEN_WIDTH'; value: string }
+  | { type: 'SET_GARDEN_HEIGHT_OPTION'; value: GardenHeightOption }
+  | { type: 'SET_GARDEN_HEIGHT_OTRA'; value: string }
+  | { type: 'SET_GARDEN_COLOR'; color: GardenColor }
+  | { type: 'SET_GARDEN_GLASS'; glass: GardenGlass }
+  | { type: 'SET_GARDEN_QTY'; value: string };
 
 /** Accepts meters ("1.10") or centimeters ("110"): values < 10 are ×100. */
 export function parseWidthCm(raw: string): number {
@@ -122,6 +182,50 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       const prev = STEP_ORDER[Math.max(idx - 1, 0)];
       return { ...state, step: prev };
     }
+    // --- S6: ventana ---
+    case 'SET_WINDOW_MODEL':
+      return { ...state, windowModel: action.model };
+    case 'SET_WINDOW_FRAME':
+      return { ...state, windowFrame: action.frame };
+    case 'SET_WINDOW_GLASS':
+      return { ...state, windowGlass: action.glass };
+    case 'SET_WINDOW_ZARANDA':
+      return { ...state, windowZaranda: action.value };
+    case 'SET_WINDOW_DESMONTAJE':
+      return { ...state, windowDesmontaje: action.value };
+    case 'ADD_WINDOW_ROW':
+      return {
+        ...state,
+        windowRows: [
+          ...state.windowRows,
+          { id: `row-${state.windowRows.length}-${Date.now()}`, qty: '1', widthM: '1.20', heightM: '1.00' },
+        ],
+      };
+    case 'REMOVE_WINDOW_ROW':
+      return {
+        ...state,
+        windowRows: state.windowRows.length > 1 ? state.windowRows.filter((r) => r.id !== action.id) : state.windowRows,
+      };
+    case 'SET_WINDOW_ROW':
+      return {
+        ...state,
+        windowRows: state.windowRows.map((r) => (r.id === action.id ? { ...r, [action.field]: action.value } : r)),
+      };
+    // --- S6: jardín ---
+    case 'SET_GARDEN_HOJAS':
+      return { ...state, gardenHojas: action.hojas };
+    case 'SET_GARDEN_WIDTH':
+      return { ...state, gardenWidth: action.value };
+    case 'SET_GARDEN_HEIGHT_OPTION':
+      return { ...state, gardenHeightOption: action.value };
+    case 'SET_GARDEN_HEIGHT_OTRA':
+      return { ...state, gardenHeightOtra: action.value };
+    case 'SET_GARDEN_COLOR':
+      return { ...state, gardenColor: action.color };
+    case 'SET_GARDEN_GLASS':
+      return { ...state, gardenGlass: action.glass };
+    case 'SET_GARDEN_QTY':
+      return { ...state, gardenQty: action.value };
     default:
       return state;
   }

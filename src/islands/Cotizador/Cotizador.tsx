@@ -11,6 +11,7 @@ import {
   STEP_SLUGS,
   type CotizadorStep,
 } from './state/cotizadorStore';
+import { computeGardenQuote, computeWindowQuote } from './state/quoteWindowGarden';
 import Step0Producto from './steps/Step0Producto';
 import Step1Medidas from './steps/Step1Medidas';
 import Step2Precio from './steps/Step2Precio';
@@ -90,10 +91,25 @@ export default function Cotizador(): ReactElement {
 
   const widthCm = parseWidthCm(state.width);
   const pickup = state.entrega === 'retiro';
-  const priceResult = useMemo(
+  const straightPriceResult = useMemo(
     () => priceStraight({ widthCm, color: state.color, glass: state.glass, pickup }),
     [widthCm, state.color, state.glass, pickup],
   );
+  // S6 — ventana/jardin are normalized into the same {price, requiresQuote}
+  // shape straight already used, so Step2/3/4/5 (untouched) keep working
+  // as-is; only Step1 (repeatable-rows UI) and Step4 (WhatsApp item lines)
+  // need their own product-specific branches.
+  const windowQuote = useMemo(() => computeWindowQuote(state), [state]);
+  const gardenQuote = useMemo(() => computeGardenQuote(state), [state]);
+  const priceResult = useMemo(() => {
+    if (state.productId === 'ventana') {
+      return { price: windowQuote.subtotal, transportIncluded: false, requiresQuote: windowQuote.requiresQuote };
+    }
+    if (state.productId === 'jardin') {
+      return { price: gardenQuote.subtotal, transportIncluded: false, requiresQuote: gardenQuote.requiresQuote };
+    }
+    return straightPriceResult;
+  }, [state.productId, windowQuote, gardenQuote, straightPriceResult]);
   const zoneFee = state.entrega === 'instalacion' ? getZoneFee(state.zone) : 0;
   const total = priceResult.price !== null ? priceResult.price + (zoneFee ?? 0) : null;
 
@@ -143,6 +159,8 @@ export default function Cotizador(): ReactElement {
             onGlassChange={(glass) => dispatch({ type: 'SET_GLASS', glass })}
             onBack={back}
             onNext={next}
+            cotizadorState={state}
+            dispatch={dispatch}
           />
         )}
         {state.step === 'precio' && product && (
