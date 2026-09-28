@@ -2,12 +2,12 @@ import type { ReactElement } from 'react';
 import type { CatalogProduct } from '@content/catalog';
 import type { CotizadorState } from '../state/cotizadorStore';
 import { buildLineItem, outOfRangeCopy, type QuoteResult } from '../state/quote';
+import { IconArrowRight, IconWarningTriangle } from '../icons';
 
 export interface Step2PrecioProps {
   product: CatalogProduct;
   state: CotizadorState;
   quote: QuoteResult;
-  onBack: () => void;
   onNext: () => void;
 }
 
@@ -15,7 +15,7 @@ export interface Step2PrecioProps {
 // corner/tempered/hinged in S5 via the state/quote.ts dispatcher). Copy per
 // prototype-spec.md §2.4: "Estimado sin transporte: $X. El costo final
 // incluye transporte según tu zona."
-export default function Step2Precio({ product, state, quote, onBack, onNext }: Step2PrecioProps): ReactElement {
+export default function Step2Precio({ product, state, quote, onNext }: Step2PrecioProps): ReactElement {
   const { requiresQuote, amount: price } = quote;
   const { detail } = buildLineItem(state);
   // S6 — ventana/jardin: requiresQuote never hard-blocks "Siguiente" (T6.3);
@@ -25,12 +25,9 @@ export default function Step2Precio({ product, state, quote, onBack, onNext }: S
 
   return (
     <section aria-labelledby="step2-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Medidas
-      </button>
-      <h2 id="step2-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
+      <h3 id="step2-heading" className="cotizador__section-heading" style={{ marginBottom: 12 }}>
         Precio estimado
-      </h2>
+      </h3>
 
       {isWindowOrGarden ? (
         <div className="price-card">
@@ -49,7 +46,10 @@ export default function Step2Precio({ product, state, quote, onBack, onNext }: S
         </div>
       ) : requiresQuote ? (
         <div className="callout" role="status">
-          <span className="callout__title">Cotización personalizada por WhatsApp</span>
+          <span className="callout__title">
+            <IconWarningTriangle />
+            Cotización personalizada por WhatsApp
+          </span>
           <p className="callout__body">{outOfRangeCopy(state.productId)}</p>
         </div>
       ) : (
@@ -71,6 +71,7 @@ export default function Step2Precio({ product, state, quote, onBack, onNext }: S
         </div>
         <button type="button" className="btn btn-primary" disabled={nextDisabled} onClick={onNext}>
           Siguiente
+          <IconArrowRight />
         </button>
       </div>
     </section>

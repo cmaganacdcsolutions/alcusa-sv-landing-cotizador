@@ -3,30 +3,27 @@ import type { CatalogProduct } from '@content/catalog';
 import { TEMPERED_WIDTH_MAX_CM, TEMPERED_WIDTH_MIN_CM } from '@engine/pricing';
 import { parseWidthCm, type CotizadorAction, type CotizadorState } from '../../state/cotizadorStore';
 import type { QuoteResult } from '../../state/quote';
+import { IconArrowRight, IconWarningTriangle } from '../../icons';
 
 export interface TemperedFormProps {
   product: CatalogProduct;
   state: CotizadorState;
   dispatch: Dispatch<CotizadorAction>;
   quote: QuoteResult;
-  onBack: () => void;
   onNext: () => void;
 }
 
 // "templado" (Templado 10 mm) measures form — ancho 120-200cm, alto fijo
 // 2.00m, vidrio templado 10mm only, no color/glass picker (T5.2 scope).
-export default function TemperedForm({ product, state, dispatch, quote, onBack, onNext }: TemperedFormProps): ReactElement {
+export default function TemperedForm({ product, state, dispatch, quote, onNext }: TemperedFormProps): ReactElement {
   const widthCm = parseWidthCm(state.width);
   const invalid = quote.requiresQuote;
 
   return (
     <section aria-labelledby="step1-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Producto
-      </button>
-      <h2 id="step1-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
+      <h3 id="step1-heading" className="cotizador__section-heading" style={{ marginBottom: 2 }}>
         Medidas y acabado
-      </h2>
+      </h3>
       <p style={{ marginTop: 0, color: 'var(--color-ink-muted)' }}>
         {product.name} · Vidrio templado 10 mm · {product.altoText}
       </p>
@@ -57,7 +54,10 @@ export default function TemperedForm({ product, state, dispatch, quote, onBack, 
 
       {invalid && (
         <div className="callout" role="status" style={{ marginTop: 20 }}>
-          <span className="callout__title">Cotización personalizada por WhatsApp</span>
+          <span className="callout__title">
+            <IconWarningTriangle />
+            Cotización personalizada por WhatsApp
+          </span>
           <p className="callout__body">
             El ancho debe ser de {TEMPERED_WIDTH_MIN_CM} a {TEMPERED_WIDTH_MAX_CM} cm y la altura de 2.00 m. Para
             otras medidas, consulta con ALCUSA.
@@ -69,6 +69,7 @@ export default function TemperedForm({ product, state, dispatch, quote, onBack, 
         <div className="bottom-bar__price" />
         <button type="button" className="btn btn-primary" disabled={invalid} onClick={onNext}>
           Siguiente
+          <IconArrowRight />
         </button>
       </div>
     </section>

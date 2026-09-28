@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 import type { AluminumColor, WindowGlass, WindowModel } from '@engine/pricing';
 import { COLOR_LABELS, type CotizadorAction, type CotizadorState } from '../../state/cotizadorStore';
 import { computeWindowQuote } from '../../state/quoteWindowGarden';
+import { IconArrowRight, IconWarningTriangle } from '../../icons';
 
 const MODELS: WindowModel[] = ['francesa', 'bilbao'];
 export const WINDOW_MODEL_LABELS: Record<WindowModel, string> = { francesa: 'Francesa', bilbao: 'Bilbao' };
@@ -26,7 +27,6 @@ function isRowValid(qty: string, widthM: string, heightM: string): boolean {
 export interface WindowFormProps {
   state: CotizadorState;
   dispatch: (action: CotizadorAction) => void;
-  onBack: () => void;
   onNext: () => void;
 }
 
@@ -35,7 +35,7 @@ export interface WindowFormProps {
 // Reflectivo bronce glass are labeled requiresQuote AT SELECTION TIME
 // (prototype-spec.md §2.3) and never hard-block "Siguiente" (T6.3) — only
 // missing/invalid row measurements do.
-export default function WindowForm({ state, dispatch, onBack, onNext }: WindowFormProps): ReactElement {
+export default function WindowForm({ state, dispatch, onNext }: WindowFormProps): ReactElement {
   const quote = computeWindowQuote(state);
   const allRowsValid = state.windowRows.every((r) => isRowValid(r.qty, r.widthM, r.heightM));
   const frameRequiresQuote = state.windowFrame === 'natural';
@@ -43,12 +43,9 @@ export default function WindowForm({ state, dispatch, onBack, onNext }: WindowFo
 
   return (
     <section aria-labelledby="step1-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Producto
-      </button>
-      <h2 id="step1-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
+      <h3 id="step1-heading" className="cotizador__section-heading" style={{ marginBottom: 2 }}>
         Medidas y acabado
-      </h2>
+      </h3>
       <p style={{ marginTop: 0, color: 'var(--color-ink-muted)' }}>Ventana Francesa o Bilbao</p>
 
       <div className="field">
@@ -188,7 +185,10 @@ export default function WindowForm({ state, dispatch, onBack, onNext }: WindowFo
 
       {(frameRequiresQuote || glassRequiresQuote) && (
         <div className="callout" role="status" style={{ marginTop: 20 }}>
-          <span className="callout__title">Cotización personalizada por WhatsApp</span>
+          <span className="callout__title">
+            <IconWarningTriangle />
+            Cotización personalizada por WhatsApp
+          </span>
           <p className="callout__body">
             {frameRequiresQuote && glassRequiresQuote
               ? 'El marco Natural y el vidrio Reflectivo bronce se cotizan a la medida.'
@@ -209,6 +209,7 @@ export default function WindowForm({ state, dispatch, onBack, onNext }: WindowFo
         </div>
         <button type="button" className="btn btn-primary" disabled={!allRowsValid} onClick={onNext}>
           Siguiente
+          <IconArrowRight />
         </button>
       </div>
     </section>

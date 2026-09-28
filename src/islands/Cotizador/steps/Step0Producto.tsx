@@ -1,36 +1,46 @@
 import type { ReactElement } from 'react';
 import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
+import { IconCheck } from '../icons';
 
 export interface Step0ProductoProps {
   selectedId: ProductId | null;
   onSelect: (productId: ProductId) => void;
 }
 
-// Step 0 — product picker. Only "recta" is selectable this slice; the other
-// 5 render disabled/"Próximamente" (S5/S6 enable them), per T1.2 scope.
+// Step 0 — product picker. All 6 catalog products are enabled/priceable as
+// of S6 (see @content/catalog.ts); "Próximamente" only renders if a future
+// entry ships disabled.
 export default function Step0Producto({ selectedId, onSelect }: Step0ProductoProps): ReactElement {
   return (
     <section aria-labelledby="step0-heading">
-      <h2 id="step0-heading" className="cotizador__title" style={{ fontSize: '1.375rem', marginBottom: 12 }}>
+      <h3 id="step0-heading" className="cotizador__section-heading" style={{ marginBottom: 12 }}>
         Elige tu producto
-      </h2>
+      </h3>
       <div className="product-grid">
-        {CATALOG_PRODUCTS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            className="product-card"
-            disabled={!p.enabled}
-            aria-pressed={selectedId === p.id}
-            onClick={() => p.enabled && onSelect(p.id)}
-          >
-            <span className="product-card__body">
-              <span className="product-card__name">{p.name}</span>
-              <span className="product-card__price">Desde ${p.fromPrice}</span>
-              {!p.enabled && <span className="product-card__badge">Próximamente</span>}
-            </span>
-          </button>
-        ))}
+        {CATALOG_PRODUCTS.map((p) => {
+          const selected = selectedId === p.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              className="product-card"
+              disabled={!p.enabled}
+              aria-pressed={selected}
+              onClick={() => p.enabled && onSelect(p.id)}
+            >
+              <span className="product-card__body">
+                <span className="product-card__name">{p.name}</span>
+                <span className="product-card__price">Desde ${p.fromPrice}</span>
+                {!p.enabled && <span className="product-card__badge">Próximamente</span>}
+              </span>
+              {selected && (
+                <span className="product-card__check">
+                  <IconCheck size={12} strokeWidth={2.5} />
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
       {!selectedId && (
         <div className="callout callout--empty" role="status" style={{ marginTop: 16 }}>

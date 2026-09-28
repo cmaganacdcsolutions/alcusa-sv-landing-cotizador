@@ -11,6 +11,7 @@ import {
   type CotizadorStep,
 } from './state/cotizadorStore';
 import { computeQuote } from './state/quote';
+import { IconCheck, IconChevronLeft } from './icons';
 import Step0Producto from './steps/Step0Producto';
 import Step1Medidas from './steps/Step1Medidas';
 import Step2Precio from './steps/Step2Precio';
@@ -30,6 +31,22 @@ const STEP_LABELS: Record<CotizadorStep, string> = {
 };
 
 const VISIBLE_STEPS: readonly CotizadorStep[] = STEP_ORDER.slice(0, 6);
+
+// Boards repeat the same header block (back link + H1) at the top of every
+// ios-0N-cotizador-*.dc.html screen. Steps 0–3 share the generic wizard
+// title ("Cotiza tu proyecto") with their own <h3> sub-heading below the
+// stepper; from "resumen" on, the H1 IS the step's own title and no
+// sub-heading is rendered (ios-05/06 boards have no secondary heading).
+const PAGE_TITLES: Record<CotizadorStep, string> = {
+  producto: 'Cotiza tu proyecto',
+  medidas: 'Cotiza tu proyecto',
+  precio: 'Cotiza tu proyecto',
+  zonaEntrega: 'Cotiza tu proyecto',
+  resumen: 'Resumen de tu cotización',
+  formaPago: 'Forma de pago',
+  wompi: 'Pago',
+  resultado: 'Resultado',
+};
 
 function stepFromHash(hash: string): CotizadorStep | null {
   const raw = hash.replace(/^#/, '');
@@ -117,26 +134,48 @@ export default function Cotizador(): ReactElement {
 
   const showSummaryColumn = !!product && state.step !== 'producto';
 
+  const currentIdx = VISIBLE_STEPS.indexOf(state.step);
+  const isFirstStep = currentIdx <= 0;
+
   return (
     <div ref={rootRef} className="cotizador" data-testid="cotizador-root" data-hydrated="false">
+      <div className="cotizador__header">
+        {isFirstStep ? (
+          <a href="/#inicio" className="cotizador__back">
+            <IconChevronLeft />
+            Inicio
+          </a>
+        ) : (
+          <button type="button" className="cotizador__back" onClick={back}>
+            <IconChevronLeft />
+            {STEP_LABELS[VISIBLE_STEPS[currentIdx - 1]]}
+          </button>
+        )}
+        <h2 id="cotizador-page-title" className="cotizador__page-title">
+          {PAGE_TITLES[state.step]}
+        </h2>
+      </div>
+
       <div className="cotizador__rail-col">
-        <ol className="step-rail" aria-label="Pasos del cotizador">
-          {VISIBLE_STEPS.map((step, index) => {
-            const currentIdx = VISIBLE_STEPS.indexOf(state.step);
-            const itemState = index < currentIdx ? 'done' : index === currentIdx ? 'current' : 'upcoming';
-            return (
-              <li
-                key={step}
-                className="step-rail__item"
-                data-state={itemState}
-                aria-current={itemState === 'current' ? 'step' : undefined}
-              >
-                <span className="step-rail__dot">{itemState === 'done' ? '✓' : index + 1}</span>
-                <span>{STEP_LABELS[step]}</span>
-              </li>
-            );
-          })}
-        </ol>
+        <div className="step-rail-wrap">
+          <div className="step-rail__connector" aria-hidden="true" />
+          <ol className="step-rail" aria-label="Pasos del cotizador">
+            {VISIBLE_STEPS.map((step, index) => {
+              const itemState = index < currentIdx ? 'done' : index === currentIdx ? 'current' : 'upcoming';
+              return (
+                <li
+                  key={step}
+                  className="step-rail__item"
+                  data-state={itemState}
+                  aria-current={itemState === 'current' ? 'step' : undefined}
+                >
+                  <span className="step-rail__dot">{itemState === 'done' ? <IconCheck /> : index + 1}</span>
+                  <span>{STEP_LABELS[step]}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
       </div>
 
       <div className="cotizador__form-col">
@@ -150,10 +189,10 @@ export default function Cotizador(): ReactElement {
           />
         )}
         {state.step === 'medidas' && product && (
-          <Step1Medidas product={product} state={state} dispatch={dispatch} quote={quote} onBack={back} onNext={next} />
+          <Step1Medidas product={product} state={state} dispatch={dispatch} quote={quote} onNext={next} />
         )}
         {state.step === 'precio' && product && (
-          <Step2Precio product={product} state={state} quote={quote} onBack={back} onNext={next} />
+          <Step2Precio product={product} state={state} quote={quote} onNext={next} />
         )}
         {state.step === 'zonaEntrega' && product && (
           <Step3ZonaEntrega
@@ -164,15 +203,14 @@ export default function Cotizador(): ReactElement {
             total={total}
             onEntregaChange={(entrega) => dispatch({ type: 'SET_ENTREGA', entrega })}
             onZoneChange={(zone) => dispatch({ type: 'SET_ZONE', zone })}
-            onBack={back}
             onNext={next}
           />
         )}
         {state.step === 'resumen' && product && (
-          <Step4Resumen product={product} state={state} quote={quote} zoneFee={zoneFee} total={total} onBack={back} onNext={next} />
+          <Step4Resumen product={product} state={state} quote={quote} zoneFee={zoneFee} total={total} onNext={next} />
         )}
         {state.step === 'formaPago' && product && (
-          <Step5FormaPago product={product} state={state} quote={quote} zoneFee={zoneFee} total={total} onBack={back} />
+          <Step5FormaPago product={product} state={state} quote={quote} zoneFee={zoneFee} total={total} />
         )}
       </div>
 

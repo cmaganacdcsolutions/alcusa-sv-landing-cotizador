@@ -14,27 +14,26 @@ export interface Step1MedidasProps {
   state: CotizadorState;
   dispatch: Dispatch<CotizadorAction>;
   quote: QuoteResult;
-  onBack: () => void;
   onNext: () => void;
 }
 
 // Step 1 — thin per-product dispatcher (S5 refactor). Each product's
 // measures UI lives in steps/measures/<Name>Form.tsx; this file only routes.
-export default function Step1Medidas({ product, state, dispatch, quote, onBack, onNext }: Step1MedidasProps): ReactElement {
+export default function Step1Medidas({ product, state, dispatch, quote, onNext }: Step1MedidasProps): ReactElement {
   switch (state.productId) {
     case 'recta':
-      return <StraightForm product={product} state={state} dispatch={dispatch} quote={quote} onBack={onBack} onNext={onNext} />;
+      return <StraightForm product={product} state={state} dispatch={dispatch} quote={quote} onNext={onNext} />;
     case 'l':
-      return <CornerForm product={product} state={state} dispatch={dispatch} quote={quote} onBack={onBack} onNext={onNext} />;
+      return <CornerForm product={product} state={state} dispatch={dispatch} quote={quote} onNext={onNext} />;
     case 'templado':
-      return <TemperedForm product={product} state={state} dispatch={dispatch} quote={quote} onBack={onBack} onNext={onNext} />;
+      return <TemperedForm product={product} state={state} dispatch={dispatch} quote={quote} onNext={onNext} />;
     case 'bisagra':
-      return <HingedForm product={product} state={state} dispatch={dispatch} quote={quote} onBack={onBack} onNext={onNext} />;
+      return <HingedForm product={product} state={state} dispatch={dispatch} quote={quote} onNext={onNext} />;
     case 'ventana':
-      return <WindowForm state={state} dispatch={dispatch} onBack={onBack} onNext={onNext} />;
+      return <WindowForm state={state} dispatch={dispatch} onNext={onNext} />;
     case 'jardin':
-      return <GardenForm state={state} dispatch={dispatch} onBack={onBack} onNext={onNext} />;
+      return <GardenForm state={state} dispatch={dispatch} onNext={onNext} />;
     default:
-      return <StraightForm product={product} state={state} dispatch={dispatch} quote={quote} onBack={onBack} onNext={onNext} />;
+      return <StraightForm product={product} state={state} dispatch={dispatch} quote={quote} onNext={onNext} />;
   }
 }

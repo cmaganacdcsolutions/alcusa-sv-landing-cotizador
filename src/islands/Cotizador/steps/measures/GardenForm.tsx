@@ -3,6 +3,7 @@ import { GARDEN_PROMO_BANDS } from '@content/pricingTables';
 import type { GardenColor, GardenGlass } from '@engine/pricing';
 import { GLASS_LABELS, COLOR_LABELS, type CotizadorAction, type CotizadorState, type GardenHeightOption } from '../../state/cotizadorStore';
 import { computeGardenQuote } from '../../state/quoteWindowGarden';
+import { IconArrowRight, IconWarningTriangle } from '../../icons';
 
 const HOJAS: (1 | 2 | 3 | 'custom')[] = [1, 2, 3, 'custom'];
 export const GARDEN_HOJAS_LABELS: Record<1 | 2 | 3 | 'custom', string> = {
@@ -27,14 +28,13 @@ function widthRangeHint(hojas: 1 | 2 | 3 | 'custom'): string | null {
 export interface GardenFormProps {
   state: CotizadorState;
   dispatch: (action: CotizadorAction) => void;
-  onBack: () => void;
   onNext: () => void;
 }
 
 // New file (S6, T6.2) — "Puerta de jardín". Only Blanco/Claro are priced;
 // any other color/vidrio is labeled requiresQuote at selection time and,
 // per T6.3, never hard-blocks "Siguiente" — only invalid measurements do.
-export default function GardenForm({ state, dispatch, onBack, onNext }: GardenFormProps): ReactElement {
+export default function GardenForm({ state, dispatch, onNext }: GardenFormProps): ReactElement {
   const quote = computeGardenQuote(state);
   const widthNum = parseFloat(state.gardenWidth.replace(',', '.'));
   const otraNum = parseFloat(state.gardenHeightOtra.replace(',', '.'));
@@ -47,12 +47,9 @@ export default function GardenForm({ state, dispatch, onBack, onNext }: GardenFo
 
   return (
     <section aria-labelledby="step1-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Producto
-      </button>
-      <h2 id="step1-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
+      <h3 id="step1-heading" className="cotizador__section-heading" style={{ marginBottom: 2 }}>
         Medidas y acabado
-      </h2>
+      </h3>
       <p style={{ marginTop: 0, color: 'var(--color-ink-muted)' }}>Puerta de jardín</p>
 
       <div className="field">
@@ -177,7 +174,10 @@ export default function GardenForm({ state, dispatch, onBack, onNext }: GardenFo
 
       {(colorRequiresQuote || glassRequiresQuote) && (
         <div className="callout" role="status" style={{ marginTop: 20 }}>
-          <span className="callout__title">Cotización personalizada por WhatsApp</span>
+          <span className="callout__title">
+            <IconWarningTriangle />
+            Cotización personalizada por WhatsApp
+          </span>
           <p className="callout__body">
             Solo Blanco/Claro tienen precio automático; otros acabados se cotizan a la medida. Puedes seguir y
             confirmar por WhatsApp.
@@ -194,6 +194,7 @@ export default function GardenForm({ state, dispatch, onBack, onNext }: GardenFo
         </div>
         <button type="button" className="btn btn-primary" disabled={!allValid} onClick={onNext}>
           Siguiente
+          <IconArrowRight />
         </button>
       </div>
     </section>

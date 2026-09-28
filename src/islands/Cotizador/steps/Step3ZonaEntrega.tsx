@@ -4,6 +4,7 @@ import { hasZoneFee, ZONE_NAMES } from '@engine/pricing';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import type { CotizadorState, Entrega } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
+import { IconArrowRight, IconChevronDown, IconWarningCircle } from '../icons';
 
 export interface Step3ZonaEntregaProps {
   product: CatalogProduct;
@@ -13,7 +14,6 @@ export interface Step3ZonaEntregaProps {
   total: number | null;
   onEntregaChange: (entrega: Entrega) => void;
   onZoneChange: (zone: string) => void;
-  onBack: () => void;
   onNext: () => void;
 }
 
@@ -27,7 +27,6 @@ export default function Step3ZonaEntrega({
   total,
   onEntregaChange,
   onZoneChange,
-  onBack,
   onNext,
 }: Step3ZonaEntregaProps): ReactElement {
   const inst = state.entrega === 'instalacion';
@@ -43,12 +42,9 @@ export default function Step3ZonaEntrega({
 
   return (
     <section aria-labelledby="step3-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Precio
-      </button>
-      <h2 id="step3-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
+      <h3 id="step3-heading" className="cotizador__section-heading" style={{ marginBottom: 12 }}>
         Entrega y zona
-      </h2>
+      </h3>
 
       <div role="group" aria-label="Tipo de entrega" className="toggle-group">
         <button
@@ -74,21 +70,24 @@ export default function Step3ZonaEntrega({
           <label className="field__label" htmlFor="municipio">
             Municipio de instalación
           </label>
-          <select
-            id="municipio"
-            className="select-field"
-            value={state.zone}
-            aria-describedby="zona-ayuda"
-            onChange={(e) => onZoneChange(e.target.value)}
-          >
-            <option value="">Selecciona tu municipio</option>
-            {ZONE_NAMES.map((zone) => (
-              <option key={zone} value={zone}>
-                {zone}
-              </option>
-            ))}
-            <option value="otro">Mi municipio no está en la lista</option>
-          </select>
+          <div className="select-field-wrap">
+            <select
+              id="municipio"
+              className="select-field"
+              value={state.zone}
+              aria-describedby="zona-ayuda"
+              onChange={(e) => onZoneChange(e.target.value)}
+            >
+              <option value="">Selecciona tu municipio</option>
+              {ZONE_NAMES.map((zone) => (
+                <option key={zone} value={zone}>
+                  {zone}
+                </option>
+              ))}
+              <option value="otro">Mi municipio no está en la lista</option>
+            </select>
+            <IconChevronDown />
+          </div>
           <span id="zona-ayuda" className="field__helper" data-invalid={zoneUnselected}>
             {zoneUnselected
               ? 'Selecciona la zona de instalación.'
@@ -105,7 +104,10 @@ export default function Step3ZonaEntrega({
 
       {zoneNotFound && (
         <div className="callout" role="status" style={{ marginTop: 20 }}>
-          <span className="callout__title">Tu zona aún no tiene tarifa de transporte automática</span>
+          <span className="callout__title">
+            <IconWarningCircle />
+            Tu zona aún no tiene tarifa de transporte automática
+          </span>
           <p className="callout__body">Cotiza por WhatsApp y te confirmamos el transporte a tu municipio.</p>
           <a
             href={buildWaLink('Hola ALCUSA, quiero cotizar el transporte a mi municipio.')}
@@ -153,6 +155,7 @@ export default function Step3ZonaEntrega({
         </div>
         <button type="button" className="btn btn-primary" disabled={!canProceed} onClick={onNext}>
           Siguiente
+          <IconArrowRight />
         </button>
       </div>
     </section>
