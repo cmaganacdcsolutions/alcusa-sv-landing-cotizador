@@ -12,6 +12,7 @@ test.describe('whatsapp links — cotizador handoff', () => {
 
   test('resumen "Enviar por WhatsApp para confirmar" href matches the §2.6 template', async ({ page }) => {
     await page.goto('/#cotizador/0-producto');
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
@@ -37,6 +38,7 @@ test.describe('whatsapp links — cotizador handoff', () => {
 
   test('forma de pago step exposes the same WhatsApp handoff, "Pagar ahora" stays disabled', async ({ page }) => {
     await page.goto('/#cotizador/0-producto');
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();

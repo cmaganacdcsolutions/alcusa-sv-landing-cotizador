@@ -1,26 +1,27 @@
 import { useState, type ReactElement } from 'react';
 import type { CatalogProduct } from '@content/catalog';
-import type { StraightPriceResult } from '@engine/pricing';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
-import { COLOR_LABELS, GLASS_LABELS, parseWidthCm, type CotizadorState } from '../state/cotizadorStore';
+import type { CotizadorState } from '../state/cotizadorStore';
+import { buildLineItem, type QuoteResult } from '../state/quote';
 
 export interface Step5FormaPagoProps {
   product: CatalogProduct;
   state: CotizadorState;
-  priceResult: StraightPriceResult;
+  quote: QuoteResult;
   zoneFee: number | undefined;
   total: number | null;
   onBack: () => void;
 }
 
-// Step 5 — forma de pago (T1.3 scope). "Enviar por WhatsApp para confirmar"
-// is the primary, working path this slice; "Pagar ahora" (Wompi) is a
-// visible but disabled stub — wired in S8.
-export default function Step5FormaPago({ product, state, priceResult, zoneFee, total, onBack }: Step5FormaPagoProps): ReactElement {
+// Step 5 — forma de pago (T1.3 scope; generalized to corner/tempered/hinged
+// in S5). "Enviar por WhatsApp para confirmar" is the primary, working path
+// this slice; "Pagar ahora" (Wompi) is a visible but disabled stub — wired
+// in S8.
+export default function Step5FormaPago({ product, state, quote, zoneFee, total, onBack }: Step5FormaPagoProps): ReactElement {
   const [method, setMethod] = useState<'wa' | 'pay'>('wa');
-  const widthCm = parseWidthCm(state.width);
-  const subtotal = priceResult.price ?? 0;
+  const item = buildLineItem(state);
+  const subtotal = quote.amount ?? 0;
   const transporte = zoneFee ?? 0;
   const grandTotal = total ?? subtotal;
   const anticipo = Math.round(grandTotal * 80) / 100;
@@ -32,10 +33,11 @@ export default function Step5FormaPago({ product, state, priceResult, zoneFee, t
       items: [
         {
           producto: product.name,
-          anchoM: widthCm / 100,
-          altoM: 1.85,
-          color: COLOR_LABELS[state.color],
-          vidrio: GLASS_LABELS[state.glass],
+          anchoM: item.anchoM,
+          altoM: item.altoM,
+          color: item.color,
+          vidrio: item.vidrio,
+          cantidad: item.cantidad,
           zona: state.entrega === 'instalacion' ? state.zone : '—',
           entrega: entregaLabel,
           subtotal,

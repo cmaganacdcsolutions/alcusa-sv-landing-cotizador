@@ -12,6 +12,8 @@ export interface QuoteMessageItem {
   zona: string;
   entrega: 'con instalación' | 'retiro en tienda';
   subtotal: number;
+  /** S5 (hinged, cart-aware qty 1-50): shown only when > 1, keeps the S1 template byte-for-byte for qty-1 items. */
+  cantidad?: number;
 }
 
 export interface QuoteMessageInput {
@@ -32,9 +34,10 @@ export function buildQuoteMessage(input: QuoteMessageInput): string {
   const lines = input.items
     .map((item, index) => {
       const discountSuffix = item.descuentoAplicado ? ', descuento aplicado' : '';
+      const cantidadSuffix = item.cantidad && item.cantidad > 1 ? ` · Cantidad: ${item.cantidad}` : '';
       return (
         `${index + 1}. ${item.producto} — ${item.anchoM.toFixed(2)}×${item.altoM.toFixed(2)} m · ` +
-        `Color: ${item.color} · Vidrio: ${item.vidrio}${discountSuffix}\n` +
+        `Color: ${item.color} · Vidrio: ${item.vidrio}${discountSuffix}${cantidadSuffix}\n` +
         `   Zona: ${item.zona} · Entrega: ${item.entrega}\n` +
         `   Subtotal: ${money(item.subtotal)}`
       );

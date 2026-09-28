@@ -1,34 +1,27 @@
 import type { ReactElement } from 'react';
 import type { CatalogProduct } from '@content/catalog';
-import type { StraightPriceResult } from '@engine/pricing';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
-import { COLOR_LABELS, GLASS_LABELS, parseWidthCm, type CotizadorState } from '../state/cotizadorStore';
+import type { CotizadorState } from '../state/cotizadorStore';
+import { buildLineItem, type QuoteResult } from '../state/quote';
 
 export interface Step4ResumenProps {
   product: CatalogProduct;
   state: CotizadorState;
-  priceResult: StraightPriceResult;
+  quote: QuoteResult;
   zoneFee: number | undefined;
   total: number | null;
   onBack: () => void;
   onNext: () => void;
 }
 
-// Step 4 — single-item summary card (T1.3 scope). "+ Agregar otro producto"
-// is visible but disabled/stub this slice — wired to the multi-item cart in
-// S7. The primary WhatsApp handoff lives here too, matching ios-05.
-export default function Step4Resumen({
-  product,
-  state,
-  priceResult,
-  zoneFee,
-  total,
-  onBack,
-  onNext,
-}: Step4ResumenProps): ReactElement {
-  const widthCm = parseWidthCm(state.width);
-  const subtotal = priceResult.price ?? 0;
+// Step 4 — single-item summary card (T1.3 scope; generalized to
+// corner/tempered/hinged in S5). "+ Agregar otro producto" is visible but
+// disabled/stub this slice — wired to the multi-item cart in S7. The
+// primary WhatsApp handoff lives here too, matching ios-05.
+export default function Step4Resumen({ product, state, quote, zoneFee, total, onBack, onNext }: Step4ResumenProps): ReactElement {
+  const item = buildLineItem(state);
+  const subtotal = quote.amount ?? 0;
   const transporte = zoneFee ?? 0;
   const grandTotal = total ?? subtotal;
   const anticipo = Math.round(grandTotal * 80) / 100;
@@ -40,10 +33,11 @@ export default function Step4Resumen({
       items: [
         {
           producto: product.name,
-          anchoM: widthCm / 100,
-          altoM: 1.85,
-          color: COLOR_LABELS[state.color],
-          vidrio: GLASS_LABELS[state.glass],
+          anchoM: item.anchoM,
+          altoM: item.altoM,
+          color: item.color,
+          vidrio: item.vidrio,
+          cantidad: item.cantidad,
           zona: state.entrega === 'instalacion' ? state.zone : '—',
           entrega: entregaLabel,
           subtotal,
@@ -69,9 +63,7 @@ export default function Step4Resumen({
         <article className="summary-item">
           <div className="summary-item__meta">
             <span className="summary-item__name">{product.name}</span>
-            <span className="summary-item__detail">
-              {(widthCm / 100).toFixed(2)} × 1.85 m · {COLOR_LABELS[state.color]} · {GLASS_LABELS[state.glass]}
-            </span>
+            <span className="summary-item__detail">{item.detail}</span>
             <span className="summary-item__detail">
               {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
             </span>

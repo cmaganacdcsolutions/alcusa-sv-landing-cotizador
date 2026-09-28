@@ -1,7 +1,7 @@
 // Reducer + hash/history slug map for the cotizador wizard (ADR-005).
 // Pure — the hash/history side effects themselves live in Cotizador.tsx
 // (islands are the only layer allowed to touch window/history).
-import type { AluminumColor, StraightGlass } from '@engine/pricing';
+import type { AluminumColor, CornerModel, StraightGlass } from '@engine/pricing';
 import type { ProductId } from '@content/catalog';
 
 export type CotizadorStep =
@@ -58,6 +58,12 @@ export const GLASS_LABELS: Readonly<Record<StraightGlass, string>> = {
   duplex: 'Dúplex',
 };
 
+export const CORNER_MODEL_LABELS: Readonly<Record<CornerModel, string>> = {
+  aquaclara: 'Aquaclara',
+  frosted: 'Frosted',
+  aquafold: 'Aquafold',
+};
+
 export interface CotizadorState {
   step: CotizadorStep;
   productId: ProductId | null;
@@ -66,6 +72,15 @@ export interface CotizadorState {
   glass: StraightGlass;
   entrega: Entrega;
   zone: string;
+  // corner ("l" — Cabina en L, S5 T5.1): fixed 0.80x0.80x1.85m, no width input.
+  cornerModel: CornerModel;
+  // tempered ("templado", S5 T5.2): reuses `width` (120-200cm); no extra fields.
+  // hinged ("bisagra", S5 T5.3): qty + optional paño fijo. Reuses `width` (40-90cm),
+  // `color` and `glass`.
+  hingedQty: string;
+  hingedFixedPanelEnabled: boolean;
+  hingedFixedPanelWidthM: string;
+  hingedFixedPanelHeightM: string;
 }
 
 export const initialCotizadorState: CotizadorState = {
@@ -76,6 +91,11 @@ export const initialCotizadorState: CotizadorState = {
   glass: 'claro',
   entrega: 'instalacion',
   zone: '',
+  cornerModel: 'aquaclara',
+  hingedQty: '1',
+  hingedFixedPanelEnabled: false,
+  hingedFixedPanelWidthM: '',
+  hingedFixedPanelHeightM: '',
 };
 
 export type CotizadorAction =
@@ -87,7 +107,16 @@ export type CotizadorAction =
   | { type: 'SET_ZONE'; zone: string }
   | { type: 'GOTO_STEP'; step: CotizadorStep }
   | { type: 'NEXT' }
-  | { type: 'BACK' };
+  | { type: 'BACK' }
+  | { type: 'SET_CORNER_MODEL'; model: CornerModel }
+  | { type: 'SET_HINGED_QTY'; value: string }
+  | { type: 'TOGGLE_HINGED_FIXED_PANEL'; enabled: boolean }
+  | { type: 'SET_HINGED_FIXED_PANEL_WIDTH'; value: string }
+  | { type: 'SET_HINGED_FIXED_PANEL_HEIGHT'; value: string }
+  // Preselects a product without navigating away from the current step —
+  // used by the `?producto=<id>` query-param contract (S5), so a catalog
+  // CTA can deep-link into `/cotizador` with the card already highlighted.
+  | { type: 'PRESELECT_PRODUCT'; productId: ProductId };
 
 /** Accepts meters ("1.10") or centimeters ("110"): values < 10 are ×100. */
 export function parseWidthCm(raw: string): number {
@@ -122,6 +151,21 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       const prev = STEP_ORDER[Math.max(idx - 1, 0)];
       return { ...state, step: prev };
     }
+    // --- corner (S5 T5.1) ---
+    case 'SET_CORNER_MODEL':
+      return { ...state, cornerModel: action.model };
+    // --- tempered (S5 T5.2) --- (no dedicated action; reuses SET_WIDTH)
+    // --- hinged (S5 T5.3) ---
+    case 'SET_HINGED_QTY':
+      return { ...state, hingedQty: action.value };
+    case 'TOGGLE_HINGED_FIXED_PANEL':
+      return { ...state, hingedFixedPanelEnabled: action.enabled };
+    case 'SET_HINGED_FIXED_PANEL_WIDTH':
+      return { ...state, hingedFixedPanelWidthM: action.value };
+    case 'SET_HINGED_FIXED_PANEL_HEIGHT':
+      return { ...state, hingedFixedPanelHeightM: action.value };
+    case 'PRESELECT_PRODUCT':
+      return { ...state, productId: action.productId };
     default:
       return state;
   }

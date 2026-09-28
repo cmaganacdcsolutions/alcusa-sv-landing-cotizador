@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useReducer, type ReactElement } from 'react';
+import { useEffect, useMemo, useReducer, useRef, type ReactElement } from 'react';
 import '@styles/cotizador.css';
-import { CATALOG_PRODUCTS } from '@content/catalog';
-import { getZoneFee, priceStraight } from '@engine/pricing';
+import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
+import { getZoneFee } from '@engine/pricing';
 import {
   cotizadorReducer,
   initialCotizadorState,
-  parseWidthCm,
   slugToStep,
   STEP_ORDER,
   STEP_SLUGS,
   type CotizadorStep,
 } from './state/cotizadorStore';
+import { computeQuote } from './state/quote';
 import Step0Producto from './steps/Step0Producto';
 import Step1Medidas from './steps/Step1Medidas';
 import Step2Precio from './steps/Step2Precio';
@@ -38,13 +38,29 @@ function stepFromHash(hash: string): CotizadorStep | null {
   return slugToStep(slug);
 }
 
+function isCatalogProductId(value: string | null): value is ProductId {
+  return !!value && CATALOG_PRODUCTS.some((p) => p.id === value);
+}
+
+// Reads the S5 `?producto=<id>` preselect contract (catalog CTAs link to
+// `/cotizador?producto=<id>`, per the Foreman's page-split correction).
+function productIdFromSearch(search: string): ProductId | null {
+  const raw = new URLSearchParams(search).get('producto');
+  return isCatalogProductId(raw) ? raw : null;
+}
+
 export default function Cotizador(): ReactElement {
   const [state, dispatch] = useReducer(cotizadorReducer, initialCotizadorState);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const initialHash = window.location.hash;
     const initial = stepFromHash(initialHash);
     if (initial) dispatch({ type: 'GOTO_STEP', step: initial });
+
+    const preselectId = productIdFromSearch(window.location.search);
+    if (preselectId) dispatch({ type: 'PRESELECT_PRODUCT', productId: preselectId });
+
     // ADR-005: browsers won't auto-scroll a compound "#cotizador/<slug>"
     // fragment, so the island scrolls itself into view on mount.
     if (initialHash.startsWith('#cotizador/')) {
@@ -57,6 +73,13 @@ export default function Cotizador(): ReactElement {
     };
     window.addEventListener('hashchange', syncFromHash);
     window.addEventListener('popstate', syncFromHash);
+
+    // android412 flake fix: flips a plain DOM attribute (not React state —
+    // test-only, same pattern as src/islands/ContactForm.tsx) once this
+    // client:load island has actually mounted/hydrated, so e2e specs can
+    // wait for it instead of racing the pre-hydration static HTML.
+    rootRef.current?.setAttribute('data-hydrated', 'true');
+
     return () => {
       window.removeEventListener('hashchange', syncFromHash);
       window.removeEventListener('popstate', syncFromHash);
@@ -88,19 +111,14 @@ export default function Cotizador(): ReactElement {
     goToStep(STEP_ORDER[Math.max(idx - 1, 0)]);
   }
 
-  const widthCm = parseWidthCm(state.width);
-  const pickup = state.entrega === 'retiro';
-  const priceResult = useMemo(
-    () => priceStraight({ widthCm, color: state.color, glass: state.glass, pickup }),
-    [widthCm, state.color, state.glass, pickup],
-  );
+  const quote = useMemo(() => computeQuote(state), [state]);
   const zoneFee = state.entrega === 'instalacion' ? getZoneFee(state.zone) : 0;
-  const total = priceResult.price !== null ? priceResult.price + (zoneFee ?? 0) : null;
+  const total = quote.amount !== null ? quote.amount + (zoneFee ?? 0) : null;
 
   const showSummaryColumn = !!product && state.step !== 'producto';
 
   return (
-    <div className="cotizador" data-testid="cotizador-root">
+    <div ref={rootRef} className="cotizador" data-testid="cotizador-root" data-hydrated="false">
       <div className="cotizador__rail-col">
         <ol className="step-rail" aria-label="Pasos del cotizador">
           {VISIBLE_STEPS.map((step, index) => {
@@ -132,26 +150,16 @@ export default function Cotizador(): ReactElement {
           />
         )}
         {state.step === 'medidas' && product && (
-          <Step1Medidas
-            product={product}
-            width={state.width}
-            color={state.color}
-            glass={state.glass}
-            priceResult={priceResult}
-            onWidthChange={(value) => dispatch({ type: 'SET_WIDTH', value })}
-            onColorChange={(color) => dispatch({ type: 'SET_COLOR', color })}
-            onGlassChange={(glass) => dispatch({ type: 'SET_GLASS', glass })}
-            onBack={back}
-            onNext={next}
-          />
+          <Step1Medidas product={product} state={state} dispatch={dispatch} quote={quote} onBack={back} onNext={next} />
         )}
         {state.step === 'precio' && product && (
-          <Step2Precio product={product} state={state} priceResult={priceResult} onBack={back} onNext={next} />
+          <Step2Precio product={product} state={state} quote={quote} onBack={back} onNext={next} />
         )}
         {state.step === 'zonaEntrega' && product && (
           <Step3ZonaEntrega
+            product={product}
             state={state}
-            priceResult={priceResult}
+            quote={quote}
             zoneFee={zoneFee}
             total={total}
             onEntregaChange={(entrega) => dispatch({ type: 'SET_ENTREGA', entrega })}
@@ -161,25 +169,10 @@ export default function Cotizador(): ReactElement {
           />
         )}
         {state.step === 'resumen' && product && (
-          <Step4Resumen
-            product={product}
-            state={state}
-            priceResult={priceResult}
-            zoneFee={zoneFee}
-            total={total}
-            onBack={back}
-            onNext={next}
-          />
+          <Step4Resumen product={product} state={state} quote={quote} zoneFee={zoneFee} total={total} onBack={back} onNext={next} />
         )}
         {state.step === 'formaPago' && product && (
-          <Step5FormaPago
-            product={product}
-            state={state}
-            priceResult={priceResult}
-            zoneFee={zoneFee}
-            total={total}
-            onBack={back}
-          />
+          <Step5FormaPago product={product} state={state} quote={quote} zoneFee={zoneFee} total={total} onBack={back} />
         )}
       </div>
 
@@ -187,7 +180,7 @@ export default function Cotizador(): ReactElement {
         <aside className="cotizador__summary-col price-card" aria-label="Resumen de precio">
           <span className="price-card__label">ESTIMADO SIN TRANSPORTE</span>
           <span className="price-card__value" data-testid="summary-price-value">
-            {priceResult.requiresQuote ? 'Por WhatsApp' : `$${(priceResult.price ?? 0).toFixed(2)}`}
+            {quote.requiresQuote ? 'Por WhatsApp' : `$${(quote.amount ?? 0).toFixed(2)}`}
           </span>
           {total !== null && (
             <p className="price-card__note">Total con transporte: ${total.toFixed(2)}</p>
