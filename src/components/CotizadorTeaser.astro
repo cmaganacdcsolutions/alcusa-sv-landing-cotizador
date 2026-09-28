@@ -3,22 +3,55 @@
 // Main.dc.html #cotizador, desktop-01-inicio #cotizador). The real cotizador
 // now lives on its own route (/cotizador, S5 page split) — this card is the
 // landing's only mention of it, linking out.
+//
+// desktop-01-inicio's card is a 2-col grid: this copy/CTA column + a 520px
+// mini product-list column (the same 3 categories as Hero, image + price).
+// Mobile (Main.dc.html) has no product list — desktop-only, see CSS below.
+import { getCategoryTeasers } from '@content/categoryTeasers';
+
+const teasers = getCategoryTeasers();
 ---
 
 <section id="cotizador" class="cotizador-teaser" aria-labelledby="cotizador-teaser-title">
   <div class="cotizador-teaser__card">
-    <p class="cotizador-teaser__kicker">Cotizador en línea</p>
-    <h2 id="cotizador-teaser-title" class="cotizador-teaser__title">
-      Conoce tu precio antes de dar tu dirección
-    </h2>
-    <p class="cotizador-teaser__lead">
-      Elige el producto, ingresa tus medidas y ve el estimado al instante. Puertas, ventanas y jardín en una sola
-      cotización.
-    </p>
-    <a href="/cotizador" class="cotizador-teaser__cta">
-      Empezar mi cotización
-      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-    </a>
+    <div class="cotizador-teaser__copy">
+      <p class="cotizador-teaser__kicker">Cotizador en línea</p>
+      <h2 id="cotizador-teaser-title" class="cotizador-teaser__title">
+        Conoce tu precio antes de dar tu dirección
+      </h2>
+      <p class="cotizador-teaser__lead">
+        Elige el producto, ingresa tus medidas y ve el estimado al instante. Puertas, ventanas y jardín en una sola
+        cotización.
+      </p>
+      <a href="/cotizador" class="cotizador-teaser__cta">
+        Empezar mi cotización
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+      </a>
+    </div>
+    <ul class="cotizador-teaser__products" aria-label="Productos y precios desde">
+      {
+        teasers.map((teaser) => (
+          <li class="cotizador-teaser__product">
+            <img
+              src={`/images/${teaser.imageBase}-128.webp`}
+              srcset={`/images/${teaser.imageBase}-128.webp 128w, /images/${teaser.imageBase}-256.webp 256w`}
+              sizes="56px"
+              alt=""
+              width="56"
+              height="56"
+              loading="lazy"
+              decoding="async"
+              class="cotizador-teaser__product-img"
+            />
+            <span class="cotizador-teaser__product-copy">
+              <span class="cotizador-teaser__product-label">{teaser.label}</span>
+              <span class="cotizador-teaser__product-subtitle">{teaser.subtitle}</span>
+            </span>
+            <span class="cotizador-teaser__product-price">Desde ${teaser.fromPrice}</span>
+          </li>
+        ))
+      }
+    </ul>
   </div>
 </section>
 
@@ -79,6 +112,10 @@
     box-shadow: var(--shadow-focus);
   }
 
+  .cotizador-teaser__products {
+    display: none;
+  }
+
   @media (min-width: 1024px) {
     .cotizador-teaser {
       padding: var(--space-16) var(--space-6) var(--space-24);
@@ -88,7 +125,16 @@
       max-width: var(--container-page);
       margin: 0 auto;
       padding: var(--space-20);
-      gap: var(--space-4);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 520px;
+      align-items: center;
+      gap: var(--space-16);
+    }
+
+    .cotizador-teaser__copy {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
     }
 
     .cotizador-teaser__title {
@@ -104,6 +150,60 @@
       align-self: flex-start;
       padding: 0 var(--space-6);
       margin-top: var(--space-2);
+    }
+
+    .cotizador-teaser__products {
+      display: flex;
+      flex-direction: column;
+      margin: 0;
+      padding: 0 var(--space-6);
+      list-style: none;
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .cotizador-teaser__product {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-4) 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .cotizador-teaser__product:last-child {
+      border-bottom: none;
+    }
+
+    .cotizador-teaser__product-img {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .cotizador-teaser__product-copy {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cotizador-teaser__product-label {
+      font-size: var(--font-size-body-lg-desktop);
+      font-weight: var(--font-weight-body-bold);
+    }
+
+    .cotizador-teaser__product-subtitle {
+      font-size: var(--font-size-body-sm-desktop);
+      color: #cfe0ff;
+    }
+
+    .cotizador-teaser__product-price {
+      font-size: var(--font-size-body-lg-desktop);
+      font-weight: var(--font-weight-body-bold);
+      white-space: nowrap;
     }
   }
 </style>
