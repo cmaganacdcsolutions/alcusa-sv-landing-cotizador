@@ -1,22 +1,23 @@
 import type { ReactElement } from 'react';
 import type { CatalogProduct } from '@content/catalog';
-import type { StraightPriceResult } from '@engine/pricing';
-import { STRAIGHT_WIDTH_MAX_CM, STRAIGHT_WIDTH_MIN_CM } from '@engine/pricing';
-import { COLOR_LABELS, type CotizadorState } from '../state/cotizadorStore';
+import type { CotizadorState } from '../state/cotizadorStore';
+import { buildLineItem, outOfRangeCopy, type QuoteResult } from '../state/quote';
 
 export interface Step2PrecioProps {
   product: CatalogProduct;
   state: CotizadorState;
-  priceResult: StraightPriceResult;
+  quote: QuoteResult;
   onBack: () => void;
   onNext: () => void;
 }
 
-// Step 2 — live price card BEFORE address (T1.2 scope). Copy per
+// Step 2 — live price card BEFORE address (T1.2 scope; generalized to
+// corner/tempered/hinged in S5 via the state/quote.ts dispatcher). Copy per
 // prototype-spec.md §2.4: "Estimado sin transporte: $X. El costo final
 // incluye transporte según tu zona."
-export default function Step2Precio({ product, state, priceResult, onBack, onNext }: Step2PrecioProps): ReactElement {
-  const { requiresQuote, price } = priceResult;
+export default function Step2Precio({ product, state, quote, onBack, onNext }: Step2PrecioProps): ReactElement {
+  const { requiresQuote, amount: price } = quote;
+  const { detail } = buildLineItem(state);
 
   return (
     <section aria-labelledby="step2-heading">
@@ -30,16 +31,12 @@ export default function Step2Precio({ product, state, priceResult, onBack, onNex
       {requiresQuote ? (
         <div className="callout" role="status">
           <span className="callout__title">Cotización personalizada por WhatsApp</span>
-          <p className="callout__body">
-            El ancho debe ser de {STRAIGHT_WIDTH_MIN_CM} a {STRAIGHT_WIDTH_MAX_CM} cm y la altura de 1.85 m. Para
-            otras medidas, consulta con ALCUSA.
-          </p>
+          <p className="callout__body">{outOfRangeCopy(state.productId)}</p>
         </div>
       ) : (
         <div className="price-card">
-          <p style={{ margin: 0, fontWeight: 700 }}>
-            {product.name} · {COLOR_LABELS[state.color]}
-          </p>
+          <p style={{ margin: 0, fontWeight: 700 }}>{product.name}</p>
+          <p style={{ margin: '2px 0 0', color: 'var(--color-ink-muted)', fontSize: 14 }}>{detail}</p>
           <span className="price-card__label">ESTIMADO SIN TRANSPORTE</span>
           <span className="price-card__value" data-testid="step2-price-value">
             ${(price ?? 0).toFixed(2)}

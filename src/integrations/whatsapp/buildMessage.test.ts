@@ -73,4 +73,51 @@ describe('integrations/whatsapp buildMessage', () => {
     expect(message).toContain('2. Puerta de baño recta — 1.25×1.85 m');
     expect(message).toContain('Dirección: [dirección]');
   });
+
+  // S5 (hinged, cart-aware qty 1-50): `cantidad` is opt-in and only shown when > 1,
+  // so the S1 fixture above stays byte-for-byte unchanged for qty-1 items.
+  it('appends "· Cantidad: N" only when cantidad > 1 (hinged qty, S5)', () => {
+    const withoutQty = buildQuoteMessage({
+      items: [
+        {
+          producto: 'Puerta con bisagra',
+          anchoM: 0.7,
+          altoM: 1.85,
+          color: 'Natural',
+          vidrio: 'Claro 5 mm',
+          zona: '—',
+          entrega: 'retiro en tienda',
+          subtotal: 270,
+          cantidad: 1,
+        },
+      ],
+      transporte: 0,
+      total: 270,
+      anticipo: 216,
+      saldo: 54,
+    });
+    expect(withoutQty).toContain('Color: Natural · Vidrio: Claro 5 mm\n');
+    expect(withoutQty).not.toContain('Cantidad:');
+
+    const withQty = buildQuoteMessage({
+      items: [
+        {
+          producto: 'Puerta con bisagra',
+          anchoM: 0.65,
+          altoM: 1.85,
+          color: 'Natural',
+          vidrio: 'Nevado 5 mm',
+          zona: '—',
+          entrega: 'retiro en tienda',
+          subtotal: 622,
+          cantidad: 2,
+        },
+      ],
+      transporte: 0,
+      total: 622,
+      anticipo: 497.6,
+      saldo: 124.4,
+    });
+    expect(withQty).toContain('Color: Natural · Vidrio: Nevado 5 mm · Cantidad: 2\n');
+  });
 });

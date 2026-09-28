@@ -1,12 +1,14 @@
 import type { ReactElement } from 'react';
-import type { StraightPriceResult } from '@engine/pricing';
+import type { CatalogProduct } from '@content/catalog';
 import { hasZoneFee, ZONE_NAMES } from '@engine/pricing';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import type { CotizadorState, Entrega } from '../state/cotizadorStore';
+import type { QuoteResult } from '../state/quote';
 
 export interface Step3ZonaEntregaProps {
+  product: CatalogProduct;
   state: CotizadorState;
-  priceResult: StraightPriceResult;
+  quote: QuoteResult;
   zoneFee: number | undefined;
   total: number | null;
   onEntregaChange: (entrega: Entrega) => void;
@@ -15,11 +17,12 @@ export interface Step3ZonaEntregaProps {
   onNext: () => void;
 }
 
-// Step 3 — entrega y zona (T1.3 scope). Municipio combobox with the 23-zone
-// table from engine/pricing/zoneFee.ts.
+// Step 3 — entrega y zona (T1.3 scope; product-agnostic since S5). Municipio
+// combobox with the 23-zone table from engine/pricing/zoneFee.ts.
 export default function Step3ZonaEntrega({
+  product,
   state,
-  priceResult,
+  quote,
   zoneFee,
   total,
   onEntregaChange,
@@ -28,7 +31,7 @@ export default function Step3ZonaEntrega({
   onNext,
 }: Step3ZonaEntregaProps): ReactElement {
   const inst = state.entrega === 'instalacion';
-  const price = priceResult.price ?? 0;
+  const price = quote.amount ?? 0;
   const zoneUnselected = inst && !state.zone;
   const zoneNotFound = inst && !!state.zone && !hasZoneFee(state.zone);
   const canProceed = !zoneUnselected && !zoneNotFound;
@@ -111,7 +114,7 @@ export default function Step3ZonaEntrega({
       {canProceed && !zoneUnselected && (
         <dl className="breakdown" style={{ marginTop: 20 }}>
           <div className="breakdown__row">
-            <dt>{inst ? 'Puerta recta · con instalación' : 'Puerta recta · retiro −15%'}</dt>
+            <dt>{inst ? `${product.name} · con instalación` : `${product.name} · retiro −15%`}</dt>
             <dd>${price.toFixed(2)}</dd>
           </div>
           <div className="breakdown__row">
