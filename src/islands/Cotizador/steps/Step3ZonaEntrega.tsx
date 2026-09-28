@@ -32,6 +32,11 @@ export default function Step3ZonaEntrega({
 }: Step3ZonaEntregaProps): ReactElement {
   const inst = state.entrega === 'instalacion';
   const price = quote.amount ?? 0;
+  // Only priceStraight ('recta') accepts a `pickup` flag and applies the
+  // 15% discount (engine/pricing/straight.ts); corner/tempered/hinged/
+  // ventana/jardin have no pickup discount, so their retiro copy must not
+  // claim one (S5/S6 tech-debt — see docs/architecture/tech-debt.md).
+  const pickupHasDiscount = product.id === 'recta';
   const zoneUnselected = inst && !state.zone;
   const zoneNotFound = inst && !!state.zone && !hasZoneFee(state.zone);
   const canProceed = !zoneUnselected && !zoneNotFound;
@@ -60,7 +65,7 @@ export default function Step3ZonaEntrega({
           aria-pressed={!inst}
           onClick={() => onEntregaChange('retiro')}
         >
-          Retiro en tienda −15%
+          {pickupHasDiscount ? 'Retiro en tienda −15%' : 'Retiro en tienda'}
         </button>
       </div>
 
@@ -114,7 +119,13 @@ export default function Step3ZonaEntrega({
       {canProceed && !zoneUnselected && (
         <dl className="breakdown" style={{ marginTop: 20 }}>
           <div className="breakdown__row">
-            <dt>{inst ? `${product.name} · con instalación` : `${product.name} · retiro −15%`}</dt>
+            <dt>
+              {inst
+                ? `${product.name} · con instalación`
+                : pickupHasDiscount
+                  ? `${product.name} · retiro −15%`
+                  : `${product.name} · retiro`}
+            </dt>
             <dd>${price.toFixed(2)}</dd>
           </div>
           <div className="breakdown__row">

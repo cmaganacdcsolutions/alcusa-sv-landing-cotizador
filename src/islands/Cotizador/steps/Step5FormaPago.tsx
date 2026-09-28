@@ -1,9 +1,13 @@
 import { useState, type ReactElement } from 'react';
 import type { CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
-import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
-import type { CotizadorState } from '../state/cotizadorStore';
+import { buildQuoteMessage, type QuoteMessageItem } from '@integrations/whatsapp/buildMessage';
+import { buildGardenMessageItem, buildWindowMessageItems } from '@integrations/whatsapp/windowGardenMessageItems';
+import { COLOR_LABELS, GLASS_LABELS, type CotizadorState } from '../state/cotizadorStore';
 import { buildLineItem, type QuoteResult } from '../state/quote';
+import { computeGardenQuote, computeWindowQuote } from '../state/quoteWindowGarden';
+import { GARDEN_HOJAS_LABELS } from './measures/GardenForm';
+import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './measures/WindowForm';
 
 export interface Step5FormaPagoProps {
   product: CatalogProduct;
@@ -26,29 +30,55 @@ export default function Step5FormaPago({ product, state, quote, zoneFee, total, 
   const grandTotal = total ?? subtotal;
   const anticipo = Math.round(grandTotal * 80) / 100;
   const saldo = grandTotal - anticipo;
-  const entregaLabel = state.entrega === 'instalacion' ? 'con instalación' : 'retiro en tienda';
+  const entregaLabel: 'con instalación' | 'retiro en tienda' =
+    state.entrega === 'instalacion' ? 'con instalación' : 'retiro en tienda';
+  const zona = state.entrega === 'instalacion' ? state.zone : '—';
 
-  const waHref = buildWaLink(
-    buildQuoteMessage({
-      items: [
-        {
-          producto: product.name,
-          anchoM: item.anchoM,
-          altoM: item.altoM,
-          color: item.color,
-          vidrio: item.vidrio,
-          cantidad: item.cantidad,
-          zona: state.entrega === 'instalacion' ? state.zone : '—',
-          entrega: entregaLabel,
-          subtotal,
-        },
-      ],
-      transporte,
-      total: grandTotal,
-      anticipo,
-      saldo,
-    }),
-  );
+  // S6 — ventana/jardin build their own item lines (repeatable rows for
+  // ventana, single line for jardin); every other product keeps its original
+  // single item from state/quote.ts's buildLineItem.
+  let items: QuoteMessageItem[];
+  if (product.id === 'ventana') {
+    const windowQuote = computeWindowQuote(state);
+    items = buildWindowMessageItems(windowQuote.rows, {
+      modelLabel: WINDOW_MODEL_LABELS[state.windowModel],
+      frameLabel: COLOR_LABELS[state.windowFrame],
+      glassLabel: WINDOW_GLASS_LABELS[state.windowGlass],
+      zona,
+      entrega: entregaLabel,
+    });
+  } else if (product.id === 'jardin') {
+    const gardenQuote = computeGardenQuote(state);
+    items = [
+      buildGardenMessageItem({
+        hojasLabel: GARDEN_HOJAS_LABELS[state.gardenHojas],
+        widthM: gardenQuote.widthM,
+        heightM: gardenQuote.heightM,
+        colorLabel: COLOR_LABELS[state.gardenColor],
+        glassLabel: GLASS_LABELS[state.gardenGlass],
+        subtotal: gardenQuote.subtotal,
+        requiresQuote: gardenQuote.requiresQuote,
+        zona,
+        entrega: entregaLabel,
+      }),
+    ];
+  } else {
+    items = [
+      {
+        producto: product.name,
+        anchoM: item.anchoM,
+        altoM: item.altoM,
+        color: item.color,
+        vidrio: item.vidrio,
+        cantidad: item.cantidad,
+        zona,
+        entrega: entregaLabel,
+        subtotal,
+      },
+    ];
+  }
+
+  const waHref = buildWaLink(buildQuoteMessage({ items, transporte, total: grandTotal, anticipo, saldo }));
 
   return (
     <section aria-labelledby="step5-heading">
