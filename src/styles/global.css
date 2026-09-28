@@ -37,6 +37,18 @@ a {
   color: var(--color-accent);
 }
 
+/* Icon SVGs are inline outline glyphs per the boards: stroke-only, no fill,
+   round caps/joins. Any icon that needs a filled glyph sets its own
+   fill/stroke inline (none do today - all board icons are outline). */
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

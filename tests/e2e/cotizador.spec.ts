@@ -11,21 +11,21 @@ async function waitForHydration(page: Page): Promise<void> {
 // requiresQuote edge states from prototype-spec.md §2.3. Never opens a real
 // WhatsApp link — fixtures.ts blocks wa.me/wompi routes as a second guard.
 test.describe('cotizador — recta, step 0 to 5', () => {
-  test('drawer "Cotizar" opens the wizard at step 0', async ({ page }) => {
+  test('drawer "Cotizar" navigates to the standalone /cotizador page at step 0', async ({ page }) => {
     await page.goto('/');
-    await waitForHydration(page);
     await page.getByRole('button', { name: 'Abrir menú' }).click();
     const drawerNav = page.getByRole('navigation', { name: 'Menú principal' });
     await expect(drawerNav).toBeVisible();
     await drawerNav.getByRole('link', { name: 'Cotizar', exact: true }).click();
-    await expect(page).toHaveURL(/#cotizador\/0-producto$/);
+    await expect(page).toHaveURL(/\/cotizador$/);
+    await waitForHydration(page);
     await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
   });
 
   test('happy path: recta 110cm Natural Claro, Soyapango, con instalación → $262.00 total + WhatsApp href', async ({
     page,
   }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
 
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
@@ -65,7 +65,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
   });
 
   test('retiro en tienda: 110cm Natural Claro → $188.70, sin transporte', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
@@ -78,7 +78,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
   test('out-of-range width (75cm) shows the "Cotización personalizada por WhatsApp" card, Siguiente disabled', async ({
     page,
   }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await page.locator('#ancho').fill('75');
@@ -91,7 +91,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
   });
 
   test('out-of-range width (201cm) shows the same personalized-quote card', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await page.locator('#ancho').fill('201');
@@ -101,7 +101,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
   });
 
   test('municipio outside the 23-zone list shows the transport empty state', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
@@ -113,7 +113,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
   });
 
   test('125cm Blanco Claro prices at $366 (Table C tier 1.3)', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await page.locator('#ancho').fill('125');
@@ -134,7 +134,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
 // tech-debt.md / HANDOFF as a slice-doc wording bug, not an engine bug.
 test.describe('cotizador — corner (Cabina en L)', () => {
   test('Natural Aquaclara/Frosted/Aquafold total $484/$620/$690 at Soyapango (T5.1 AC)', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Cabina en L/ }).click();
     await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
@@ -149,7 +149,7 @@ test.describe('cotizador — corner (Cabina en L)', () => {
   });
 
   test('Frosted totals $620 at Soyapango', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Cabina en L/ }).click();
     await page.getByRole('button', { name: 'Natural' }).click();
@@ -162,7 +162,7 @@ test.describe('cotizador — corner (Cabina en L)', () => {
   });
 
   test('Aquafold totals $690 at Soyapango', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Cabina en L/ }).click();
     await page.getByRole('button', { name: 'Natural' }).click();
@@ -175,7 +175,7 @@ test.describe('cotizador — corner (Cabina en L)', () => {
   });
 
   test('no "Blanco" chip is rendered for corner (T5.1 AC)', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Cabina en L/ }).click();
     await expect(page.getByRole('button', { name: 'Blanco', exact: true })).toHaveCount(0);
@@ -194,7 +194,7 @@ test.describe('cotizador — tempered (Templado 10 mm)', () => {
     ['200', '$1120.00', '$1160.00'],
   ] as const) {
     test(`${width}cm totals ${totalText} at Soyapango (T5.2 AC)`, async ({ page }) => {
-      await page.goto('/#cotizador/0-producto');
+      await page.goto('/cotizador');
       await waitForHydration(page);
       await page.getByRole('button', { name: /Templado 10 mm/ }).click();
       await page.locator('#ancho').fill(width);
@@ -207,7 +207,7 @@ test.describe('cotizador — tempered (Templado 10 mm)', () => {
   }
 
   test('119cm and 201cm show the "Cotización personalizada por WhatsApp" card (T5.2 AC)', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Templado 10 mm/ }).click();
 
@@ -224,7 +224,7 @@ test.describe('cotizador — tempered (Templado 10 mm)', () => {
 // S5 T5.3 — Puerta con bisagra (hinged). Ancho 40-90cm, cantidad 1-50.
 test.describe('cotizador — hinged (Puerta con bisagra)', () => {
   test('70cm natural claro qty1 prices at $270 (T5.3 AC)', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta con bisagra/ }).click();
     await page.locator('#ancho').fill('70');
@@ -235,7 +235,7 @@ test.describe('cotizador — hinged (Puerta con bisagra)', () => {
   });
 
   test('65cm natural nevado qty2 prices at $622 (T5.3 AC)', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta con bisagra/ }).click();
     await page.locator('#ancho').fill('65');
@@ -247,7 +247,7 @@ test.describe('cotizador — hinged (Puerta con bisagra)', () => {
   });
 
   test('40cm decorado (blanco) qty1 prices at $449 exactly as encoded (T5.3 AC)', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta con bisagra/ }).click();
     await page.locator('#ancho').fill('40');
@@ -258,7 +258,7 @@ test.describe('cotizador — hinged (Puerta con bisagra)', () => {
   });
 
   test('qty 0 or 51 shows "Ingresa una cantidad entre 1 y 50.", Siguiente disabled (T5.3 AC)', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await waitForHydration(page);
     await page.getByRole('button', { name: /Puerta con bisagra/ }).click();
     await page.locator('#ancho').fill('70');
@@ -281,11 +281,8 @@ test.describe('cotizador — hinged (Puerta con bisagra)', () => {
 // will link with this query param instead of a hash suffix).
 test.describe('cotizador — ?producto=<id> preselect', () => {
   test('preselects the product card on mount without leaving step 0', async ({ page }) => {
-    await page.goto('/?producto=l#cotizador/0-producto');
+    await page.goto('/cotizador?producto=l');
     await waitForHydration(page);
-    // Note: the hash routing owns the slug; ?producto is read from
-    // location.search independently of the hash, so this also works when
-    // /cotizador becomes its own page (?producto=l with no hash at all).
     await expect(page.getByRole('button', { name: /Cabina en L/ })).toHaveAttribute('aria-pressed', 'true');
   });
 });

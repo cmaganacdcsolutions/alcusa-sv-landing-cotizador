@@ -25,14 +25,14 @@ test.describe('a11y — home, drawer, cotizador (Slice 1)', () => {
   });
 
   test('cotizador step 0 (producto) — no serious/critical violations', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
     await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
     await expectNoSeriousOrCriticalViolations(page);
   });
 
   test('cotizador step 1 (medidas) — no serious/critical violations', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
@@ -40,7 +40,7 @@ test.describe('a11y — home, drawer, cotizador (Slice 1)', () => {
   });
 
   test('cotizador step 4 (resumen) — no serious/critical violations', async ({ page }) => {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
     await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();

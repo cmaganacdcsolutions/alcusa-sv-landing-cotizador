@@ -26,17 +26,17 @@ const waHref = buildWaLink();
   </div>
 
   <div class="drawer__links">
-    <a href="#inicio" data-drawer-link class="drawer__link">Inicio</a>
-    <a href="#modelos" data-drawer-link class="drawer__link">Catálogo</a>
-    <a href="#proceso" data-drawer-link class="drawer__link">Cómo funciona</a>
-    <a href="#galeria" data-drawer-link class="drawer__link">Galería</a>
-    <a href="#cotizador/0-producto" data-drawer-link class="drawer__link drawer__link--pill">
+    <a href="/#inicio" data-drawer-link class="drawer__link">Inicio</a>
+    <a href="/#modelos" data-drawer-link class="drawer__link">Catálogo</a>
+    <a href="/#proceso" data-drawer-link class="drawer__link">Cómo funciona</a>
+    <a href="/#galeria" data-drawer-link class="drawer__link">Proyectos reales</a>
+    <a href="/cotizador" data-drawer-link class="drawer__link drawer__link--pill">
       Cotizar
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
         ><path d="M5 12h14M13 6l6 6-6 6"></path></svg
       >
     </a>
-    <a href="#contacto" data-drawer-link class="drawer__link">Contacto</a>
+    <a href="/contacto" data-drawer-link class="drawer__link">Contacto</a>
   </div>
 
   <div class="drawer__footer">
@@ -264,8 +264,13 @@ const waHref = buildWaLink();
 
     document.querySelectorAll<HTMLAnchorElement>('[data-drawer-link]').forEach((link) => {
       link.addEventListener('click', (event) => {
+        // Cross-page links (/cotizador, /contacto, or /#id clicked from a
+        // sub-page) are real navigations — let the browser handle them.
+        const isSamePageHash = link.pathname === window.location.pathname && link.hash.length > 0;
+        if (!isSamePageHash) return;
+
         event.preventDefault();
-        const target = link.getAttribute('href') ?? '';
+        const target = link.hash;
         const hadPushedEntry = pushedHistoryEntry;
         if (hadPushedEntry) {
           window.addEventListener(

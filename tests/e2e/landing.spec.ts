@@ -15,24 +15,21 @@ test.describe('landing — hero, cómo funciona, confianza, info importante (S3)
     await expect(hero.getByRole('link', { name: /Puertas de jardín.*desde \$410/i })).toBeVisible();
   });
 
-  test('a category card tap points at #cotizador step 0 with the product id in the URL', async ({ page }) => {
-    // Cotizador.tsx's mount effect owns the actual product pre-select +
-    // scroll-into-view (tech-debt.md: it doesn't yet read this 3rd hash
-    // segment). This asserts the part that is Hero's responsibility: the
-    // href itself.
+  test('a category card tap points at /cotizador with the product id as a query param', async ({ page }) => {
+    // S5 page split: the cotizador lives on its own /cotizador route; the
+    // island reads `?producto=<id>` from location.search (Hero's
+    // responsibility is just the href).
     await page.goto('/');
     const href = await page.getByRole('link', { name: /Puertas de baño.*desde \$222/i }).getAttribute('href');
-    expect(href).toBe('#cotizador/0-producto/recta');
+    expect(href).toBe('/cotizador?producto=recta');
   });
 
-  test('landing directly on a #cotizador/0-producto/<id> URL scrolls the cotizador into view on load', async ({
-    page,
-  }) => {
-    await page.goto('/#cotizador/0-producto/recta');
+  test('landing on /#cotizador scrolls the cotizador teaser into view on load', async ({ page }) => {
+    await page.goto('/#cotizador');
     await expect(page.locator('#cotizador')).toBeInViewport();
   });
 
-  test('hero "Cotizar ahora" points to #cotizador (ADR-005), WhatsApp CTA uses the shared integration', async ({
+  test('hero "Cotizar ahora" points to /cotizador (ADR-005), WhatsApp CTA uses the shared integration', async ({
     page,
   }) => {
     // The hero CTA row is desktop-only per the boards (Main.dc.html /
@@ -43,7 +40,7 @@ test.describe('landing — hero, cómo funciona, confianza, info importante (S3)
 
     await page.goto('/');
     const cotizarHref = await page.getByRole('link', { name: 'Cotizar ahora' }).first().getAttribute('href');
-    expect(cotizarHref).toBe('#cotizador');
+    expect(cotizarHref).toBe('/cotizador');
 
     const waHref = await page.getByRole('link', { name: 'Cotizar por WhatsApp' }).first().getAttribute('href');
     expect(waHref).toMatch(/^https:\/\/wa\.me\/50376802410$/);

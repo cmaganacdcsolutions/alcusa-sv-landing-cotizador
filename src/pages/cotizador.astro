@@ -1,0 +1,43 @@
+---
+// /cotizador — standalone cotizador route (spec §1 item 6, page split S5).
+// Same shell as the landing (TopBar/Drawer/Footer); the Cotizador island
+// reads `?producto=` from the URL to preselect step 0 (S6 territory —
+// import only, do not edit src/islands/Cotizador/**).
+import BaseLayout from '@layouts/BaseLayout.astro';
+import TopBar from '@components/TopBar.astro';
+import Drawer from '@components/Drawer.astro';
+import Footer from '@components/Footer.astro';
+import Cotizador from '@islands/Cotizador/Cotizador';
+---
+
+<BaseLayout
+  title="Cotizador en línea | ALCUSA"
+  description="Cotiza puertas, ventanas y trabajos de aluminio y vidrio a tu medida. Precio al instante, confirma por WhatsApp."
+>
+  <TopBar />
+  <Drawer />
+
+  <main>
+    <section id="cotizador-app" class="cotizador-page">
+      <h1 class="visually-hidden">Cotizador en línea</h1>
+      <Cotizador client:load />
+    </section>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style is:global>
+  .cotizador-page {
+    padding: 0;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+</style>

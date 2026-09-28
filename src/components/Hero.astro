@@ -62,7 +62,7 @@ const teasers = CATEGORY_TEASERS.map((teaser) => {
     </p>
 
     <div class="hero__cta-row">
-      <a href="#cotizador" class="hero__cta hero__cta--primary">
+      <a href="/cotizador" class="hero__cta hero__cta--primary">
         Cotizar ahora
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
       </a>
@@ -115,7 +115,7 @@ const teasers = CATEGORY_TEASERS.map((teaser) => {
     {
       teasers.map((teaser) => (
         <a
-          href={`#cotizador/0-producto/${teaser.productId}`}
+          href={`/cotizador?producto=${teaser.productId}`}
           class="hero__category-card"
           aria-label={`Cotizar ${teaser.label}, desde $${teaser.fromPrice}`}
         >
@@ -200,7 +200,7 @@ const teasers = CATEGORY_TEASERS.map((teaser) => {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: 50% 30%;
+    object-position: 50% 42%;
     display: block;
   }
 
@@ -400,6 +400,10 @@ const teasers = CATEGORY_TEASERS.map((teaser) => {
       height: 100%;
       min-height: 560px;
       border-radius: var(--radius-xl);
+    }
+
+    .hero__media::after {
+      background: linear-gradient(180deg, rgba(16, 33, 61, 0) 52%, rgba(16, 33, 61, 0.45) 100%);
     }
 
     .hero__media-caption {
