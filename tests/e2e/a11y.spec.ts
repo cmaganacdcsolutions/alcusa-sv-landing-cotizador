@@ -1,25 +1,50 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 
-// Slice 0 smoke test: the placeholder home renders, the h1 is visible, and
-// axe reports zero serious/critical violations. Later slices add the
-// drawer/cotizador-step/contact-form scans this file's name promises
-// (ADR-006).
-test.describe('a11y — home (Slice 0 smoke)', () => {
-  test('loads with a visible h1 and no serious/critical a11y violations', async ({
-    page,
-  }) => {
-    await page.goto('/');
+async function expectNoSeriousOrCriticalViolations(page: import('@playwright/test').Page): Promise<void> {
+  const results = await new AxeBuilder({ page }).analyze();
+  const seriousOrCritical = results.violations.filter(
+    (violation) => violation.impact === 'serious' || violation.impact === 'critical',
+  );
+  expect(seriousOrCritical).toEqual([]);
+}
 
+test.describe('a11y — home, drawer, cotizador (Slice 1)', () => {
+  test('home loads with a visible h1 and no serious/critical a11y violations', async ({ page }) => {
+    await page.goto('/');
     const heading = page.getByRole('heading', { level: 1 });
     await expect(heading).toBeVisible();
-    await expect(heading).toHaveText('Sitio en construcción');
+    await expectNoSeriousOrCriticalViolations(page);
+  });
 
-    const results = await new AxeBuilder({ page }).analyze();
-    const seriousOrCritical = results.violations.filter(
-      (violation) => violation.impact === 'serious' || violation.impact === 'critical',
-    );
+  test('drawer open — focus trap target and no serious/critical violations', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await expect(page.getByRole('navigation', { name: 'Menú principal' })).toBeVisible();
+    await expectNoSeriousOrCriticalViolations(page);
+  });
 
-    expect(seriousOrCritical).toEqual([]);
+  test('cotizador step 0 (producto) — no serious/critical violations', async ({ page }) => {
+    await page.goto('/#cotizador/0-producto');
+    await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
+    await expectNoSeriousOrCriticalViolations(page);
+  });
+
+  test('cotizador step 1 (medidas) — no serious/critical violations', async ({ page }) => {
+    await page.goto('/#cotizador/0-producto');
+    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
+    await expectNoSeriousOrCriticalViolations(page);
+  });
+
+  test('cotizador step 4 (resumen) — no serious/critical violations', async ({ page }) => {
+    await page.goto('/#cotizador/0-producto');
+    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.locator('#municipio').selectOption('Soyapango');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    await expectNoSeriousOrCriticalViolations(page);
   });
 });

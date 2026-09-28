@@ -1,5 +1,62 @@
 import type { ReactElement } from 'react';
-// Step2Precio — cotizador wizard step. Stub for Slice 0, implemented in later slices.
-export default function Step2Precio(): ReactElement {
-  return <div data-testid="Step2Precio" />;
+import type { CatalogProduct } from '@content/catalog';
+import type { StraightPriceResult } from '@engine/pricing';
+import { STRAIGHT_WIDTH_MAX_CM, STRAIGHT_WIDTH_MIN_CM } from '@engine/pricing';
+import { COLOR_LABELS, type CotizadorState } from '../state/cotizadorStore';
+
+export interface Step2PrecioProps {
+  product: CatalogProduct;
+  state: CotizadorState;
+  priceResult: StraightPriceResult;
+  onBack: () => void;
+  onNext: () => void;
+}
+
+// Step 2 — live price card BEFORE address (T1.2 scope). Copy per
+// prototype-spec.md §2.4: "Estimado sin transporte: $X. El costo final
+// incluye transporte según tu zona."
+export default function Step2Precio({ product, state, priceResult, onBack, onNext }: Step2PrecioProps): ReactElement {
+  const { requiresQuote, price } = priceResult;
+
+  return (
+    <section aria-labelledby="step2-heading">
+      <button type="button" className="cotizador__back" onClick={onBack}>
+        ← Medidas
+      </button>
+      <h2 id="step2-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
+        Precio estimado
+      </h2>
+
+      {requiresQuote ? (
+        <div className="callout" role="status">
+          <span className="callout__title">Cotización personalizada por WhatsApp</span>
+          <p className="callout__body">
+            El ancho debe ser de {STRAIGHT_WIDTH_MIN_CM} a {STRAIGHT_WIDTH_MAX_CM} cm y la altura de 1.85 m. Para
+            otras medidas, consulta con ALCUSA.
+          </p>
+        </div>
+      ) : (
+        <div className="price-card">
+          <p style={{ margin: 0, fontWeight: 700 }}>
+            {product.name} · {COLOR_LABELS[state.color]}
+          </p>
+          <span className="price-card__label">ESTIMADO SIN TRANSPORTE</span>
+          <span className="price-card__value" data-testid="step2-price-value">
+            ${(price ?? 0).toFixed(2)}
+          </span>
+          <p className="price-card__note">El costo final incluye transporte según tu zona.</p>
+        </div>
+      )}
+
+      <div className="bottom-bar" style={{ marginTop: 24 }}>
+        <div className="bottom-bar__price">
+          <span className="bottom-bar__price-label">Estimado sin transporte</span>
+          <span className="bottom-bar__price-value">{requiresQuote ? 'Por WhatsApp' : `$${(price ?? 0).toFixed(2)}`}</span>
+        </div>
+        <button type="button" className="btn btn-primary" disabled={requiresQuote} onClick={onNext}>
+          Siguiente
+        </button>
+      </div>
+    </section>
+  );
 }

@@ -1,4 +1,311 @@
 ---
-// Drawer — static component, no business logic. Stub for Slice 0.
-// Populated in a later slice per docs/product/slices/.
+// Drawer — static markup + a small vanilla-JS toggle script (open/close,
+// focus trap, Esc, veil click, back-button close). No pricing/cart state,
+// no hardcoded wa.me (README §4) — WhatsApp link built via integrations/.
+import { buildWaLink } from '@integrations/whatsapp/waLink';
+
+const waHref = buildWaLink();
 ---
+
+<div id="drawer-veil" class="drawer-veil" hidden></div>
+<nav
+  id="drawer-panel"
+  class="drawer"
+  aria-label="Menú principal"
+  aria-hidden="true"
+  inert
+  data-drawer-panel
+>
+  <div class="drawer__head">
+    <span class="drawer__brand">Alcusa</span>
+    <button type="button" id="drawer-close-btn" class="drawer__close" aria-label="Cerrar menú">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+        ><path d="M6 6l12 12M18 6L6 18"></path></svg
+      >
+    </button>
+  </div>
+
+  <div class="drawer__links">
+    <a href="#inicio" data-drawer-link class="drawer__link">Inicio</a>
+    <a href="#modelos" data-drawer-link class="drawer__link">Catálogo</a>
+    <a href="#proceso" data-drawer-link class="drawer__link">Cómo funciona</a>
+    <a href="#galeria" data-drawer-link class="drawer__link">Galería</a>
+    <a href="#cotizador/0-producto" data-drawer-link class="drawer__link drawer__link--pill">
+      Cotizar
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+        ><path d="M5 12h14M13 6l6 6-6 6"></path></svg
+      >
+    </a>
+    <a href="#contacto" data-drawer-link class="drawer__link">Contacto</a>
+  </div>
+
+  <div class="drawer__footer">
+    <a href={waHref} class="drawer__whatsapp">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+        ><path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z"></path><path
+          d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z"
+        ></path></svg
+      >
+      WhatsApp · 7680-2410
+    </a>
+    <div class="drawer__social">
+      <a href="https://instagram.com/alcusasv" aria-label="Instagram @alcusasv" class="drawer__social-icon"
+        ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+          ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
+          ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
+        ></a
+      >
+      <a href="https://tiktok.com/@alcusaes" aria-label="TikTok @alcusaes" class="drawer__social-icon"
+        ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+          ><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path><path d="M14 4c.4 2.6 2.2 4.3 5 4.5"
+          ></path></svg
+        ></a
+      >
+      <a
+        href="https://youtube.com/@alcusaelsalvador8209"
+        aria-label="YouTube @alcusaelsalvador8209"
+        class="drawer__social-icon"
+        ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+          ><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="M10.5 9.5v5l4.3-2.5z"
+          ></path></svg
+        ></a
+      >
+    </div>
+  </div>
+</nav>
+
+<style>
+  .drawer-veil {
+    position: fixed;
+    inset: 0;
+    background: var(--color-scrim-ink);
+    z-index: 40;
+  }
+
+  .drawer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: min(320px, 85vw);
+    background: var(--color-surface);
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-6) var(--space-5) var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform var(--motion-duration-base) var(--motion-ease-ui);
+  }
+
+  .drawer[data-open='true'] {
+    transform: translateX(0);
+  }
+
+  .drawer-veil[data-open='true'] {
+    display: block;
+  }
+
+  .drawer__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .drawer__brand {
+    font-family: var(--font-family-display);
+    font-size: 1.375rem;
+    font-weight: var(--font-weight-display-semibold);
+    color: var(--color-primary);
+  }
+
+  .drawer__close {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .drawer__links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .drawer__link {
+    min-height: 48px;
+    padding: 0 var(--space-3);
+    display: flex;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+    font-size: 1.0625rem;
+    font-weight: var(--font-weight-body-medium);
+    text-decoration: none;
+  }
+
+  .drawer__link--pill {
+    margin: var(--space-2) 0;
+    min-height: 52px;
+    padding: 0 var(--space-5);
+    justify-content: space-between;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: var(--color-surface);
+    font-weight: var(--font-weight-body-bold);
+    box-shadow: var(--shadow-md);
+  }
+
+  .drawer__footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .drawer__whatsapp {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-md);
+    background: var(--color-whatsapp-strong);
+    color: var(--color-surface);
+    font-weight: var(--font-weight-body-bold);
+    text-decoration: none;
+  }
+
+  .drawer__social {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: center;
+  }
+
+  .drawer__social-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-tint);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+
+<script>
+  const veil = document.getElementById('drawer-veil') as HTMLDivElement | null;
+  const panel = document.getElementById('drawer-panel') as HTMLElement | null;
+  const openBtn = document.getElementById('drawer-open-btn') as HTMLButtonElement | null;
+  const closeBtn = document.getElementById('drawer-close-btn') as HTMLButtonElement | null;
+
+  if (veil && panel && openBtn && closeBtn) {
+    let pushedHistoryEntry = false;
+
+    const focusableSelector =
+      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    function getFocusable(): HTMLElement[] {
+      return Array.from(panel!.querySelectorAll<HTMLElement>(focusableSelector));
+    }
+
+    function isOpen(): boolean {
+      return panel!.dataset.open === 'true';
+    }
+
+    function openDrawer(): void {
+      panel!.dataset.open = 'true';
+      veil!.dataset.open = 'true';
+      veil!.hidden = false;
+      panel!.setAttribute('aria-hidden', 'false');
+      panel!.removeAttribute('inert');
+      openBtn!.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+      closeBtn!.focus();
+      window.history.pushState({ drawerOpen: true }, '');
+      pushedHistoryEntry = true;
+    }
+
+    // fromPopState=true means the history entry is already gone (the back
+    // button/gesture popped it) — don't call history.back() again.
+    function closeDrawer(fromPopState = false): void {
+      if (!isOpen()) return;
+      panel!.dataset.open = 'false';
+      veil!.dataset.open = 'false';
+      panel!.setAttribute('aria-hidden', 'true');
+      panel!.setAttribute('inert', '');
+      openBtn!.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      veil!.hidden = true;
+      openBtn!.focus();
+      if (pushedHistoryEntry) {
+        pushedHistoryEntry = false;
+        if (!fromPopState) window.history.back();
+      }
+    }
+
+    openBtn.addEventListener('click', () => {
+      if (isOpen()) closeDrawer();
+      else openDrawer();
+    });
+    closeBtn.addEventListener('click', () => closeDrawer());
+    veil.addEventListener('click', () => closeDrawer());
+
+    document.querySelectorAll<HTMLAnchorElement>('[data-drawer-link]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const target = link.getAttribute('href') ?? '';
+        const hadPushedEntry = pushedHistoryEntry;
+        if (hadPushedEntry) {
+          window.addEventListener(
+            'popstate',
+            () => {
+              window.location.hash = target;
+            },
+            { once: true },
+          );
+        }
+        closeDrawer();
+        if (!hadPushedEntry) {
+          window.location.hash = target;
+        }
+      });
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!isOpen()) return;
+      if (event.key === 'Escape') {
+        closeDrawer();
+        return;
+      }
+      if (event.key === 'Tab') {
+        const focusable = getFocusable();
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    window.addEventListener('popstate', () => {
+      if (isOpen()) closeDrawer(true);
+    });
+  }
+</script>

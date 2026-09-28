@@ -1,59 +1,62 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import TopBar from '@components/TopBar.astro';
+import Drawer from '@components/Drawer.astro';
+import Hero from '@components/Hero.astro';
+import ComoFunciona from '@components/ComoFunciona.astro';
+import Catalogo from '@components/Catalogo.astro';
+import Galeria from '@components/Galeria.astro';
+import Confianza from '@components/Confianza.astro';
+import InfoImportante from '@components/InfoImportante.astro';
+import Contacto from '@components/Contacto.astro';
+import Footer from '@components/Footer.astro';
+import Cotizador from '@islands/Cotizador/Cotizador';
 ---
 
 <BaseLayout
   title="ALCUSA | Aluminio y vidrio en El Salvador"
-  description="ALCUSA: ventanas, puertas y trabajos de aluminio y vidrio a la medida en El Salvador. Sitio en construcción."
+  description="ALCUSA: ventanas, puertas y trabajos de aluminio y vidrio a la medida en El Salvador. Cotiza en línea y confirma por WhatsApp."
 >
-  <main class="placeholder">
-    <img
-      src="/images/logo-primary.png"
-      alt="ALCUSA — Aluminio y Vidrio"
-      class="placeholder__logo"
-      width="240"
-      height="80"
-    />
-    <h1>Sitio en construcción</h1>
-    <p>Estamos preparando nuestra nueva página. Vuelve pronto.</p>
+  <TopBar />
+  <Drawer />
+
+  <main>
+    <Hero />
+    <ComoFunciona />
+    <Catalogo />
+    <Galeria />
+    <Confianza />
+
+    <section id="cotizador" class="placeholder-section placeholder-section--cotizador">
+      <h2 class="visually-hidden">Cotizador en línea</h2>
+      <Cotizador client:load />
+    </section>
+
+    <InfoImportante />
+    <Contacto />
   </main>
+
+  <Footer />
 </BaseLayout>
 
-<style>
-  .placeholder {
-    min-height: 100dvh;
+<style is:global>
+  .placeholder-section {
+    padding: var(--space-8) var(--space-6);
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-6);
-    padding: var(--space-8);
-    text-align: center;
+    gap: var(--space-3);
   }
 
-  .placeholder__logo {
-    width: min(240px, 60vw);
-    height: auto;
+  .placeholder-section--cotizador {
+    padding: 0;
   }
 
-  .placeholder h1 {
-    font-size: var(--font-size-h1-mobile);
-    color: var(--color-primary);
-  }
-
-  .placeholder p {
-    color: var(--color-ink-muted);
-    font-size: var(--font-size-body-lg-mobile);
-    max-width: 32ch;
-  }
-
-  @media (min-width: 840px) {
-    .placeholder h1 {
-      font-size: var(--font-size-h1-desktop);
-    }
-
-    .placeholder p {
-      font-size: var(--font-size-body-lg-desktop);
-    }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 </style>
