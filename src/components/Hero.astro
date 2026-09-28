@@ -1,9 +1,483 @@
 ---
-// Hero — static component, no business logic. Full content (image, CTA
-// cards) arrives in S3.
+// Hero — kicker + H1 + hero image + 3 category teasers (spec §1 item 1).
+// Prices are read from CATALOG_PRODUCTS (@content/catalog), the single
+// source of truth also used by the cotizador island — never duplicated
+// here as raw numbers (T3.1 AC).
+// "Cotizar ahora" / WhatsApp CTAs + trust checklist are desktop-only
+// (>=1024px) per the boards: Main.dc.html / android-01-inicio have no
+// hero CTA row (WhatsApp lives in TopBar/Drawer instead), desktop-01-inicio
+// shows both above the 1080 fold.
+import { buildWaLink } from '@integrations/whatsapp/waLink';
+import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
+
+const waHref = buildWaLink();
+
+interface CategoryTeaser {
+  productId: ProductId;
+  label: string;
+  subtitle: string;
+  imageBase: string;
+}
+
+// Display grouping + copy per the boards (Main.dc.html / desktop-01-inicio).
+// Catalog names are the finer-grained per-model names shown later in
+// Catálogo (S4); these three are the broader category labels for the hero.
+const CATEGORY_TEASERS: readonly CategoryTeaser[] = [
+  {
+    productId: 'recta',
+    label: 'Puertas de baño',
+    subtitle: 'Rectas, en L y templado',
+    imageBase: 'card-puertas-bano',
+  },
+  {
+    productId: 'ventana',
+    label: 'Ventanas',
+    subtitle: 'Francesas y Bilbao a tu medida',
+    imageBase: 'card-ventanas',
+  },
+  {
+    productId: 'jardin',
+    label: 'Puertas de jardín',
+    subtitle: 'Una, dos o tres hojas corredizas',
+    imageBase: 'card-puertas-jardin',
+  },
+] as const;
+
+const teasers = CATEGORY_TEASERS.map((teaser) => {
+  const product = CATALOG_PRODUCTS.find((p) => p.id === teaser.productId);
+  if (!product) {
+    throw new Error(`Hero category teaser references unknown product id "${teaser.productId}"`);
+  }
+  return { ...teaser, fromPrice: product.fromPrice };
+});
 ---
 
-<section id="inicio" class="placeholder-section">
-  <h1>¿Qué quieres cambiar en tu casa hoy?</h1>
-  <p>Puertas, ventanas y trabajos de aluminio y vidrio a tu medida. Sección completa en construcción.</p>
+<section id="inicio" class="hero" aria-labelledby="hero-title">
+  <div class="hero__intro">
+    <p class="hero__kicker">ALCUSA &middot; Fabricado a tu medida</p>
+    <h1 id="hero-title" class="hero__title">&iquest;Qu&eacute; quieres cambiar en tu casa hoy?</h1>
+    <p class="hero__lede">
+      Un ba&ntilde;o que se vea mejor, ventanas que renueven tus espacios o una puerta que te conecte con tu
+      jard&iacute;n. En ALCUSA lo hacemos a tu medida.
+    </p>
+
+    <div class="hero__cta-row">
+      <a href="#cotizador" class="hero__cta hero__cta--primary">
+        Cotizar ahora
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+      </a>
+      <a href={waHref} class="hero__cta hero__cta--whatsapp">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
+          <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
+        </svg>
+        Cotizar por WhatsApp
+      </a>
+    </div>
+
+    <ul class="hero__trust-list">
+      <li>Precio antes de dar tu direcci&oacute;n</li>
+      <li>Entrega en 8&ndash;10 d&iacute;as h&aacute;biles</li>
+      <li>6 meses de garant&iacute;a</li>
+    </ul>
+  </div>
+
+  <figure class="hero__media">
+    <img
+      src="/images/hero-ventana-bilbao-800.webp"
+      srcset="/images/hero-ventana-bilbao-480.webp 480w,
+              /images/hero-ventana-bilbao-800.webp 800w,
+              /images/hero-ventana-bilbao-1200.webp 1200w,
+              /images/hero-ventana-bilbao-1920.webp 1920w"
+      sizes="(min-width: 1024px) 720px, 100vw"
+      alt="Ventana Bilbao de aluminio y vidrio fabricada por ALCUSA"
+      width="800"
+      height="1067"
+      fetchpriority="high"
+      decoding="async"
+      class="hero__media-img"
+    />
+    <figcaption class="hero__media-caption">Ventana Bilbao &middot; a tu medida</figcaption>
+    <div class="hero__media-rating" aria-hidden="true">
+      <span class="hero__media-rating-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 4l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.6-4.8 2.6 1-5.4-4-3.7 5.4-.7z" />
+        </svg>
+      </span>
+      <span class="hero__media-rating-text">
+        <span class="hero__media-rating-score">4.2 en Google</span>
+        <span class="hero__media-rating-count">130 rese&ntilde;as de clientes</span>
+      </span>
+    </div>
+  </figure>
+
+  <div class="hero__categories">
+    {
+      teasers.map((teaser) => (
+        <a
+          href={`#cotizador/0-producto/${teaser.productId}`}
+          class="hero__category-card"
+          aria-label={`Cotizar ${teaser.label}, desde $${teaser.fromPrice}`}
+        >
+          <img
+            src={`/images/${teaser.imageBase}-128.webp`}
+            srcset={`/images/${teaser.imageBase}-128.webp 128w, /images/${teaser.imageBase}-256.webp 256w`}
+            sizes="(min-width: 1024px) 104px, 64px"
+            alt=""
+            width="128"
+            height="128"
+            loading="lazy"
+            decoding="async"
+            class="hero__category-img"
+          />
+          <span class="hero__category-copy">
+            <span class="hero__category-label">{teaser.label}</span>
+            <span class="hero__category-subtitle">{teaser.subtitle}</span>
+            <span class="hero__category-price">Desde ${teaser.fromPrice}</span>
+          </span>
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" class="hero__category-arrow">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </a>
+      ))
+    }
+  </div>
 </section>
+
+<style>
+  .hero {
+    padding: var(--space-5) var(--space-6) 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .hero__intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .hero__kicker {
+    margin: 0;
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-bold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .hero__title {
+    font-size: var(--font-size-display-xl-mobile);
+    font-weight: var(--font-weight-display-semibold);
+    background: linear-gradient(100deg, var(--color-ink) 0%, var(--color-primary) 55%, var(--color-accent) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-wrap: balance;
+  }
+
+  .hero__lede {
+    margin: 0;
+    color: var(--color-ink-muted);
+    text-wrap: pretty;
+  }
+
+  .hero__cta-row,
+  .hero__trust-list {
+    display: none;
+  }
+
+  .hero__media {
+    margin: 0;
+    position: relative;
+    height: 250px;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .hero__media-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 30%;
+    display: block;
+  }
+
+  .hero__media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(16, 33, 61, 0) 40%, rgba(16, 33, 61, 0.5) 100%);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero__media::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      bottom: -20%;
+      left: 34%;
+      width: 25%;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.42) 50%, rgba(255, 255, 255, 0) 100%);
+      transform: rotate(12deg) translateX(-160%);
+      animation: hero-sweep var(--motion-duration-sweep) var(--motion-ease-sheen) 300ms 1 both;
+      z-index: 1;
+    }
+  }
+
+  @keyframes hero-sweep {
+    to {
+      transform: rotate(12deg) translateX(160%);
+    }
+  }
+
+  .hero__media-caption {
+    position: absolute;
+    left: var(--space-4);
+    bottom: var(--space-4);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.9);
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-medium);
+    color: var(--color-ink);
+    z-index: 2;
+  }
+
+  .hero__media-rating {
+    display: none;
+  }
+
+  .hero__categories {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-1);
+    padding-bottom: var(--space-8);
+  }
+
+  .hero__category-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    color: var(--color-ink);
+    text-decoration: none;
+    min-height: 48px;
+  }
+
+  .hero__category-card:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  .hero__category-img {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .hero__category-copy {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    line-height: 1.4;
+  }
+
+  .hero__category-label {
+    font-size: var(--font-size-body-lg-mobile);
+    font-weight: var(--font-weight-body-bold);
+  }
+
+  .hero__category-subtitle {
+    font-size: var(--font-size-body-sm-mobile);
+    color: var(--color-ink-muted);
+  }
+
+  .hero__category-price {
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-primary);
+  }
+
+  .hero__category-arrow {
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .hero {
+      max-width: var(--container-xl);
+      margin: 0 auto;
+      padding: var(--space-16) var(--space-6) 0;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 640px);
+      column-gap: var(--space-16);
+    }
+
+    .hero__intro {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    .hero__title {
+      font-size: var(--font-size-display-xl-desktop);
+    }
+
+    .hero__cta-row {
+      display: flex;
+      gap: var(--space-4);
+      margin-top: var(--space-2);
+    }
+
+    .hero__cta {
+      min-height: 56px;
+      padding: 0 var(--space-6);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-body-lg-desktop);
+      font-weight: var(--font-weight-body-bold);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .hero__cta--primary {
+      background: var(--color-primary);
+      color: var(--color-surface);
+      box-shadow: var(--shadow-md);
+    }
+
+    .hero__cta--whatsapp {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      color: var(--color-whatsapp-strong);
+    }
+
+    .hero__cta:focus-visible {
+      outline: none;
+      box-shadow: var(--shadow-focus);
+    }
+
+    .hero__trust-list {
+      display: flex;
+      gap: var(--space-6);
+      margin: var(--space-6) 0 0;
+      padding: 0;
+      list-style: none;
+      font-size: var(--font-size-body-sm-desktop);
+      font-weight: var(--font-weight-body-bold);
+      color: var(--color-ink-muted);
+    }
+
+    .hero__trust-list li {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .hero__trust-list li::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      background: var(--color-success);
+      clip-path: polygon(20% 55%, 40% 75%, 80% 25%, 92% 38%, 40% 95%, 8% 63%);
+    }
+
+    .hero__media {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      height: 100%;
+      min-height: 560px;
+      border-radius: var(--radius-xl);
+    }
+
+    .hero__media-caption {
+      left: var(--space-6);
+      bottom: var(--space-6);
+      font-size: var(--font-size-body-sm-desktop);
+      padding: var(--space-2) var(--space-4);
+    }
+
+    .hero__media-rating {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      position: absolute;
+      right: var(--space-6);
+      bottom: var(--space-6);
+      padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: var(--shadow-md);
+      z-index: 2;
+    }
+
+    .hero__media-rating-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-full);
+      background: var(--color-surface-tint);
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .hero__media-rating-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+
+    .hero__media-rating-score {
+      font-size: var(--font-size-h3-mobile);
+      font-weight: var(--font-weight-body-bold);
+      color: var(--color-ink);
+    }
+
+    .hero__media-rating-count {
+      font-size: var(--font-size-body-sm-desktop);
+      color: var(--color-ink-muted);
+    }
+
+    .hero__categories {
+      grid-column: 1;
+      grid-row: 2;
+      flex-direction: column;
+      align-self: start;
+      margin-top: var(--space-10);
+      padding-bottom: var(--space-16);
+    }
+
+    .hero__category-card {
+      min-height: 136px;
+      padding: var(--space-4) var(--space-6) var(--space-4) var(--space-4);
+    }
+
+    .hero__category-img {
+      width: 104px;
+      height: 104px;
+    }
+
+    .hero__category-label {
+      font-size: var(--font-size-h3-desktop);
+    }
+
+    .hero__category-subtitle,
+    .hero__category-price {
+      font-size: var(--font-size-body-lg-desktop);
+    }
+  }
+</style>
