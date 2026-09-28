@@ -13,16 +13,17 @@ describe('state/quote — computeQuote', () => {
     expect(result).toEqual({ amount: 222, requiresQuote: false });
   });
 
-  it('corner: Natural Aquaclara/Frosted/Aquafold → $484/$620/$690 (T5.1 AC)', () => {
+  // computeQuote is pre-zone; the AC figures ($484/$620/$690) include the Soyapango +$40 fee (exploratory-report §3.1).
+  it('corner: Natural Aquaclara/Frosted/Aquafold → $444/$580/$650 pre-zone (T5.1)', () => {
     expect(
       computeQuote({ ...initialCotizadorState, productId: 'l', color: 'natural', cornerModel: 'aquaclara' }),
-    ).toEqual({ amount: 484, requiresQuote: false });
+    ).toEqual({ amount: 444, requiresQuote: false });
     expect(
       computeQuote({ ...initialCotizadorState, productId: 'l', color: 'natural', cornerModel: 'frosted' }),
-    ).toEqual({ amount: 620, requiresQuote: false });
+    ).toEqual({ amount: 580, requiresQuote: false });
     expect(
       computeQuote({ ...initialCotizadorState, productId: 'l', color: 'natural', cornerModel: 'aquafold' }),
-    ).toEqual({ amount: 690, requiresQuote: false });
+    ).toEqual({ amount: 650, requiresQuote: false });
   });
 
   it('corner: Blanco requires a quote (not rendered in the UI, but the engine still flags it)', () => {
@@ -32,11 +33,11 @@ describe('state/quote — computeQuote', () => {
     });
   });
 
-  it('tempered: 120/150/175/200cm → $712/$880/$1,020/$1,160 (T5.2 AC)', () => {
-    expect(computeQuote({ ...initialCotizadorState, productId: 'templado', width: '120' }).amount).toBe(712);
-    expect(computeQuote({ ...initialCotizadorState, productId: 'templado', width: '150' }).amount).toBe(880);
-    expect(computeQuote({ ...initialCotizadorState, productId: 'templado', width: '175' }).amount).toBe(1020);
-    expect(computeQuote({ ...initialCotizadorState, productId: 'templado', width: '200' }).amount).toBe(1160);
+  it('tempered: 120/150/175/200cm → $672/$840/$980/$1,120 pre-zone (T5.2)', () => {
+    expect(computeQuote({ ...initialCotizadorState, productId: 'templado', width: '120' }).amount).toBe(672);
+    expect(computeQuote({ ...initialCotizadorState, productId: 'templado', width: '150' }).amount).toBe(840);
+    expect(computeQuote({ ...initialCotizadorState, productId: 'templado', width: '175' }).amount).toBe(980);
+    expect(computeQuote({ ...initialCotizadorState, productId: 'templado', width: '200' }).amount).toBe(1120);
   });
 
   it('tempered: 119cm and 201cm require a quote (out of range)', () => {

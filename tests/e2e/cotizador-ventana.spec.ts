@@ -12,7 +12,7 @@ async function waitForHydration(page: Page): Promise<void> {
 // first product-card click (per S6 brief), hence the toPass() wrap below.
 test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
   async function openVentana(page: Page) {
-    await page.goto('/#cotizador/0-producto');
+    await page.goto('/cotizador#cotizador/0-producto');
     await waitForHydration(page);
     const card = page.getByRole('button', { name: /Ventana Francesa o Bilbao/ });
     const nextBtn = page.getByRole('button', { name: 'Siguiente' });
