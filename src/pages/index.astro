@@ -1,0 +1,59 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="ALCUSA | Aluminio y vidrio en El Salvador"
+  description="ALCUSA: ventanas, puertas y trabajos de aluminio y vidrio a la medida en El Salvador. Sitio en construcción."
+>
+  <main class="placeholder">
+    <img
+      src="/images/logo-primary.png"
+      alt="ALCUSA — Aluminio y Vidrio"
+      class="placeholder__logo"
+      width="240"
+      height="80"
+    />
+    <h1>Sitio en construcción</h1>
+    <p>Estamos preparando nuestra nueva página. Vuelve pronto.</p>
+  </main>
+</BaseLayout>
+
+<style>
+  .placeholder {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-6);
+    padding: var(--space-8);
+    text-align: center;
+  }
+
+  .placeholder__logo {
+    width: min(240px, 60vw);
+    height: auto;
+  }
+
+  .placeholder h1 {
+    font-size: var(--font-size-h1-mobile);
+    color: var(--color-primary);
+  }
+
+  .placeholder p {
+    color: var(--color-ink-muted);
+    font-size: var(--font-size-body-lg-mobile);
+    max-width: 32ch;
+  }
+
+  @media (min-width: 840px) {
+    .placeholder h1 {
+      font-size: var(--font-size-h1-desktop);
+    }
+
+    .placeholder p {
+      font-size: var(--font-size-body-lg-desktop);
+    }
+  }
+</style>
