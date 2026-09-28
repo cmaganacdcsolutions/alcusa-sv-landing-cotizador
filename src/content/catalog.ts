@@ -12,6 +12,9 @@ export interface CatalogProduct {
   enabled: boolean;
 }
 
+// fromPrice = the cheapest priceable output of engine/pricing/* for each
+// product (S4 T4.1 reconciliation). Guarded by content/catalog.test.ts — if
+// a pricing table changes, that test fails before this literal drifts.
 export const CATALOG_PRODUCTS: readonly CatalogProduct[] = [
   { id: 'recta', name: 'Puerta de baño recta', fromPrice: 222, altoText: 'Alto estándar 1.85 m', enabled: true },
   { id: 'l', name: 'Cabina en L', fromPrice: 444, altoText: 'Medida fija 0.80 × 0.80 × 1.85 m', enabled: false },

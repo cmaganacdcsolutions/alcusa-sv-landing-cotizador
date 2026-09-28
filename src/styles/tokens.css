@@ -77,6 +77,10 @@
   --container-md: 840px;
   --container-lg: 1120px;
   --container-xl: 1320px;
+  /* Desktop landing sections (1920 frame): render-brief.md desktop specifics
+     — 12-col grid, content container 1600 wide. --container-xl (1320) stays
+     for narrower in-page blocks (e.g. proceso title). */
+  --container-page: 1600px;
 
   --breakpoint-xs: 0px;
   --breakpoint-sm: 480px;

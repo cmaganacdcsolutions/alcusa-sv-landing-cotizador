@@ -1,9 +1,247 @@
 ---
-// Catalogo — static component, no business logic, no pricing math (README
-// §4). Full 6-product catálogo arrives in S3/S4.
+// Catalogo — ONE consolidated grid, 6 cards (spec §1 item 3 / S4 T4.1).
+// Replaces the legacy 5 scattered/duplicate-linked sections. No pricing math
+// here (README §4) — "Desde $X" is read straight from CATALOG_PRODUCTS
+// (@content/catalog), the same source of truth as Hero and the cotizador
+// island, reconciled against engine/pricing in content/catalog.test.ts.
+//
+// CTA "Cotizar este modelo" links to the standalone cotizador route with a
+// `producto` query param (Foreman correction, 2026-09-28: the cotizador is
+// moving off the landing page to its own `/cotizador` route in this wave).
+// S5/S6 read `?producto=` to preselect step 0 — see HANDOFF below.
+import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
+
+interface CardImage {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+// Real ALCUSA photos (01-discovery/assets), curated per product — see
+// docs/architecture/tech-debt.md (end of file) for the "jardin" gap: no
+// rights-cleared photo exists yet for that product, so it renders a
+// placeholder tile instead of a mismatched/risky image.
+const CARD_IMAGES: Record<ProductId, CardImage | null> = {
+  recta: { src: '/images/catalog-recta.jpg', alt: 'Puerta de baño recta corrediza', width: 400, height: 533 },
+  l: { src: '/images/catalog-l.jpeg', alt: 'Cabina de baño en L', width: 400, height: 533 },
+  templado: { src: '/images/catalog-templado.jpeg', alt: 'Puerta de vidrio templado de 10 mm', width: 400, height: 300 },
+  bisagra: { src: '/images/catalog-bisagra.jpeg', alt: 'Puerta con bisagra de aluminio y vidrio', width: 400, height: 300 },
+  jardin: null,
+  ventana: { src: '/images/catalog-ventana.jpeg', alt: 'Ventana Francesa o Bilbao de aluminio', width: 400, height: 533 },
+};
 ---
 
-<section id="modelos" class="placeholder-section">
-  <h2>Catálogo</h2>
-  <p>Próximamente.</p>
+<section id="modelos" class="catalogo" aria-labelledby="catalogo-title">
+  <div class="catalogo__inner">
+    <p class="catalogo__kicker">Cat&aacute;logo</p>
+    <h2 id="catalogo-title" class="catalogo__title">Modelos fabricados a tu medida</h2>
+
+    <ul class="catalogo__grid">
+      {
+        CATALOG_PRODUCTS.map((product) => {
+          const image = CARD_IMAGES[product.id];
+          return (
+            <li class="catalogo__item">
+              <article class="catalogo__card">
+                {image ? (
+                  <img
+                    src={image.src}
+                    alt={image.alt}
+                    width={image.width}
+                    height={image.height}
+                    loading="lazy"
+                    decoding="async"
+                    class="catalogo__card-img"
+                  />
+                ) : (
+                  <div class="catalogo__card-img catalogo__card-img--placeholder">
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <rect x="4" y="3" width="16" height="18" rx="2" />
+                      <path d="M9 21v-6h6v6" />
+                    </svg>
+                    <span>Foto pr&oacute;ximamente</span>
+                  </div>
+                )}
+                <div class="catalogo__card-body">
+                  <span class="catalogo__card-name">{product.name}</span>
+                  <span class="catalogo__card-price">Desde ${product.fromPrice}</span>
+                  <a href={`/cotizador?producto=${product.id}`} class="catalogo__card-cta">
+                    Cotizar este modelo
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  </a>
+                </div>
+              </article>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </div>
 </section>
+
+<style>
+  .catalogo {
+    padding: var(--space-8) var(--space-6);
+  }
+
+  .catalogo__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .catalogo__kicker {
+    margin: 0;
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-bold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .catalogo__title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-h2-mobile);
+    font-weight: var(--font-weight-display-medium);
+    font-family: var(--font-family-display);
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  .catalogo__grid {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .catalogo__card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    height: 100%;
+  }
+
+  .catalogo__card-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .catalogo__card-img--placeholder {
+    background: var(--color-surface-tint);
+    color: var(--color-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: var(--font-weight-body-medium);
+  }
+
+  .catalogo__card-body {
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    line-height: 1.35;
+  }
+
+  .catalogo__card-name {
+    font-size: var(--font-size-body-lg-mobile);
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-ink);
+    min-height: 2.6em;
+  }
+
+  .catalogo__card-price {
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-primary);
+  }
+
+  .catalogo__card-cta {
+    margin-top: var(--space-1);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-accent);
+  }
+
+  .catalogo__card-cta:hover {
+    color: var(--color-primary);
+  }
+
+  @media (min-width: 768px) {
+    .catalogo__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .catalogo {
+      padding: var(--space-24) var(--space-6);
+    }
+
+    .catalogo__inner {
+      max-width: var(--container-page);
+      margin: 0 auto;
+      gap: var(--space-8);
+    }
+
+    .catalogo__title {
+      font-size: var(--font-size-h2-desktop);
+    }
+
+    .catalogo__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-8);
+    }
+
+    .catalogo__card-img {
+      height: 260px;
+    }
+
+    .catalogo__card-name {
+      font-size: var(--font-size-h3-desktop);
+    }
+
+    .catalogo__card-price,
+    .catalogo__card-cta {
+      font-size: var(--font-size-body-desktop);
+    }
+  }
+</style>

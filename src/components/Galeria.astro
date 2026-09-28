@@ -1,8 +1,303 @@
 ---
-// Galeria — static component, no business logic. Full content in S4.
+// Galeria — real-project photo strip (spec §1 item 4 / S4 T4.2). Exactly the
+// 6 real WhatsApp customer photos (product-whatsapp-01..06.jpeg) — no
+// AI-generated or third-party-rights image (see prototype-spec.md §1 item 4
+// rationale + open question #11). Horizontal snap-scroll on all 3 viewports:
+// the desktop board's 5-col masonry mixes in more photos than the 6 the AC
+// allows, so this keeps the iOS/Android strip layout at desktop too
+// (deviation, flagged in the slice summary) rather than under/over-filling
+// a masonry grid.
+const PHOTOS = [
+  { src: '/images/galeria-01.jpeg', alt: 'Puerta de baño con vidrio decorado instalada', width: 934, height: 1280 },
+  { src: '/images/galeria-02.jpeg', alt: 'División de vidrio esmerilado instalada', width: 1600, height: 1200 },
+  { src: '/images/galeria-03.jpeg', alt: 'Ducha de vidrio corrediza con marco plateado', width: 960, height: 1280 },
+  { src: '/images/galeria-04.jpeg', alt: 'Ventanas correderas de aluminio con perfil negro instaladas', width: 1200, height: 1600 },
+  { src: '/images/galeria-05.jpeg', alt: 'Puerta de vidrio corrediza de aluminio negro en fachada', width: 1600, height: 1200 },
+  { src: '/images/galeria-06.jpeg', alt: 'Ducha de vidrio con marco negro y acabado en mármol', width: 1200, height: 1600 },
+] as const;
 ---
 
-<section id="galeria" class="placeholder-section">
-  <h2>Galería</h2>
-  <p>Próximamente.</p>
+<section id="galeria" class="galeria" aria-labelledby="galeria-title">
+  <div class="galeria__intro">
+    <p class="galeria__kicker">Proyectos reales</p>
+    <h2 id="galeria-title" class="galeria__title">Instalaciones de nuestros clientes</h2>
+    <p class="galeria__subtitle">Fotos enviadas por clientes. Desliza para ver más.</p>
+  </div>
+
+  <ul class="galeria__strip">
+    {
+      PHOTOS.map((photo, index) => (
+        <li class="galeria__item">
+          <button
+            type="button"
+            class="galeria__trigger"
+            data-lightbox-trigger
+            data-src={photo.src}
+            data-alt={photo.alt}
+            aria-label={`Ampliar foto ${index + 1} de ${PHOTOS.length}: ${photo.alt}`}
+          >
+            <img
+              src={photo.src}
+              alt={photo.alt}
+              width={photo.width}
+              height={photo.height}
+              loading="lazy"
+              decoding="async"
+              class="galeria__img"
+            />
+          </button>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div id="galeria-veil" class="galeria__veil" hidden></div>
+  <div
+    id="galeria-lightbox"
+    class="galeria__lightbox"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Foto ampliada"
+    aria-hidden="true"
+    inert
+  >
+    <button type="button" id="galeria-lightbox-close" class="galeria__lightbox-close" aria-label="Cerrar foto ampliada">
+      <svg
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
+    <img id="galeria-lightbox-img" src="" alt="" class="galeria__lightbox-img" />
+  </div>
 </section>
+
+<style>
+  .galeria {
+    padding: var(--space-8) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .galeria__intro {
+    padding: 0 var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .galeria__kicker {
+    margin: 0;
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-bold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  .galeria__title {
+    margin: 0;
+    font-size: var(--font-size-h2-mobile);
+    font-weight: var(--font-weight-display-medium);
+    font-family: var(--font-family-display);
+    color: var(--color-ink);
+    text-wrap: balance;
+  }
+
+  .galeria__subtitle {
+    margin: 0;
+    font-size: var(--font-size-body-sm-mobile);
+    color: var(--color-ink-muted);
+  }
+
+  .galeria__strip {
+    margin: 0;
+    padding: 0 var(--space-6) var(--space-2);
+    list-style: none;
+    display: flex;
+    gap: var(--space-3);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 var(--space-6);
+  }
+
+  .galeria__item {
+    flex: 0 0 240px;
+    scroll-snap-align: start;
+  }
+
+  .galeria__trigger {
+    display: block;
+    width: 100%;
+    height: 300px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .galeria__trigger:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  .galeria__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .galeria__veil {
+    position: fixed;
+    inset: 0;
+    background: var(--color-scrim-ink);
+    z-index: 40;
+  }
+
+  .galeria__veil[hidden] {
+    display: none;
+  }
+
+  .galeria__lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 41;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+  }
+
+  .galeria__lightbox[data-open='true'] {
+    display: flex;
+  }
+
+  .galeria__lightbox-img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: var(--radius-md);
+    display: block;
+  }
+
+  .galeria__lightbox-close {
+    position: absolute;
+    top: var(--space-6);
+    right: var(--space-6);
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+  }
+
+  .galeria__lightbox-close:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  @media (min-width: 1024px) {
+    .galeria {
+      padding: var(--space-24) 0;
+    }
+
+    .galeria__intro,
+    .galeria__strip {
+      max-width: var(--container-page);
+      margin: 0 auto;
+      padding-left: var(--space-6);
+      padding-right: var(--space-6);
+    }
+
+    .galeria__title {
+      font-size: var(--font-size-h2-desktop);
+    }
+
+    .galeria__subtitle {
+      font-size: var(--font-size-body-lg-desktop);
+    }
+
+    .galeria__item {
+      flex-basis: 320px;
+    }
+
+    .galeria__trigger {
+      height: 380px;
+    }
+  }
+</style>
+
+<script>
+  const triggers = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-lightbox-trigger]'));
+  const veil = document.getElementById('galeria-veil');
+  const box = document.getElementById('galeria-lightbox');
+  const closeBtn = document.getElementById('galeria-lightbox-close') as HTMLButtonElement | null;
+  const img = document.getElementById('galeria-lightbox-img') as HTMLImageElement | null;
+
+  if (veil && box && closeBtn && img && triggers.length > 0) {
+    let lastTrigger: HTMLButtonElement | null = null;
+
+    function isOpen(): boolean {
+      return box!.dataset.open === 'true';
+    }
+
+    function openLightbox(trigger: HTMLButtonElement): void {
+      img!.src = trigger.dataset.src ?? '';
+      img!.alt = trigger.dataset.alt ?? '';
+      lastTrigger = trigger;
+      box!.dataset.open = 'true';
+      veil!.dataset.open = 'true';
+      veil!.hidden = false;
+      box!.setAttribute('aria-hidden', 'false');
+      box!.removeAttribute('inert');
+      document.body.style.overflow = 'hidden';
+      closeBtn!.focus();
+    }
+
+    function closeLightbox(): void {
+      if (!isOpen()) return;
+      box!.dataset.open = 'false';
+      veil!.dataset.open = 'false';
+      box!.setAttribute('aria-hidden', 'true');
+      box!.setAttribute('inert', '');
+      veil!.hidden = true;
+      document.body.style.overflow = '';
+      img!.src = '';
+      lastTrigger?.focus();
+      lastTrigger = null;
+    }
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('click', () => openLightbox(trigger));
+    });
+
+    closeBtn.addEventListener('click', () => closeLightbox());
+    veil.addEventListener('click', () => closeLightbox());
+
+    document.addEventListener('keydown', (event) => {
+      if (!isOpen()) return;
+      if (event.key === 'Escape') {
+        closeLightbox();
+        return;
+      }
+      // Only the close button is focusable inside the lightbox — keep Tab
+      // trapped there (single-element focus trap).
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        closeBtn!.focus();
+      }
+    });
+  }
+</script>
