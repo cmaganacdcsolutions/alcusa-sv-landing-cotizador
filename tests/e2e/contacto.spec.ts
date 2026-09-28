@@ -110,7 +110,7 @@ test.describe('footer — quick links + legal', () => {
     await page.goto('/');
     await expect(page.getByText('Aluminios Cuzcatlán, S.A. de C.V.', { exact: false })).toBeVisible();
     await expect(page.getByText('[NIT — confirmar]')).toBeVisible();
-    const waCta = page.getByRole('link', { name: /Cotizar por WhatsApp/ });
+    const waCta = page.getByRole('contentinfo').getByRole('link', { name: /Cotizar por WhatsApp/ });
     await expect(waCta).toHaveAttribute('href', 'https://wa.me/50376802410');
   });
 });
