@@ -8,6 +8,7 @@ import { buildLineItem, type QuoteResult } from '../state/quote';
 import { computeGardenQuote, computeWindowQuote } from '../state/quoteWindowGarden';
 import { GARDEN_HOJAS_LABELS } from './measures/GardenForm';
 import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './measures/WindowForm';
+import { IconCard, IconWhatsApp } from '../icons';
 
 export interface Step5FormaPagoProps {
   product: CatalogProduct;
@@ -15,14 +16,13 @@ export interface Step5FormaPagoProps {
   quote: QuoteResult;
   zoneFee: number | undefined;
   total: number | null;
-  onBack: () => void;
 }
 
 // Step 5 — forma de pago (T1.3 scope; generalized to corner/tempered/hinged
 // in S5). "Enviar por WhatsApp para confirmar" is the primary, working path
 // this slice; "Pagar ahora" (Wompi) is a visible but disabled stub — wired
 // in S8.
-export default function Step5FormaPago({ product, state, quote, zoneFee, total, onBack }: Step5FormaPagoProps): ReactElement {
+export default function Step5FormaPago({ product, state, quote, zoneFee, total }: Step5FormaPagoProps): ReactElement {
   const [method, setMethod] = useState<'wa' | 'pay'>('wa');
   const item = buildLineItem(state);
   const subtotal = quote.amount ?? 0;
@@ -81,13 +81,7 @@ export default function Step5FormaPago({ product, state, quote, zoneFee, total, 
   const waHref = buildWaLink(buildQuoteMessage({ items, transporte, total: grandTotal, anticipo, saldo }));
 
   return (
-    <section aria-labelledby="step5-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Resumen
-      </button>
-      <h2 id="step5-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 4px' }}>
-        Forma de pago
-      </h2>
+    <section aria-labelledby="cotizador-page-title">
       <p style={{ marginTop: 0, color: 'var(--color-ink-muted)' }}>
         Total de tu cotización: <strong style={{ color: 'var(--color-ink)' }}>${grandTotal.toFixed(2)}</strong>
       </p>
@@ -100,11 +94,14 @@ export default function Step5FormaPago({ product, state, quote, zoneFee, total, 
           className="payment-option"
           onClick={() => setMethod('wa')}
         >
-          <span className="payment-option__icon">WA</span>
+          <span className="payment-option__icon">
+            <IconWhatsApp />
+          </span>
           <span className="payment-option__body">
             <span className="payment-option__title">Enviar por WhatsApp para confirmar</span>
             <span className="payment-option__desc">Un asesor confirma tu pedido y te comparte el enlace de pago.</span>
           </span>
+          <span className="payment-option__dot" />
         </button>
 
         <button
@@ -116,25 +113,30 @@ export default function Step5FormaPago({ product, state, quote, zoneFee, total, 
           aria-disabled="true"
           title="Disponible próximamente"
         >
-          <span className="payment-option__icon payment-option__icon--pay">$</span>
+          <span className="payment-option__icon payment-option__icon--pay">
+            <IconCard />
+          </span>
           <span className="payment-option__body">
             <span className="payment-option__title">Pagar ahora</span>
             <span className="payment-option__desc">Con tarjeta, en la página de pago de Wompi (próximamente).</span>
           </span>
+          <span className="payment-option__dot" />
         </button>
       </div>
 
-      <p style={{ fontSize: 14, color: 'var(--color-ink-muted)' }}>
+      <p style={{ display: 'flex', gap: 8, fontSize: 14, color: 'var(--color-ink-muted)' }}>
+        <IconCard size={18} />
         Aceptamos tarjeta de crédito y débito, excepto American Express.
       </p>
 
-      <div style={{ marginTop: 16 }}>
-        {method === 'wa' && (
+      {method === 'wa' && (
+        <div className="bottom-bar" style={{ marginTop: 16 }}>
           <a href={waHref} className="btn btn-whatsapp" style={{ minHeight: 52, width: '100%' }}>
+            <IconWhatsApp />
             Enviar por WhatsApp
           </a>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 }

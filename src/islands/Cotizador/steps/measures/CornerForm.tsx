@@ -8,6 +8,7 @@ import {
   type CotizadorState,
 } from '../../state/cotizadorStore';
 import type { QuoteResult } from '../../state/quote';
+import { IconArrowRight, IconWarningTriangle } from '../../icons';
 
 // Corner (only Natural/Bronce — no Blanco option rendered at all, T5.1 AC).
 const COLORS: { id: AluminumColor; dot: string }[] = [
@@ -22,23 +23,19 @@ export interface CornerFormProps {
   state: CotizadorState;
   dispatch: Dispatch<CotizadorAction>;
   quote: QuoteResult;
-  onBack: () => void;
   onNext: () => void;
 }
 
 // "l" (Cabina en L) measures form — fixed 0.80x0.80x1.85m, no width input
 // (T5.1 scope).
-export default function CornerForm({ product, state, dispatch, quote, onBack, onNext }: CornerFormProps): ReactElement {
+export default function CornerForm({ product, state, dispatch, quote, onNext }: CornerFormProps): ReactElement {
   const invalid = quote.requiresQuote;
 
   return (
     <section aria-labelledby="step1-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Producto
-      </button>
-      <h2 id="step1-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
+      <h3 id="step1-heading" className="cotizador__section-heading" style={{ marginBottom: 2 }}>
         Medidas y acabado
-      </h2>
+      </h3>
       <p style={{ marginTop: 0, color: 'var(--color-ink-muted)' }}>
         {product.name} · {product.altoText}
       </p>
@@ -80,7 +77,10 @@ export default function CornerForm({ product, state, dispatch, quote, onBack, on
 
       {invalid && (
         <div className="callout" role="status" style={{ marginTop: 20 }}>
-          <span className="callout__title">Cotización personalizada por WhatsApp</span>
+          <span className="callout__title">
+            <IconWarningTriangle />
+            Cotización personalizada por WhatsApp
+          </span>
           <p className="callout__body">Para este acabado, consulta con ALCUSA.</p>
         </div>
       )}
@@ -89,6 +89,7 @@ export default function CornerForm({ product, state, dispatch, quote, onBack, on
         <div className="bottom-bar__price" />
         <button type="button" className="btn btn-primary" disabled={invalid} onClick={onNext}>
           Siguiente
+          <IconArrowRight />
         </button>
       </div>
     </section>

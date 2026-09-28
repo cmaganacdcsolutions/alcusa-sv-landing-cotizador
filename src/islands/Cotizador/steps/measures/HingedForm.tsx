@@ -18,6 +18,7 @@ import {
   type CotizadorState,
 } from '../../state/cotizadorStore';
 import { parseHingedQty, type QuoteResult } from '../../state/quote';
+import { IconArrowRight, IconWarningTriangle } from '../../icons';
 
 const COLORS: { id: AluminumColor; dot: string }[] = [
   { id: 'natural', dot: '#c9ced6' },
@@ -38,13 +39,12 @@ export interface HingedFormProps {
   state: CotizadorState;
   dispatch: Dispatch<CotizadorAction>;
   quote: QuoteResult;
-  onBack: () => void;
   onNext: () => void;
 }
 
 // "bisagra" (Puerta con bisagra) measures form — ancho 40-90cm, alto fijo
 // 1.85m, cantidad 1-50, color, vidrio, optional paño fijo (T5.3 scope).
-export default function HingedForm({ product, state, dispatch, quote, onBack, onNext }: HingedFormProps): ReactElement {
+export default function HingedForm({ product, state, dispatch, quote, onNext }: HingedFormProps): ReactElement {
   const widthCm = parseWidthCm(state.width);
   const qty = parseHingedQty(state.hingedQty);
   const widthInvalid = !isHingedWidthInRange(widthCm);
@@ -53,12 +53,9 @@ export default function HingedForm({ product, state, dispatch, quote, onBack, on
 
   return (
     <section aria-labelledby="step1-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Producto
-      </button>
-      <h2 id="step1-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
+      <h3 id="step1-heading" className="cotizador__section-heading" style={{ marginBottom: 2 }}>
         Medidas y acabado
-      </h2>
+      </h3>
       <p style={{ marginTop: 0, color: 'var(--color-ink-muted)' }}>{product.name}</p>
 
       <div className="field">
@@ -204,7 +201,10 @@ export default function HingedForm({ product, state, dispatch, quote, onBack, on
 
       {widthInvalid && (
         <div className="callout" role="status" style={{ marginTop: 20 }}>
-          <span className="callout__title">Cotización personalizada por WhatsApp</span>
+          <span className="callout__title">
+            <IconWarningTriangle />
+            Cotización personalizada por WhatsApp
+          </span>
           <p className="callout__body">
             El ancho debe ser de {HINGED_WIDTH_MIN_CM} a {HINGED_WIDTH_MAX_CM} cm y la altura de 1.85 m. Para otras
             medidas, consulta con ALCUSA.
@@ -216,6 +216,7 @@ export default function HingedForm({ product, state, dispatch, quote, onBack, on
         <div className="bottom-bar__price" />
         <button type="button" className="btn btn-primary" disabled={invalid} onClick={onNext}>
           Siguiente
+          <IconArrowRight />
         </button>
       </div>
     </section>

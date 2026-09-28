@@ -8,6 +8,7 @@ import { buildLineItem, type QuoteResult } from '../state/quote';
 import { computeGardenQuote, computeWindowQuote } from '../state/quoteWindowGarden';
 import { GARDEN_HOJAS_LABELS } from './measures/GardenForm';
 import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './measures/WindowForm';
+import { IconArrowRight, IconPlus, IconWarningTriangle, IconWhatsApp } from '../icons';
 
 export interface Step4ResumenProps {
   product: CatalogProduct;
@@ -15,7 +16,6 @@ export interface Step4ResumenProps {
   quote: QuoteResult;
   zoneFee: number | undefined;
   total: number | null;
-  onBack: () => void;
   onNext: () => void;
 }
 
@@ -23,7 +23,7 @@ export interface Step4ResumenProps {
 // corner/tempered/hinged in S5). "+ Agregar otro producto" is visible but
 // disabled/stub this slice — wired to the multi-item cart in S7. The
 // primary WhatsApp handoff lives here too, matching ios-05.
-export default function Step4Resumen({ product, state, quote, zoneFee, total, onBack, onNext }: Step4ResumenProps): ReactElement {
+export default function Step4Resumen({ product, state, quote, zoneFee, total, onNext }: Step4ResumenProps): ReactElement {
   // S6 — ventana/jardin: multi-row (ventana) / single-line (jardin) summary
   // + WhatsApp handoff. Per T6.3, WhatsApp is ALWAYS available even when a
   // line requiresQuote (its subtotal is annotated, not blocking); "Pagar
@@ -69,14 +69,7 @@ export default function Step4Resumen({ product, state, quote, zoneFee, total, on
     const waHref = buildWaLink(buildQuoteMessage({ items, transporte, total: grandTotal, anticipo, saldo }));
 
     return (
-      <section aria-labelledby="step4-heading">
-        <button type="button" className="cotizador__back" onClick={onBack}>
-          ← Entrega
-        </button>
-        <h2 id="step4-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
-          Resumen de tu cotización
-        </h2>
-
+      <section aria-labelledby="cotizador-page-title">
         <div className="summary-card">
           {items.map((item, index) => (
             <article className="summary-item" key={index}>
@@ -94,12 +87,16 @@ export default function Step4Resumen({ product, state, quote, zoneFee, total, on
           ))}
 
           <button type="button" className="summary-add" disabled aria-disabled="true">
-            + Agregar otro producto
+            <IconPlus />
+            Agregar otro producto
           </button>
 
           {anyRequiresQuote && (
             <div className="callout" role="status" style={{ marginTop: 8 }}>
-              <span className="callout__title">Cotización personalizada por WhatsApp</span>
+              <span className="callout__title">
+                <IconWarningTriangle />
+                Cotización personalizada por WhatsApp
+              </span>
               <p className="callout__body">
                 Al menos un acabado elegido requiere cotización manual. Puedes enviarlo por WhatsApp junto con el
                 resto, o confirmar solo lo que ya tiene precio.
@@ -137,10 +134,12 @@ export default function Step4Resumen({ product, state, quote, zoneFee, total, on
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
           <a href={waHref} className="btn btn-whatsapp" style={{ minHeight: 52 }}>
+            <IconWhatsApp />
             Enviar por WhatsApp para confirmar
           </a>
           <button type="button" className="btn btn-primary" onClick={onNext}>
             Pagar ahora
+            <IconArrowRight />
           </button>
         </div>
       </section>
@@ -178,14 +177,7 @@ export default function Step4Resumen({ product, state, quote, zoneFee, total, on
   );
 
   return (
-    <section aria-labelledby="step4-heading">
-      <button type="button" className="cotizador__back" onClick={onBack}>
-        ← Entrega
-      </button>
-      <h2 id="step4-heading" className="cotizador__title" style={{ fontSize: '1.375rem', margin: '8px 0 16px' }}>
-        Resumen de tu cotización
-      </h2>
-
+    <section aria-labelledby="cotizador-page-title">
       <div className="summary-card">
         <article className="summary-item">
           <div className="summary-item__meta">
@@ -199,7 +191,8 @@ export default function Step4Resumen({ product, state, quote, zoneFee, total, on
         </article>
 
         <button type="button" className="summary-add" disabled aria-disabled="true">
-          + Agregar otro producto
+          <IconPlus />
+          Agregar otro producto
         </button>
 
         <dl className="breakdown" style={{ marginTop: 8 }}>
@@ -232,10 +225,12 @@ export default function Step4Resumen({ product, state, quote, zoneFee, total, on
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
         <a href={waHref} className="btn btn-whatsapp" style={{ minHeight: 52 }}>
+          <IconWhatsApp />
           Enviar por WhatsApp para confirmar
         </a>
         <button type="button" className="btn btn-primary" onClick={onNext}>
           Pagar ahora
+          <IconArrowRight />
         </button>
       </div>
     </section>

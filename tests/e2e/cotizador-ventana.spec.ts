@@ -34,7 +34,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$162.00');
 
-    await page.getByRole('button', { name: '← Medidas' }).click();
+    await page.getByRole('button', { name: 'Medidas' }).click();
     await page.getByRole('checkbox', { name: /Zaranda/ }).check();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$198.00');
