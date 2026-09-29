@@ -177,7 +177,7 @@ test.describe('landing5 — desktop follow-ups (e)-(h)', () => {
     await expect(ventanaImg).toHaveAttribute('src', '/images/galeria-04.jpeg');
   });
 
-  test('(f) Acabados finish swatches use real photos; "Puerta de jardín" stays a flagged placeholder (uncleared rights)', async ({
+  test('(f) Acabados finish swatches use real photos; "Puerta de jardín" shows the real garden-door photo', async ({
     page,
   }) => {
     await page.goto('/');
@@ -193,11 +193,15 @@ test.describe('landing5 — desktop follow-ups (e)-(h)', () => {
       await expect(img).toHaveAttribute('src', `/images/${file}`);
     }
 
-    // docs/architecture/tech-debt.md (S4 row) + prototype-spec.md open
-    // question #11: the board's garden-door photo is an uncleared
-    // third-party stock image — left as the placeholder tile on purpose.
+    // docs/architecture/tech-debt.md: client confirmed usage rights for all
+    // board/discovery assets 2026-09-29 (sf-user-0929) — the placeholder
+    // tile is gone, the card now renders the real garden-door photo.
     const jardinCard = modelos.locator('li', { hasText: 'Puerta de jardín' });
-    await expect(jardinCard.getByText('Foto próximamente')).toBeVisible();
+    await expect(jardinCard.locator('img.catalogo__card-img')).toHaveAttribute(
+      'src',
+      '/images/catalog-jardin.webp',
+    );
+    await expect(jardinCard.getByText('Foto próximamente')).toHaveCount(0);
   });
 
   test('(g) "Proyectos reales" header: alignment + kicker typography matches the desktop board', async ({

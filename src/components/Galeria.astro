@@ -18,40 +18,51 @@
 // every breakpoint was wrong; ".galeria__subtitle-hint" restores the
 // "Desliza para ver más." clause, hidden at >=1024px (Instagram link takes
 // over there, matching the desktop board).
+// `caption` — sf-user-0929: short visible label per photo naming what it is,
+// using the catalog vocabulary (@content/catalog product names) where it
+// fits. Not on any board (galería captions are a user-requested addition,
+// not a design-fidelity item) — rendered as an overlay pill on each card and
+// echoed in the lightbox counter. Alts stay as the longer descriptive text.
 const PHOTOS = [
   {
     src: '/images/galeria-01.jpeg',
     alt: 'Puerta de baño con vidrio decorado instalada',
+    caption: 'Puerta de baño · vidrio decorado',
     width: 934,
     height: 1280,
   },
   {
     src: '/images/galeria-02.jpeg',
     alt: 'División de vidrio esmerilado instalada',
+    caption: 'Vidrio esmerilado',
     width: 1600,
     height: 1200,
   },
   {
     src: '/images/galeria-03.jpeg',
     alt: 'Ducha de vidrio corrediza con marco plateado',
+    caption: 'Cabina en L',
     width: 960,
     height: 1280,
   },
   {
     src: '/images/galeria-04.jpeg',
     alt: 'Ventanas correderas de aluminio con perfil negro instaladas',
+    caption: 'Ventana corrediza',
     width: 1200,
     height: 1600,
   },
   {
     src: '/images/galeria-05.jpeg',
     alt: 'Puerta de vidrio corrediza de aluminio negro en fachada',
+    caption: 'Puerta de jardín',
     width: 1600,
     height: 1200,
   },
   {
     src: '/images/galeria-06.jpeg',
     alt: 'Ducha de vidrio con marco negro y acabado en mármol',
+    caption: 'Puerta con bisagra',
     width: 1200,
     height: 1600,
   },
@@ -109,6 +120,7 @@ const PHOTOS = [
             data-index={index}
             data-src={photo.src}
             data-alt={photo.alt}
+            data-caption={photo.caption}
             aria-label={`Ampliar foto ${index + 1} de ${PHOTOS.length}: ${photo.alt}`}
           >
             <img
@@ -120,6 +132,7 @@ const PHOTOS = [
               decoding="async"
               class="galeria__img"
             />
+            <span class="galeria__caption-pill" aria-hidden="true">{photo.caption}</span>
           </button>
         </li>
       ))}
@@ -311,6 +324,7 @@ const PHOTOS = [
   }
 
   .galeria__trigger {
+    position: relative;
     display: block;
     width: 100%;
     height: 300px;
@@ -329,6 +343,27 @@ const PHOTOS = [
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  /* Overlay caption pill — user request (not on the boards): stays readable
+     on both light and dark photos via an opaque ink-tinted background
+     (same RGB as --color-ink, higher alpha than --color-scrim-ink so text
+     contrast holds on bright photos like galeria-02/03). */
+  .galeria__caption-pill {
+    position: absolute;
+    left: var(--space-3);
+    bottom: var(--space-3);
+    max-width: calc(100% - var(--space-3) * 2);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    background: rgba(16, 33, 61, 0.78);
+    color: var(--color-surface);
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-bold);
+    line-height: var(--font-line-height-heading);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .galeria__veil {
@@ -577,7 +612,8 @@ const PHOTOS = [
       const trigger = triggers[index];
       img!.src = trigger.dataset.src ?? '';
       img!.alt = trigger.dataset.alt ?? '';
-      counter!.textContent = `${index + 1} / ${total}`;
+      const caption = trigger.dataset.caption ?? '';
+      counter!.textContent = caption ? `${index + 1} / ${total} · ${caption}` : `${index + 1} / ${total}`;
     }
 
     function goTo(index: number): void {

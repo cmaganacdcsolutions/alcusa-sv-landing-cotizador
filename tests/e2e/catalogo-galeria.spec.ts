@@ -36,6 +36,35 @@ test.describe('landing — catálogo + galería (S4)', () => {
     expect(href).toBe('/cotizador?producto=bisagra');
   });
 
+  test('"Puerta de jardín" card shows the real garden-door photo, not the placeholder tile', async ({ page }) => {
+    // sf-user-0929: client confirmed usage rights 2026-09-29 for
+    // product-puerta-3-hojas.webp (tech-debt.md S4 row, RESOLVED).
+    await page.goto('/');
+    const card = page.locator('#modelos li', { hasText: 'Puerta de jardín' });
+    await expect(card.getByText('Foto próximamente')).toHaveCount(0);
+    const img = card.locator('img.catalogo__card-img');
+    await expect(img).toHaveAttribute('src', '/images/catalog-jardin.webp');
+    await expect(img).toHaveAttribute('alt', 'Puerta de jardín corrediza de tres hojas');
+  });
+
+  test('catálogo header shows "Ver todos en el cotizador" on desktop, hidden on mobile', async ({
+    page,
+  }, testInfo) => {
+    // desktop-01-inicio.dc.html ~L94: desktop-only per the mobile boards
+    // (Main.dc.html / android-01-inicio.dc.html), which draw no such link.
+    await page.goto('/');
+    const modelos = page.locator('#modelos');
+    await modelos.scrollIntoViewIfNeeded();
+    const link = modelos.getByRole('link', { name: 'Ver todos en el cotizador' });
+
+    if (testInfo.project.name === 'desktop1920') {
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute('href', '/cotizador');
+    } else {
+      await expect(link).toBeHidden();
+    }
+  });
+
   test('catálogo shows the "Vidrios para puertas de baño" swatches block at every breakpoint', async ({ page }) => {
     // Present on all 3 boards (Main.dc.html ~L80-84 / android-01-inicio.dc.html
     // ~L84-88 / desktop-01-inicio.dc.html ~L106-114) — sf-landing5 user
@@ -64,6 +93,32 @@ test.describe('landing — catálogo + galería (S4)', () => {
     }
     // Excluded assets never appear anywhere in the gallery markup.
     expect(srcs.join(' ')).not.toMatch(/chatgpt|puerta-3-hojas/);
+  });
+
+  test('each gallery photo shows a visible caption naming what it is, echoed in the lightbox counter', async ({
+    page,
+  }) => {
+    // sf-user-0929: user-requested captions (not on any board), using the
+    // catalog vocabulary where it fits.
+    await page.goto('/');
+    const galeria = page.locator('#galeria');
+    await galeria.scrollIntoViewIfNeeded();
+
+    const captions = [
+      'Puerta de baño · vidrio decorado',
+      'Vidrio esmerilado',
+      'Cabina en L',
+      'Ventana corrediza',
+      'Puerta de jardín',
+      'Puerta con bisagra',
+    ];
+    for (const caption of captions) {
+      await expect(galeria.locator('.galeria__caption-pill', { hasText: caption })).toBeVisible();
+    }
+
+    const firstTrigger = galeria.locator('[data-lightbox-trigger]').first();
+    await firstTrigger.click();
+    await expect(page.locator('#galeria-lightbox-counter')).toHaveText(`1 / 6 · ${captions[0]}`);
   });
 
   test('tapping a gallery photo opens a focus-trapped lightbox; Escape closes it and restores focus', async ({

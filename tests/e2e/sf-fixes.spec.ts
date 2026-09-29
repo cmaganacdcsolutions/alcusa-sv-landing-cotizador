@@ -197,19 +197,20 @@ test.describe('sf-fixes — galería lightbox prev/next + strip controls', () =>
 
     const lightbox = page.locator('#galeria-lightbox');
     const counter = page.locator('#galeria-lightbox-counter');
-    await expect(counter).toHaveText('1 / 6');
+    // sf-user-0929: counter now echoes each photo's caption after the n/6.
+    await expect(counter).toHaveText('1 / 6 · Puerta de baño · vidrio decorado');
 
     await lightbox.getByRole('button', { name: 'Foto siguiente' }).click();
-    await expect(counter).toHaveText('2 / 6');
+    await expect(counter).toHaveText('2 / 6 · Vidrio esmerilado');
 
     await page.keyboard.press('ArrowRight');
-    await expect(counter).toHaveText('3 / 6');
+    await expect(counter).toHaveText('3 / 6 · Cabina en L');
 
     await page.keyboard.press('ArrowLeft');
-    await expect(counter).toHaveText('2 / 6');
+    await expect(counter).toHaveText('2 / 6 · Vidrio esmerilado');
 
     await lightbox.getByRole('button', { name: 'Foto anterior' }).click();
-    await expect(counter).toHaveText('1 / 6');
+    await expect(counter).toHaveText('1 / 6 · Puerta de baño · vidrio decorado');
   });
 
   test('swiping the lightbox image moves to the next photo', async ({ page }) => {
@@ -225,7 +226,7 @@ test.describe('sf-fixes — galería lightbox prev/next + strip controls', () =>
       changedTouches: [{ identifier: 0, clientX: 100, clientY: 300 }],
     });
 
-    await expect(page.locator('#galeria-lightbox-counter')).toHaveText('2 / 6');
+    await expect(page.locator('#galeria-lightbox-counter')).toHaveText('2 / 6 · Vidrio esmerilado');
   });
 
   test('mobile snap-scroll strip has prev/next controls that scroll the strip', async ({

@@ -34,11 +34,12 @@ interface CardImage {
   height: number;
 }
 
+// All 6 products now have a real, rights-cleared photo — no placeholder
+// branch needed in the markup below (2026-09-29, see CARD_IMAGES).
+
 // Real ALCUSA photos (01-discovery/assets), curated per product — see
-// docs/architecture/tech-debt.md (end of file) for the "jardin" gap: no
-// rights-cleared photo exists yet for that product, so it renders a
-// placeholder tile instead of a mismatched/risky image.
-const CARD_IMAGES: Record<ProductId, CardImage | null> = {
+// docs/architecture/tech-debt.md (end of file, S4 row) for history.
+const CARD_IMAGES: Record<ProductId, CardImage> = {
   recta: {
     src: '/images/catalog-recta.jpg',
     alt: 'Puerta de baño recta corrediza',
@@ -63,14 +64,16 @@ const CARD_IMAGES: Record<ProductId, CardImage | null> = {
     width: 400,
     height: 300,
   },
-  // /_blob/0b1f316ff8064cebb6e590af7f7fe134 = product-puerta-3-hojas.webp
-  // is what the board mocks up here, BUT docs/architecture/tech-debt.md
-  // (S4 row) + prototype-spec.md open question #11 flag that exact asset as
-  // an uncleared third-party stock photo ("Fuente: BBC Menuiseries") — not
-  // ours to publish. Left as the placeholder tile until the client clears
-  // usage rights or supplies a real ALCUSA garden-door photo (Foreman
-  // 2026-09-28 asked for this asset; flagged instead of used — see HANDOFF).
-  jardin: null,
+  // /_blob/0b1f316ff8064cebb6e590af7f7fe134 = product-puerta-3-hojas.webp,
+  // the board's own mockup for this card. Client confirmed usage rights for
+  // all board/discovery assets 2026-09-29 (see tech-debt.md S4 row) — used
+  // here per that confirmation.
+  jardin: {
+    src: '/images/catalog-jardin.webp',
+    alt: 'Puerta de jardín corrediza de tres hojas',
+    width: 400,
+    height: 300,
+  },
   // desktop-01-inicio.dc.html's catálogo card for this product is
   // /_blob/408c1938343803d0fb8ca17c7b29387a = product-whatsapp-04.jpeg
   // (byte-identical to public/images/galeria-04.jpeg) — the real installed-
@@ -98,10 +101,33 @@ const ACABADOS = [
 
 <section id="modelos" class="catalogo" aria-labelledby="catalogo-title">
   <div class="catalogo__inner">
-    <p class="catalogo__kicker">Cat&aacute;logo</p>
-    <h2 id="catalogo-title" class="catalogo__title">
-      Modelos fabricados a tu medida
-    </h2>
+    <div class="catalogo__header">
+      <div class="catalogo__intro">
+        <p class="catalogo__kicker">Cat&aacute;logo</p>
+        <h2 id="catalogo-title" class="catalogo__title">
+          Modelos fabricados a tu medida
+        </h2>
+      </div>
+      <!-- desktop-01-inicio.dc.html ~L94: header link, desktop-only — the
+           mobile boards (Main.dc.html / android-01-inicio.dc.html) don't
+           draw it and there's no room for it next to the 2-col grid. -->
+      <a href="/cotizador" class="catalogo__cotizador-link">
+        Ver todos en el cotizador
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </a>
+    </div>
 
     <ul class="catalogo__grid">
       {CATALOG_PRODUCTS.map((product) => {
@@ -109,35 +135,15 @@ const ACABADOS = [
         return (
           <li class="catalogo__item">
             <article class="catalogo__card">
-              {image ? (
-                <img
-                  src={image.src}
-                  alt={image.alt}
-                  width={image.width}
-                  height={image.height}
-                  loading="lazy"
-                  decoding="async"
-                  class="catalogo__card-img"
-                />
-              ) : (
-                <div class="catalogo__card-img catalogo__card-img--placeholder">
-                  <svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="1.5"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <rect x="4" y="3" width="16" height="18" rx="2" />
-                    <path d="M9 21v-6h6v6" />
-                  </svg>
-                  <span>Foto pr&oacute;ximamente</span>
-                </div>
-              )}
+              <img
+                src={image.src}
+                alt={image.alt}
+                width={image.width}
+                height={image.height}
+                loading="lazy"
+                decoding="async"
+                class="catalogo__card-img"
+              />
               <div class="catalogo__card-body">
                 <span class="catalogo__card-name">{product.name}</span>
                 <span class="catalogo__card-price">Desde ${product.fromPrice}</span>
@@ -205,6 +211,16 @@ const ACABADOS = [
     gap: var(--space-3);
   }
 
+  .catalogo__header {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .catalogo__intro {
+    display: flex;
+    flex-direction: column;
+  }
+
   .catalogo__kicker {
     margin: 0;
     font-size: var(--font-size-caption-mobile);
@@ -212,6 +228,12 @@ const ACABADOS = [
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--color-primary);
+  }
+
+  .catalogo__cotizador-link {
+    /* desktop-01-inicio.dc.html ~L94: hidden on the mobile boards, no
+       equivalent link drawn there. */
+    display: none;
   }
 
   .catalogo__title {
@@ -251,18 +273,6 @@ const ACABADOS = [
     height: 140px;
     object-fit: cover;
     display: block;
-  }
-
-  .catalogo__card-img--placeholder {
-    background: var(--color-surface-tint);
-    color: var(--color-primary);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    font-size: var(--font-size-body-sm-mobile);
-    font-weight: var(--font-weight-body-medium);
   }
 
   .catalogo__card-body {
@@ -383,14 +393,51 @@ const ACABADOS = [
       gap: var(--space-8);
     }
 
+    .catalogo__header {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-16);
+    }
+
+    .catalogo__intro {
+      width: 1000px;
+      flex-shrink: 0;
+      gap: var(--space-4);
+    }
+
     .catalogo__kicker {
       /* desktop-01-inicio.dc.html kicker: 14px/20px — no caption token is
          14px (caption-desktop is 13px), reuses body-sm-desktop. */
       font-size: var(--font-size-body-sm-desktop);
-      line-height: var(--font-line-height-heading);
+      line-height: var(--font-line-height-kicker-desktop);
+    }
+
+    .catalogo__cotizador-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: 48px;
+      /* board: 17px/700 — no desktop token is 17px, body-lg-mobile (1.0625rem)
+         matches exactly and is reused the same way elsewhere in this file. */
+      font-size: var(--font-size-body-lg-mobile);
+      font-weight: var(--font-weight-body-bold);
+      color: var(--color-accent);
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .catalogo__cotizador-link:hover {
+      color: var(--color-primary);
+    }
+
+    .catalogo__cotizador-link:focus-visible {
+      outline: none;
+      box-shadow: var(--shadow-focus);
     }
 
     .catalogo__title {
+      margin: 0;
       font-size: var(--font-size-display-xl-desktop);
       line-height: var(--font-line-height-display-xl-desktop);
     }
