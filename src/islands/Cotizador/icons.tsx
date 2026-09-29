@@ -49,6 +49,19 @@ export function IconCheck({ size = 16, strokeWidth, className }: IconProps): Rea
   );
 }
 
+// sf-cot-models — fallback glyph for .model-card__image-wrap when a model
+// photo is missing/fails to load (spec §5). Same outline-only language as
+// the icons above: no inline stroke props, inherits from the global `svg{}`
+// rule in global.css.
+export function IconWindow({ size = 24, className }: IconProps): ReactElement {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
+      <path d="M12 3.5v17M3.5 12h17" />
+    </svg>
+  );
+}
+
 export function IconWarningTriangle({ size = 22, className }: IconProps): ReactElement {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={className}>

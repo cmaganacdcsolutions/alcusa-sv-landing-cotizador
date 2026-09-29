@@ -37,6 +37,43 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     }).toPass();
   }
 
+  // sf-cot-models — Modelo (Francesa/Bilbao) option cards now render a real
+  // photo per 02-design/specs/ventana-modelo-selector.md, replacing the old
+  // text-only chip row. Guards: both cards load an <img> regardless of
+  // selection, aria-pressed follows the click per card (not a chip-row
+  // shared state), and switching model still re-prices (francesa
+  // 135/m² vs bilbao 192/m² — @content/pricingTables.ts).
+  test('Modelo cards render photos, toggle aria-pressed, and switching model re-prices', async ({ page }) => {
+    await openVentana(page);
+
+    const francesaCard = page.getByRole('button', { name: 'Francesa', exact: true });
+    const bilbaoCard = page.getByRole('button', { name: 'Bilbao', exact: true });
+
+    // Both option photos load, not just the selected one.
+    await expect(francesaCard.locator('img')).toHaveJSProperty('complete', true);
+    await expect(bilbaoCard.locator('img')).toHaveJSProperty('complete', true);
+    expect(await francesaCard.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    expect(await bilbaoCard.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+
+    // Francesa is the default model.
+    await expect(francesaCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(bilbaoCard).toHaveAttribute('aria-pressed', 'false');
+
+    await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
+    await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
+    await page.getByRole('button', { name: 'Blanco', exact: true }).click();
+    await page.getByRole('button', { name: 'Claro', exact: true }).click();
+    await clickSiguienteOnMedidas(page);
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$162.00');
+
+    await page.getByRole('button', { name: 'Medidas', exact: true }).click();
+    await bilbaoCard.click();
+    await expect(bilbaoCard).toHaveAttribute('aria-pressed', 'true');
+    await expect(francesaCard).toHaveAttribute('aria-pressed', 'false');
+    await clickSiguienteOnMedidas(page);
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$230.40');
+  });
+
   test('1.20x1.00 Francesa blanco/claro qty1 → $162; + zaranda → $198', async ({ page }) => {
     await openVentana(page);
 
