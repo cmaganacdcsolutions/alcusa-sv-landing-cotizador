@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type { AluminumColor, WindowGlass, WindowModel } from '@engine/pricing';
 import { COLOR_LABELS, type CotizadorAction, type CotizadorState } from '../../state/cotizadorStore';
+import { WINDOW_GLASS_LABELS } from '../../state/labels';
 import { computeWindowQuote } from '../../state/quoteWindowGarden';
 import { IconArrowRight, IconWarningTriangle } from '../../icons';
 
@@ -9,13 +10,9 @@ export const WINDOW_MODEL_LABELS: Record<WindowModel, string> = { francesa: 'Fra
 
 const FRAMES: AluminumColor[] = ['blanco', 'bronce', 'natural'];
 const GLASSES: WindowGlass[] = ['claro', 'bronce', 'super_gris', 'reflectivo_azul', 'reflectivo_bronce'];
-export const WINDOW_GLASS_LABELS: Record<WindowGlass, string> = {
-  claro: 'Claro',
-  bronce: 'Bronce 5 mm',
-  super_gris: 'Súper gris',
-  reflectivo_azul: 'Reflectivo azul',
-  reflectivo_bronce: 'Reflectivo bronce',
-};
+// Re-exported for existing importers (state/labels.ts is the source of truth
+// now — sf-cot-polish item 5).
+export { WINDOW_GLASS_LABELS };
 
 function isRowValid(qty: string, widthM: string, heightM: string): boolean {
   const q = parseFloat(qty);

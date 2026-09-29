@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { createPortal } from 'react-dom';
 import type { CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
@@ -9,7 +10,8 @@ import { computeGardenQuote, computeWindowQuote } from '../state/quoteWindowGard
 import { GARDEN_HOJAS_LABELS } from './measures/GardenForm';
 import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './measures/WindowForm';
 import { IconArrowRight, IconPlus, IconWarningTriangle, IconWhatsApp } from '../icons';
-import { IconEdit, IconLocationPin, IconTrash, IconWindowPane } from '../icons-checkout';
+import { IconEdit, IconLocationPin, IconTrash } from '../icons-checkout';
+import { PRODUCT_IMAGES } from './productImages';
 import '@styles/cotizador-checkout.css';
 
 export interface Step4ResumenProps {
@@ -19,9 +21,17 @@ export interface Step4ResumenProps {
   zoneFee: number | undefined;
   total: number | null;
   onNext: () => void;
-  // Optional — not wired by Cotizador.tsx yet (see HANDOFF to sf-cot-shell).
-  // Renders as a real "Cambiar" link/button either way; a no-op until wired.
+  // Renders as a real "Cambiar" link/button either way; a no-op if omitted.
   onEditZone?: () => void;
+  // sf-cot-polish item 3 — desktop-05 draws "Enviar por WhatsApp para
+  // confirmar"/"Pagar ahora" ONLY in the "TU COTIZACIÓN" aside (never in the
+  // main content column); ios-05/android-05 draw them ONLY in the main
+  // content bottom area (the aside is hidden below 1024px). Rather than
+  // duplicate the per-product WhatsApp-message logic in Cotizador.tsx, this
+  // component keeps owning it and `createPortal`s a second, identically
+  // wired copy into the aside's mount node when given one. CSS hides
+  // whichever copy doesn't match the current breakpoint.
+  asideCtaTarget?: HTMLElement | null;
 }
 
 // Step 4 — single-item summary card (T1.3 scope; generalized to
@@ -37,6 +47,7 @@ export default function Step4Resumen({
   total,
   onNext,
   onEditZone,
+  asideCtaTarget,
 }: Step4ResumenProps): ReactElement {
   // S6 — ventana/jardin: multi-row (ventana) / single-line (jardin) summary
   // + WhatsApp handoff. Per T6.3, WhatsApp is ALWAYS available even when a
@@ -84,6 +95,19 @@ export default function Step4Resumen({
 
     const countText = `${items.length} ${items.length === 1 ? 'producto' : 'productos'}`;
 
+    const ctas = (
+      <>
+        <a href={waHref} className="btn btn-whatsapp" style={{ width: '100%' }}>
+          <IconWhatsApp />
+          Enviar por WhatsApp para confirmar
+        </a>
+        <button type="button" className="btn btn-primary" style={{ width: '100%' }} onClick={onNext}>
+          Pagar ahora
+          <IconArrowRight />
+        </button>
+      </>
+    );
+
     return (
       <section aria-labelledby="cotizador-page-title">
         <div className="summary-card">
@@ -101,9 +125,12 @@ export default function Step4Resumen({
           </div>
           {items.map((item, index) => (
             <article className="summary-item" key={index}>
-              <span className="summary-item__thumb" aria-hidden="true">
-                <IconWindowPane />
-              </span>
+              <img
+                src={PRODUCT_IMAGES[product.id]}
+                alt=""
+                className="summary-item__thumb"
+                style={{ objectFit: 'cover' }}
+              />
               <div className="summary-item__meta">
                 <div className="summary-item__top">
                   <span className="summary-item__name">{item.producto}</span>
@@ -189,16 +216,10 @@ export default function Step4Resumen({
           </dl>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
-          <a href={waHref} className="btn btn-whatsapp" style={{ minHeight: 52 }}>
-            <IconWhatsApp />
-            Enviar por WhatsApp para confirmar
-          </a>
-          <button type="button" className="btn btn-primary" onClick={onNext}>
-            Pagar ahora
-            <IconArrowRight />
-          </button>
+        <div className="bottom-bar cotizador__mobile-only-ctas">
+          {ctas}
         </div>
+        {asideCtaTarget && createPortal(ctas, asideCtaTarget)}
       </section>
     );
   }
@@ -233,6 +254,19 @@ export default function Step4Resumen({
     }),
   );
 
+  const ctas = (
+    <>
+      <a href={waHref} className="btn btn-whatsapp" style={{ width: '100%' }}>
+        <IconWhatsApp />
+        Enviar por WhatsApp para confirmar
+      </a>
+      <button type="button" className="btn btn-primary" style={{ width: '100%' }} onClick={onNext}>
+        Pagar ahora
+        <IconArrowRight />
+      </button>
+    </>
+  );
+
   return (
     <section aria-labelledby="cotizador-page-title">
       <div className="summary-card">
@@ -249,9 +283,7 @@ export default function Step4Resumen({
           )}
         </div>
         <article className="summary-item">
-          <span className="summary-item__thumb" aria-hidden="true">
-            <IconWindowPane />
-          </span>
+          <img src={PRODUCT_IMAGES[product.id]} alt="" className="summary-item__thumb" style={{ objectFit: 'cover' }} />
           <div className="summary-item__meta">
             <div className="summary-item__top">
               <span className="summary-item__name">{product.name}</span>
@@ -321,16 +353,10 @@ export default function Step4Resumen({
         </dl>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 20 }}>
-        <a href={waHref} className="btn btn-whatsapp" style={{ minHeight: 52 }}>
-          <IconWhatsApp />
-          Enviar por WhatsApp para confirmar
-        </a>
-        <button type="button" className="btn btn-primary" onClick={onNext}>
-          Pagar ahora
-          <IconArrowRight />
-        </button>
+      <div className="bottom-bar cotizador__mobile-only-ctas">
+        {ctas}
       </div>
+      {asideCtaTarget && createPortal(ctas, asideCtaTarget)}
     </section>
   );
 }

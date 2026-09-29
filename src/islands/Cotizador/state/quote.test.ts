@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initialCotizadorState } from './cotizadorStore';
-import { computeQuote, parseHingedQty } from './quote';
+import { buildLineItem, computeQuote, parseHingedQty } from './quote';
 
 // S5-derived check-values (docs/product/slices/S5-cotizador-corner-tempered-hinged.md).
 describe('state/quote — computeQuote', () => {
@@ -77,5 +77,20 @@ describe('state/quote — computeQuote', () => {
     expect(Number.isNaN(parseHingedQty(''))).toBe(true);
     expect(Number.isNaN(parseHingedQty('abc'))).toBe(true);
     expect(Number.isNaN(parseHingedQty('1.5'))).toBe(true);
+  });
+});
+
+// sf-cot-polish item 5 — buildLineItem must show the human label
+// ("Súper gris"), never the raw WindowGlass id ("super_gris").
+describe('state/quote — buildLineItem (ventana glass label)', () => {
+  it('uses WINDOW_GLASS_LABELS, not the raw windowGlass id, in both detail and vidrio', () => {
+    const item = buildLineItem({
+      ...initialCotizadorState,
+      productId: 'ventana',
+      windowGlass: 'super_gris',
+    });
+    expect(item.vidrio).toBe('Súper gris');
+    expect(item.detail).toContain('Súper gris');
+    expect(item.detail).not.toContain('super_gris');
   });
 });

@@ -21,6 +21,7 @@ import {
   parseWidthCm,
   type CotizadorState,
 } from './cotizadorStore';
+import { WINDOW_GLASS_LABELS } from './labels';
 import { computeGardenQuote, computeWindowQuote } from './quoteWindowGarden';
 
 export interface QuoteResult {
@@ -159,11 +160,11 @@ export function buildLineItem(state: CotizadorState): LineItemView {
       const first = q.rows[0];
       const rowCount = q.rows.length;
       return {
-        detail: `${rowCount} ventana${rowCount === 1 ? '' : 's'} · ${COLOR_LABELS[state.windowFrame]} · ${state.windowGlass}`,
+        detail: `${rowCount} ventana${rowCount === 1 ? '' : 's'} · ${COLOR_LABELS[state.windowFrame]} · ${WINDOW_GLASS_LABELS[state.windowGlass]}`,
         anchoM: first?.widthM ?? 0,
         altoM: first?.heightM ?? 0,
         color: COLOR_LABELS[state.windowFrame],
-        vidrio: state.windowGlass,
+        vidrio: WINDOW_GLASS_LABELS[state.windowGlass],
       };
     }
     case 'jardin': {
