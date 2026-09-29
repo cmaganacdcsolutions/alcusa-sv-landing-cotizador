@@ -160,6 +160,11 @@
      token rather than reusing/rounding. */
   --shadow-xl: 0 16px 40px rgba(16, 33, 61, 0.1);
   --shadow-focus: 0 0 0 3px rgba(9, 86, 216, 0.35);
+  /* Contacto map pin badge (desktop-08 ~L68-69): label pill shadow + pin
+     ring glow. Board-literal, distinct from shadow-md/--color-primary
+     ring alpha so their own tokens. */
+  --shadow-pin-label: 0 8px 20px rgba(16, 33, 61, 0.12);
+  --shadow-pin-ring: 0 0 0 10px rgba(7, 59, 146, 0.12);
 
   /* Iconografía */
   --icon-stroke-width: 1.5px;

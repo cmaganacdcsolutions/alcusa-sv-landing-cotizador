@@ -98,6 +98,18 @@ test.describe('contacto — info block + socials', () => {
     }
   });
 
+  test('desktop: the 3 social cards form a single row (1x3 grid, not stacked)', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop1920', 'desktop-08 only draws the named-card grid at >=1024');
+    await page.goto('/contacto');
+    const cards = page.getByTestId('contacto-social-grid').locator('> a');
+    await expect(cards).toHaveCount(3);
+    const tops = await cards.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().top));
+    expect(tops[0]).toBe(tops[1]);
+    expect(tops[1]).toBe(tops[2]);
+  });
+
   test('every info/map/social icon renders a visible, non-empty stroked svg', async ({ page }) => {
     await page.goto('/contacto');
     // Some icons are breakpoint-conditional (mobile-only social cards drop
