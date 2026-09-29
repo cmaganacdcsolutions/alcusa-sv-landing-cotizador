@@ -2,17 +2,15 @@ import type { ReactElement } from 'react';
 import { GARDEN_PROMO_BANDS } from '@content/pricingTables';
 import type { GardenColor, GardenGlass } from '@engine/pricing';
 import { GLASS_LABELS, COLOR_LABELS, type CotizadorAction, type CotizadorState, type GardenHeightOption } from '../../state/cotizadorStore';
+import { GARDEN_HOJAS_LABELS } from '../../state/labels';
 import { computeGardenQuote } from '../../state/quoteWindowGarden';
 import { IconArrowRight, IconWarningTriangle } from '../../icons';
 import { GlassSwatch } from './glassSwatches';
 
 const HOJAS: (1 | 2 | 3 | 'custom')[] = [1, 2, 3, 'custom'];
-export const GARDEN_HOJAS_LABELS: Record<1 | 2 | 3 | 'custom', string> = {
-  1: '1 hoja',
-  2: '2 hojas',
-  3: '3 hojas',
-  custom: 'A la medida',
-};
+// S7 — re-exported so existing `from './measures/GardenForm'` imports keep
+// working; the label map itself now lives in state/labels.ts (see comment there).
+export { GARDEN_HOJAS_LABELS };
 
 const HEIGHT_OPTIONS: GardenHeightOption[] = ['2.10', '2.40', 'otra'];
 const HEIGHT_LABELS: Record<GardenHeightOption, string> = { '2.10': '2.10 m', '2.40': '2.40 m', otra: 'Otra' };

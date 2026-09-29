@@ -1,12 +1,14 @@
 import type { ReactElement } from 'react';
 import type { AluminumColor, WindowGlass, WindowModel } from '@engine/pricing';
 import { COLOR_LABELS, type CotizadorAction, type CotizadorState } from '../../state/cotizadorStore';
-import { WINDOW_GLASS_LABELS } from '../../state/labels';
+import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from '../../state/labels';
 import { computeWindowQuote } from '../../state/quoteWindowGarden';
 import { IconArrowRight, IconWarningTriangle } from '../../icons';
 
 const MODELS: WindowModel[] = ['francesa', 'bilbao'];
-export const WINDOW_MODEL_LABELS: Record<WindowModel, string> = { francesa: 'Francesa', bilbao: 'Bilbao' };
+// S7 — re-exported so existing `from './measures/WindowForm'` imports keep
+// working; the label map itself now lives in state/labels.ts (see comment there).
+export { WINDOW_MODEL_LABELS };
 
 const FRAMES: AluminumColor[] = ['blanco', 'bronce', 'natural'];
 const GLASSES: WindowGlass[] = ['claro', 'bronce', 'super_gris', 'reflectivo_azul', 'reflectivo_bronce'];

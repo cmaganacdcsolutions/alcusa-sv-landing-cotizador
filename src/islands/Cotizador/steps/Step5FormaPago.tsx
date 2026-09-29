@@ -1,20 +1,16 @@
 import { useState, type Dispatch, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
-import type { CatalogProduct } from '@content/catalog';
+import { CATALOG_PRODUCTS } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
-import { buildQuoteMessage, type QuoteMessageItem } from '@integrations/whatsapp/buildMessage';
-import { buildGardenMessageItem, buildWindowMessageItems } from '@integrations/whatsapp/windowGardenMessageItems';
-import { COLOR_LABELS, GLASS_LABELS, type CotizadorAction, type CotizadorState } from '../state/cotizadorStore';
-import { buildLineItem, type QuoteResult } from '../state/quote';
-import { computeGardenQuote, computeWindowQuote } from '../state/quoteWindowGarden';
-import { GARDEN_HOJAS_LABELS } from './measures/GardenForm';
-import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './measures/WindowForm';
+import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
+import type { CotizadorAction, CotizadorState } from '../state/cotizadorStore';
+import type { QuoteResult } from '../state/quote';
+import { buildOrderMessageItems } from '../state/order';
 import { IconArrowRight, IconWhatsApp } from '../icons';
 import { IconCardRect, IconLock } from '../icons-checkout';
 import '@styles/cotizador-checkout.css';
 
 export interface Step5FormaPagoProps {
-  product: CatalogProduct;
   state: CotizadorState;
   quote: QuoteResult;
   zoneFee: number | undefined;
@@ -40,7 +36,6 @@ export interface Step5FormaPagoProps {
 // no real network/keys (src/integrations/wompi/mock.ts, Step6Wompi resolves
 // it).
 export default function Step5FormaPago({
-  product,
   state,
   quote,
   zoneFee,
@@ -59,7 +54,6 @@ export default function Step5FormaPago({
     setLocalAmountPct(pct);
     dispatch?.({ type: 'SET_PAY_AMOUNT_PCT', pct });
   };
-  const item = buildLineItem(state);
   const subtotal = quote.amount ?? 0;
   const transporte = zoneFee ?? 0;
   const grandTotal = total ?? subtotal;
@@ -70,49 +64,9 @@ export default function Step5FormaPago({
     state.entrega === 'instalacion' ? 'con instalación' : 'retiro en tienda';
   const zona = state.entrega === 'instalacion' ? state.zone : '—';
 
-  // S6 — ventana/jardin build their own item lines (repeatable rows for
-  // ventana, single line for jardin); every other product keeps its original
-  // single item from state/quote.ts's buildLineItem.
-  let items: QuoteMessageItem[];
-  if (product.id === 'ventana') {
-    const windowQuote = computeWindowQuote(state);
-    items = buildWindowMessageItems(windowQuote.rows, {
-      modelLabel: WINDOW_MODEL_LABELS[state.windowModel],
-      frameLabel: COLOR_LABELS[state.windowFrame],
-      glassLabel: WINDOW_GLASS_LABELS[state.windowGlass],
-      zona,
-      entrega: entregaLabel,
-    });
-  } else if (product.id === 'jardin') {
-    const gardenQuote = computeGardenQuote(state);
-    items = [
-      buildGardenMessageItem({
-        hojasLabel: GARDEN_HOJAS_LABELS[state.gardenHojas],
-        widthM: gardenQuote.widthM,
-        heightM: gardenQuote.heightM,
-        colorLabel: COLOR_LABELS[state.gardenColor],
-        glassLabel: GLASS_LABELS[state.gardenGlass],
-        subtotal: gardenQuote.subtotal,
-        requiresQuote: gardenQuote.requiresQuote,
-        zona,
-        entrega: entregaLabel,
-      }),
-    ];
-  } else {
-    items = [
-      {
-        producto: product.name,
-        anchoM: item.anchoM,
-        altoM: item.altoM,
-        color: item.color,
-        vidrio: item.vidrio,
-        cantidad: item.cantidad,
-        zona,
-        entrega: entregaLabel,
-        subtotal,
-      },
-    ];
-  }
+  // S7 — every cart item + the current item, one WhatsApp line each
+  // (ventana items still expand to one line per pane — see state/order.ts).
+  const items = buildOrderMessageItems(state, CATALOG_PRODUCTS, { zona, entrega: entregaLabel });
 
   const waMsg = buildQuoteMessage({ items, transporte, total: grandTotal, anticipo, saldo });
   const waHref = buildWaLink(waMsg);
