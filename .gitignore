@@ -4,6 +4,7 @@ dist/
 .astro/
 coverage/
 playwright-report/
+playwright-report-responsive/
 test-results/
 blob-report/
 .env

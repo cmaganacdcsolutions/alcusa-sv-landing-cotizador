@@ -534,6 +534,93 @@
   }
 }
 
+/* sf-cot-resp BUG-3 (QA 2026-09-29) — 1024–1279.98px intermediate tier.
+   The ≥1024px block above turns on the full desktop 3-col grid (320px
+   rail-desktop sidebar + minmax(0,1fr) form + 440px aside): from 1024 to
+   1279 that only leaves ~136–168px for the middle column, so
+   .estimate-card / .delivery-option / payment radios bleed into the aside.
+   Per resp-02's own rule of thumb for this band, this tier instead (a) drops
+   the rich rail-desktop sidebar for the same compact horizontal 6-dot
+   stepper mobile uses, full-width above the content, and (b) narrows the
+   grid to two tracks — form + a ~360px aside — so the middle column always
+   has real room. Source order after the ≥1024px block above lets these
+   equal-specificity rules win only inside 1024–1279.98; ≥1280px is
+   untouched and still matches the desktop boards 1:1. */
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  .cotizador {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .cotizador__header {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  /* Reset the ≥1024px sidebar-card treatment — at this tier the rail is a
+     plain full-width bar above the form, same as mobile's (no card chrome,
+     no sticky). */
+  .cotizador__rail-col {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    position: static;
+    top: auto;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    margin-bottom: var(--space-2);
+  }
+
+  .cotizador__rail-col[data-mobile-empty='true'] {
+    display: none;
+  }
+
+  .step-rail-wrap {
+    display: block;
+  }
+
+  .rail-desktop {
+    display: none;
+  }
+
+  /* Undo the ≥1024px block's dead-code restyle of .step-rail (written for a
+     sidebar orientation it never actually ships in, since .step-rail-wrap
+     stays display:none at ≥1024px) — here .step-rail-wrap IS visible again,
+     so it must keep the same horizontal 6-dot layout it uses on mobile. */
+  .step-rail {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: var(--space-1);
+  }
+
+  .step-rail__connector {
+    display: block;
+  }
+
+  .step-rail__item {
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .cotizador__form-col {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .cotizador__summary-col {
+    grid-column: 2;
+    grid-row: 3;
+    position: sticky;
+    top: var(--space-8);
+  }
+
+  .cotizador-aside {
+    display: flex;
+  }
+}
+
 /* product-grid/card, chip/chip-row/glass-grid family, chip__badge and the
    window-row family used to live here — moved to
    src/styles/cotizador-medidas.css (sf-cot-medidas, S7 board pass): every
