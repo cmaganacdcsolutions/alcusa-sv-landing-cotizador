@@ -77,6 +77,12 @@
 }
 
 .product-card__body {
+  /* sf-cot-mobile item 5 (user-reported: card text clips at ~320-360px) —
+     .product-card is a flex row; a flex item's default min-width:auto kept
+     this from shrinking below its content's intrinsic width (e.g. "Ventana
+     Francesa o Bilbao"), clipping it against the card's own edge/padding
+     instead of wrapping inside the 2-column mobile grid. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   line-height: 1.3;
@@ -86,6 +92,7 @@
 .product-card__name {
   font-size: var(--font-size-body-sm-mobile);
   font-weight: var(--font-weight-body-bold);
+  overflow-wrap: break-word;
 }
 
 .product-card__price {

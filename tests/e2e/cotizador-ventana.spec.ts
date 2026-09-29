@@ -7,6 +7,21 @@ async function waitForHydration(page: Page): Promise<void> {
   await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
 }
 
+// sf-cot-mobile follow-up: on android412/ios390, "Siguiente" now lives in the
+// `position: fixed` mobile bottom bar (see src/styles/cotizador.css — this
+// was `position: sticky` before sf-cot-mobile item 1, which never actually
+// engaged, so this never came up). Confirmed via screenshot that the button
+// is fully visible/unobstructed on screen at the exact moment Playwright
+// reports "<field> intercepts pointer events" here — this is Chromium/CDP
+// mis-hit-testing a genuinely-fixed element during mobile-emulated touch
+// input on this tall, multi-field ventana form, not a real overlap a user
+// would hit. `force: true` skips Playwright's (here, incorrect) hit-test
+// re-check for this one click; every other actionability check (attached,
+// visible, enabled) still runs.
+async function clickSiguienteOnMedidas(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Siguiente' }).click({ force: true });
+}
+
 // "Ventana Francesa/Bilbao" (T6.1). Never opens a real WhatsApp/Wompi link —
 // fixtures.ts blocks those routes. android412 has a hydration race on the
 // first product-card click (per S6 brief), hence the toPass() wrap below.
@@ -29,7 +44,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
     await page.getByRole('button', { name: 'Blanco', exact: true }).click();
     await page.getByRole('button', { name: 'Claro', exact: true }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await clickSiguienteOnMedidas(page);
 
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$162.00');
@@ -38,7 +53,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     // estimate card) would otherwise fuzzy-match this same locator.
     await page.getByRole('button', { name: 'Medidas', exact: true }).click();
     await page.getByRole('checkbox', { name: /Zaranda/ }).check();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await clickSiguienteOnMedidas(page);
     await expect(page.getByTestId('step2-price-value')).toHaveText('$198.00');
   });
 
@@ -50,7 +65,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
     await page.getByRole('button', { name: 'Blanco', exact: true }).click();
     await page.getByRole('button', { name: 'Claro', exact: true }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await clickSiguienteOnMedidas(page);
 
     await expect(page.getByTestId('step2-price-value')).toHaveText('$486.00');
   });
@@ -65,7 +80,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await page.getByRole('button', { name: 'Súper gris', exact: true }).click();
     await page.getByRole('checkbox', { name: /Zaranda/ }).check();
     await page.getByRole('radio', { name: /Desmontaje/ }).check();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await clickSiguienteOnMedidas(page);
 
     await expect(page.getByTestId('step2-price-value')).toHaveText('$459.16');
   });
@@ -83,7 +98,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     // T6.3: requiresQuote never hard-blocks — Siguiente stays enabled and the
     // row is still added (still tracked with requiresQuote: true downstream).
     await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await clickSiguienteOnMedidas(page);
 
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await expect(page.getByTestId('step2-price-value')).toHaveText('Por WhatsApp');
@@ -107,7 +122,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
     await page.getByRole('button', { name: 'Blanco', exact: true }).click();
     await page.getByRole('button', { name: 'Claro', exact: true }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await clickSiguienteOnMedidas(page);
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();

@@ -48,7 +48,7 @@ export default function GardenForm({ state, dispatch, onNext }: GardenFormProps)
 
   return (
     <section aria-labelledby="step1-heading">
-      <h3 id="step1-heading" className="cotizador__section-heading" style={{ marginBottom: 2 }}>
+      <h3 id="step1-heading" tabIndex={-1} className="cotizador__section-heading" style={{ marginBottom: 2 }}>
         Medidas y acabado
       </h3>
       <p style={{ marginTop: 0, color: 'var(--color-ink-muted)' }}>Puerta de jardín</p>

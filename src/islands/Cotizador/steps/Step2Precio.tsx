@@ -39,7 +39,7 @@ export default function Step2Precio({ product, state, quote, onNext, onEditMedid
 
   return (
     <section aria-labelledby="step2-heading">
-      <h3 id="step2-heading" className="cotizador__section-heading" style={{ marginBottom: 12 }}>
+      <h3 id="step2-heading" tabIndex={-1} className="cotizador__section-heading" style={{ marginBottom: 12 }}>
         Precio estimado
       </h3>
 

@@ -275,6 +275,12 @@
 }
 
 .summary-item__meta {
+  /* sf-cot-mobile item 3 (user-reported, Galaxy A55/384px: "quitar y el
+     precio se salen de la tabla resumen") — `.summary-item` is a flex row;
+     this column's default min-width:auto let its content (name/detail text)
+     force the row wider than the card, pushing the price+Quitar footer past
+     the card's right edge instead of wrapping inside it. */
+  min-width: 0;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -282,21 +288,30 @@
   line-height: 1.4;
 }
 
-.summary-item__top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-3);
-}
-
 .summary-item__name {
   font-size: 1rem;
   font-weight: var(--font-weight-body-bold);
+  overflow-wrap: break-word;
 }
 
 .summary-item__detail {
   font-size: var(--font-size-body-sm-mobile);
   color: var(--color-ink-muted);
+  overflow-wrap: break-word;
+}
+
+/* sf-cot-mobile item 3 — rebuilt 1:1 from ios-05/android-05's per-item
+   `sc-for` row: name, then up to two detail lines, then a price+"Quitar"
+   footer row (`margin-top: 4px`, space-between). The boards draw ONLY a
+   "Quitar" (remove) control per item — no separate "Editar" — so the old
+   `.summary-item__action`/`--edit` pair (an unrequested extra affordance)
+   is dropped along with the name+price top row this replaces. */
+.summary-item__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: 4px;
 }
 
 .summary-item__price {
@@ -306,24 +321,10 @@
   white-space: nowrap;
 }
 
-.summary-item__actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-top: 2px;
-}
-
-.summary-item__buttons {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin-right: -10px;
-}
-
-.summary-item__action {
-  min-height: 40px;
+.summary-item__remove {
+  min-height: 44px;
   padding: 0 10px;
+  margin-right: -10px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -331,13 +332,10 @@
   border-radius: var(--radius-sm);
   background: transparent;
   font-size: var(--font-size-body-sm-mobile);
-  font-weight: var(--font-weight-body-bold);
+  font-weight: var(--font-weight-body-medium);
   color: var(--color-ink-muted);
   cursor: not-allowed;
-}
-
-.summary-item__action--edit {
-  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .summary-add {
