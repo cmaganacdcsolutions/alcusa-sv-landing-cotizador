@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { expect, test } from './fixtures';
@@ -7,7 +8,15 @@ import { expect, test } from './fixtures';
 // Rather than hardcoding pixel values, each check opens the matching
 // approved board directly (file://) and compares the shipped page against
 // what the board itself renders — the true source of truth.
-const BOARDS_DIR = path.resolve(process.cwd(), '..', '..', '02-design', 'boards');
+// The boards live outside this (public) repo: next to the main checkout
+// (../02-design) or two levels up from a 03-dev-wt/<slice> worktree. When
+// neither exists (CI), these board-comparison checks are skipped.
+const BOARDS_DIR = [
+  path.resolve(process.cwd(), '..', '02-design', 'boards'),
+  path.resolve(process.cwd(), '..', '..', '02-design', 'boards'),
+].find((dir) => existsSync(dir));
+
+test.skip(!BOARDS_DIR, 'Design boards not available in this checkout');
 
 const BOARD_BY_PROJECT: Record<string, string> = {
   ios390: 'Main.dc.html',
@@ -18,7 +27,7 @@ const BOARD_BY_PROJECT: Record<string, string> = {
 function boardUrl(project: string): string {
   const file = BOARD_BY_PROJECT[project];
   if (!file) throw new Error(`No board mapped for project "${project}"`);
-  return pathToFileURL(path.join(BOARDS_DIR, file)).toString();
+  return pathToFileURL(path.join(BOARDS_DIR!, file)).toString();
 }
 
 test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards bigger/smaller, proceso title break)', () => {
