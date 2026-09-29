@@ -109,6 +109,15 @@ export interface CotizadorState {
   gardenColor: GardenColor;
   gardenGlass: GardenGlass;
   gardenQty: string;
+  // --- sf-cot-checkout: Step5 forma de pago selection ---
+  payMethod: 'wa' | 'pay';
+  payAmountPct: 80 | 100;
+  // --- sf-cot-checkout: mock Wompi result (Step6Wompi → Step7Resultado) ---
+  // Set by SET_WOMPI_RESULT once src/integrations/wompi/mock.ts "resolves" a
+  // mock payment attempt; null until then. No real gateway data lands here
+  // until the live integration slice.
+  wompiOutcome: 'approved' | 'declined' | null;
+  wompiOrderNumber: string | null;
 }
 
 export const initialCotizadorState: CotizadorState = {
@@ -139,6 +148,10 @@ export const initialCotizadorState: CotizadorState = {
   gardenColor: 'blanco',
   gardenGlass: 'claro',
   gardenQty: '1',
+  payMethod: 'pay',
+  payAmountPct: 80,
+  wompiOutcome: null,
+  wompiOrderNumber: null,
 };
 
 export type CotizadorAction =
@@ -176,7 +189,11 @@ export type CotizadorAction =
   | { type: 'SET_GARDEN_HEIGHT_OTRA'; value: string }
   | { type: 'SET_GARDEN_COLOR'; color: GardenColor }
   | { type: 'SET_GARDEN_GLASS'; glass: GardenGlass }
-  | { type: 'SET_GARDEN_QTY'; value: string };
+  | { type: 'SET_GARDEN_QTY'; value: string }
+  // --- sf-cot-checkout: Step5 forma de pago + mock Wompi result ---
+  | { type: 'SET_PAY_METHOD'; method: 'wa' | 'pay' }
+  | { type: 'SET_PAY_AMOUNT_PCT'; pct: 80 | 100 }
+  | { type: 'SET_WOMPI_RESULT'; outcome: 'approved' | 'declined'; orderNumber: string };
 
 /** Accepts meters ("1.10") or centimeters ("110"): values < 10 are ×100. */
 export function parseWidthCm(raw: string): number {
@@ -270,6 +287,13 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       return { ...state, gardenGlass: action.glass };
     case 'SET_GARDEN_QTY':
       return { ...state, gardenQty: action.value };
+    // --- sf-cot-checkout: Step5 forma de pago + mock Wompi result ---
+    case 'SET_PAY_METHOD':
+      return { ...state, payMethod: action.method };
+    case 'SET_PAY_AMOUNT_PCT':
+      return { ...state, payAmountPct: action.pct };
+    case 'SET_WOMPI_RESULT':
+      return { ...state, wompiOutcome: action.outcome, wompiOrderNumber: action.orderNumber };
     default:
       return state;
   }

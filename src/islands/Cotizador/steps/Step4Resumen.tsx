@@ -9,6 +9,8 @@ import { computeGardenQuote, computeWindowQuote } from '../state/quoteWindowGard
 import { GARDEN_HOJAS_LABELS } from './measures/GardenForm';
 import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './measures/WindowForm';
 import { IconArrowRight, IconPlus, IconWarningTriangle, IconWhatsApp } from '../icons';
+import { IconEdit, IconLocationPin, IconTrash, IconWindowPane } from '../icons-checkout';
+import '@styles/cotizador-checkout.css';
 
 export interface Step4ResumenProps {
   product: CatalogProduct;
@@ -17,13 +19,25 @@ export interface Step4ResumenProps {
   zoneFee: number | undefined;
   total: number | null;
   onNext: () => void;
+  // Optional — not wired by Cotizador.tsx yet (see HANDOFF to sf-cot-shell).
+  // Renders as a real "Cambiar" link/button either way; a no-op until wired.
+  onEditZone?: () => void;
 }
 
 // Step 4 — single-item summary card (T1.3 scope; generalized to
-// corner/tempered/hinged in S5). "+ Agregar otro producto" is visible but
-// disabled/stub this slice — wired to the multi-item cart in S7. The
-// primary WhatsApp handoff lives here too, matching ios-05.
-export default function Step4Resumen({ product, state, quote, zoneFee, total, onNext }: Step4ResumenProps): ReactElement {
+// corner/tempered/hinged in S5). "+ Agregar otro producto"/"Editar"/"Quitar"
+// are visible but disabled/stub this slice — the multi-item cart (add/edit/
+// remove) is S7 tech-debt (see docs/architecture/tech-debt.md). The primary
+// WhatsApp handoff lives here too, matching desktop-05/ios-05/android-05.
+export default function Step4Resumen({
+  product,
+  state,
+  quote,
+  zoneFee,
+  total,
+  onNext,
+  onEditZone,
+}: Step4ResumenProps): ReactElement {
   // S6 — ventana/jardin: multi-row (ventana) / single-line (jardin) summary
   // + WhatsApp handoff. Per T6.3, WhatsApp is ALWAYS available even when a
   // line requiresQuote (its subtotal is annotated, not blocking); "Pagar
@@ -68,20 +82,63 @@ export default function Step4Resumen({ product, state, quote, zoneFee, total, on
 
     const waHref = buildWaLink(buildQuoteMessage({ items, transporte, total: grandTotal, anticipo, saldo }));
 
+    const countText = `${items.length} ${items.length === 1 ? 'producto' : 'productos'}`;
+
     return (
       <section aria-labelledby="cotizador-page-title">
         <div className="summary-card">
+          <div className="summary-card__header">
+            <span className="summary-card__count">Tus productos · {countText}</span>
+            {entregaLabel === 'con instalación' && (
+              <p className="summary-card__zone">
+                <IconLocationPin />
+                Zona: {state.zone} · con instalación
+                <button type="button" className="summary-card__zone-change" onClick={onEditZone}>
+                  Cambiar
+                </button>
+              </p>
+            )}
+          </div>
           {items.map((item, index) => (
             <article className="summary-item" key={index}>
+              <span className="summary-item__thumb" aria-hidden="true">
+                <IconWindowPane />
+              </span>
               <div className="summary-item__meta">
-                <span className="summary-item__name">{item.producto}</span>
+                <div className="summary-item__top">
+                  <span className="summary-item__name">{item.producto}</span>
+                  <span className="summary-item__price">${item.subtotal.toFixed(2)}</span>
+                </div>
                 <span className="summary-item__detail">
                   {item.anchoM.toFixed(2)} × {item.altoM.toFixed(2)} m · {item.color} · {item.vidrio}
                 </span>
-                <span className="summary-item__detail">
-                  {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
-                </span>
-                <span className="summary-item__price">${item.subtotal.toFixed(2)}</span>
+                <div className="summary-item__actions">
+                  <span className="summary-item__detail">
+                    {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
+                  </span>
+                  <div className="summary-item__buttons">
+                    <button
+                      type="button"
+                      className="summary-item__action summary-item__action--edit"
+                      disabled
+                      aria-disabled="true"
+                      aria-label={`Editar ${item.producto}`}
+                    >
+                      <IconEdit />
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      className="summary-item__action"
+                      disabled
+                      aria-disabled="true"
+                      aria-label={`Quitar ${item.producto}`}
+                    >
+                      <IconTrash />
+                      Quitar
+                    </button>
+                  </div>
+                </div>
               </div>
             </article>
           ))}
@@ -179,14 +236,55 @@ export default function Step4Resumen({ product, state, quote, zoneFee, total, on
   return (
     <section aria-labelledby="cotizador-page-title">
       <div className="summary-card">
+        <div className="summary-card__header">
+          <span className="summary-card__count">Tus productos · 1 producto</span>
+          {entregaLabel === 'con instalación' && (
+            <p className="summary-card__zone">
+              <IconLocationPin />
+              Zona: {state.zone} · con instalación
+              <button type="button" className="summary-card__zone-change" onClick={onEditZone}>
+                Cambiar
+              </button>
+            </p>
+          )}
+        </div>
         <article className="summary-item">
+          <span className="summary-item__thumb" aria-hidden="true">
+            <IconWindowPane />
+          </span>
           <div className="summary-item__meta">
-            <span className="summary-item__name">{product.name}</span>
+            <div className="summary-item__top">
+              <span className="summary-item__name">{product.name}</span>
+              <span className="summary-item__price">${subtotal.toFixed(2)}</span>
+            </div>
             <span className="summary-item__detail">{item.detail}</span>
-            <span className="summary-item__detail">
-              {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
-            </span>
-            <span className="summary-item__price">${subtotal.toFixed(2)}</span>
+            <div className="summary-item__actions">
+              <span className="summary-item__detail">
+                {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
+              </span>
+              <div className="summary-item__buttons">
+                <button
+                  type="button"
+                  className="summary-item__action summary-item__action--edit"
+                  disabled
+                  aria-disabled="true"
+                  aria-label={`Editar ${product.name}`}
+                >
+                  <IconEdit />
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="summary-item__action"
+                  disabled
+                  aria-disabled="true"
+                  aria-label={`Quitar ${product.name}`}
+                >
+                  <IconTrash />
+                  Quitar
+                </button>
+              </div>
+            </div>
           </div>
         </article>
 
