@@ -92,3 +92,15 @@ export function IconCard({ size = 20, className }: IconProps): ReactElement {
     </svg>
   );
 }
+
+// Wompi payment-note padlock (desktop-0[3-7] asides + footer "Pago con
+// tarjeta vía Wompi · excepto American Express" line — glyph is 1:1 with
+// the boards' inline `<rect>` + `<path>` pair, not a generic lock icon.
+export function IconLock({ size = 16, className }: IconProps): ReactElement {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
+      <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
+    </svg>
+  );
+}
