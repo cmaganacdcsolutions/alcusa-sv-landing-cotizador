@@ -52,6 +52,16 @@
      no existing token fit. No mobile pairing needed: both boards use
      h2-mobile (22px) at mobile for these titles. */
   --font-size-display-sm-desktop: 2rem;
+  /* Hero H1 desktop tier — desktop-01-inicio.dc.html ~L56 (88px/96px,
+     letter-spacing -0.01em). Mobile keeps display-xl-mobile (36px), which
+     already matches Main.dc.html/android-01-inicio ~L31/L33. */
+  --font-size-display-2xl-desktop: 5.5rem;
+  --font-line-height-display-2xl-desktop: 6rem;
+  --letter-spacing-display-tight: -0.01em;
+  /* Hero category card label/subtitle desktop tiers — desktop-01-inicio
+     ~L58 (20px label, 15px subtitle; price reuses body-desktop 16px). */
+  --font-size-hero-category-label-desktop: 1.25rem;
+  --font-size-hero-category-subtitle-desktop: 0.9375rem;
   --font-size-body-lg-mobile: 1.0625rem;
   --font-size-body-lg-desktop: 1.125rem;
   --font-size-body-mobile: 1rem;

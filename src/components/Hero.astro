@@ -137,6 +137,7 @@ const teasers = getCategoryTeasers();
   .hero__title {
     font-size: var(--font-size-display-xl-mobile);
     font-weight: var(--font-weight-display-semibold);
+    line-height: var(--font-line-height-display);
     background: linear-gradient(100deg, var(--color-ink) 0%, var(--color-primary) 55%, var(--color-accent) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -296,7 +297,9 @@ const teasers = getCategoryTeasers();
     }
 
     .hero__title {
-      font-size: var(--font-size-display-xl-desktop);
+      font-size: var(--font-size-display-2xl-desktop);
+      line-height: var(--font-line-height-display-2xl-desktop);
+      letter-spacing: var(--letter-spacing-display-tight);
     }
 
     .hero__cta-row {
@@ -363,8 +366,11 @@ const teasers = getCategoryTeasers();
     }
 
     .hero__media {
+      /* Row 1 only — the category row below now spans the full hero width
+         (both columns), so media must not also occupy row 2 or the two
+         would overlap the same grid cell. */
       grid-column: 2;
-      grid-row: 1 / span 2;
+      grid-row: 1;
       height: 100%;
       min-height: 560px;
       border-radius: var(--radius-xl);
@@ -425,11 +431,18 @@ const teasers = getCategoryTeasers();
     }
 
     .hero__categories {
-      grid-column: 1;
+      /* Full-bleed row spanning both grid columns, matching the board's
+         3-across layout at the hero's full 1600px width (desktop-01-inicio
+         ~L58): the card grid ignores the hero's inline padding via the
+         negative margin below so cards compute to exactly 512px wide
+         ((1600 - 2*32) / 3), not the narrower single (1fr) text column. */
+      grid-column: 1 / -1;
       grid-row: 2;
-      flex-direction: column;
-      align-self: start;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-8);
       margin-top: var(--space-10);
+      margin-inline: calc(var(--space-6) * -1);
       padding-bottom: var(--space-16);
     }
 
@@ -444,12 +457,15 @@ const teasers = getCategoryTeasers();
     }
 
     .hero__category-label {
-      font-size: var(--font-size-h3-desktop);
+      font-size: var(--font-size-hero-category-label-desktop);
     }
 
-    .hero__category-subtitle,
+    .hero__category-subtitle {
+      font-size: var(--font-size-hero-category-subtitle-desktop);
+    }
+
     .hero__category-price {
-      font-size: var(--font-size-body-lg-desktop);
+      font-size: var(--font-size-body-desktop);
     }
   }
 </style>

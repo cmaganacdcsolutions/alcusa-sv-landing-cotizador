@@ -80,9 +80,17 @@ const STEPS = [
   }
 
   .proceso__title {
+    /* Board size (desktop-01-inicio ~L81, Main.dc.html/android ~L60/L63):
+       30px/1.15 mobile, 56px/~1.15 desktop — bigger than the shared h2
+       tokens (22px/28px) used by sibling sections, so this reuses the
+       existing display-lg-mobile / display-xl-desktop tiers instead.
+       No literal <br> in the boards' markup: text-wrap: balance at this
+       size + the (already-matching) container width naturally wraps
+       after "en", same as the board. */
     margin: 0;
-    font-size: var(--font-size-h2-mobile);
+    font-size: var(--font-size-display-lg-mobile);
     font-weight: var(--font-weight-display-medium);
+    line-height: var(--font-line-height-display);
     color: var(--color-ink);
     text-wrap: balance;
   }
@@ -172,7 +180,7 @@ const STEPS = [
     }
 
     .proceso__title {
-      font-size: var(--font-size-h2-desktop);
+      font-size: var(--font-size-display-xl-desktop);
     }
 
     .proceso__lead {
