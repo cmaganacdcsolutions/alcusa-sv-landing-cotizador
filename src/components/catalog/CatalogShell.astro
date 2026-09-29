@@ -1,0 +1,143 @@
+---
+// Tracer shell for the /catalogo pages (R1). Minimal styling with existing
+// tokens; the final UI and fidelity pass arrive with R2.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import TopBar from '@components/TopBar.astro';
+import Drawer from '@components/Drawer.astro';
+import Footer from '@components/Footer.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  crumbs?: ReadonlyArray<{ label: string; href?: string }>;
+}
+const { title, description, crumbs = [] } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+  <TopBar />
+  <Drawer />
+  <main class="cat-page">
+    {
+      crumbs.length > 0 && (
+        <nav aria-label="Ruta de navegación" class="cat-crumbs">
+          <ol>
+            {crumbs.map((c, i) => (
+              <li>{c.href && i < crumbs.length - 1 ? <a href={c.href}>{c.label}</a> : <span aria-current="page">{c.label}</span>}</li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+    <slot />
+  </main>
+  <Footer />
+</BaseLayout>
+
+<style is:global>
+  .cat-page {
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-4) var(--space-7);
+    color: var(--color-ink);
+    font-family: var(--font-family-body);
+  }
+  .cat-page h1 {
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-medium);
+    font-size: var(--font-size-h1-mobile);
+    margin: var(--space-3) 0 var(--space-2);
+  }
+  .cat-page .cat-lead {
+    color: var(--color-ink-muted);
+    margin: 0 0 var(--space-5);
+  }
+  .cat-crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: var(--font-size-body-sm-mobile);
+  }
+  .cat-crumbs li + li::before {
+    content: '/';
+    margin-right: var(--space-2);
+    color: var(--color-ink-muted);
+  }
+  .cat-crumbs a {
+    color: var(--color-primary);
+  }
+  .cat-grid {
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: 1fr;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .cat-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    height: 100%;
+    padding: var(--space-5);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+  .cat-card h2 {
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-medium);
+    font-size: var(--font-size-h2-mobile);
+    margin: 0;
+  }
+  .cat-card p {
+    margin: 0;
+    color: var(--color-ink-muted);
+  }
+  .cat-price {
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-ink);
+  }
+  .cat-link,
+  .cat-cta {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-weight-body-bold);
+    text-decoration: none;
+    align-self: flex-start;
+  }
+  .cat-link {
+    color: var(--color-primary);
+    border: 1px solid var(--color-border-input);
+  }
+  .cat-cta {
+    background: var(--color-primary);
+    color: var(--color-surface);
+  }
+  .cat-cta--wa {
+    background: var(--color-whatsapp-strong);
+  }
+  .cat-link:focus-visible,
+  .cat-cta:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .cat-variants {
+    margin: var(--space-4) 0;
+    padding-left: var(--space-5);
+  }
+  @media (min-width: 768px) {
+    .cat-page h1 {
+      font-size: var(--font-size-h1-desktop);
+    }
+    .cat-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

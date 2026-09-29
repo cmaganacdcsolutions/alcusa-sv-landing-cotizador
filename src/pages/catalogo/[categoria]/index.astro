@@ -1,0 +1,39 @@
+---
+// /catalogo/<categoria> (R1 tracer): subcategories in model order.
+import CatalogShell from '@components/catalog/CatalogShell.astro';
+import { CATEGORIES, formatFromPrice, subFromPrice, type Category } from '@content/catalog';
+
+export function getStaticPaths() {
+  return CATEGORIES.map((category) => ({ params: { categoria: category.slug }, props: { category } }));
+}
+interface Props {
+  category: Category;
+}
+const { category } = Astro.props;
+---
+
+<CatalogShell
+  title={`${category.name} | Catálogo ALCUSA`}
+  description={`${category.name} de aluminio y vidrio a la medida.`}
+  crumbs={[{ label: 'Catálogo', href: '/catalogo' }, { label: category.name }]}
+>
+  <h1>{category.name}</h1>
+  <ul class="cat-grid" data-testid="catalogo-subcategories">
+    {
+      category.subcategories.map((s) => {
+        const from = subFromPrice(s);
+        return (
+          <li>
+            <article class="cat-card">
+              <h2>{s.name}</h2>
+              <p class="cat-price">{from === null ? 'Cotiza con un asesor' : `Desde ${formatFromPrice(from)}`}</p>
+              <a class="cat-link" href={`/catalogo/${category.slug}/${s.slug}`}>
+                Ver {s.name}
+              </a>
+            </article>
+          </li>
+        );
+      })
+    }
+  </ul>
+</CatalogShell>
