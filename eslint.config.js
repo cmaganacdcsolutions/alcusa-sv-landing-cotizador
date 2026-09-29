@@ -15,6 +15,7 @@ export default tseslint.config(
       '.vite-cache/**',
       'coverage/**',
       'playwright-report/**',
+      'playwright-report-responsive/**',
       'test-results/**',
     ],
   },
