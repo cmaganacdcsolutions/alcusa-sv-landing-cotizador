@@ -1,23 +1,43 @@
 ---
 // ComoFunciona — 4-step trust strip (spec §1 item 2). Previously
 // `display:none` in legacy; must render visibly on all 3 viewports (T3.2).
+//
+// Fidelity pass (sf-fidelity3): desktop-01-inicio.dc.html §proceso (~L78-89)
+// is the source of truth — step 4's badge is filled solid (unlike 1-3), a
+// dashed connector runs between badges 1→2→3→4 on desktop only, the lead
+// copy "Sin visitas previas…" sits beside the title on desktop only (absent
+// from both mobile boards), and desktop steps are flat (no card box/shadow) —
+// only the mobile boards (Main.dc.html / android-01-inicio) keep the card
+// look with --shadow-xs, which already matched pre-fix.
 const STEPS = [
-  { n: '01', title: 'Selecciona', copy: 'Elige el producto y el acabado para tu espacio.' },
-  { n: '02', title: 'Cotiza', copy: 'Ingresa tus medidas y ve el precio al instante.' },
-  { n: '03', title: 'Confirma', copy: 'Aparta tu pedido con un anticipo del 80%.' },
-  { n: '04', title: 'Recibe', copy: 'Instalamos y pagas el 20% al entregar.' },
+  { n: '01', title: 'Selecciona', copy: 'Elige el producto y el acabado para tu espacio.', filled: false },
+  { n: '02', title: 'Cotiza', copy: 'Ingresa tus medidas y ve el precio al instante.', filled: false },
+  { n: '03', title: 'Confirma', copy: 'Aparta tu pedido con un anticipo del 80%.', filled: false },
+  { n: '04', title: 'Recibe', copy: 'Instalamos y pagas el 20% al entregar.', filled: true },
 ] as const;
 ---
 
 <section id="proceso" class="proceso" aria-labelledby="proceso-title">
   <div class="proceso__inner">
-    <p class="proceso__kicker">C&oacute;mo funciona</p>
-    <h2 id="proceso-title" class="proceso__title">Tu pedido, en cuatro pasos claros</h2>
+    <div class="proceso__head">
+      <div class="proceso__heading">
+        <p class="proceso__kicker">C&oacute;mo funciona</p>
+        <h2 id="proceso-title" class="proceso__title">Tu pedido, en cuatro pasos claros</h2>
+      </div>
+      <p class="proceso__lead">
+        Sin visitas previas para saber el precio: cotizas en l&iacute;nea y confirmamos medidas antes de fabricar.
+      </p>
+    </div>
     <ol class="proceso__list">
       {
-        STEPS.map((step) => (
+        STEPS.map((step, i) => (
           <li class="proceso__step">
-            <span class="proceso__step-number">{step.n}</span>
+            <div class="proceso__step-head">
+              <span class:list={['proceso__step-number', { 'proceso__step-number--filled': step.filled }]}>
+                {step.n}
+              </span>
+              {i < STEPS.length - 1 && <span class="proceso__step-connector" aria-hidden="true" />}
+            </div>
             <span class="proceso__step-title">{step.title}</span>
             <span class="proceso__step-copy">{step.copy}</span>
           </li>
@@ -38,6 +58,18 @@ const STEPS = [
     gap: var(--space-3);
   }
 
+  .proceso__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .proceso__heading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
   .proceso__kicker {
     margin: 0;
     font-size: var(--font-size-caption-mobile);
@@ -48,11 +80,17 @@ const STEPS = [
   }
 
   .proceso__title {
-    margin: 0 0 var(--space-3);
+    margin: 0;
     font-size: var(--font-size-h2-mobile);
     font-weight: var(--font-weight-display-medium);
     color: var(--color-ink);
     text-wrap: balance;
+  }
+
+  /* Lead copy only appears in the desktop board (§proceso ~L82); both mobile
+     boards omit it entirely. */
+  .proceso__lead {
+    display: none;
   }
 
   .proceso__list {
@@ -74,12 +112,25 @@ const STEPS = [
     gap: var(--space-2);
   }
 
+  .proceso__step-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
   .proceso__step-number {
     font-family: var(--font-family-display);
-    font-size: var(--font-size-h3-mobile);
+    font-size: var(--font-size-h2-mobile);
     font-weight: var(--font-weight-display-medium);
     color: var(--color-accent);
     line-height: var(--font-line-height-display);
+  }
+
+  /* Filled (step 4) badge only exists in the desktop board — both mobile
+     boards render step 4 identically to steps 1-3 — so the modifier is a
+     no-op until the desktop media query below. */
+  .proceso__step-connector {
+    display: none;
   }
 
   .proceso__step-title {
@@ -108,9 +159,30 @@ const STEPS = [
       gap: var(--space-16);
     }
 
+    .proceso__head {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: var(--space-16);
+    }
+
+    .proceso__heading {
+      width: 784px;
+      gap: var(--space-4);
+    }
+
     .proceso__title {
       font-size: var(--font-size-h2-desktop);
-      max-width: var(--container-md);
+    }
+
+    .proceso__lead {
+      display: block;
+      margin: 0;
+      width: 520px;
+      font-size: var(--font-size-body-lg-desktop);
+      line-height: var(--font-line-height-body);
+      color: var(--color-ink-muted);
+      text-wrap: pretty;
     }
 
     .proceso__list {
@@ -118,15 +190,43 @@ const STEPS = [
       gap: var(--space-8);
     }
 
+    .proceso__step {
+      /* Flat on desktop — the board's steps have no card box/shadow, only
+         the mobile boards do. */
+      padding: 0;
+      background: transparent;
+      border-radius: 0;
+      box-shadow: none;
+      gap: var(--space-3);
+    }
+
+    .proceso__step-head {
+      margin-bottom: var(--space-3);
+    }
+
     .proceso__step-number {
-      width: 64px;
-      height: 64px;
+      width: var(--space-16);
+      height: var(--space-16);
+      flex-shrink: 0;
       border-radius: var(--radius-full);
       background: var(--color-surface-tint);
-      font-size: var(--font-size-h2-desktop);
+      color: var(--color-primary);
+      font-size: var(--font-size-h3-desktop);
+      font-weight: var(--font-weight-display-semibold);
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .proceso__step-number--filled {
+      background: var(--color-primary);
+      color: var(--color-surface);
+    }
+
+    .proceso__step-connector {
+      display: block;
+      flex-grow: 1;
+      border-top: 1.5px dashed var(--color-border-input);
     }
 
     .proceso__step-title {

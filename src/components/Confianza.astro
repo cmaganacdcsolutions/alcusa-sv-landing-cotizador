@@ -64,9 +64,11 @@ const ICON_PATHS: Record<string, string> = {
               </svg>
             </span>
             <span class="confianza__copy">
-              <span class="confianza__value">
-                {item.placeholder ? <span class="confianza__placeholder">{item.value}</span> : item.value}{' '}
-                {item.valueSuffix}
+              <span class="confianza__line">
+                <span class="confianza__value">
+                  {item.placeholder ? <span class="confianza__placeholder">{item.value}</span> : item.value}
+                </span>{' '}
+                <span class="confianza__suffix">{item.valueSuffix}</span>
               </span>
               {item.detail && <span class="confianza__detail">{item.detail}</span>}
             </span>
@@ -99,8 +101,10 @@ const ICON_PATHS: Record<string, string> = {
 
   .confianza__title {
     margin: 0 0 var(--space-3);
-    font-size: var(--font-size-h2-mobile);
+    font-family: var(--font-family-display);
+    font-size: var(--font-size-display-lg-mobile);
     font-weight: var(--font-weight-display-medium);
+    line-height: var(--font-line-height-display);
     color: var(--color-ink);
     text-wrap: balance;
   }
@@ -146,7 +150,12 @@ const ICON_PATHS: Record<string, string> = {
     line-height: 1.4;
   }
 
-  .confianza__value {
+  .confianza__line {
+    display: inline;
+  }
+
+  .confianza__value,
+  .confianza__suffix {
     font-size: var(--font-size-body-lg-mobile);
     font-weight: var(--font-weight-body-bold);
     color: var(--color-ink);
@@ -176,7 +185,8 @@ const ICON_PATHS: Record<string, string> = {
     }
 
     .confianza__title {
-      font-size: var(--font-size-h2-desktop);
+      font-size: var(--font-size-display-xl-desktop);
+      line-height: var(--font-line-height-display);
     }
 
     .confianza__list {
@@ -205,11 +215,41 @@ const ICON_PATHS: Record<string, string> = {
       height: 48px;
     }
 
+    .confianza__line {
+      display: contents;
+    }
+
     .confianza__value {
-      margin-top: var(--space-4);
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      min-height: var(--space-16);
+      margin-top: var(--space-4);
+      font-family: var(--font-family-display);
+      font-size: var(--font-size-display-xl-desktop);
+      font-weight: var(--font-weight-display-medium);
+      line-height: var(--font-line-height-display);
+      color: var(--color-primary);
+    }
+
+    .confianza__suffix {
+      display: block;
       font-size: var(--font-size-body-lg-desktop);
+      font-weight: var(--font-weight-body-bold);
+      line-height: var(--font-line-height-body);
+      color: var(--color-ink);
+    }
+
+    /* Placeholder pills (años/track-record) sit inside .confianza__value,
+       which is now the giant 56px Fraunces number — reset the pill back to
+       a small sans badge so it doesn't inherit and overflow its column
+       (desktop-01-inicio.dc.html ~L156-157: 15px/700/line-height 22px). */
+    .confianza__placeholder {
+      display: inline-block;
+      font-family: var(--font-family-body);
+      font-size: var(--font-size-body-sm-desktop);
+      font-weight: var(--font-weight-body-bold);
+      line-height: var(--font-line-height-body);
+      white-space: normal;
     }
 
     .confianza__detail {
