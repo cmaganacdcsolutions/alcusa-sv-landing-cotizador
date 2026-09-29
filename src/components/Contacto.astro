@@ -102,6 +102,22 @@ const waHref = buildWaLink();
             referrerpolicy="no-referrer-when-downgrade"
             allowfullscreen
             data-testid="contacto-map-iframe"></iframe>
+          <!-- Pin badge overlay (desktop-08 ~L67-70): the board's decorative
+               grid/blobs illustration is replaced by the real iframe
+               (user decision), but the pin badge itself stays on top,
+               marking ALCUSA's spot on the embed. -->
+          <div class="contacto__map-pin" aria-hidden="true">
+            <span class="contacto__map-pin-label">ALCUSA · Taller</span>
+            <span class="contacto__map-pin-marker">
+              <svg width="28" height="28" viewBox="0 0 24 24"
+                ><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"></path><circle
+                  cx="12"
+                  cy="10"
+                  r="2.3"
+                ></circle></svg
+              >
+            </span>
+          </div>
         </div>
         <figcaption class="contacto__map-caption">
           <span class="contacto__icon" aria-hidden="true">
@@ -124,7 +140,25 @@ const waHref = buildWaLink();
             class="contacto__map-cta"
           >
             Ver ubicación en el mapa
-            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            <!-- ios-08/android-08 ~L39 draw a diagonal arrow at 16px for
+                 the mobile text-link CTA; desktop-08 ~L75 a horizontal
+                 arrow at 20px for the pill button. -->
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              class="contacto__map-cta-arrow contacto__map-cta-arrow--mobile"
+              ><path d="M8 16L16 8M9 8h7v7"></path></svg
+            >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              class="contacto__map-cta-arrow contacto__map-cta-arrow--desktop"
+              ><path d="M5 12h14M13 6l6 6-6 6"></path></svg
+            >
           </a>
         </figcaption>
       </figure>
@@ -200,6 +234,13 @@ const waHref = buildWaLink();
 </section>
 
 <style>
+  /* Board base reset (every board's <style> block ~L15): a{text-decoration:none}.
+     This component has no global reset to lean on, so every link inside it
+     opts in explicitly. */
+  .contacto a {
+    text-decoration: none;
+  }
+
   .contacto {
     padding: var(--space-8) var(--space-6) var(--space-10);
     display: flex;
@@ -389,29 +430,90 @@ const waHref = buildWaLink();
     display: block;
   }
 
+  /* Pin badge overlay (desktop-08 ~L67-70): board positions it at
+     left: 486px of a 920px-wide illustration (52.8%) and top: 58px, so a
+     percentage left keeps it centered over the pin spot regardless of the
+     figure's actual (container-dependent) width. */
+  .contacto__map-pin {
+    position: absolute;
+    left: 52.8%;
+    top: 58px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .contacto__map-pin-label {
+    padding: var(--space-1-5) var(--space-3-5);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pin-label);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 20px;
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+
+  .contacto__map-pin-marker {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: var(--color-surface);
+    box-shadow: var(--shadow-pin-ring);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .contacto__map-pin-marker svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--icon-stroke-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* No board draws the map figure at mobile (ios-08/android-08 fold Taller
+     into a plain li — allowed deviation, see the .contacto__map comment
+     above). Below 1024 this reuses that li's own CTA treatment instead:
+     icon + column (label/address, then a small text link, not a pill),
+     wrapping the CTA onto its own row aligned under the text
+     (ios-08 ~L39: icon 40px + li gap 14px). */
   .contacto__map-caption {
     padding: var(--space-4) var(--space-5);
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-2) var(--space-4);
     border-top: 1px solid var(--color-border);
   }
 
   .contacto__map-cta {
     flex-shrink: 0;
-    min-height: var(--icon-min-tap-target);
-    padding: 0 var(--space-4);
+    flex-basis: 100%;
+    margin-left: calc(40px + var(--space-4));
+    min-height: 32px;
+    padding: 0;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-1);
-    border-radius: var(--radius-full);
-    border: 1px solid var(--color-border-input);
-    background: var(--color-surface);
-    color: var(--color-ink);
+    border-radius: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-accent);
     font-size: var(--font-size-body-sm-mobile);
     font-weight: 700;
     white-space: nowrap;
+  }
+
+  .contacto__map-cta-arrow--desktop {
+    display: none;
   }
 
   /* Mobile: a single row — "Síguenos" label + 3 icon-only circles
@@ -614,20 +716,39 @@ const waHref = buildWaLink();
     }
 
     .contacto__map-frame {
-      aspect-ratio: 920 / 280;
+      /* desktop-08 ~L56: literal fixed height, not width-relative. */
+      aspect-ratio: auto;
+      height: 280px;
     }
 
     .contacto__map-caption {
       padding: var(--space-5-5) var(--space-7);
+      flex-wrap: nowrap;
       gap: var(--space-5);
     }
 
     .contacto__map-cta {
+      /* desktop-08 ~L75: back to the pill button (mobile above swaps it
+         for a small text link, ios-08 ~L39). */
+      flex-basis: auto;
+      margin-left: 0;
       min-height: 48px;
       padding: 0 var(--space-5);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border-input);
+      background: var(--color-surface);
+      color: var(--color-ink);
       font-size: 0.9375rem;
       gap: var(--space-2-5);
       line-height: 1.2;
+    }
+
+    .contacto__map-cta-arrow--mobile {
+      display: none;
+    }
+
+    .contacto__map-cta-arrow--desktop {
+      display: block;
     }
 
     .contacto__social {
@@ -645,7 +766,10 @@ const waHref = buildWaLink();
     }
 
     .contacto__social-grid {
-      flex-direction: row;
+      /* desktop-08 ~L81: a 1x3 grid row, not a flex row — flex let the
+         long YouTube handle push cards unevenly/onto separate lines. */
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: var(--space-4);
     }
 
