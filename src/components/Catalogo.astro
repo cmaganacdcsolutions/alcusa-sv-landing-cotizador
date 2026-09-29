@@ -16,8 +16,15 @@
 // (jardin/ventana); the "Acabados" swatch block is the board's 7th grid
 // item, `grid-column: span 2`, auto-flowing into the remaining 2 cells of
 // row 2 — same order as CATALOG_PRODUCTS, so no reordering needed here.
-// Acabados is desktop-only: absent from both mobile boards (Main.dc.html /
-// android-01-inicio §modelos), so it is CSS-hidden below 1024px.
+//
+// User correction 2026-09-28 (sf-landing5): the mobile boards DO have this
+// block — Main.dc.html ~L80-84 / android-01-inicio.dc.html ~L84-88 render a
+// plain "Vidrios para puertas de baño" label + a flex row of 3 small round
+// swatches below the 2-col product grid (no kicker, no lead paragraph —
+// those two lines are desktop-only, per desktop-01-inicio.dc.html ~L106-114).
+// `.catalogo__item--acabados` now spans the full mobile grid width
+// (`grid-column: 1 / -1`) instead of being CSS-hidden; `.acabados__kicker`/
+// `.acabados__lead` are the ones hidden below 1024px.
 import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
 
 interface CardImage {
@@ -36,17 +43,31 @@ const CARD_IMAGES: Record<ProductId, CardImage | null> = {
   l: { src: '/images/catalog-l.jpeg', alt: 'Cabina de baño en L', width: 400, height: 533 },
   templado: { src: '/images/catalog-templado.jpeg', alt: 'Puerta de vidrio templado de 10 mm', width: 400, height: 300 },
   bisagra: { src: '/images/catalog-bisagra.jpeg', alt: 'Puerta con bisagra de aluminio y vidrio', width: 400, height: 300 },
+  // /_blob/0b1f316ff8064cebb6e590af7f7fe134 = product-puerta-3-hojas.webp
+  // is what the board mocks up here, BUT docs/architecture/tech-debt.md
+  // (S4 row) + prototype-spec.md open question #11 flag that exact asset as
+  // an uncleared third-party stock photo ("Fuente: BBC Menuiseries") — not
+  // ours to publish. Left as the placeholder tile until the client clears
+  // usage rights or supplies a real ALCUSA garden-door photo (Foreman
+  // 2026-09-28 asked for this asset; flagged instead of used — see HANDOFF).
   jardin: null,
-  ventana: { src: '/images/catalog-ventana.jpeg', alt: 'Ventana Francesa o Bilbao de aluminio', width: 400, height: 533 },
+  // desktop-01-inicio.dc.html's catálogo card for this product is
+  // /_blob/408c1938343803d0fb8ca17c7b29387a = product-whatsapp-04.jpeg
+  // (byte-identical to public/images/galeria-04.jpeg) — the real installed-
+  // window gallery photo, not the hero's close-up profile shot
+  // (catalog-ventana.jpeg / product-ventana-bilbao.jpeg). Foreman correction
+  // 2026-09-28: the close-up crops far more vertical in the card's fixed-
+  // height box; the gallery photo reads as the intended horizontal window.
+  ventana: { src: '/images/galeria-04.jpeg', alt: 'Ventana Francesa o Bilbao de aluminio', width: 1200, height: 1600 },
 };
 
-// "Acabados" swatches (desktop-01-inicio.dc.html ~L110-114). No rights-
-// cleared photos exist yet for these glass finishes (same gap as "jardin"
-// above) — placeholder tiles render until real swatch photos land.
+// "Acabados" swatches (desktop-01-inicio.dc.html ~L110-114 / Main.dc.html
+// ~L81-83). Real swatch photos now live in public/images (copied from
+// 01-discovery/assets/finish-*.webp per canvas-assets.json's /_blob map).
 const ACABADOS = [
-  { name: 'Aquaclara' },
-  { name: 'Frosted' },
-  { name: 'Aquafold' },
+  { name: 'Aquaclara', src: '/images/finish-aquaclara.webp' },
+  { name: 'Frosted', src: '/images/finish-frosted.webp' },
+  { name: 'Aquafold', src: '/images/finish-aquafold.webp' },
 ] as const;
 ---
 
@@ -125,8 +146,12 @@ const ACABADOS = [
             {
               ACABADOS.map((finish) => (
                 <li class="acabados__swatch">
-                  <div class="acabados__swatch-img" aria-hidden="true" />
-                  <span class="acabados__swatch-name">{finish.name}</span>
+                  <figure class="acabados__swatch-figure">
+                    <div class="acabados__swatch-img">
+                      <img src={finish.src} alt="" width="64" height="64" loading="lazy" decoding="async" />
+                    </div>
+                    <figcaption class="acabados__swatch-name">{finish.name}</figcaption>
+                  </figure>
                 </li>
               ))
             }
@@ -159,7 +184,14 @@ const ACABADOS = [
 
   .catalogo__title {
     margin: 0 0 var(--space-3);
+    /* Board h2 is actually 30px/1.15 mobile, 56px/64px desktop (Main.dc.html
+       #modelos-title / desktop-01-inicio.dc.html #modelos-title) — bigger
+       than font-size-h2-mobile/desktop (22/28px). Per Foreman (2026-09-28):
+       this is a project-wide shared-token gap fixed centrally, not per
+       section — keep referencing font-size-h2-mobile/desktop here so this
+       inherits that fix automatically; only line-height is corrected below. */
     font-size: var(--font-size-h2-mobile);
+    line-height: var(--font-line-height-display);
     font-weight: var(--font-weight-display-medium);
     font-family: var(--font-family-display);
     color: var(--color-ink);
@@ -236,16 +268,81 @@ const ACABADOS = [
     font-size: var(--font-size-body-sm-mobile);
     font-weight: var(--font-weight-body-bold);
     color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .catalogo__card-cta:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
   }
 
   .catalogo__card-cta:hover {
     color: var(--color-primary);
   }
 
-  /* Acabados — desktop-only per the boards; see the desktop media query
-     below for the visible layout. */
+  /* Acabados / "Vidrios para puertas de baño" — Main.dc.html ~L80-84 &
+     android-01-inicio.dc.html ~L84-88: full-width row below the 2-col
+     product grid (mobile); desktop-01-inicio.dc.html ~L106-114 makes it a
+     span-2 grid card instead (see the desktop media query below). */
   .catalogo__item--acabados {
+    grid-column: 1 / -1;
+    margin-top: var(--space-3);
+  }
+
+  .acabados {
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* board: gap 10px, no matching space-* token */
+  }
+
+  .acabados__kicker,
+  .acabados__lead {
     display: none;
+  }
+
+  .acabados__title {
+    margin: 0;
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: var(--font-weight-body-bold);
+  }
+
+  .acabados__swatches {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .acabados__swatch-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px; /* board: gap 6px, no matching space-* token */
+  }
+
+  .acabados__swatch-img {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .acabados__swatch-img img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    display: block;
+    transform: scale(2.2);
+    transform-origin: 24% 58%;
+  }
+
+  .acabados__swatch-name {
+    font-size: var(--font-size-caption-mobile);
+    font-weight: 600; /* board: 600, no body-weight token between 500/700 */
+    color: var(--color-ink-muted);
   }
 
   @media (min-width: 1024px) {
@@ -257,6 +354,13 @@ const ACABADOS = [
       max-width: var(--container-page);
       margin: 0 auto;
       gap: var(--space-8);
+    }
+
+    .catalogo__kicker {
+      /* desktop-01-inicio.dc.html kicker: 14px/20px — no caption token is
+         14px (caption-desktop is 13px), reuses body-sm-desktop. */
+      font-size: var(--font-size-body-sm-desktop);
+      line-height: var(--font-line-height-heading);
     }
 
     .catalogo__title {
@@ -294,12 +398,11 @@ const ACABADOS = [
       font-size: var(--font-size-body-sm-desktop);
     }
 
-    /* Acabados — desktop-only block, absent from both mobile boards (hidden
-       by default outside this media query; see .catalogo__item--acabados
-       base rule below). */
+    /* Acabados — desktop-01-inicio.dc.html ~L106-114: span-2 grid card
+       (mobile instead spans the full grid width; base rule above). */
     .catalogo__item--acabados {
-      display: block;
       grid-column: span 2;
+      margin-top: 0;
     }
 
     .acabados {
@@ -313,6 +416,7 @@ const ACABADOS = [
     }
 
     .acabados__kicker {
+      display: block;
       margin: 0;
       font-size: var(--font-size-caption-mobile);
       font-weight: var(--font-weight-body-bold);
@@ -322,7 +426,6 @@ const ACABADOS = [
     }
 
     .acabados__title {
-      margin: 0;
       font-family: var(--font-family-display);
       font-weight: var(--font-weight-display-medium);
       font-size: var(--font-size-display-sm-desktop);
@@ -331,6 +434,7 @@ const ACABADOS = [
     }
 
     .acabados__lead {
+      display: block;
       margin: 0;
       font-size: var(--font-size-body-lg-desktop);
       line-height: var(--font-line-height-body);
@@ -346,18 +450,26 @@ const ACABADOS = [
       gap: var(--space-6);
     }
 
-    .acabados__swatch {
-      display: flex;
+    .acabados__swatch-figure {
       flex-direction: column;
-      gap: var(--space-2);
+      align-items: stretch;
+      gap: 10px; /* board: gap 10px, no matching space-* token */
     }
 
     .acabados__swatch-img {
+      width: auto;
       height: 176px;
       border-radius: var(--radius-md);
       overflow: hidden;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
+      box-shadow: none;
+    }
+
+    .acabados__swatch-img img {
+      width: 100%;
+      height: 100%;
+      transform: none;
     }
 
     .acabados__swatch-name {

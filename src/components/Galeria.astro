@@ -11,9 +11,13 @@
 // instead of the board's fixed 5-col/10-photo composition.
 // Header row (kicker+title left, caption+Instagram link right on desktop,
 // stacked on mobile); the "Ver más en Instagram" caption+link (per
-// desktop-01-inicio.dc.html lines 123-124) replaces the old "Desliza para
-// ver más" copy at every breakpoint (Foreman correction 2026-09-28 —
-// Main.dc.html's plain caption is superseded by this decision).
+// desktop-01-inicio.dc.html lines 123-124) is desktop-only. Main.dc.html /
+// android-01-inicio.dc.html §galeria (~L94/L97) both keep the mobile
+// subtitle as "Fotos enviadas por clientes. Desliza para ver más." — user
+// correction 2026-09-28: the earlier Foreman note dropping this copy at
+// every breakpoint was wrong; ".galeria__subtitle-hint" restores the
+// "Desliza para ver más." clause, hidden at >=1024px (Instagram link takes
+// over there, matching the desktop board).
 const PHOTOS = [
   { src: '/images/galeria-01.jpeg', alt: 'Puerta de baño con vidrio decorado instalada', width: 934, height: 1280 },
   { src: '/images/galeria-02.jpeg', alt: 'División de vidrio esmerilado instalada', width: 1600, height: 1200 },
@@ -31,7 +35,9 @@ const PHOTOS = [
       <h2 id="galeria-title" class="galeria__title">Instalaciones de nuestros clientes</h2>
     </div>
     <div class="galeria__caption">
-      <p class="galeria__subtitle">Fotos enviadas por clientes.</p>
+      <p class="galeria__subtitle">
+        Fotos enviadas por clientes.<span class="galeria__subtitle-hint"> Desliza para ver más.</span>
+      </p>
       <a
         href="https://instagram.com/alcusasv"
         target="_blank"
@@ -153,7 +159,14 @@ const PHOTOS = [
 
   .galeria__title {
     margin: 0;
+    /* Board h2 is actually 30px/1.15 mobile, 56px/64px desktop (Main.dc.html
+       / android-01-inicio.dc.html / desktop-01-inicio.dc.html #galeria-title)
+       — bigger than font-size-h2-mobile/desktop (22/28px). Per Foreman
+       (2026-09-28): a project-wide shared-token gap fixed centrally, not
+       per section — keep referencing font-size-h2-mobile/desktop so this
+       inherits that fix automatically; only line-height is corrected below. */
     font-size: var(--font-size-h2-mobile);
+    line-height: var(--font-line-height-display);
     font-weight: var(--font-weight-display-medium);
     font-family: var(--font-family-display);
     color: var(--color-ink);
@@ -372,12 +385,19 @@ const PHOTOS = [
       flex-direction: row;
       align-items: flex-end;
       justify-content: space-between;
-      gap: var(--space-10);
+      gap: var(--space-16);
     }
 
     .galeria__caption {
       align-items: flex-end;
       text-align: right;
+    }
+
+    .galeria__kicker {
+      /* desktop-01-inicio.dc.html kicker: 14px/20px — no caption token is
+         14px (caption-desktop is 13px), reuses body-sm-desktop. */
+      font-size: var(--font-size-body-sm-desktop);
+      line-height: var(--font-line-height-heading);
     }
 
     .galeria__title {
@@ -388,8 +408,14 @@ const PHOTOS = [
       font-size: var(--font-size-body-lg-desktop);
     }
 
+    .galeria__subtitle-hint {
+      display: none;
+    }
+
     .galeria__ig-link {
-      font-size: var(--font-size-body-sm-desktop);
+      /* desktop-01-inicio.dc.html ig-link: 16px — no 16px "desktop" token,
+         reuses body-mobile (1rem = 16px). */
+      font-size: var(--font-size-body-mobile);
     }
 
     .galeria__strip {

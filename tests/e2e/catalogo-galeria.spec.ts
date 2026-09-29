@@ -36,11 +36,10 @@ test.describe('landing — catálogo + galería (S4)', () => {
     expect(href).toBe('/cotizador?producto=bisagra');
   });
 
-  test('catálogo shows the desktop-only Acabados swatches block', async ({ page }) => {
-    // Absent from both mobile boards (Main.dc.html / android-01-inicio
-    // §modelos) — only desktop-01-inicio.dc.html has it (~L106-114).
-    test.skip((page.viewportSize()?.width ?? 0) < 1024, 'Acabados is desktop-only per the boards');
-
+  test('catálogo shows the "Vidrios para puertas de baño" swatches block at every breakpoint', async ({ page }) => {
+    // Present on all 3 boards (Main.dc.html ~L80-84 / android-01-inicio.dc.html
+    // ~L84-88 / desktop-01-inicio.dc.html ~L106-114) — sf-landing5 user
+    // correction 2026-09-28 restores it on mobile (it was wrongly desktop-only).
     await page.goto('/');
     const modelos = page.locator('#modelos');
     await modelos.scrollIntoViewIfNeeded();

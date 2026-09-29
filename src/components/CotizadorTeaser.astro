@@ -6,14 +6,21 @@
 //
 // desktop-01-inicio's card is a 2-col grid: this copy/CTA column + a 520px
 // mini product-list column (the same 3 categories as Hero, image + price).
-// Mobile (Main.dc.html) has no product list — desktop-only, see CSS below.
+// Mobile (Main.dc.html) has no product list, no WhatsApp CTA and no
+// gradient sheen — those 2 are desktop-01-inicio.dc.html-only additions
+// (~L169-174: `.cotizador-teaser__cta-row` holds both CTAs; the sheen is an
+// absolutely-positioned rotated gradient strip), see CSS below. Foreman
+// correction 2026-09-28: both were missing from the earlier build.
 import { getCategoryTeasers } from '@content/categoryTeasers';
+import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 const teasers = getCategoryTeasers();
+const waHref = buildWaLink();
 ---
 
 <section id="cotizador" class="cotizador-teaser" aria-labelledby="cotizador-teaser-title">
   <div class="cotizador-teaser__card">
+    <span class="cotizador-teaser__sheen" aria-hidden="true"></span>
     <div class="cotizador-teaser__copy">
       <p class="cotizador-teaser__kicker">Cotizador en línea</p>
       <h2 id="cotizador-teaser-title" class="cotizador-teaser__title">
@@ -23,10 +30,20 @@ const teasers = getCategoryTeasers();
         Elige el producto, ingresa tus medidas y ve el estimado al instante. Puertas, ventanas y jardín en una sola
         cotización.
       </p>
-      <a href="/cotizador" class="cotizador-teaser__cta">
-        Empezar mi cotización
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-      </a>
+      <div class="cotizador-teaser__cta-row">
+        <a href="/cotizador" class="cotizador-teaser__cta">
+          Empezar mi cotización
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </a>
+        <a href={waHref} class="cotizador-teaser__wa-cta">
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+            ><path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" /><path
+              d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z"
+            /></svg
+          >
+          Cotizar por WhatsApp
+        </a>
+      </div>
     </div>
     <ul class="cotizador-teaser__products" aria-label="Productos y precios desde">
       {
@@ -84,8 +101,14 @@ const teasers = getCategoryTeasers();
     margin: 0;
     font-family: var(--font-family-display);
     font-weight: var(--font-weight-display-medium);
+    /* Board h2 is actually 28px/1.15 mobile, 56px/64px desktop (Main.dc.html
+       / desktop-01-inicio.dc.html #cotizador h2) — bigger than
+       font-size-h2-mobile/desktop (22/28px). Per Foreman (2026-09-28): a
+       project-wide shared-token gap fixed centrally, not per section — keep
+       referencing font-size-h2-mobile/desktop so this inherits that fix
+       automatically; only line-height is corrected here. */
     font-size: var(--font-size-h2-mobile);
-    line-height: var(--font-line-height-heading);
+    line-height: var(--font-line-height-display);
     text-wrap: balance;
   }
 
@@ -107,9 +130,18 @@ const teasers = getCategoryTeasers();
     text-decoration: none;
   }
 
-  .cotizador-teaser__cta:focus-visible {
+  .cotizador-teaser__cta:focus-visible,
+  .cotizador-teaser__wa-cta:focus-visible {
     outline: none;
     box-shadow: var(--shadow-focus);
+  }
+
+  /* Mobile boards (Main.dc.html/android-01-inicio.dc.html) have no WhatsApp
+     CTA or gradient sheen on this card — desktop-01-inicio.dc.html-only
+     additions (~L169-174), unhidden below at >=1024px. */
+  .cotizador-teaser__wa-cta,
+  .cotizador-teaser__sheen {
+    display: none;
   }
 
   .cotizador-teaser__products {
@@ -122,6 +154,8 @@ const teasers = getCategoryTeasers();
     }
 
     .cotizador-teaser__card {
+      position: relative;
+      overflow: hidden;
       max-width: var(--container-page);
       margin: 0 auto;
       padding: var(--space-20);
@@ -131,14 +165,35 @@ const teasers = getCategoryTeasers();
       gap: var(--space-16);
     }
 
+    .cotizador-teaser__sheen {
+      display: block;
+      position: absolute;
+      top: -40%;
+      bottom: -40%;
+      left: 44%;
+      width: 18%;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%);
+      transform: rotate(12deg);
+      pointer-events: none;
+    }
+
     .cotizador-teaser__copy {
       display: flex;
       flex-direction: column;
       gap: var(--space-3);
     }
 
+    .cotizador-teaser__kicker {
+      /* desktop-01-inicio.dc.html #cotizador kicker: 14px/20px — no caption
+         token is 14px (caption-desktop is 13px), reuses body-sm-desktop. */
+      font-size: var(--font-size-body-sm-desktop);
+      line-height: var(--font-line-height-heading);
+    }
+
     .cotizador-teaser__title {
-      font-size: var(--font-size-display-lg-desktop);
+      /* Board is 56px/64px (display 1.15 ratio) — see the shared-token note
+         on the base rule above; keep font-size-h2-desktop here. */
+      font-size: var(--font-size-h2-desktop);
     }
 
     .cotizador-teaser__lead {
@@ -146,10 +201,36 @@ const teasers = getCategoryTeasers();
       font-size: var(--font-size-body-lg-desktop);
     }
 
-    .cotizador-teaser__cta {
-      align-self: flex-start;
+    .cotizador-teaser__cta-row {
+      display: flex;
+      gap: var(--space-4);
+      margin-top: var(--space-6);
+      position: relative; /* stack above .cotizador-teaser__sheen */
+    }
+
+    .cotizador-teaser__cta,
+    .cotizador-teaser__wa-cta {
+      min-height: 56px;
       padding: 0 var(--space-6);
-      margin-top: var(--space-2);
+      white-space: nowrap;
+      /* desktop-01-inicio.dc.html CTAs: 17px/1.2 — no 17px desktop token,
+         reuses body-lg-mobile (1.0625rem = 17px); line-height rounds to the
+         display ratio (1.15) among the 3 available tokens. */
+      font-size: var(--font-size-body-lg-mobile);
+      line-height: var(--font-line-height-display);
+    }
+
+    .cotizador-teaser__wa-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px; /* board: gap 10px, no matching space-* token */
+      min-height: 56px;
+      border-radius: var(--radius-full);
+      background: var(--color-whatsapp-strong);
+      color: var(--color-surface);
+      font-weight: var(--font-weight-body-bold);
+      text-decoration: none;
     }
 
     .cotizador-teaser__products {
@@ -196,7 +277,9 @@ const teasers = getCategoryTeasers();
     }
 
     .cotizador-teaser__product-subtitle {
-      font-size: var(--font-size-body-sm-desktop);
+      /* desktop-01-inicio.dc.html product-subtitle: 15px/24px — no 15px
+         token (same gap already hardcoded in styles/cotizador.css). */
+      font-size: 0.9375rem;
       color: #cfe0ff;
     }
 
