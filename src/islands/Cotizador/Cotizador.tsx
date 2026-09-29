@@ -9,9 +9,11 @@ import {
   slugToStep,
   STEP_ORDER,
   STEP_SLUGS,
+  type CotizadorState,
   type CotizadorStep,
 } from './state/cotizadorStore';
 import { buildLineItem, computeQuote } from './state/quote';
+import { buildOrderItems, orderTotal as computeOrderTotal } from './state/order';
 import { IconArrowRight, IconCheck, IconChevronLeft, IconLock, IconWhatsApp } from './icons';
 import { IconSpinner } from './icons-checkout';
 import Step0Producto from './steps/Step0Producto';
@@ -145,9 +147,41 @@ interface AsideView {
   ctas: ReactElement | null;
 }
 
+// S7 — sessionStorage persistence for the cart only (not the whole wizard
+// state): a reload mid-checkout shouldn't lose already-committed items.
+// Guarded for the Astro build's server-side render pass (no `window` there)
+// and for private-mode/quota errors (try/catch, silently drops the cart).
+const CART_STORAGE_KEY = 'alcusa-cotizador-cart';
+
+function loadPersistedCart(): CotizadorState['cart'] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.sessionStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as CotizadorState['cart']) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function Cotizador(): ReactElement {
-  const [state, dispatch] = useReducer(cotizadorReducer, initialCotizadorState);
+  const [state, dispatch] = useReducer(cotizadorReducer, initialCotizadorState, (init) => ({
+    ...init,
+    cart: loadPersistedCart(),
+  }));
   const rootRef = useRef<HTMLDivElement>(null);
+
+  // Persists `cart` (only) on every change — zone/entrega/current-item
+  // fields stay session-only, matching the rest of the wizard.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state.cart));
+    } catch {
+      // private mode / quota — the cart just won't survive a reload.
+    }
+  }, [state.cart]);
   // Portal mount for the resumen/formaPago aside CTAs — see the AsideView.ctas
   // comment below and Step4Resumen/Step5FormaPago's `asideCtaTarget` prop.
   const [portalCtaEl, setPortalCtaEl] = useState<HTMLDivElement | null>(null);
@@ -251,19 +285,67 @@ export default function Cotizador(): ReactElement {
     window.history.pushState(null, '', `#cotizador/${STEP_SLUGS[step]}`);
   }
 
+  // S7 — the zone/entrega step is order-level: once it's actually been
+  // decided (a zone picked, or "retiro" chosen), "Siguiente"/back skip it
+  // for every later item so the loop goes straight precio <-> resumen.
+  // Deliberately NOT keyed off `cart.length` alone — the cart persists
+  // across a reload (sessionStorage) but zone/entrega don't, so a fresh
+  // session with a leftover cart must still ask for the zone once. The
+  // zone stays changeable any time via Resumen's "Cambiar" link
+  // (onEditZone → goToStep('zonaEntrega')).
+  const zoneDecided = state.zone !== '' || state.entrega === 'retiro';
+
   function next(): void {
     const idx = STEP_ORDER.indexOf(state.step);
-    goToStep(STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)]);
+    let target = STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)];
+    if (target === 'zonaEntrega' && zoneDecided) {
+      target = STEP_ORDER[Math.min(idx + 2, STEP_ORDER.length - 1)];
+    }
+    goToStep(target);
   }
 
   function back(): void {
     const idx = STEP_ORDER.indexOf(state.step);
-    goToStep(STEP_ORDER[Math.max(idx - 1, 0)]);
+    let target = STEP_ORDER[Math.max(idx - 1, 0)];
+    if (target === 'zonaEntrega' && zoneDecided) {
+      target = STEP_ORDER[Math.max(idx - 2, 0)];
+    }
+    goToStep(target);
+  }
+
+  // S7 — "+ Agregar otro producto": commits the current item into `cart`
+  // and the reducer resets step 0 with a fresh item (prototype-spec.md
+  // §2.1 step 4). Mirrors goToStep's pushState so the URL/back button stay
+  // in sync with the step the reducer just landed on.
+  function addToCart(): void {
+    dispatch({ type: 'ADD_TO_CART' });
+    window.history.pushState(null, '', `#cotizador/${STEP_SLUGS.producto}`);
+  }
+
+  // S7 — "Quitar": `id: 'current'` removes the in-progress item (promoting
+  // the last committed cart item back into it, or falling back to step 0
+  // if the cart is empty too); any other id removes that committed item.
+  function removeItem(id: string): void {
+    dispatch({ type: 'REMOVE_ITEM', id });
   }
 
   const quote = useMemo(() => computeQuote(state), [state]);
   const zoneFee = state.entrega === 'instalacion' ? getZoneFee(state.zone) : 0;
-  const total = quote.amount !== null ? quote.amount + (zoneFee ?? 0) : null;
+  // Single-current-item total — still what steps 0-3 show ("Estimado sin
+  // transporte" / the live zone breakdown) since "Agregar otro producto"
+  // always resets to step 0, so cart items are never in play while the
+  // user is still configuring an item through steps 1-3 for the first time.
+  const singleItemTotal = quote.amount !== null ? quote.amount + (zoneFee ?? 0) : null;
+
+  // S7 — the whole order: every committed cart item + the current item (if
+  // any), one subtotal each, transport (zoneFee) added exactly ONCE
+  // (T7.2) regardless of item count. This is what Resumen/Forma de
+  // pago/Wompi/Resultado must show as "the total" — see HANDOFF to S8.
+  const orderItems = useMemo(() => buildOrderItems(state, CATALOG_PRODUCTS), [state]);
+  const isOrderPhase =
+    state.step === 'resumen' || state.step === 'formaPago' || state.step === 'wompi' || state.step === 'resultado';
+  const orderTotalValue = orderItems.length > 0 ? computeOrderTotal(orderItems, zoneFee ?? 0) : null;
+  const total = isOrderPhase ? orderTotalValue : singleItemTotal;
 
   // desktop-07-payment-result.dc.html is the only board (03-07) with no
   // "TU COTIZACIÓN" aside at all — the wizard is done, there's nothing left
@@ -382,7 +464,16 @@ export default function Cotizador(): ReactElement {
         totalLabel: 'Total estimado',
         totalValue: totalText,
         note: 'Incluye transporte, cobrado 1 vez por pedido.',
-        items: [baseItem, { name: 'Transporte', detail: transporteDetail, price: transportePrice }],
+        // S7 — every cart+current item, one row each, then the single
+        // order-level transport row (never one row per item — T7.2).
+        items: [
+          ...orderItems.map((it) => ({
+            name: it.name,
+            detail: it.detail,
+            price: it.requiresQuote ? 'Por WhatsApp' : `$${it.subtotal.toFixed(2)}`,
+          })),
+          { name: 'Transporte', detail: transporteDetail, price: transportePrice },
+        ],
         showDeposit: total !== null,
         ctas:
           state.step === 'wompi' ? (
@@ -406,7 +497,13 @@ export default function Cotizador(): ReactElement {
         ) : (
           <button type="button" className="cotizador__back" onClick={back}>
             <IconChevronLeft />
-            {STEP_LABELS[STEP_ORDER[currentIdx - 1]]}
+            {STEP_LABELS[
+              // S7 — mirrors back()'s zonaEntrega skip so the label always
+              // names the step the click will actually land on.
+              STEP_ORDER[currentIdx - 1] === 'zonaEntrega' && zoneDecided
+                ? STEP_ORDER[Math.max(currentIdx - 2, 0)]
+                : STEP_ORDER[currentIdx - 1]
+            ]}
           </button>
         )}
         <h2 id="cotizador-page-title" tabIndex={-1} className="cotizador__page-title">
@@ -521,17 +618,18 @@ export default function Cotizador(): ReactElement {
           <Step4Resumen
             product={product}
             state={state}
-            quote={quote}
+            items={orderItems}
             zoneFee={zoneFee}
             total={total}
             onNext={next}
             onEditZone={() => goToStep('zonaEntrega')}
+            onAddAnother={addToCart}
+            onRemoveItem={removeItem}
             asideCtaTarget={portalCtaEl}
           />
         )}
         {state.step === 'formaPago' && product && (
           <Step5FormaPago
-            product={product}
             state={state}
             quote={quote}
             zoneFee={zoneFee}
@@ -562,7 +660,9 @@ export default function Cotizador(): ReactElement {
             <span className="cotizador-aside__shine" aria-hidden="true" />
             <div className="cotizador-aside__hero-top">
               <span className="cotizador-aside__kicker">TU COTIZACIÓN</span>
-              <span className="cotizador-aside__count">1 producto</span>
+              <span className="cotizador-aside__count">
+                {orderItems.length} {orderItems.length === 1 ? 'producto' : 'productos'}
+              </span>
             </div>
             <span className="cotizador-aside__total-label">{aside.totalLabel}</span>
             <span className="cotizador-aside__total-value" aria-live="polite" data-testid="summary-price-value">

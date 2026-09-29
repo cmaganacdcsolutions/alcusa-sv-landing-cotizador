@@ -1,12 +1,9 @@
 import type { ReactElement } from 'react';
-import type { CatalogProduct } from '@content/catalog';
+import { CATALOG_PRODUCTS, type CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
-import { buildGardenMessageItem, buildWindowMessageItems } from '@integrations/whatsapp/windowGardenMessageItems';
-import { COLOR_LABELS, GLASS_LABELS, type CotizadorState } from '../state/cotizadorStore';
-import { buildLineItem, type QuoteResult } from '../state/quote';
-import { computeGardenQuote, computeWindowQuote } from '../state/quoteWindowGarden';
-import { GARDEN_HOJAS_LABELS } from './measures/GardenForm';
-import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './measures/WindowForm';
+import type { CotizadorState } from '../state/cotizadorStore';
+import type { QuoteResult } from '../state/quote';
+import { buildOrderItems } from '../state/order';
 import { IconArrowRight, IconCheck, IconWarningTriangle, IconWhatsApp } from '../icons';
 import { IconCardRect, IconShieldCheck, IconTruck } from '../icons-checkout';
 import '@styles/cotizador-checkout.css';
@@ -34,7 +31,7 @@ function todayEs(): string {
 // Mock/local state only: no real Wompi calls, no keys, no network — the
 // `outcome` prop is how a caller (or a future S8 gateway callback) picks
 // which of the two drawn states to render.
-export default function Step7Resultado({ product, state, quote, zoneFee, total, onRetry }: Step7ResultadoProps): ReactElement {
+export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }: Step7ResultadoProps): ReactElement {
   // Mock-only: set by Step6Wompi via SET_WOMPI_RESULT
   // (src/integrations/wompi/mock.ts). Falls back to "approved" so this step
   // still renders something sensible if reached directly (e.g. mid-dev,
@@ -43,7 +40,6 @@ export default function Step7Resultado({ product, state, quote, zoneFee, total, 
   const outcome: 'success' | 'failure' = state.wompiOutcome === 'declined' ? 'failure' : 'success';
   const paidPct = state.payAmountPct;
   const orderNumber = state.wompiOrderNumber ?? 'ALC-2026-0001';
-  const item = buildLineItem(state);
   const subtotal = quote.amount ?? 0;
   const transporte = zoneFee ?? 0;
   const grandTotal = total ?? subtotal;
@@ -53,36 +49,9 @@ export default function Step7Resultado({ product, state, quote, zoneFee, total, 
   const money = (n: number) => `$${n.toFixed(2)}`;
   const inst = state.entrega === 'instalacion';
 
-  // Product-agnostic detail lines (S6 — ventana repeatable rows / jardín
-  // single line / everything else's single buildLineItem row), mirrors
-  // Step4Resumen/Step5FormaPago's item derivation.
-  let lines: { name: string; amount: number }[];
-  if (product.id === 'ventana') {
-    const windowQuote = computeWindowQuote(state);
-    lines = buildWindowMessageItems(windowQuote.rows, {
-      modelLabel: WINDOW_MODEL_LABELS[state.windowModel],
-      frameLabel: COLOR_LABELS[state.windowFrame],
-      glassLabel: WINDOW_GLASS_LABELS[state.windowGlass],
-      zona: inst ? state.zone : '—',
-      entrega: inst ? 'con instalación' : 'retiro en tienda',
-    }).map((it) => ({ name: it.producto, amount: it.subtotal }));
-  } else if (product.id === 'jardin') {
-    const gardenQuote = computeGardenQuote(state);
-    const it = buildGardenMessageItem({
-      hojasLabel: GARDEN_HOJAS_LABELS[state.gardenHojas],
-      widthM: gardenQuote.widthM,
-      heightM: gardenQuote.heightM,
-      colorLabel: COLOR_LABELS[state.gardenColor],
-      glassLabel: GLASS_LABELS[state.gardenGlass],
-      subtotal: gardenQuote.subtotal,
-      requiresQuote: gardenQuote.requiresQuote,
-      zona: inst ? state.zone : '—',
-      entrega: inst ? 'con instalación' : 'retiro en tienda',
-    });
-    lines = [{ name: it.producto, amount: it.subtotal }];
-  } else {
-    lines = [{ name: `${product.name} · ${item.detail}`, amount: subtotal }];
-  }
+  // S7 — every cart item + the current item, one row each (a ventana item's
+  // several panes collapse into its own single row here, same as Step4Resumen).
+  const lines = buildOrderItems(state, CATALOG_PRODUCTS).map((it) => ({ name: `${it.name} · ${it.detail}`, amount: it.subtotal }));
 
   const itemCountText = `${lines.length} ${lines.length === 1 ? 'producto' : 'productos'}`;
   const waOk = buildWaLink(

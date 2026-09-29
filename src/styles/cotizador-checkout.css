@@ -334,8 +334,12 @@
   font-size: var(--font-size-body-sm-mobile);
   font-weight: var(--font-weight-body-medium);
   color: var(--color-ink-muted);
-  cursor: not-allowed;
+  cursor: pointer;
   flex-shrink: 0;
+}
+
+.summary-item__remove:hover {
+  color: var(--color-danger, #b3261e);
 }
 
 .summary-add {
@@ -351,7 +355,24 @@
   background: transparent;
   font-size: 1rem;
   font-weight: var(--font-weight-body-bold);
-  cursor: not-allowed;
+  cursor: pointer;
+}
+
+.summary-add:hover {
+  background: var(--color-surface-muted, rgba(7, 59, 146, 0.04));
+}
+
+/* S7 — visually-hidden aria-live region for add/remove announcements
+   (the scoped .visually-hidden in cotizador.astro doesn't reach React
+   island output, so this global copy lives alongside the other cotizador
+   utility classes the island actually imports). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 /* ---------- Step 5 — Forma de pago ---------- */
