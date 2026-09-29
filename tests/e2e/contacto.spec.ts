@@ -100,19 +100,28 @@ test.describe('contacto — info block + socials', () => {
 
   test('every info/map/social icon renders a visible, non-empty stroked svg', async ({ page }) => {
     await page.goto('/contacto');
+    // Some icons are breakpoint-conditional (mobile-only social cards drop
+    // the arrow glyph per ios-08/android-08 ~L45-48; the Teléfonos icon
+    // swaps between two board-literal paths per breakpoint, desktop-08
+    // ~L50) — CSS-hidden at the current viewport, so only the ones actually
+    // rendered here are asserted.
     const icons = page.locator(
       '.contacto__list svg, .contacto__map svg, .contacto__social svg',
     );
     const count = await icons.count();
     expect(count).toBeGreaterThan(0);
+    let visibleCount = 0;
     for (let i = 0; i < count; i++) {
       const icon = icons.nth(i);
+      if (!(await icon.isVisible())) continue;
+      visibleCount++;
       const box = await icon.boundingBox();
       expect(box?.width).toBeGreaterThan(0);
       expect(box?.height).toBeGreaterThan(0);
       const stroke = await icon.evaluate((el) => getComputedStyle(el).stroke);
       expect(stroke).not.toBe('none');
     }
+    expect(visibleCount).toBeGreaterThan(0);
   });
 });
 
