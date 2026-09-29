@@ -1,4 +1,13 @@
-/* Cotizador island styles — consumes tokens.css custom properties only. */
+/* Cotizador island styles — consumes tokens.css custom properties only.
+   sf-cot-shell additions below are new, cotizador-scoped custom properties
+   (not in the shared tokens.css) needed 1:1 from the boards' inline styles —
+   per task instructions these are added here, at :root, not in tokens.css. */
+:root {
+  --cotizador-ring-shadow: 0 0 0 4px rgba(9, 86, 216, 0.12);
+  --cotizador-cta-shadow: 0 8px 20px rgba(7, 59, 146, 0.22);
+  --cotizador-aside-shadow: 0 16px 40px rgba(16, 33, 61, 0.1);
+}
+
 .cotizador {
   display: flex;
   flex-direction: column;
@@ -40,6 +49,7 @@
 .cotizador__page-title {
   margin: 0;
   color: var(--color-primary);
+  font-family: var(--font-family-display);
   font-size: var(--font-size-display-lg-mobile);
   font-weight: var(--font-weight-display-semibold);
   line-height: 1.15;
@@ -52,6 +62,7 @@
 .cotizador__section-heading {
   margin: 0;
   color: var(--color-ink);
+  font-family: var(--font-family-display);
   font-size: 1.375rem;
   font-weight: var(--font-weight-display-medium);
   line-height: 1.3;
@@ -545,6 +556,15 @@
     grid-row: 1;
   }
 
+  .cotizador__page-title {
+    font-size: var(--font-size-display-xl-desktop);
+  }
+
+  .cotizador__section-heading {
+    font-size: 2rem;
+    line-height: 1.25;
+  }
+
   .cotizador__rail-col {
     grid-column: 1;
     grid-row: 1 / 3;
@@ -555,6 +575,21 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xs);
+  }
+
+  /* boards 03-07 (desktop-0N-*.dc.html): the sticky rail is a *different*,
+     richer nav on desktop than the 6-dot mobile stepper — kicker + "Paso N
+     de 8" + progress bar + all 8 steps (with sub-labels) + a "¿Dudas con tu
+     medida?" WhatsApp block. Toggled with .step-rail-wrap below instead of
+     reusing the same markup at both breakpoints (dot styling, item count —
+     6 vs 8 — and highlight rules all genuinely differ; see rail-desktop
+     rules appended at the end of this file). */
+  .step-rail-wrap {
+    display: none;
+  }
+
+  .rail-desktop {
+    display: flex;
   }
 
   .cotizador__form-col {
@@ -572,6 +607,10 @@
     top: var(--space-8);
   }
 
+  .cotizador-aside {
+    display: flex;
+  }
+
   .step-rail {
     grid-template-columns: 1fr;
     gap: var(--space-3);
@@ -587,11 +626,23 @@
     gap: var(--space-3);
   }
 
+  /* Gap #1 (user-reported): the mobile sticky bottom-bar (price + Siguiente)
+     is correct on ios/android boards, but desktop-0N boards render just a
+     bare "Siguiente" pill directly on the page background — no white card,
+     no border, no shadow, and no duplicate price (the price already headlines
+     the aside above). Strip all of that back down on desktop instead of only
+     removing the shadow/border as before. */
   .bottom-bar {
     position: static;
     border-top: 0;
     box-shadow: none;
     padding: 0;
+    background: transparent;
+    justify-content: flex-end;
+  }
+
+  .bottom-bar__price {
+    display: none;
   }
 }
 
@@ -600,3 +651,374 @@
    src/styles/cotizador-medidas.css (sf-cot-medidas, S7 board pass): every
    one of those classes is exclusive to Step0Producto/steps/measures, so the
    move is a pure relocation, no shared-rule edits. */
+/* sf-cot-shell (slice sf-cot-shell) — desktop-only rail nav (kicker + "Paso
+   N de 8" + progress bar + all 8 steps w/ sub-labels + "¿Dudas con tu
+   medida?") and the "TU COTIZACIÓN" aside, both 1:1 from
+   desktop-0[3-7]-*.dc.html. Hidden below 1024px (.step-rail-wrap /
+   .step-rail above stay the mobile 6-dot version); toggled on in the
+   `@media (min-width: 1024px)` block above. New rules only — nothing above
+   this comment was reordered. */
+.rail-desktop {
+  /* Base rule is deliberately scoped to the mobile range (rather than an
+     unconditional `display: none`): this block is appended after the
+     pre-existing `@media (min-width: 1024px)` one above that turns it back
+     on, and an unconditional rule here would win the cascade (same
+     specificity, later source order) and hide it at every width. */
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+@media (max-width: 1023.98px) {
+  .rail-desktop {
+    display: none;
+  }
+
+  /* The "TU COTIZACIÓN" card is desktop-only (boards 03-06 — no ios-0N/
+     android-0N board has a "TU COTIZACIÓN" string anywhere); below 1024px
+     the mobile sticky `.bottom-bar` (price + Siguiente, rendered per-step)
+     is the only summary UI. Without this the card rendered inline in the
+     mobile flex column, after the form and before the footer — a real gap
+     found by diffing against the ios/android boards, not one of the
+     user-reported items. */
+  .cotizador-aside {
+    display: none;
+  }
+}
+
+.rail-desktop__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rail-desktop__kicker {
+  margin: 0;
+  font-size: 13px;
+  font-weight: var(--font-weight-body-bold);
+  letter-spacing: 0.14em;
+  color: var(--color-primary);
+}
+
+.rail-desktop__paso {
+  margin: 0;
+  font-size: 15px;
+  font-weight: var(--font-weight-body-medium);
+  color: var(--color-ink-muted);
+}
+
+.rail-desktop__progress {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-tint);
+  overflow: hidden;
+}
+
+.rail-desktop__progress-fill {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+}
+
+.rail-desktop__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rail-desktop__item {
+  position: relative;
+  margin: 0 -12px;
+  padding: 8px 12px 0;
+  border-radius: var(--radius-md);
+}
+
+.rail-desktop__item[data-state='done'],
+.rail-desktop__item[data-state='current'] {
+  background: var(--color-surface-tint);
+}
+
+.rail-desktop__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-height: 56px;
+  color: inherit;
+}
+
+.rail-desktop__connector {
+  position: absolute;
+  left: 27px;
+  top: 44px;
+  bottom: -8px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--color-border);
+}
+
+.rail-desktop__dot {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: var(--font-weight-body-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rail-desktop__item[data-state='done'] .rail-desktop__dot,
+.rail-desktop__item[data-state='current'] .rail-desktop__dot {
+  background: var(--color-surface);
+  border: 2px solid var(--color-accent);
+  box-shadow: var(--cotizador-ring-shadow);
+  color: var(--color-accent);
+}
+
+.rail-desktop__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.rail-desktop__title {
+  font-size: 1rem;
+  font-weight: var(--font-weight-body-medium);
+  color: var(--color-ink-muted);
+  line-height: 1.5;
+}
+
+.rail-desktop__item[data-state='done'] .rail-desktop__title,
+.rail-desktop__item[data-state='current'] .rail-desktop__title {
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-accent);
+}
+
+.rail-desktop__sub {
+  font-size: 13px;
+  line-height: 1.55;
+  /* Board literal is --color-muted (#65738a, same as the mobile
+     .step-rail__item sub-label) but that fails WCAG AA on the
+     --color-surface-tint highlighted row background (axe: color-contrast) —
+     same fix already applied to .step-rail__item above, for the same
+     reason. */
+  color: var(--color-ink-muted);
+}
+
+.rail-desktop__dudas {
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rail-desktop__dudas-title {
+  font-size: 15px;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+
+.rail-desktop__dudas-link {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 15px;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-whatsapp-strong);
+  text-decoration: none;
+}
+
+/* "TU COTIZACIÓN" aside — desktop-only (boards 03-06; hidden on 07 /
+   resultado, same as the boards). Distinct from the pre-existing
+   `.price-card` (still used verbatim by Step2Precio — do not touch). */
+.cotizador-aside {
+  /* No unconditional `display` here on purpose: the mobile
+     `display: none` above and this rule have equal specificity, and a
+     later, unconditional `display: flex` would win the cascade at every
+     width (same pitfall as .rail-desktop above) — flex is instead set by
+     the existing `@media (min-width: 1024px)` block earlier in this file,
+     alongside .cotizador__summary-col. */
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--cotizador-aside-shadow);
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.cotizador-aside__hero {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-8) var(--space-8) var(--space-6);
+  background: var(--color-surface-tint);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cotizador-aside__shine {
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: 55%;
+  width: 22%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0) 100%);
+  transform: rotate(12deg);
+}
+
+.cotizador-aside__hero-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.cotizador-aside__kicker {
+  font-size: 13px;
+  font-weight: var(--font-weight-body-bold);
+  letter-spacing: 0.14em;
+  color: var(--color-primary);
+}
+
+.cotizador-aside__count {
+  padding: 2px 12px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: var(--font-weight-body-bold);
+  line-height: 22px;
+}
+
+.cotizador-aside__total-label {
+  position: relative;
+  font-size: 15px;
+  font-weight: var(--font-weight-body-medium);
+  color: var(--color-ink-muted);
+}
+
+.cotizador-aside__total-value {
+  position: relative;
+  font-family: var(--font-family-display);
+  font-size: 3.5rem;
+  line-height: 1.15;
+  font-weight: var(--font-weight-display-semibold);
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.cotizador-aside__note {
+  position: relative;
+  font-size: 15px;
+  color: var(--color-ink-muted);
+}
+
+.cotizador-aside__items {
+  margin: 0;
+  padding: 4px var(--space-8);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.cotizador-aside__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cotizador-aside__item:last-child {
+  border-bottom: 0;
+}
+
+.cotizador-aside__item-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.cotizador-aside__item-name {
+  font-size: 1rem;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+
+.cotizador-aside__item-detail {
+  font-size: 15px;
+  color: var(--color-ink-muted);
+}
+
+.cotizador-aside__item-price {
+  font-size: 1rem;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.cotizador-aside__deposit {
+  margin: var(--space-4) var(--space-8) 0;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.cotizador-aside__deposit-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.cotizador-aside__ctas {
+  padding: var(--space-6) var(--space-8) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cotizador-aside__cta.btn {
+  min-height: 56px;
+  width: 100%;
+}
+
+/* Board's disabled "Siguiente" (out-of-range measurement) is a plain
+   `<button disabled>` — rendered here as an `<a aria-disabled>` instead
+   (see HANDOFF: keeps this link out of the `getByRole('button', {name:
+   'Siguiente'})` locators the per-step bottom-bar Siguiente button already
+   owns, so both can coexist without an ambiguous/strict-mode match). */
+.cotizador-aside__cta[aria-disabled='true'] {
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-whatsapp-outline {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-whatsapp-strong);
+}
+
+.cotizador-aside__wompi-note {
+  margin: 0;
+  padding: var(--space-4) var(--space-8) 28px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  color: var(--color-ink-muted);
+}
