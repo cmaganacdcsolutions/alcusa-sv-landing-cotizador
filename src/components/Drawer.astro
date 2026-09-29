@@ -17,7 +17,7 @@ const waHref = buildWaLink();
   data-drawer-panel
 >
   <div class="drawer__head">
-    <span class="drawer__brand">Alcusa</span>
+    <a href="/" class="drawer__brand" aria-label="ALCUSA, inicio">Alcusa</a>
     <button type="button" id="drawer-close-btn" class="drawer__close" aria-label="Cerrar menú">
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
         ><path d="M6 6l12 12M18 6L6 18"></path></svg
@@ -119,6 +119,7 @@ const waHref = buildWaLink();
     font-size: 1.375rem;
     font-weight: var(--font-weight-display-semibold);
     color: var(--color-primary);
+    text-decoration: none;
   }
 
   .drawer__close {
@@ -262,6 +263,16 @@ const waHref = buildWaLink();
     closeBtn.addEventListener('click', () => closeDrawer());
     veil.addEventListener('click', () => closeDrawer());
 
+    // Scrolls straight to the section instead of only reassigning
+    // location.hash (which stopped re-triggering the browser's own anchor
+    // scroll once this ran through the drawer's history.back() round-trip —
+    // the reported "nav links don't work" bug).
+    function scrollToHash(hash: string): void {
+      const target = document.getElementById(hash.slice(1));
+      if (target) target.scrollIntoView({ block: 'start' });
+      else window.location.hash = hash;
+    }
+
     document.querySelectorAll<HTMLAnchorElement>('[data-drawer-link]').forEach((link) => {
       link.addEventListener('click', (event) => {
         // Cross-page links (/cotizador, /contacto, or /#id clicked from a
@@ -271,20 +282,20 @@ const waHref = buildWaLink();
 
         event.preventDefault();
         const target = link.hash;
-        const hadPushedEntry = pushedHistoryEntry;
-        if (hadPushedEntry) {
-          window.addEventListener(
-            'popstate',
-            () => {
-              window.location.hash = target;
-            },
-            { once: true },
-          );
+        if (pushedHistoryEntry) {
+          // Consume the drawer's pushed entry in place (replaceState)
+          // instead of calling history.back(): a real back-navigation lets
+          // the browser restore that entry's original (pre-scroll) scroll
+          // position right after our own scrollIntoView runs, snapping the
+          // page straight back to the top.
+          window.history.replaceState(null, '', target);
+          pushedHistoryEntry = false;
+          closeDrawer();
+        } else {
+          window.history.pushState(null, '', target);
+          closeDrawer();
         }
-        closeDrawer();
-        if (!hadPushedEntry) {
-          window.location.hash = target;
-        }
+        scrollToHash(target);
       });
     });
 

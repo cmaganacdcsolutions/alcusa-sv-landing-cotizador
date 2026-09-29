@@ -6,9 +6,14 @@
 // Mobile/tablet (<1024px): horizontal snap-scroll strip (Main.dc.html /
 // android-01). Desktop (>=1024px): desktop-01-inicio's masonry — the board
 // curates 10 photos across 5 columns, but our AC caps this gallery at
-// exactly these 6 real photos, so it's a CSS multi-column masonry (each
-// photo's own aspect ratio staggers the column heights) instead of the
-// board's fixed 5-col/10-photo composition.
+// exactly these 6 real photos, so it's a 3-column CSS multi-column masonry
+// with per-card heights lifted from the board's own height set (240-440px)
+// instead of the board's fixed 5-col/10-photo composition.
+// Header row (kicker+title left, caption+Instagram link right on desktop,
+// stacked on mobile); the "Ver más en Instagram" caption+link (per
+// desktop-01-inicio.dc.html lines 123-124) replaces the old "Desliza para
+// ver más" copy at every breakpoint (Foreman correction 2026-09-28 —
+// Main.dc.html's plain caption is superseded by this decision).
 const PHOTOS = [
   { src: '/images/galeria-01.jpeg', alt: 'Puerta de baño con vidrio decorado instalada', width: 934, height: 1280 },
   { src: '/images/galeria-02.jpeg', alt: 'División de vidrio esmerilado instalada', width: 1600, height: 1200 },
@@ -20,38 +25,64 @@ const PHOTOS = [
 ---
 
 <section id="galeria" class="galeria" aria-labelledby="galeria-title">
-  <div class="galeria__intro">
-    <p class="galeria__kicker">Proyectos reales</p>
-    <h2 id="galeria-title" class="galeria__title">Instalaciones de nuestros clientes</h2>
-    <p class="galeria__subtitle">Fotos enviadas por clientes. Desliza para ver más.</p>
+  <div class="galeria__header">
+    <div class="galeria__intro">
+      <p class="galeria__kicker">Proyectos reales</p>
+      <h2 id="galeria-title" class="galeria__title">Instalaciones de nuestros clientes</h2>
+    </div>
+    <div class="galeria__caption">
+      <p class="galeria__subtitle">Fotos enviadas por clientes.</p>
+      <a
+        href="https://instagram.com/alcusasv"
+        target="_blank"
+        rel="noopener"
+        class="galeria__ig-link"
+        aria-label="Ver más fotos en Instagram, arroba alcusasv"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+          ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
+          ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
+        >
+        Ver más en Instagram &middot; @alcusasv
+      </a>
+    </div>
   </div>
 
-  <ul class="galeria__strip">
-    {
-      PHOTOS.map((photo, index) => (
-        <li class="galeria__item">
-          <button
-            type="button"
-            class="galeria__trigger"
-            data-lightbox-trigger
-            data-src={photo.src}
-            data-alt={photo.alt}
-            aria-label={`Ampliar foto ${index + 1} de ${PHOTOS.length}: ${photo.alt}`}
-          >
-            <img
-              src={photo.src}
-              alt={photo.alt}
-              width={photo.width}
-              height={photo.height}
-              loading="lazy"
-              decoding="async"
-              class="galeria__img"
-            />
-          </button>
-        </li>
-      ))
-    }
-  </ul>
+  <div class="galeria__strip-wrap">
+    <button type="button" class="galeria__strip-nav galeria__strip-nav--prev" data-strip-prev aria-label="Foto anterior">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    </button>
+    <ul class="galeria__strip" id="galeria-strip">
+      {
+        PHOTOS.map((photo, index) => (
+          <li class="galeria__item">
+            <button
+              type="button"
+              class="galeria__trigger"
+              data-lightbox-trigger
+              data-index={index}
+              data-src={photo.src}
+              data-alt={photo.alt}
+              aria-label={`Ampliar foto ${index + 1} de ${PHOTOS.length}: ${photo.alt}`}
+            >
+              <img
+                src={photo.src}
+                alt={photo.alt}
+                width={photo.width}
+                height={photo.height}
+                loading="lazy"
+                decoding="async"
+                class="galeria__img"
+              />
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+    <button type="button" class="galeria__strip-nav galeria__strip-nav--next" data-strip-next aria-label="Foto siguiente">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    </button>
+  </div>
 
   <div id="galeria-veil" class="galeria__veil" hidden></div>
   <div
@@ -78,7 +109,14 @@ const PHOTOS = [
         <path d="M6 6l12 12M18 6L6 18" />
       </svg>
     </button>
+    <button type="button" id="galeria-lightbox-prev" class="galeria__lightbox-nav galeria__lightbox-nav--prev" aria-label="Foto anterior">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    </button>
+    <button type="button" id="galeria-lightbox-next" class="galeria__lightbox-nav galeria__lightbox-nav--next" aria-label="Foto siguiente">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    </button>
     <img id="galeria-lightbox-img" src="" alt="" class="galeria__lightbox-img" />
+    <p id="galeria-lightbox-counter" class="galeria__lightbox-counter" aria-live="polite"></p>
   </div>
 </section>
 
@@ -90,8 +128,15 @@ const PHOTOS = [
     gap: var(--space-3);
   }
 
-  .galeria__intro {
+  .galeria__header {
     padding: 0 var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .galeria__intro,
+  .galeria__caption {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
@@ -119,6 +164,57 @@ const PHOTOS = [
     margin: 0;
     font-size: var(--font-size-body-sm-mobile);
     color: var(--color-ink-muted);
+  }
+
+  .galeria__ig-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 32px;
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  .galeria__ig-link:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  .galeria__strip-wrap {
+    position: relative;
+  }
+
+  .galeria__strip-nav {
+    position: absolute;
+    top: 50%;
+    z-index: 2;
+    width: 44px;
+    height: 44px;
+    transform: translateY(-50%);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .galeria__strip-nav:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  .galeria__strip-nav--prev {
+    left: var(--space-2);
+  }
+
+  .galeria__strip-nav--next {
+    right: var(--space-2);
   }
 
   .galeria__strip {
@@ -210,7 +306,53 @@ const PHOTOS = [
     box-shadow: var(--shadow-focus);
   }
 
+  .galeria__lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+  }
+
+  .galeria__lightbox-nav:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  .galeria__lightbox-nav--prev {
+    left: var(--space-4);
+  }
+
+  .galeria__lightbox-nav--next {
+    right: var(--space-4);
+  }
+
+  .galeria__lightbox-counter {
+    position: absolute;
+    bottom: var(--space-6);
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--color-ink);
+    font-size: var(--font-size-caption-mobile);
+    font-weight: var(--font-weight-body-medium);
+  }
+
   @media (min-width: 1024px) {
+    .galeria__strip-nav {
+      display: none;
+    }
+
     .galeria {
       padding: var(--space-24) 0;
       background: var(--color-surface);
@@ -218,12 +360,24 @@ const PHOTOS = [
       border-bottom: 1px solid var(--color-border-soft);
     }
 
-    .galeria__intro,
+    .galeria__header,
     .galeria__strip {
       max-width: var(--container-page);
       margin: 0 auto;
       padding-left: var(--space-6);
       padding-right: var(--space-6);
+    }
+
+    .galeria__header {
+      flex-direction: row;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-10);
+    }
+
+    .galeria__caption {
+      align-items: flex-end;
+      text-align: right;
     }
 
     .galeria__title {
@@ -232,6 +386,10 @@ const PHOTOS = [
 
     .galeria__subtitle {
       font-size: var(--font-size-body-lg-desktop);
+    }
+
+    .galeria__ig-link {
+      font-size: var(--font-size-body-sm-desktop);
     }
 
     .galeria__strip {
@@ -251,12 +409,35 @@ const PHOTOS = [
       scroll-snap-align: none;
     }
 
-    .galeria__trigger {
-      height: auto;
+    /* Per-card heights lifted from desktop-01-inicio.dc.html's masonry
+       (height set: 240-440px) so cards read at the board's scale instead of
+       shrinking to each photo's raw intrinsic aspect ratio. */
+    .galeria__item:nth-child(1) .galeria__trigger {
+      height: 420px;
+    }
+
+    .galeria__item:nth-child(2) .galeria__trigger {
+      height: 280px;
+    }
+
+    .galeria__item:nth-child(3) .galeria__trigger {
+      height: 360px;
+    }
+
+    .galeria__item:nth-child(4) .galeria__trigger {
+      height: 440px;
+    }
+
+    .galeria__item:nth-child(5) .galeria__trigger {
+      height: 320px;
+    }
+
+    .galeria__item:nth-child(6) .galeria__trigger {
+      height: 400px;
     }
 
     .galeria__img {
-      height: auto;
+      height: 100%;
     }
   }
 </style>
@@ -266,19 +447,40 @@ const PHOTOS = [
   const veil = document.getElementById('galeria-veil');
   const box = document.getElementById('galeria-lightbox');
   const closeBtn = document.getElementById('galeria-lightbox-close') as HTMLButtonElement | null;
+  const prevBtn = document.getElementById('galeria-lightbox-prev') as HTMLButtonElement | null;
+  const nextBtn = document.getElementById('galeria-lightbox-next') as HTMLButtonElement | null;
   const img = document.getElementById('galeria-lightbox-img') as HTMLImageElement | null;
+  const counter = document.getElementById('galeria-lightbox-counter');
+  const strip = document.getElementById('galeria-strip') as HTMLUListElement | null;
+  const stripPrevBtn = document.querySelector<HTMLButtonElement>('[data-strip-prev]');
+  const stripNextBtn = document.querySelector<HTMLButtonElement>('[data-strip-next]');
 
-  if (veil && box && closeBtn && img && triggers.length > 0) {
+  if (veil && box && closeBtn && prevBtn && nextBtn && img && counter && triggers.length > 0) {
     let lastTrigger: HTMLButtonElement | null = null;
+    let currentIndex = 0;
+    const total = triggers.length;
+    const focusOrder = [prevBtn, nextBtn, closeBtn];
 
     function isOpen(): boolean {
       return box!.dataset.open === 'true';
     }
 
-    function openLightbox(trigger: HTMLButtonElement): void {
+    function render(index: number): void {
+      const trigger = triggers[index];
       img!.src = trigger.dataset.src ?? '';
       img!.alt = trigger.dataset.alt ?? '';
+      counter!.textContent = `${index + 1} / ${total}`;
+    }
+
+    function goTo(index: number): void {
+      currentIndex = (index + total) % total;
+      render(currentIndex);
+    }
+
+    function openLightbox(trigger: HTMLButtonElement): void {
       lastTrigger = trigger;
+      currentIndex = Number(trigger.dataset.index ?? '0');
+      render(currentIndex);
       box!.dataset.open = 'true';
       veil!.dataset.open = 'true';
       veil!.hidden = false;
@@ -307,6 +509,8 @@ const PHOTOS = [
 
     closeBtn.addEventListener('click', () => closeLightbox());
     veil.addEventListener('click', () => closeLightbox());
+    prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
+    nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
 
     document.addEventListener('keydown', (event) => {
       if (!isOpen()) return;
@@ -314,12 +518,67 @@ const PHOTOS = [
         closeLightbox();
         return;
       }
-      // Only the close button is focusable inside the lightbox — keep Tab
-      // trapped there (single-element focus trap).
+      if (event.key === 'ArrowLeft') {
+        goTo(currentIndex - 1);
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        goTo(currentIndex + 1);
+        return;
+      }
+      // Focus trap across the three focusable controls (prev/next/close).
       if (event.key === 'Tab') {
         event.preventDefault();
-        closeBtn!.focus();
+        const at = focusOrder.indexOf(document.activeElement as HTMLButtonElement);
+        const nextAt = event.shiftKey
+          ? (at - 1 + focusOrder.length) % focusOrder.length
+          : (at + 1) % focusOrder.length;
+        focusOrder[nextAt < 0 ? 0 : nextAt].focus();
       }
     });
+
+    // Swipe left/right on touch devices to move between photos.
+    let touchStartX: number | null = null;
+    box.addEventListener(
+      'touchstart',
+      (event) => {
+        touchStartX = event.touches[0]?.clientX ?? null;
+      },
+      { passive: true },
+    );
+    box.addEventListener(
+      'touchend',
+      (event) => {
+        if (touchStartX === null) return;
+        const endX = event.changedTouches[0]?.clientX ?? touchStartX;
+        const deltaX = endX - touchStartX;
+        const SWIPE_THRESHOLD = 40;
+        if (deltaX > SWIPE_THRESHOLD) goTo(currentIndex - 1);
+        else if (deltaX < -SWIPE_THRESHOLD) goTo(currentIndex + 1);
+        touchStartX = null;
+      },
+      { passive: true },
+    );
+  }
+
+  // Mobile snap-scroll strip prev/next controls.
+  if (strip && stripPrevBtn && stripNextBtn) {
+    function stripStep(): number {
+      const item = strip!.querySelector<HTMLElement>('.galeria__item');
+      if (!item) return strip!.clientWidth;
+      const styles = window.getComputedStyle(strip!);
+      const gap = parseFloat(styles.columnGap || styles.gap || '0') || 0;
+      return item.getBoundingClientRect().width + gap;
+    }
+
+    function scrollStrip(direction: 1 | -1): void {
+      const behavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth';
+      strip!.scrollBy({ left: direction * stripStep(), behavior });
+    }
+
+    stripPrevBtn.addEventListener('click', () => scrollStrip(-1));
+    stripNextBtn.addEventListener('click', () => scrollStrip(1));
   }
 </script>

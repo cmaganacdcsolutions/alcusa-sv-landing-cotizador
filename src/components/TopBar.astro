@@ -1,6 +1,7 @@
 ---
 // TopBar — static component, no business logic, no hardcoded wa.me (README §4).
-// NOT sticky: it scrolls away with the page content (T1.1 AC).
+// STICKY (user decision 2026-09-28, overrides the old non-fixed T1.1 AC):
+// stays visible on scroll so the drawer trigger is always reachable.
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 const waHref = buildWaLink();
@@ -20,7 +21,7 @@ const waHref = buildWaLink();
       ><path d="M4 7h16M4 12h16M4 17h10"></path></svg
     >
   </button>
-  <a href="#inicio" class="top-bar__wordmark" aria-label="ALCUSA, inicio">
+  <a href="/" class="top-bar__wordmark" aria-label="ALCUSA, inicio">
     <img src="/images/logo-primary.png" alt="" width="30" height="30" class="top-bar__logo" />
     <span class="top-bar__brand">Alcusa</span>
   </a>
@@ -35,6 +36,9 @@ const waHref = buildWaLink();
 
 <style>
   .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
     display: flex;
     align-items: center;
     justify-content: space-between;

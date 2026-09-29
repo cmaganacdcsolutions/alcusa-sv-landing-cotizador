@@ -55,6 +55,7 @@ const waHref = buildWaLink();
           ></a
         >
       </div>
+      <p class="site-footer__handles">@alcusasv &middot; @alcusaes</p>
     </div>
 
     <div class="site-footer__wa-col">
@@ -150,6 +151,22 @@ const waHref = buildWaLink();
     min-height: 32px;
     display: flex;
     align-items: center;
+  }
+
+  .site-footer__nav a {
+    text-decoration: none;
+  }
+
+  .site-footer__nav a:focus-visible,
+  .site-footer__whatsapp:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  .site-footer__handles {
+    margin: var(--space-2) 0 0;
+    font-size: var(--font-size-body-sm-mobile);
+    color: #9fb0c9;
   }
 
   .site-footer__social {
