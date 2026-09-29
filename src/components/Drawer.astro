@@ -192,16 +192,19 @@ const isContact = pathname === '/contacto';
     position: fixed;
     left: 0;
     top: 0;
-    bottom: 0;
+    height: 100dvh;
     width: min(360px, 83vw);
     background: var(--color-surface);
     border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
     box-shadow: var(--shadow-lg);
-    padding: max(var(--space-6), env(safe-area-inset-top)) var(--space-5) var(--space-8);
+    padding: max(var(--space-6), env(safe-area-inset-top)) var(--space-5)
+      max(var(--space-8), env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
     z-index: 50;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     transform: translateX(-100%);
     transition: transform var(--motion-duration-base) var(--motion-ease-ui);
   }
@@ -457,6 +460,92 @@ const isContact = pathname === '/contacto';
       border: 1px solid var(--color-surface-tint);
     }
   }
+
+  /* Short-viewport compaction (laptops at 768–900px tall): shrink the
+     brand mark, link rows and footer spacing so the whole drawer —
+     including "Síguenos" — fits without scrolling. Scrolling (above) is
+     the last-resort fallback for anything shorter than this. */
+  @media (min-width: 1024px) and (max-height: 920px) {
+    .drawer {
+      padding-top: var(--space-4);
+      padding-bottom: var(--space-6);
+      gap: var(--space-4);
+    }
+
+    .drawer__brand-img {
+      width: 120px;
+      height: 68px;
+    }
+
+    .drawer__links {
+      gap: 2px;
+    }
+
+    .drawer__link {
+      min-height: 44px;
+    }
+
+    .drawer__link--pill {
+      min-height: 48px;
+      margin: var(--space-1) 0;
+    }
+
+    .drawer__footer {
+      gap: var(--space-3);
+      padding-top: var(--space-4);
+    }
+
+    .drawer__whatsapp {
+      min-height: 44px;
+    }
+
+    .drawer__social-icon {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  /* Same idea for narrow (<1024px) short viewports — mobile landscape
+     phones and small tablets in landscape. */
+  @media (max-width: 1023.98px) and (max-height: 700px) {
+    .drawer {
+      padding-top: var(--space-4);
+      padding-bottom: var(--space-5);
+      gap: var(--space-3);
+    }
+
+    .drawer__brand-img {
+      width: 108px;
+      height: 61px;
+    }
+
+    .drawer__links {
+      gap: 2px;
+    }
+
+    .drawer__link {
+      min-height: 42px;
+    }
+
+    .drawer__link--pill {
+      min-height: 46px;
+      margin: var(--space-1) 0;
+    }
+
+    .drawer__footer {
+      gap: var(--space-2);
+      padding-top: var(--space-3);
+    }
+
+    .drawer__whatsapp {
+      min-height: 42px;
+    }
+
+    .drawer__social-icon {
+      width: 40px;
+      height: 40px;
+    }
+  }
 </style>
 
 <script>
@@ -576,6 +665,43 @@ const isContact = pathname === '/contacto';
 
     window.addEventListener('popstate', () => {
       if (isOpen()) closeDrawer(true);
+    });
+
+    function scrollToTop(): void {
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, left: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
+
+    // Same-pathname links with no hash (drawer/footer "Contacto", the
+    // top-bar logo on the home page, etc.) are real <a href> elements
+    // pointing at the page the visitor is already on. Left alone, the
+    // browser treats a click on one as a normal navigation and does a full
+    // reload. Intercept those here (document-level delegation covers the
+    // drawer, the footer and the top bar in one place) and just close the
+    // drawer + scroll to top instead. In-page hash links keep the dedicated
+    // scrollToHash branch above untouched.
+    document.addEventListener('click', (event) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const link = target?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!link) return;
+      if (link.target && link.target !== '_self') return;
+      if (link.origin !== window.location.origin) return;
+      if (link.pathname !== window.location.pathname) return;
+      if (link.hash) return;
+
+      event.preventDefault();
+      if (pushedHistoryEntry) {
+        // Consume the drawer's pushed history entry in place, same as the
+        // hash branch above — no history.back() round-trip.
+        window.history.replaceState(null, '', link.pathname + link.search);
+        pushedHistoryEntry = false;
+        closeDrawer();
+      } else if (isOpen()) {
+        closeDrawer();
+      }
+      scrollToTop();
     });
   }
 </script>
