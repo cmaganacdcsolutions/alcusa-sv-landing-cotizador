@@ -11,6 +11,8 @@ export interface Step2PrecioProps {
   state: CotizadorState;
   quote: QuoteResult;
   onNext: () => void;
+  // Jumps back to Step1Medidas — desktop-04/ios-04's "Editar medidas" link.
+  onEditMedidas: () => void;
 }
 
 // Step 2 — live price card BEFORE address (T1.2 scope; generalized to
@@ -24,11 +26,10 @@ export interface Step2PrecioProps {
 // new `.estimate-card` family in cotizador-medidas.css. It intentionally
 // reuses `product.name` (real selection) rather than the board's static demo
 // text ("Puerta recta · Aquaclara" is prototype flavor text hardcoded in the
-// mock's JS, unrelated to the actual selected finish) — see HANDOFF. The
-// board's "Editar medidas" link is NOT implemented: it needs a step-jump
-// callback this component isn't given (Cotizador.tsx/shell owns step
-// navigation) — flagged in HANDOFF for sf-cot-shell.
-export default function Step2Precio({ product, state, quote, onNext }: Step2PrecioProps): ReactElement {
+// mock's JS, unrelated to the actual selected finish) — see HANDOFF.
+// sf-cot-polish item 4 — "Editar medidas" now jumps back to Step1Medidas via
+// `onEditMedidas` (Cotizador.tsx owns step navigation).
+export default function Step2Precio({ product, state, quote, onNext, onEditMedidas }: Step2PrecioProps): ReactElement {
   const { requiresQuote, amount: price } = quote;
   const { detail } = buildLineItem(state);
   // S6 — ventana/jardin: requiresQuote never hard-blocks "Siguiente" (T6.3);
@@ -49,6 +50,9 @@ export default function Step2Precio({ product, state, quote, onNext }: Step2Prec
             <div className="estimate-card__meta">
               <span className="estimate-card__name">{product.name}</span>
               <span className="estimate-card__detail">{detail}</span>
+              <button type="button" className="estimate-card__edit-link" onClick={onEditMedidas}>
+                Editar medidas
+              </button>
             </div>
           </div>
           <div className="estimate-card__price">
@@ -80,6 +84,9 @@ export default function Step2Precio({ product, state, quote, onNext }: Step2Prec
             <div className="estimate-card__meta">
               <span className="estimate-card__name">{product.name}</span>
               <span className="estimate-card__detail">{detail}</span>
+              <button type="button" className="estimate-card__edit-link" onClick={onEditMedidas}>
+                Editar medidas
+              </button>
             </div>
           </div>
           <div className="estimate-card__price">

@@ -342,6 +342,23 @@
   color: var(--color-ink-muted);
 }
 
+/* sf-cot-polish item 4 — desktop-04/ios-04's "Editar medidas" link, a plain
+   text button (no icon, no border) under the name/detail rows. */
+.estimate-card__edit-link {
+  align-self: flex-start;
+  min-height: 28px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  font-size: 0.9375rem; /* 15px */
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
 .estimate-card__price {
   display: flex;
   flex-direction: column;

@@ -34,7 +34,9 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$162.00');
 
-    await page.getByRole('button', { name: 'Medidas' }).click();
+    // exact: true — sf-cot-polish's new "Editar medidas" link (Step2Precio's
+    // estimate card) would otherwise fuzzy-match this same locator.
+    await page.getByRole('button', { name: 'Medidas', exact: true }).click();
     await page.getByRole('checkbox', { name: /Zaranda/ }).check();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$198.00');

@@ -1,4 +1,5 @@
 import { useState, type Dispatch, type ReactElement } from 'react';
+import { createPortal } from 'react-dom';
 import type { CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage, type QuoteMessageItem } from '@integrations/whatsapp/buildMessage';
@@ -26,6 +27,11 @@ export interface Step5FormaPagoProps {
   dispatch?: Dispatch<CotizadorAction>;
   // Optional — advances to the (mock) Wompi step when "Pagar" is clicked.
   onNext?: () => void;
+  // sf-cot-polish item 3 — desktop-06 draws the active CTA (WhatsApp or
+  // Wompi, whichever `method` is selected) ONLY in the "TU COTIZACIÓN"
+  // aside; ios-06/android-06 draw it ONLY in the mobile bottom bar (aside is
+  // hidden below 1024px). Same portal pattern as Step4Resumen.
+  asideCtaTarget?: HTMLElement | null;
 }
 
 // Step 5 — forma de pago, matches desktop-06/ios-06/android-06
@@ -41,6 +47,7 @@ export default function Step5FormaPago({
   total,
   dispatch,
   onNext,
+  asideCtaTarget,
 }: Step5FormaPagoProps): ReactElement {
   const [method, setLocalMethod] = useState<'wa' | 'pay'>(state.payMethod);
   const [amountPct, setLocalAmountPct] = useState<80 | 100>(state.payAmountPct);
@@ -110,6 +117,20 @@ export default function Step5FormaPago({
   const waMsg = buildQuoteMessage({ items, transporte, total: grandTotal, anticipo, saldo });
   const waHref = buildWaLink(waMsg);
   const money = (n: number) => `$${n.toFixed(2)}`;
+
+  const waCta = (
+    <a href={waHref} className="btn btn-whatsapp" style={{ width: '100%' }}>
+      <IconWhatsApp />
+      Enviar por WhatsApp
+    </a>
+  );
+  const payCta = (
+    <button type="button" className="btn btn-primary" style={{ width: '100%' }} onClick={onNext}>
+      <IconCardRect size={20} />
+      Pagar {money(amountToPay)} con Wompi
+      <IconArrowRight />
+    </button>
+  );
 
   return (
     <section aria-labelledby="cotizador-page-title">
@@ -204,26 +225,15 @@ export default function Step5FormaPago({
       </div>
 
       {method === 'wa' ? (
-        <div className="bottom-bar" style={{ marginTop: 16 }}>
-          <a href={waHref} className="btn btn-whatsapp" style={{ minHeight: 52, width: '100%' }}>
-            <IconWhatsApp />
-            Enviar por WhatsApp
-          </a>
+        <div className="bottom-bar cotizador__mobile-only-ctas" style={{ marginTop: 16 }}>
+          {waCta}
         </div>
       ) : (
-        <div className="bottom-bar" style={{ marginTop: 16 }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ minHeight: 52, width: '100%' }}
-            onClick={onNext}
-          >
-            <IconCardRect size={20} />
-            Pagar {money(amountToPay)} con Wompi
-            <IconArrowRight />
-          </button>
+        <div className="bottom-bar cotizador__mobile-only-ctas" style={{ marginTop: 16 }}>
+          {payCta}
         </div>
       )}
+      {asideCtaTarget && createPortal(method === 'wa' ? waCta : payCta, asideCtaTarget)}
 
       <p className="wompi-footnote">
         <IconLock />

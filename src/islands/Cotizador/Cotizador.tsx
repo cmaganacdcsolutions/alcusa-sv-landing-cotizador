@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, type ReactElement } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState, type ReactElement } from 'react';
 import '@styles/cotizador.css';
 import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
 import { getZoneFee } from '@engine/pricing';
@@ -13,12 +13,15 @@ import {
 } from './state/cotizadorStore';
 import { buildLineItem, computeQuote } from './state/quote';
 import { IconArrowRight, IconCheck, IconChevronLeft, IconLock, IconWhatsApp } from './icons';
+import { IconSpinner } from './icons-checkout';
 import Step0Producto from './steps/Step0Producto';
 import Step1Medidas from './steps/Step1Medidas';
 import Step2Precio from './steps/Step2Precio';
 import Step3ZonaEntrega from './steps/Step3ZonaEntrega';
 import Step4Resumen from './steps/Step4Resumen';
 import Step5FormaPago from './steps/Step5FormaPago';
+import Step6Wompi from './steps/Step6Wompi';
+import Step7Resultado from './steps/Step7Resultado';
 
 const STEP_LABELS: Record<CotizadorStep, string> = {
   producto: 'Producto',
@@ -31,7 +34,16 @@ const STEP_LABELS: Record<CotizadorStep, string> = {
   resultado: 'Resultado',
 };
 
-const VISIBLE_STEPS: readonly CotizadorStep[] = STEP_ORDER.slice(0, 6);
+// sf-cot-polish: navigation now spans the full 8-step wizard (was clamped to
+// the first 6, which made Step6Wompi/Step7Resultado unreachable — next()
+// could never advance past 'formaPago'). The mobile 6-dot stepper is a
+// separate, narrower list (see MOBILE_STEPPER_STEPS below) — grepping
+// ios-0N/android-0N confirms the "Pasos del cotizador" <ol> only appears on
+// 03/04/05 (producto, medidas, precio, zonaEntrega, resumen); 06
+// (whatsapp-pago/formaPago) and 07 (payment-result/wompi+resultado) render
+// no stepper at all on mobile.
+const MOBILE_STEPPER_STEPS: readonly CotizadorStep[] = STEP_ORDER.slice(0, 6);
+const MOBILE_STEPPER_LAST_VISIBLE_IDX = 4; // 'resumen' — index of the last step that still shows the mobile stepper
 
 // Desktop-only rail (nav) — desktop-0[3-7]-*.dc.html render all 8 STEP_ORDER
 // entries with a title + one-line sub-label, unlike the 6-dot mobile
@@ -97,12 +109,22 @@ interface AsideView {
   items: AsideItem[];
   showDeposit: boolean;
   /**
-   * null on resumen/formaPago/wompi: those steps' own "Enviar por WhatsApp
-   * para confirmar" / "Pagar ahora" controls already exist 1:1 in
-   * Step4Resumen.tsx (sf-cot-checkout) — duplicating them here would create
-   * a second same-named control on the page and break their existing
-   * `getByRole(..., { name: 'Pagar ahora' })`-style e2e locators. See
-   * HANDOFF for the follow-up needed to fold them into this card visually.
+   * null on resumen/formaPago: desktop-05/06 draw "Enviar por WhatsApp para
+   * confirmar"/"Pagar ahora" (resumen) and the Wompi CTA (formaPago) ONLY in
+   * this aside, never in the main content column — Step4Resumen/
+   * Step5FormaPago own the message/amount logic (per-product WhatsApp text,
+   * amount toggle) so they still render their own copy of the same control
+   * for the mobile bottom-bar (ios/android boards draw it there instead),
+   * then `createPortal` a second, real, identically-wired copy into this
+   * card's `.cotizador-aside__ctas` mount point (via the `asideCtaTarget`
+   * prop) when running at >=1024px. CSS hides whichever copy doesn't match
+   * the current breakpoint (see `.cotizador__mobile-only-ctas` /
+   * `.cotizador-aside` display:none rules) so exactly one is ever visible —
+   * `getByRole` locators (which only match elements in the accessibility
+   * tree, i.e. not display:none) resolve to that one without scoping.
+   * On 'wompi' this is instead a static "Creando enlace de pago…" pill
+   * (desktop-06's own "ANOTACIÓN · ESTADO DE CARGA" callout) — there's
+   * nothing to click while the mock payment is in flight.
    */
   ctas: ReactElement | null;
 }
@@ -110,6 +132,9 @@ interface AsideView {
 export default function Cotizador(): ReactElement {
   const [state, dispatch] = useReducer(cotizadorReducer, initialCotizadorState);
   const rootRef = useRef<HTMLDivElement>(null);
+  // Portal mount for the resumen/formaPago aside CTAs — see the AsideView.ctas
+  // comment below and Step4Resumen/Step5FormaPago's `asideCtaTarget` prop.
+  const [portalCtaEl, setPortalCtaEl] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const initialHash = window.location.hash;
@@ -161,7 +186,7 @@ export default function Cotizador(): ReactElement {
 
   function next(): void {
     const idx = STEP_ORDER.indexOf(state.step);
-    goToStep(STEP_ORDER[Math.min(idx + 1, VISIBLE_STEPS.length - 1)]);
+    goToStep(STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)]);
   }
 
   function back(): void {
@@ -178,11 +203,20 @@ export default function Cotizador(): ReactElement {
   // to summarize mid-flow.
   const showSummaryColumn = !!product && state.step !== 'producto' && state.step !== 'resultado';
 
-  const currentIdx = VISIBLE_STEPS.indexOf(state.step);
+  const currentIdx = STEP_ORDER.indexOf(state.step);
   const isFirstStep = currentIdx <= 0;
+  // Mobile 6-dot stepper (.step-rail-wrap) only exists through 'resumen' —
+  // see MOBILE_STEPPER_STEPS comment above.
+  const showMobileStepper = currentIdx <= MOBILE_STEPPER_LAST_VISIBLE_IDX;
 
   // --- Desktop rail (kicker + "Paso N de 8" + progress bar + 8-item list) ---
-  const railIdx = STEP_ORDER.indexOf(state.step);
+  // desktop-07-payment-result.dc.html (the only board covering wompi/
+  // resultado) shows "Paso 7 de 8", aria-current on item 7 ("Pago (Wompi)"),
+  // AND item 8 ("Resultado") highlighted the same way (bold, accent ring)
+  // but without aria-current — i.e. wompi+resultado share rail position 7;
+  // resultado never advances the counter or the current pointer.
+  const isPaymentPhase = state.step === 'wompi' || state.step === 'resultado';
+  const railIdx = STEP_ORDER.indexOf(isPaymentPhase ? 'wompi' : state.step);
   const railStepNumber = railIdx + 1;
   const railProgressPct = (railStepNumber / STEP_ORDER.length) * 100;
   // "¿Dudas con tu medida?" block (desktop rail only, all of boards 03-07) —
@@ -212,7 +246,7 @@ export default function Cotizador(): ReactElement {
     const siguiente = (disabled: boolean): ReactElement => (
       <a
         className="btn btn-primary cotizador-aside__cta"
-        href={`#cotizador/${STEP_SLUGS[STEP_ORDER[Math.min(STEP_ORDER.indexOf(state.step) + 1, VISIBLE_STEPS.length - 1)]]}`}
+        href={`#cotizador/${STEP_SLUGS[STEP_ORDER[Math.min(STEP_ORDER.indexOf(state.step) + 1, STEP_ORDER.length - 1)]]}`}
         aria-disabled={disabled || undefined}
         onClick={(event) => {
           event.preventDefault();
@@ -283,8 +317,13 @@ export default function Cotizador(): ReactElement {
         note: 'Incluye transporte, cobrado 1 vez por pedido.',
         items: [baseItem, { name: 'Transporte', detail: transporteDetail, price: transportePrice }],
         showDeposit: total !== null,
-        // Deliberately no CTAs here — see the AsideView.ctas comment above.
-        ctas: null,
+        ctas:
+          state.step === 'wompi' ? (
+            <span className="cotizador-aside__cta cotizador-aside__cta--loading" aria-hidden="true">
+              <IconSpinner size={20} />
+              Creando enlace de pago…
+            </span>
+          ) : null, // resumen/formaPago: real CTAs portal in from the step component — see the AsideView.ctas comment above.
       };
     }
   }
@@ -300,7 +339,7 @@ export default function Cotizador(): ReactElement {
         ) : (
           <button type="button" className="cotizador__back" onClick={back}>
             <IconChevronLeft />
-            {STEP_LABELS[VISIBLE_STEPS[currentIdx - 1]]}
+            {STEP_LABELS[STEP_ORDER[currentIdx - 1]]}
           </button>
         )}
         <h2 id="cotizador-page-title" className="cotizador__page-title">
@@ -308,26 +347,28 @@ export default function Cotizador(): ReactElement {
         </h2>
       </div>
 
-      <div className="cotizador__rail-col">
-        <div className="step-rail-wrap">
-          <div className="step-rail__connector" aria-hidden="true" />
-          <ol className="step-rail" aria-label="Pasos del cotizador">
-            {VISIBLE_STEPS.map((step, index) => {
-              const itemState = index < currentIdx ? 'done' : index === currentIdx ? 'current' : 'upcoming';
-              return (
-                <li
-                  key={step}
-                  className="step-rail__item"
-                  data-state={itemState}
-                  aria-current={itemState === 'current' ? 'step' : undefined}
-                >
-                  <span className="step-rail__dot">{itemState === 'done' ? <IconCheck /> : index + 1}</span>
-                  <span>{STEP_LABELS[step]}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+      <div className="cotizador__rail-col" data-mobile-empty={showMobileStepper ? undefined : 'true'}>
+        {showMobileStepper && (
+          <div className="step-rail-wrap">
+            <div className="step-rail__connector" aria-hidden="true" />
+            <ol className="step-rail" aria-label="Pasos del cotizador">
+              {MOBILE_STEPPER_STEPS.map((step, index) => {
+                const itemState = index < currentIdx ? 'done' : index === currentIdx ? 'current' : 'upcoming';
+                return (
+                  <li
+                    key={step}
+                    className="step-rail__item"
+                    data-state={itemState}
+                    aria-current={itemState === 'current' ? 'step' : undefined}
+                  >
+                    <span className="step-rail__dot">{itemState === 'done' ? <IconCheck /> : index + 1}</span>
+                    <span>{STEP_LABELS[step]}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
 
         <nav className="rail-desktop" aria-label="Pasos del cotizador">
           <div className="rail-desktop__intro">
@@ -341,14 +382,17 @@ export default function Cotizador(): ReactElement {
           </div>
           <ol className="rail-desktop__list">
             {STEP_ORDER.map((step, index) => {
-              const itemState = index < railIdx ? 'done' : index === railIdx ? 'current' : 'upcoming';
+              // 'resultado' (index railIdx+1) shares the "current" look while
+              // isPaymentPhase, without aria-current — see the railIdx comment.
+              const isExtraCurrent = isPaymentPhase && index === railIdx + 1;
+              const itemState = index < railIdx ? 'done' : index === railIdx || isExtraCurrent ? 'current' : 'upcoming';
               const item = RAIL_ITEMS[step];
               return (
                 <li
                   key={step}
                   className="rail-desktop__item"
                   data-state={itemState}
-                  aria-current={itemState === 'current' ? 'step' : undefined}
+                  aria-current={index === railIdx ? 'step' : undefined}
                 >
                   {index < STEP_ORDER.length - 1 && <span className="rail-desktop__connector" aria-hidden="true" />}
                   <div className="rail-desktop__row">
@@ -386,7 +430,13 @@ export default function Cotizador(): ReactElement {
           <Step1Medidas product={product} state={state} dispatch={dispatch} quote={quote} onNext={next} />
         )}
         {state.step === 'precio' && product && (
-          <Step2Precio product={product} state={state} quote={quote} onNext={next} />
+          <Step2Precio
+            product={product}
+            state={state}
+            quote={quote}
+            onNext={next}
+            onEditMedidas={() => goToStep('medidas')}
+          />
         )}
         {state.step === 'zonaEntrega' && product && (
           <Step3ZonaEntrega
@@ -401,10 +451,41 @@ export default function Cotizador(): ReactElement {
           />
         )}
         {state.step === 'resumen' && product && (
-          <Step4Resumen product={product} state={state} quote={quote} zoneFee={zoneFee} total={total} onNext={next} />
+          <Step4Resumen
+            product={product}
+            state={state}
+            quote={quote}
+            zoneFee={zoneFee}
+            total={total}
+            onNext={next}
+            onEditZone={() => goToStep('zonaEntrega')}
+            asideCtaTarget={portalCtaEl}
+          />
         )}
         {state.step === 'formaPago' && product && (
-          <Step5FormaPago product={product} state={state} quote={quote} zoneFee={zoneFee} total={total} />
+          <Step5FormaPago
+            product={product}
+            state={state}
+            quote={quote}
+            zoneFee={zoneFee}
+            total={total}
+            dispatch={dispatch}
+            onNext={next}
+            asideCtaTarget={portalCtaEl}
+          />
+        )}
+        {state.step === 'wompi' && product && (
+          <Step6Wompi state={state} quote={quote} zoneFee={zoneFee} total={total} dispatch={dispatch} onNext={next} />
+        )}
+        {state.step === 'resultado' && product && (
+          <Step7Resultado
+            product={product}
+            state={state}
+            quote={quote}
+            zoneFee={zoneFee}
+            total={total}
+            onRetry={() => goToStep('wompi')}
+          />
         )}
       </div>
 
@@ -446,6 +527,9 @@ export default function Cotizador(): ReactElement {
             </div>
           )}
           {aside.ctas && <div className="cotizador-aside__ctas">{aside.ctas}</div>}
+          {(state.step === 'resumen' || state.step === 'formaPago') && (
+            <div className="cotizador-aside__ctas" ref={setPortalCtaEl} />
+          )}
           <p className="cotizador-aside__wompi-note">
             <IconLock size={16} />
             Pago con tarjeta vía Wompi · excepto American Express

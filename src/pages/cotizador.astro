@@ -6,7 +6,6 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import TopBar from '@components/TopBar.astro';
 import Drawer from '@components/Drawer.astro';
-import Footer from '@components/Footer.astro';
 import Cotizador from '@islands/Cotizador/Cotizador';
 ---
 
@@ -23,8 +22,6 @@ import Cotizador from '@islands/Cotizador/Cotizador';
       <Cotizador client:load />
     </section>
   </main>
-
-  <Footer />
 </BaseLayout>
 
 <style is:global>
