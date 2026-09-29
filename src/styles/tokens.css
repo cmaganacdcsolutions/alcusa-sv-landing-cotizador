@@ -18,12 +18,19 @@
   --color-whatsapp: #18a96b;
   --color-whatsapp-strong: #087348;
   --color-whatsapp-strong-hover: #06603c;
+  /* Desktop contacto "Escribir" chip bg (desktop-08 ~L49) — a light
+     WhatsApp tint distinct from --color-surface-tint (which is blue). */
+  --color-whatsapp-tint: #e8f5ee;
   --color-success: #0d9b66;
   --color-error: #d63232;
   --color-warning: #8a5a00;
   --color-warning-bg: #fff4e0;
   --color-focus: #0956d8;
   --color-scrim-ink: rgba(16, 33, 61, 0.55);
+  /* Contacto tel-error copy: mobile boards (ios-08/android-08 ~L64/L70) use
+     a darker red than the desktop board (desktop-08 ~L103, #d63232 =
+     --color-error). Two distinct board literals, two tokens. */
+  --color-error-mobile: #b42424;
 
   /* Tipografía */
   --font-family-display: 'Fraunces', Georgia, serif;
@@ -85,17 +92,39 @@
 
   /* Espaciado (grid 4/8) */
   --space-1: 4px;
+  /* Contacto form field label-to-input gap on mobile (ios-08/android-08
+     ~L57-58: gap 6px), vs 8px on desktop (desktop-08 ~L96-97). */
+  --space-1-5: 6px;
   --space-2: 8px;
+  /* Desktop contacto submit-button / map-cta icon gap (desktop-08 ~L75,
+     L131-132: gap 10px). */
+  --space-2-5: 10px;
   --space-3: 12px;
   --space-4: 16px;
+  /* Contacto info-list item vertical padding / social-card icon gap
+     (ios-08/android-08 ~L36-43, desktop-08 ~L82-84): 14px — breaks the 4/8
+     grid but is the board's literal value, not an invented one. */
+  --space-3-5: 14px;
+  /* Desktop contacto form input horizontal padding (desktop-08 ~L98) and
+     quote-note padding-top (desktop-08 ~L134): 18px. */
+  --space-4-5: 18px;
   --space-5: 20px;
+  /* Desktop contacto sticky form card internal gap (desktop-08 ~L90: gap
+     22px) and map-caption vertical padding (desktop-08 ~L72: 22px 28px). */
+  --space-5-5: 22px;
   --space-6: 24px;
+  /* Desktop contacto info list / social cards cell padding (desktop-08
+     ~L49-52, L82-84): 24px 28px. No existing 4/8-grid step fits 28px. */
+  --space-7: 28px;
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;
   --space-16: 64px;
   --space-20: 80px;
   --space-24: 96px;
+  /* Desktop contacto section bottom padding (desktop-08 ~L38: padding 80px
+     0 120px). */
+  --space-30: 120px;
 
   /* Contenedores y breakpoints */
   --container-sm: 640px;
@@ -126,6 +155,10 @@
   --shadow-sm: 0 2px 6px rgba(16, 33, 61, 0.08);
   --shadow-md: 0 8px 20px rgba(16, 33, 61, 0.10);
   --shadow-lg: 0 16px 40px rgba(16, 33, 61, 0.12);
+  /* Desktop contacto sticky form card (desktop-08 ~L90): 0 16px 40px /
+     0.10 alpha — close to --shadow-lg but a different alpha, so its own
+     token rather than reusing/rounding. */
+  --shadow-xl: 0 16px 40px rgba(16, 33, 61, 0.1);
   --shadow-focus: 0 0 0 3px rgba(9, 86, 216, 0.35);
 
   /* Iconografía */
