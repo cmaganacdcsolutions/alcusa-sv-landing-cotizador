@@ -27,47 +27,46 @@ const waHref = buildWaLink();
         Conoce tu precio antes de dar tu dirección
       </h2>
       <p class="cotizador-teaser__lead">
-        Elige el producto, ingresa tus medidas y ve el estimado al instante. Puertas, ventanas y jardín en una sola
-        cotización.
+        Elige el producto, ingresa tus medidas y ve el estimado al instante. Puertas,
+        ventanas y jardín en una sola cotización.
       </p>
       <div class="cotizador-teaser__cta-row">
         <a href="/cotizador" class="cotizador-teaser__cta">
           Empezar mi cotización
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
         </a>
         <a href={waHref} class="cotizador-teaser__wa-cta">
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-            ><path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" /><path
-              d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z"
-            /></svg
-          >
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
+            <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
+          </svg>
           Cotizar por WhatsApp
         </a>
       </div>
     </div>
     <ul class="cotizador-teaser__products" aria-label="Productos y precios desde">
-      {
-        teasers.map((teaser) => (
-          <li class="cotizador-teaser__product">
-            <img
-              src={`/images/${teaser.imageBase}-128.webp`}
-              srcset={`/images/${teaser.imageBase}-128.webp 128w, /images/${teaser.imageBase}-256.webp 256w`}
-              sizes="56px"
-              alt=""
-              width="56"
-              height="56"
-              loading="lazy"
-              decoding="async"
-              class="cotizador-teaser__product-img"
-            />
-            <span class="cotizador-teaser__product-copy">
-              <span class="cotizador-teaser__product-label">{teaser.label}</span>
-              <span class="cotizador-teaser__product-subtitle">{teaser.subtitle}</span>
-            </span>
-            <span class="cotizador-teaser__product-price">Desde ${teaser.fromPrice}</span>
-          </li>
-        ))
-      }
+      {teasers.map((teaser) => (
+        <li class="cotizador-teaser__product">
+          <img
+            src={`/images/${teaser.imageBase}-128.webp`}
+            srcset={`/images/${teaser.imageBase}-128.webp 128w, /images/${teaser.imageBase}-256.webp 256w`}
+            sizes="56px"
+            alt=""
+            width="56"
+            height="56"
+            loading="lazy"
+            decoding="async"
+            class="cotizador-teaser__product-img"
+          />
+          <span class="cotizador-teaser__product-copy">
+            <span class="cotizador-teaser__product-label">{teaser.label}</span>
+            <span class="cotizador-teaser__product-subtitle">{teaser.subtitle}</span>
+          </span>
+          <span class="cotizador-teaser__product-price">Desde ${teaser.fromPrice}</span>
+        </li>
+      ))}
     </ul>
   </div>
 </section>
@@ -101,13 +100,8 @@ const waHref = buildWaLink();
     margin: 0;
     font-family: var(--font-family-display);
     font-weight: var(--font-weight-display-medium);
-    /* Board h2 is actually 28px/1.15 mobile, 56px/64px desktop (Main.dc.html
-       / desktop-01-inicio.dc.html #cotizador h2) — bigger than
-       font-size-h2-mobile/desktop (22/28px). Per Foreman (2026-09-28): a
-       project-wide shared-token gap fixed centrally, not per section — keep
-       referencing font-size-h2-mobile/desktop so this inherits that fix
-       automatically; only line-height is corrected here. */
-    font-size: var(--font-size-h2-mobile);
+    /* Board h2: 28px/1.15 mobile, 56px/64px desktop. */
+    font-size: var(--font-size-display-md-mobile);
     line-height: var(--font-line-height-display);
     text-wrap: balance;
   }
@@ -172,7 +166,12 @@ const waHref = buildWaLink();
       bottom: -40%;
       left: 44%;
       width: 18%;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0) 100%);
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
       transform: rotate(12deg);
       pointer-events: none;
     }
@@ -191,9 +190,8 @@ const waHref = buildWaLink();
     }
 
     .cotizador-teaser__title {
-      /* Board is 56px/64px (display 1.15 ratio) — see the shared-token note
-         on the base rule above; keep font-size-h2-desktop here. */
-      font-size: var(--font-size-h2-desktop);
+      font-size: var(--font-size-display-xl-desktop);
+      line-height: var(--font-line-height-display-xl-desktop);
     }
 
     .cotizador-teaser__lead {

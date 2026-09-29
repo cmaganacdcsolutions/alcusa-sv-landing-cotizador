@@ -19,12 +19,42 @@
 // "Desliza para ver más." clause, hidden at >=1024px (Instagram link takes
 // over there, matching the desktop board).
 const PHOTOS = [
-  { src: '/images/galeria-01.jpeg', alt: 'Puerta de baño con vidrio decorado instalada', width: 934, height: 1280 },
-  { src: '/images/galeria-02.jpeg', alt: 'División de vidrio esmerilado instalada', width: 1600, height: 1200 },
-  { src: '/images/galeria-03.jpeg', alt: 'Ducha de vidrio corrediza con marco plateado', width: 960, height: 1280 },
-  { src: '/images/galeria-04.jpeg', alt: 'Ventanas correderas de aluminio con perfil negro instaladas', width: 1200, height: 1600 },
-  { src: '/images/galeria-05.jpeg', alt: 'Puerta de vidrio corrediza de aluminio negro en fachada', width: 1600, height: 1200 },
-  { src: '/images/galeria-06.jpeg', alt: 'Ducha de vidrio con marco negro y acabado en mármol', width: 1200, height: 1600 },
+  {
+    src: '/images/galeria-01.jpeg',
+    alt: 'Puerta de baño con vidrio decorado instalada',
+    width: 934,
+    height: 1280,
+  },
+  {
+    src: '/images/galeria-02.jpeg',
+    alt: 'División de vidrio esmerilado instalada',
+    width: 1600,
+    height: 1200,
+  },
+  {
+    src: '/images/galeria-03.jpeg',
+    alt: 'Ducha de vidrio corrediza con marco plateado',
+    width: 960,
+    height: 1280,
+  },
+  {
+    src: '/images/galeria-04.jpeg',
+    alt: 'Ventanas correderas de aluminio con perfil negro instaladas',
+    width: 1200,
+    height: 1600,
+  },
+  {
+    src: '/images/galeria-05.jpeg',
+    alt: 'Puerta de vidrio corrediza de aluminio negro en fachada',
+    width: 1600,
+    height: 1200,
+  },
+  {
+    src: '/images/galeria-06.jpeg',
+    alt: 'Ducha de vidrio con marco negro y acabado en mármol',
+    width: 1200,
+    height: 1600,
+  },
 ] as const;
 ---
 
@@ -32,11 +62,14 @@ const PHOTOS = [
   <div class="galeria__header">
     <div class="galeria__intro">
       <p class="galeria__kicker">Proyectos reales</p>
-      <h2 id="galeria-title" class="galeria__title">Instalaciones de nuestros clientes</h2>
+      <h2 id="galeria-title" class="galeria__title">
+        Instalaciones de nuestros clientes
+      </h2>
     </div>
     <div class="galeria__caption">
       <p class="galeria__subtitle">
-        Fotos enviadas por clientes.<span class="galeria__subtitle-hint"> Desliza para ver más.</span>
+        Fotos enviadas por clientes.
+        <span class="galeria__subtitle-hint"> Desliza para ver más.</span>
       </p>
       <a
         href="https://instagram.com/alcusasv"
@@ -45,48 +78,61 @@ const PHOTOS = [
         class="galeria__ig-link"
         aria-label="Ver más fotos en Instagram, arroba alcusasv"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-          ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
-          ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
-        >
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
+          <circle cx="12" cy="12" r="4"></circle>
+          <circle cx="17.2" cy="6.8" r=".6"></circle>
+        </svg>
         Ver más en Instagram &middot; @alcusasv
       </a>
     </div>
   </div>
 
   <div class="galeria__strip-wrap">
-    <button type="button" class="galeria__strip-nav galeria__strip-nav--prev" data-strip-prev aria-label="Foto anterior">
-      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    <button
+      type="button"
+      class="galeria__strip-nav galeria__strip-nav--prev"
+      data-strip-prev
+      aria-label="Foto anterior"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 6l-6 6 6 6" />
+      </svg>
     </button>
     <ul class="galeria__strip" id="galeria-strip">
-      {
-        PHOTOS.map((photo, index) => (
-          <li class="galeria__item">
-            <button
-              type="button"
-              class="galeria__trigger"
-              data-lightbox-trigger
-              data-index={index}
-              data-src={photo.src}
-              data-alt={photo.alt}
-              aria-label={`Ampliar foto ${index + 1} de ${PHOTOS.length}: ${photo.alt}`}
-            >
-              <img
-                src={photo.src}
-                alt={photo.alt}
-                width={photo.width}
-                height={photo.height}
-                loading="lazy"
-                decoding="async"
-                class="galeria__img"
-              />
-            </button>
-          </li>
-        ))
-      }
+      {PHOTOS.map((photo, index) => (
+        <li class="galeria__item">
+          <button
+            type="button"
+            class="galeria__trigger"
+            data-lightbox-trigger
+            data-index={index}
+            data-src={photo.src}
+            data-alt={photo.alt}
+            aria-label={`Ampliar foto ${index + 1} de ${PHOTOS.length}: ${photo.alt}`}
+          >
+            <img
+              src={photo.src}
+              alt={photo.alt}
+              width={photo.width}
+              height={photo.height}
+              loading="lazy"
+              decoding="async"
+              class="galeria__img"
+            />
+          </button>
+        </li>
+      ))}
     </ul>
-    <button type="button" class="galeria__strip-nav galeria__strip-nav--next" data-strip-next aria-label="Foto siguiente">
-      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    <button
+      type="button"
+      class="galeria__strip-nav galeria__strip-nav--next"
+      data-strip-next
+      aria-label="Foto siguiente"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
     </button>
   </div>
 
@@ -100,7 +146,12 @@ const PHOTOS = [
     aria-hidden="true"
     inert
   >
-    <button type="button" id="galeria-lightbox-close" class="galeria__lightbox-close" aria-label="Cerrar foto ampliada">
+    <button
+      type="button"
+      id="galeria-lightbox-close"
+      class="galeria__lightbox-close"
+      aria-label="Cerrar foto ampliada"
+    >
       <svg
         width="22"
         height="22"
@@ -115,14 +166,32 @@ const PHOTOS = [
         <path d="M6 6l12 12M18 6L6 18" />
       </svg>
     </button>
-    <button type="button" id="galeria-lightbox-prev" class="galeria__lightbox-nav galeria__lightbox-nav--prev" aria-label="Foto anterior">
-      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    <button
+      type="button"
+      id="galeria-lightbox-prev"
+      class="galeria__lightbox-nav galeria__lightbox-nav--prev"
+      aria-label="Foto anterior"
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M15 6l-6 6 6 6" />
+      </svg>
     </button>
-    <button type="button" id="galeria-lightbox-next" class="galeria__lightbox-nav galeria__lightbox-nav--next" aria-label="Foto siguiente">
-      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+    <button
+      type="button"
+      id="galeria-lightbox-next"
+      class="galeria__lightbox-nav galeria__lightbox-nav--next"
+      aria-label="Foto siguiente"
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
     </button>
     <img id="galeria-lightbox-img" src="" alt="" class="galeria__lightbox-img" />
-    <p id="galeria-lightbox-counter" class="galeria__lightbox-counter" aria-live="polite"></p>
+    <p
+      id="galeria-lightbox-counter"
+      class="galeria__lightbox-counter"
+      aria-live="polite"
+    ></p>
   </div>
 </section>
 
@@ -159,13 +228,8 @@ const PHOTOS = [
 
   .galeria__title {
     margin: 0;
-    /* Board h2 is actually 30px/1.15 mobile, 56px/64px desktop (Main.dc.html
-       / android-01-inicio.dc.html / desktop-01-inicio.dc.html #galeria-title)
-       — bigger than font-size-h2-mobile/desktop (22/28px). Per Foreman
-       (2026-09-28): a project-wide shared-token gap fixed centrally, not
-       per section — keep referencing font-size-h2-mobile/desktop so this
-       inherits that fix automatically; only line-height is corrected below. */
-    font-size: var(--font-size-h2-mobile);
+    /* Section h2 per boards: 30px/1.15 mobile, 56px/64px desktop. */
+    font-size: var(--font-size-display-lg-mobile);
     line-height: var(--font-line-height-display);
     font-weight: var(--font-weight-display-medium);
     font-family: var(--font-family-display);
@@ -401,7 +465,8 @@ const PHOTOS = [
     }
 
     .galeria__title {
-      font-size: var(--font-size-h2-desktop);
+      font-size: var(--font-size-display-xl-desktop);
+      line-height: var(--font-line-height-display-xl-desktop);
     }
 
     .galeria__subtitle {
@@ -469,19 +534,36 @@ const PHOTOS = [
 </style>
 
 <script>
-  const triggers = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-lightbox-trigger]'));
+  const triggers = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('[data-lightbox-trigger]'),
+  );
   const veil = document.getElementById('galeria-veil');
   const box = document.getElementById('galeria-lightbox');
-  const closeBtn = document.getElementById('galeria-lightbox-close') as HTMLButtonElement | null;
-  const prevBtn = document.getElementById('galeria-lightbox-prev') as HTMLButtonElement | null;
-  const nextBtn = document.getElementById('galeria-lightbox-next') as HTMLButtonElement | null;
+  const closeBtn = document.getElementById(
+    'galeria-lightbox-close',
+  ) as HTMLButtonElement | null;
+  const prevBtn = document.getElementById(
+    'galeria-lightbox-prev',
+  ) as HTMLButtonElement | null;
+  const nextBtn = document.getElementById(
+    'galeria-lightbox-next',
+  ) as HTMLButtonElement | null;
   const img = document.getElementById('galeria-lightbox-img') as HTMLImageElement | null;
   const counter = document.getElementById('galeria-lightbox-counter');
   const strip = document.getElementById('galeria-strip') as HTMLUListElement | null;
   const stripPrevBtn = document.querySelector<HTMLButtonElement>('[data-strip-prev]');
   const stripNextBtn = document.querySelector<HTMLButtonElement>('[data-strip-next]');
 
-  if (veil && box && closeBtn && prevBtn && nextBtn && img && counter && triggers.length > 0) {
+  if (
+    veil &&
+    box &&
+    closeBtn &&
+    prevBtn &&
+    nextBtn &&
+    img &&
+    counter &&
+    triggers.length > 0
+  ) {
     let lastTrigger: HTMLButtonElement | null = null;
     let currentIndex = 0;
     const total = triggers.length;
@@ -598,7 +680,9 @@ const PHOTOS = [
     }
 
     function scrollStrip(direction: 1 | -1): void {
-      const behavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const behavior: ScrollBehavior = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches
         ? 'auto'
         : 'smooth';
       strip!.scrollBy({ left: direction * stripStep(), behavior });

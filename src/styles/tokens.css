@@ -58,6 +58,10 @@
   --font-size-display-2xl-desktop: 5.5rem;
   --font-line-height-display-2xl-desktop: 6rem;
   --letter-spacing-display-tight: -0.01em;
+  /* Landing section h2s: 30px/1.15 mobile, 56px/64px desktop on every
+     section of the boards; the mobile "Cotiza en línea" title is 28px. */
+  --font-line-height-display-xl-desktop: 4rem;
+  --font-size-display-md-mobile: 1.75rem;
   /* Hero category card label/subtitle desktop tiers — desktop-01-inicio
      ~L58 (20px label, 15px subtitle; price reuses body-desktop 16px). */
   --font-size-hero-category-label-desktop: 1.25rem;
