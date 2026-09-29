@@ -4,7 +4,9 @@ import { hasZoneFee, ZONE_NAMES } from '@engine/pricing';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import type { CotizadorState, Entrega } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
-import { IconArrowRight, IconChevronDown, IconWarningCircle } from '../icons';
+import { IconArrowRight, IconCheck, IconChevronDown, IconWarningCircle } from '../icons';
+import { IconStore, IconTruck } from '../icons-checkout';
+import '@styles/cotizador-checkout.css';
 
 export interface Step3ZonaEntregaProps {
   product: CatalogProduct;
@@ -46,24 +48,58 @@ export default function Step3ZonaEntrega({
         Entrega y zona
       </h3>
 
-      <div role="group" aria-label="Tipo de entrega" className="toggle-group">
+      <div role="group" aria-label="Tipo de entrega" className="delivery-group">
         <button
           type="button"
-          className="toggle-group__btn"
+          className="delivery-option"
           aria-pressed={inst}
           onClick={() => onEntregaChange('instalacion')}
         >
-          Con instalación
+          <span className="delivery-option__check">{inst && <IconCheck size={16} strokeWidth={2} />}</span>
+          <span className="delivery-option__icon">
+            <IconTruck />
+          </span>
+          <span className="delivery-option__body">
+            <span className="delivery-option__title">Con instalación</span>
+            <span className="delivery-option__desc">Transporte según tu municipio</span>
+          </span>
+          <span className="delivery-option__radio" aria-hidden="true" />
         </button>
         <button
           type="button"
-          className="toggle-group__btn"
+          className="delivery-option"
           aria-pressed={!inst}
           onClick={() => onEntregaChange('retiro')}
         >
-          {pickupHasDiscount ? 'Retiro en tienda −15%' : 'Retiro en tienda'}
+          <span className="delivery-option__check">{!inst && <IconCheck size={16} strokeWidth={2} />}</span>
+          <span className="delivery-option__icon">
+            <IconStore />
+          </span>
+          <span className="delivery-option__body">
+            <span className="delivery-option__title">
+              {pickupHasDiscount ? 'Retiro en tienda −15%' : 'Retiro en tienda'}
+            </span>
+            <span className="delivery-option__desc">Sin costo de transporte</span>
+          </span>
+          <span className="delivery-option__radio" aria-hidden="true" />
         </button>
       </div>
+
+      {!inst && (
+        <div className="delivery-note" style={{ marginTop: 8 }}>
+          <IconStore size={22} />
+          <div>
+            <p className="delivery-note__title" style={{ margin: 0 }}>
+              Retiro en tienda
+            </p>
+            <p className="delivery-note__body">
+              {pickupHasDiscount
+                ? 'Aplicamos 15% de descuento al producto. Sin costo de transporte.'
+                : 'Sin costo de transporte.'}
+            </p>
+          </div>
+        </div>
+      )}
 
       {inst && (
         <div className="field" style={{ marginTop: 20 }}>
@@ -118,7 +154,14 @@ export default function Step3ZonaEntrega({
         </div>
       )}
 
-      {canProceed && !zoneUnselected && (
+      {zoneUnselected && (
+        <div className="total-placeholder" style={{ marginTop: 20 }}>
+          <span className="total-placeholder__title">Total por confirmar</span>
+          <p className="total-placeholder__body">Selecciona la zona de instalación.</p>
+        </div>
+      )}
+
+      {canProceed && (
         <dl className="breakdown" style={{ marginTop: 20 }}>
           <div className="breakdown__row">
             <dt>
