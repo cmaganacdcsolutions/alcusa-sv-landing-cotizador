@@ -557,7 +557,7 @@ export default function Cotizador(): ReactElement {
       </div>
 
       {showSummaryColumn && aside && (
-        <aside className="cotizador-aside" aria-label="Resumen de tu cotización">
+        <aside className="cotizador-aside cotizador__summary-col" aria-label="Resumen de tu cotización">
           <div className="cotizador-aside__hero">
             <span className="cotizador-aside__shine" aria-hidden="true" />
             <div className="cotizador-aside__hero-top">

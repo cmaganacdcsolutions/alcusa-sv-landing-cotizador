@@ -205,7 +205,9 @@ const isContact = pathname === '/contacto';
     z-index: 50;
     overflow-y: auto;
     overscroll-behavior: contain;
-    transform: translateX(-100%);
+    /* Park it past its own box-shadow blur (60px on desktop) so the closed
+       drawer does not leave a grey shadow strip along the left edge. */
+    transform: translateX(calc(-100% - 96px));
     transition: transform var(--motion-duration-base) var(--motion-ease-ui);
   }
 
