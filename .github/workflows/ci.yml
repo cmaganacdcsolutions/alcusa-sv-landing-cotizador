@@ -27,10 +27,15 @@ jobs:
 
       - name: Secret scan
         run: |
-          if git grep -nEI "(WOMPI_CLIENT_SECRET|WOMPI_WEBHOOK_SECRET)\s*=\s*['\"a-zA-Z0-9]" -- . ':!.env.example' ':!docs' ':!.github'; then
+          if git grep -nEI "(WOMPI_CLIENT_SECRET|WOMPI_WEBHOOK_SECRET|WOMPI_API_SECRET)\s*=\s*['\"a-zA-Z0-9]" -- . ':!.env.example' ':!docs' ':!.github'; then
             echo "Possible committed secret found." >&2
             exit 1
           fi
+
+      - name: PHP syntax + pure unit checks (no credentials, no network)
+        run: |
+          for f in api/*.php api/_lib/*.php api/_dev/*.php; do php -l "$f"; done
+          php api/_dev/wompi-smoke.php unit
 
       - name: Lint
         run: npm run lint

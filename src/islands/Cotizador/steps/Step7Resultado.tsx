@@ -9,7 +9,8 @@ import { IconCardRect, IconShieldCheck, IconTruck } from '../icons-checkout';
 import '@styles/cotizador-checkout.css';
 
 export interface Step7ResultadoProps {
-  product: CatalogProduct;
+  // Unused by the layout; optional so the return-from-Wompi render (fresh page load, no product selected) can mount it.
+  product?: CatalogProduct;
   state: CotizadorState;
   quote: QuoteResult;
   zoneFee: number | undefined;
@@ -19,7 +20,20 @@ export interface Step7ResultadoProps {
   onRetry?: () => void;
 }
 
-const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const MONTHS_ES = [
+  'ene',
+  'feb',
+  'mar',
+  'abr',
+  'may',
+  'jun',
+  'jul',
+  'ago',
+  'sep',
+  'oct',
+  'nov',
+  'dic',
+];
 
 function todayEs(): string {
   const d = new Date();
@@ -31,13 +45,22 @@ function todayEs(): string {
 // Mock/local state only: no real Wompi calls, no keys, no network — the
 // `outcome` prop is how a caller (or a future S8 gateway callback) picks
 // which of the two drawn states to render.
-export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }: Step7ResultadoProps): ReactElement {
+export default function Step7Resultado({
+  state,
+  quote,
+  zoneFee,
+  total,
+  onRetry,
+}: Step7ResultadoProps): ReactElement {
   // Mock-only: set by Step6Wompi via SET_WOMPI_RESULT
   // (src/integrations/wompi/mock.ts). Falls back to "approved" so this step
   // still renders something sensible if reached directly (e.g. mid-dev,
   // before Cotizador.tsx wires the real Step6→Step7 transition — see
   // HANDOFF).
-  const outcome: 'success' | 'failure' = state.wompiOutcome === 'declined' ? 'failure' : 'success';
+  const outcome: 'success' | 'failure' =
+    state.wompiOutcome === 'declined' ? 'failure' : 'success';
+  // Real gateway only: the redirect could not be confirmed yet; the webhook is the source of truth.
+  const pending = state.wompiOutcome === 'pending';
   const paidPct = state.payAmountPct;
   const orderNumber = state.wompiOrderNumber ?? 'ALC-2026-0001';
   const subtotal = quote.amount ?? 0;
@@ -51,7 +74,10 @@ export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }
 
   // S7 — every cart item + the current item, one row each (a ventana item's
   // several panes collapse into its own single row here, same as Step4Resumen).
-  const lines = buildOrderItems(state, CATALOG_PRODUCTS).map((it) => ({ name: `${it.name} · ${it.detail}`, amount: it.subtotal }));
+  const lines = buildOrderItems(state, CATALOG_PRODUCTS).map((it) => ({
+    name: `${it.name} · ${it.detail}`,
+    amount: it.subtotal,
+  }));
 
   const itemCountText = `${lines.length} ${lines.length === 1 ? 'producto' : 'productos'}`;
   const waOk = buildWaLink(
@@ -63,7 +89,10 @@ export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }
 
   if (outcome === 'failure') {
     return (
-      <section aria-labelledby="ko-title" style={{ display: 'flex', justifyContent: 'center' }}>
+      <section
+        aria-labelledby="ko-title"
+        style={{ display: 'flex', justifyContent: 'center' }}
+      >
         <article className="result-card" data-outcome="failure">
           <header className="result-header">
             <span className="result-icon">
@@ -73,7 +102,9 @@ export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }
             <h1 id="ko-title" className="result-title">
               Tu pago no se completó.
             </h1>
-            <p className="result-lede">Puedes intentarlo de nuevo o enviarnos tu cotización por WhatsApp.</p>
+            <p className="result-lede">
+              Puedes intentarlo de nuevo o enviarnos tu cotización por WhatsApp.
+            </p>
             <p className="result-safety">
               <IconShieldCheck />
               No se realizó ningún cargo. Tu cotización sigue guardada.
@@ -91,13 +122,17 @@ export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }
                 <div className="result-detail__row">
                   <dt>Monto que intentaste pagar</dt>
                   <dd>
-                    {money(paidAmount)} · {paidPct === 80 ? 'anticipo 80%' : 'pago total 100%'}
+                    {money(paidAmount)} ·{' '}
+                    {paidPct === 80 ? 'anticipo 80%' : 'pago total 100%'}
                   </dd>
                 </div>
               </dl>
               <p className="result-note">
                 {itemCountText}
-                {transporte > 0 && inst && state.zone ? ` + transporte a ${state.zone}` : ''}.
+                {transporte > 0 && inst && state.zone
+                  ? ` + transporte a ${state.zone}`
+                  : ''}
+                .
               </p>
             </div>
 
@@ -146,18 +181,30 @@ export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }
   }
 
   return (
-    <section aria-labelledby="ok-title" style={{ display: 'flex', justifyContent: 'center' }}>
+    <section
+      aria-labelledby="ok-title"
+      style={{ display: 'flex', justifyContent: 'center' }}
+    >
       <article className="result-card" data-outcome="success">
         <header className="result-header">
           <span className="result-icon">
             <IconCheck size={38} strokeWidth={2.5} />
           </span>
-          <p className="result-eyebrow">PAGO APROBADO</p>
+          <p className="result-eyebrow">
+            {pending ? 'PAGO EN CONFIRMACIÓN' : 'PAGO APROBADO'}
+          </p>
           <h1 id="ok-title" className="result-title">
-            Pago completado
+            {pending ? 'Estamos confirmando su pago' : 'Pago completado'}
           </h1>
           <p className="result-lede">
-            Recibimos {paidPct === 80 ? 'tu anticipo' : 'tu pago'} de {money(paidAmount)}.
+            {pending ? (
+              'Wompi aún no nos confirma el cobro. Le avisaremos por WhatsApp en cuanto lo recibamos.'
+            ) : (
+              <>
+                Recibimos {paidPct === 80 ? 'tu anticipo' : 'tu pago'} de{' '}
+                {money(paidAmount)}.
+              </>
+            )}
           </p>
           <dl className="result-pill">
             <div>
@@ -213,8 +260,17 @@ export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }
 
           <div>
             <p className="result-section-label">PRÓXIMOS PASOS</p>
-            <p style={{ margin: '0 0 4px', fontSize: '1.0625rem', fontWeight: 600, color: 'var(--color-ink)' }}>
-              {inst ? 'Nos pondremos en contacto para coordinar instalación.' : 'Nos pondremos en contacto para coordinar el retiro.'}
+            <p
+              style={{
+                margin: '0 0 4px',
+                fontSize: '1.0625rem',
+                fontWeight: 600,
+                color: 'var(--color-ink)',
+              }}
+            >
+              {inst
+                ? 'Nos pondremos en contacto para coordinar instalación.'
+                : 'Nos pondremos en contacto para coordinar el retiro.'}
             </p>
             <ol className="result-steps">
               <li>
@@ -234,9 +290,13 @@ export default function Step7Resultado({ state, quote, zoneFee, total, onRetry }
                 </span>
                 <span className="result-steps__body">
                   <span className="result-steps__title">
-                    {inst ? 'Fabricación e instalación' : 'Fabricación y retiro en tienda'}
+                    {inst
+                      ? 'Fabricación e instalación'
+                      : 'Fabricación y retiro en tienda'}
                   </span>
-                  <span className="result-steps__desc">Acordamos contigo fecha y hora.</span>
+                  <span className="result-steps__desc">
+                    Acordamos contigo fecha y hora.
+                  </span>
                 </span>
               </li>
               {paidPct === 80 && (

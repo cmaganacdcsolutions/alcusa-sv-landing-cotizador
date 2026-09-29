@@ -1,0 +1,28 @@
+---
+// /catalogo (R1 tracer): the 3 category cards straight from the model.
+import CatalogShell from '@components/catalog/CatalogShell.astro';
+import { CATEGORIES } from '@content/catalog';
+---
+
+<CatalogShell
+  title="Catálogo | ALCUSA"
+  description="Puertas de baño, puertas de jardín y ventanas de aluminio y vidrio a la medida, con precio desde."
+>
+  <h1>Catálogo</h1>
+  <p class="cat-lead">Elija una categoría para ver los modelos y cotizar.</p>
+  <ul class="cat-grid" data-testid="catalogo-categories">
+    {
+      CATEGORIES.map((c) => (
+        <li>
+          <article class="cat-card">
+            <h2>{c.name}</h2>
+            <p>{c.subcategories.length} opciones</p>
+            <a class="cat-link" href={`/catalogo/${c.slug}`}>
+              Ver {c.name}
+            </a>
+          </article>
+        </li>
+      ))
+    }
+  </ul>
+</CatalogShell>

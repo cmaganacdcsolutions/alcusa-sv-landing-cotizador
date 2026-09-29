@@ -1,0 +1,70 @@
+---
+// /catalogo/<categoria>/<subcategoria> (R1 tracer): detail + variants + CTA.
+// Variants have no route of their own; they render here (ADR-008 §4).
+import CatalogShell from '@components/catalog/CatalogShell.astro';
+import { CATEGORIES, formatFromPrice, hasVariants, subFromPrice, type Category, type Subcategory } from '@content/catalog';
+import { cotizadorHref } from '@content/deepLink';
+import { buildAdvisorMessage } from '@integrations/whatsapp/buildMessage';
+import { buildWaLink } from '@integrations/whatsapp/waLink';
+
+export function getStaticPaths() {
+  return CATEGORIES.flatMap((category) =>
+    category.subcategories.map((subcategory) => ({
+      params: { categoria: category.slug, subcategoria: subcategory.slug },
+      props: { category, subcategory },
+    })),
+  );
+}
+interface Props {
+  category: Category;
+  subcategory: Subcategory;
+}
+const { category, subcategory } = Astro.props;
+const from = subFromPrice(subcategory);
+const variants = hasVariants(subcategory) ? subcategory.variants : [];
+---
+
+<CatalogShell
+  title={`${subcategory.name} | ${category.name} | ALCUSA`}
+  description={`${subcategory.name}: ${category.name} de aluminio y vidrio a la medida.`}
+  crumbs={[
+    { label: 'Catálogo', href: '/catalogo' },
+    { label: category.name, href: `/catalogo/${category.slug}` },
+    { label: subcategory.name },
+  ]}
+>
+  <h1>{subcategory.name}</h1>
+  {subcategory.altoText && <p class="cat-lead">{subcategory.altoText}</p>}
+  <p class="cat-price">{from === null ? 'Cotiza con un asesor' : `Desde ${formatFromPrice(from)}`}</p>
+
+  {
+    variants.length > 0 && (
+      <ul class="cat-variants" data-testid="catalogo-variants">
+        {variants.map((v) => (
+          <li>
+            {v.name}
+            {v.advisorOnly ? '' : `: desde ${formatFromPrice(v.fromPrice)}`}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    subcategory.advisorOnly ? (
+      <a
+        class="cat-cta cat-cta--wa"
+        data-testid="catalogo-cta"
+        href={buildWaLink(buildAdvisorMessage(subcategory.name))}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Cotiza con asesor
+      </a>
+    ) : (
+      <a class="cat-cta" data-testid="catalogo-cta" href={cotizadorHref(subcategory.slug)}>
+        Cotizar este producto
+      </a>
+    )
+  }
+</CatalogShell>

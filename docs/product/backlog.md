@@ -36,6 +36,22 @@ Legend size: S ≈ ≤1 day, M ≈ 2–3 days, L ≈ 4–5 days (one agent, ≤1
 context each; if a slice's actual work exceeds its size it goes back to
 shaping — circuit breaker, not an extension).
 
+## Revisión con cliente 2026-09-29 (R0–R6)
+
+Pitch: `pitch-revision-cliente-2026-09-29.md` · Preguntas: `client-questions-revision-2026-09-29.md` · Detalle/AC: `slices/R-revision-cliente-2026-09-29.md`
+
+| ID | Slice | Owner(s) | Priority | Depends on | Size | Status |
+|---|---|---|---|---|---|---|
+| R0 | Diseño canvas: landing nueva, /catalogo, promos, PDF (iOS/Android/desktop) | senior-uiux-design | P1 | — | M | Todo |
+| R1 | Modelo de datos catálogo + tracer /catalogo → /cotizador?producto= | fe-senior-react, senior-be, arquitecto (ADR) | P1 | S2, S7 | M | Todo |
+| R2 | Página /catalogo completa (categorías, subcategorías, detalle, CTA) | fe-senior-react | P2 | R0, R1 | M | Todo |
+| R3 | Landing: Promociones del mes + CTA catálogo; catálogo/galería fuera | fe-senior-react | P1 | R0, R1 | M | Todo |
+| R4 | PDF de cotización + WhatsApp (Web Share móvil / descarga+wa.me desktop; ADR solo librería) | arquitecto → fe-senior-react (+be) | P1 | R0, S7 | L | Todo |
+| R5 | Cotizador adopta taxonomía nueva | fe-senior-react, senior-be | P2 | R1 | M | Todo |
+| R6 | Limpieza + e2e/a11y de la revisión (se fusiona en S11) | senior-qa | P2 | R2–R5 | S | Todo |
+
+Encaje con la cola existente (STATE.md): sf-audit sigue primero (tokens/base 18px afectan a las boards nuevas; R0 debe partir de los tokens ya decididos). R0 corre junto al canvas slice 2 (mismo agente de diseño; puede ir antes si el usuario prioriza). R1 y los ADR arrancan en paralelo al diseño. Orden recomendado: sf-audit → R0 ‖ R1+ADRs → canvas slice 2 → R3 → R2 → R5 → R4 → S8 Wompi (S8 depende de S7, no de R; puede ir antes si el cliente prioriza pagos) → S10 motion (después de R2/R3/R4-UI para animar el diseño final) → S11 QA (absorbe R6 y endurece los flakes ios390) → S12 PR dev→main (solo con R0–R6 Done o explícitamente diferidos). S3/S4 se enmiendan: la sección catálogo/galería de S4 se reubica a R2; su e2e se migra (no se borra). Todo en rama dev; gates en worktree separado.
+
 ## Slice index
 
 - `slices/S0-scaffold-ci.md`
@@ -51,6 +67,7 @@ shaping — circuit breaker, not an extension).
 - `slices/S10-motion.md`
 - `slices/S11-qa-hardening.md`
 - `slices/S12-release-gate.md`
+- `slices/R-revision-cliente-2026-09-29.md` (R0–R6)
 
 ## Risks / open questions carried from shaping
 

@@ -61,3 +61,15 @@ this project (blocker, see HANDOFF).
   that manual WhatsApp+Wompi-dashboard reconciliation becomes painful,
   revisit (trigger: >20 paid orders/week) — add a minimal flat-file or SQLite
   order log, still no dedicated DB server needed on shared hosting.
+
+## Confirmado 2026-09-29 (docs.wompi.sv)
+Supersedes the "to confirm" items above. Details and runbook: `docs/ops/wompi-go-live.md`.
+
+- **Token**: `POST https://id.wompi.sv/connect/token` (form-urlencoded), `grant_type=client_credentials`, `client_id=<App ID>`, `client_secret=<API Secret>`, `audience=wompi_api`; `expires_in=3600`. API base `https://api.wompi.sv`, `authorization: Bearer`. Env names change: `WOMPI_APP_ID`, `WOMPI_API_SECRET` (the API Secret is also the HMAC key, so `WOMPI_CLIENT_*`/`WOMPI_WEBHOOK_SECRET` from the first draft are replaced), plus `WOMPI_WEBHOOK_URL`, `WOMPI_REDIRECT_BASE`. `WOMPI_ENV`/`WOMPI_API_BASE_URL` dropped: there is no sandbox host.
+- **Test mode**: no sandbox. The negocio is put in "modo desarrollo" in panel.wompi.sv; all transactions approve, CVV `111` declines (not with 3DS). `estaProductivo`/`EsProductiva=false` mark tests.
+- **Create link**: `POST /EnlacePago` with `identificadorEnlaceComercio`, `monto`, `nombreProducto`, `formaPago{...}`, `configuracion{urlRedirect, urlWebhook, urlRetorno, esMontoEditable, notificarTransaccionCliente, ...}`, `vigencia`, `limitesDeUso`, `idGrupoTarjetas`. Response `{idEnlace, urlEnlace, urlQrCodeEnlace, estaProductivo}`. AMEX cannot be excluded via a flag; only through a card group (`idGrupoTarjetas`) configured in the panel.
+- **Webhook**: header `wompi_hash` = hex HMAC-SHA256 of the raw body keyed with the API Secret (confirmed). Payload keys are PascalCase (`IdTransaccion`, `ResultadoTransaccion`, `EsProductiva`, `EnlacePago.IdentificadorEnlaceComercio`, ...). Only successes are notified; Wompi retries until 2xx, hence idempotency by `IdTransaccion`.
+- **Return (amends "Return screen")**: the payment-link redirect appends `identificadorEnlaceComercio, idTransaccion, idEnlace, monto, hash` and NO approved flag. The hash needs the API Secret, so it cannot be verified in the browser. `urlRedirect` therefore points at `api/wompi-return.php`, which verifies the hash (HMAC over the four values concatenated in that order), confirms via `GET /TransaccionCompra/{id}` and 303-redirects to `#cotizador/7-resultado?pago=aprobado|rechazado|pendiente&ref=...`. Anything unverifiable is `pendiente` ("en confirmación") until the webhook. The SPA slug is `7-resultado`.
+- **Amount**: the browser sends cart total + 80/100, never an amount; the server derives and bounds it and stores the expected amount per reference (Phase 1). PHP re-pricing is Phase 2 (see runbook section 4).
+- **Mode flag**: `PUBLIC_COTIZADOR_MODE=mock|wompi` (anything else = mock; CI/e2e force mock).
+- **Open**: the docs disagree on the redirect hash order (API-flavour vs payment-link); implemented the payment-link one, to verify with the first real redirect.

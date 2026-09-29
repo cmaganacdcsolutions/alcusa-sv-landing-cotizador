@@ -1,8 +1,17 @@
-import { useEffect, useMemo, useReducer, useRef, useState, type ReactElement } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type ReactElement,
+} from 'react';
 import '@styles/cotizador.css';
-import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
+import { CATALOG_PRODUCTS } from '@content/catalog';
+import { parseDeepLink } from '@content/deepLink';
 import { getZoneFee } from '@engine/pricing';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
+import { buildAdvisorMessage } from '@integrations/whatsapp/buildMessage';
 import {
   cotizadorReducer,
   initialCotizadorState,
@@ -14,7 +23,13 @@ import {
 } from './state/cotizadorStore';
 import { buildLineItem, computeQuote } from './state/quote';
 import { buildOrderItems, orderTotal as computeOrderTotal } from './state/order';
-import { IconArrowRight, IconCheck, IconChevronLeft, IconLock, IconWhatsApp } from './icons';
+import {
+  IconArrowRight,
+  IconCheck,
+  IconChevronLeft,
+  IconLock,
+  IconWhatsApp,
+} from './icons';
 import { IconSpinner } from './icons-checkout';
 import Step0Producto from './steps/Step0Producto';
 import Step1Medidas from './steps/Step1Medidas';
@@ -23,6 +38,7 @@ import Step3ZonaEntrega from './steps/Step3ZonaEntrega';
 import Step4Resumen from './steps/Step4Resumen';
 import Step5FormaPago from './steps/Step5FormaPago';
 import Step6Wompi from './steps/Step6Wompi';
+import { loadPendingPayment, parseWompiReturn } from '@integrations/wompi/client';
 import Step7Resultado from './steps/Step7Resultado';
 
 const STEP_LABELS: Record<CotizadorStep, string> = {
@@ -96,21 +112,11 @@ const HEADING_ID: Record<CotizadorStep, string> = {
 };
 
 function stepFromHash(hash: string): CotizadorStep | null {
-  const raw = hash.replace(/^#/, '');
+  // Strip a fragment query (`#cotizador/7-resultado?pago=...` from the Wompi return).
+  const raw = hash.replace(/^#/, '').split('?')[0] ?? '';
   const [section, slug] = raw.split('/');
   if (section !== 'cotizador' || !slug) return null;
   return slugToStep(slug);
-}
-
-function isCatalogProductId(value: string | null): value is ProductId {
-  return !!value && CATALOG_PRODUCTS.some((p) => p.id === value);
-}
-
-// Reads the S5 `?producto=<id>` preselect contract (catalog CTAs link to
-// `/cotizador?producto=<id>`, per the Foreman's page-split correction).
-function productIdFromSearch(search: string): ProductId | null {
-  const raw = new URLSearchParams(search).get('producto');
-  return isCatalogProductId(raw) ? raw : null;
 }
 
 // Desktop aside item row (kicker "TU COTIZACIÓN" card, boards 03-06).
@@ -166,10 +172,14 @@ function loadPersistedCart(): CotizadorState['cart'] {
 }
 
 export default function Cotizador(): ReactElement {
-  const [state, dispatch] = useReducer(cotizadorReducer, initialCotizadorState, (init) => ({
-    ...init,
-    cart: loadPersistedCart(),
-  }));
+  const [state, dispatch] = useReducer(
+    cotizadorReducer,
+    initialCotizadorState,
+    (init) => ({
+      ...init,
+      cart: loadPersistedCart(),
+    }),
+  );
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Persists `cart` (only) on every change — zone/entrega/current-item
@@ -185,14 +195,61 @@ export default function Cotizador(): ReactElement {
   // Portal mount for the resumen/formaPago aside CTAs — see the AsideView.ctas
   // comment below and Step4Resumen/Step5FormaPago's `asideCtaTarget` prop.
   const [portalCtaEl, setPortalCtaEl] = useState<HTMLDivElement | null>(null);
+  // advisorOnly deep link: name of the product to quote with an advisor.
+  const [advisorProduct, setAdvisorProduct] = useState<string | null>(null);
 
   useEffect(() => {
     const initialHash = window.location.hash;
     const initial = stepFromHash(initialHash);
     if (initial) dispatch({ type: 'GOTO_STEP', step: initial });
 
-    const preselectId = productIdFromSearch(window.location.search);
-    if (preselectId) dispatch({ type: 'PRESELECT_PRODUCT', productId: preselectId });
+    // Return from Wompi (real gateway): api/wompi-return.php already verified
+    // the redirect hash server-side and encoded the result in the fragment.
+    // Restore what the redirect wiped, show the result, then tidy the URL.
+    const wompiReturn = parseWompiReturn(initialHash);
+    if (wompiReturn) {
+      const pendingPayment = loadPendingPayment();
+      if (pendingPayment) {
+        dispatch({ type: 'SET_ZONE', zone: pendingPayment.zone });
+        dispatch({ type: 'SET_ENTREGA', entrega: pendingPayment.entrega });
+        dispatch({ type: 'SET_PAY_AMOUNT_PCT', pct: pendingPayment.pct });
+      }
+      const outcome =
+        wompiReturn.pago === 'aprobado'
+          ? 'approved'
+          : wompiReturn.pago === 'rechazado'
+            ? 'declined'
+            : 'pending';
+      dispatch({
+        type: 'SET_WOMPI_RESULT',
+        outcome,
+        orderNumber: wompiReturn.ref ?? pendingPayment?.reference ?? 'ALC-2026-0001',
+      });
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}#cotizador/${STEP_SLUGS.resultado}`,
+      );
+    }
+
+    // Post-Wompi restoration wins: the deep link must not override it.
+    if (!wompiReturn) {
+      // ADR-008 §3: `?producto=<slug>` (leaf, variant or legacy alias). Invalid
+      // slugs are ignored; advisorOnly slugs never enter the wizard.
+      const deepLink = parseDeepLink(window.location.search);
+      if (deepLink.kind === 'priced') {
+        const { preset, quoterModel } = deepLink;
+        if (preset.cornerFinish) dispatch({ type: 'SET_CORNER_MODEL', model: preset.cornerFinish });
+        if (preset.gardenHojas) dispatch({ type: 'SET_GARDEN_HOJAS', hojas: preset.gardenHojas });
+        if (preset.windowType) dispatch({ type: 'SET_WINDOW_MODEL', model: preset.windowType });
+        // Legacy ids and an explicit `#cotizador/<step>` hash only preselect;
+        // a canonical slug jumps to Medidas.
+        dispatch({ type: deepLink.advance && !initial ? 'SELECT_PRODUCT' : 'PRESELECT_PRODUCT', productId: quoterModel });
+      } else if (deepLink.kind === 'advisor') {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only read of location.search (no SSR access)
+        setAdvisorProduct(deepLink.name);
+      }
+    }
 
     // ADR-005: browsers won't auto-scroll a compound "#cotizador/<slug>"
     // fragment, so the island scrolls itself into view on mount.
@@ -240,9 +297,14 @@ export default function Cotizador(): ReactElement {
     const isMobile = window.innerWidth < 1024;
     const topBarHeight = topBar?.getBoundingClientRect().height ?? 0;
     const headerStackHeight =
-      isMobile && headingId !== 'cotizador-page-title' ? (header?.getBoundingClientRect().height ?? 0) : 0;
+      isMobile && headingId !== 'cotizador-page-title'
+        ? (header?.getBoundingClientRect().height ?? 0)
+        : 0;
     const offset = topBarHeight + headerStackHeight + (isMobile ? 0 : 24);
-    const targetY = Math.max(window.scrollY + heading.getBoundingClientRect().top - offset, 0);
+    const targetY = Math.max(
+      window.scrollY + heading.getBoundingClientRect().top - offset,
+      0,
+    );
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: targetY, behavior: reduceMotion ? 'auto' : 'smooth' });
     heading.focus({ preventScroll: true });
@@ -263,22 +325,34 @@ export default function Cotizador(): ReactElement {
       root.style.setProperty('--cotizador-bottom-bar-height', '0px');
       return;
     }
-    const update = () => root.style.setProperty('--cotizador-bottom-bar-height', `${bar.getBoundingClientRect().height}px`);
+    const update = () =>
+      root.style.setProperty(
+        '--cotizador-bottom-bar-height',
+        `${bar.getBoundingClientRect().height}px`,
+      );
     update();
     const observer = new ResizeObserver(update);
     observer.observe(bar);
     return () => observer.disconnect();
   }, [state.step]);
 
-  const product = useMemo(() => CATALOG_PRODUCTS.find((p) => p.id === state.productId) ?? null, [state.productId]);
+  const product = useMemo(
+    () => CATALOG_PRODUCTS.find((p) => p.id === state.productId) ?? null,
+    [state.productId],
+  );
 
   // ADR-005: a mid-wizard state with no product selected falls back to step 0
   // instead of rendering a broken step.
   useEffect(() => {
-    if (state.step !== 'producto' && !product) {
+    // Exception: the result step reached from the Wompi return (fresh page load).
+    if (
+      state.step !== 'producto' &&
+      !product &&
+      !(state.step === 'resultado' && state.wompiOutcome !== null)
+    ) {
       dispatch({ type: 'GOTO_STEP', step: 'producto' });
     }
-  }, [state.step, product]);
+  }, [state.step, state.wompiOutcome, product]);
 
   function goToStep(step: CotizadorStep): void {
     dispatch({ type: 'GOTO_STEP', step });
@@ -366,13 +440,15 @@ export default function Cotizador(): ReactElement {
     state.step === 'formaPago' ||
     state.step === 'wompi' ||
     state.step === 'resultado';
-  const orderTotalValue = orderItems.length > 0 ? computeOrderTotal(orderItems, zoneFee ?? 0) : null;
+  const orderTotalValue =
+    orderItems.length > 0 ? computeOrderTotal(orderItems, zoneFee ?? 0) : null;
   const total = isOrderPhase ? orderTotalValue : singleItemTotal;
 
   // desktop-07-payment-result.dc.html is the only board (03-07) with no
   // "TU COTIZACIÓN" aside at all — the wizard is done, there's nothing left
   // to summarize mid-flow.
-  const showSummaryColumn = !!product && state.step !== 'producto' && state.step !== 'resultado';
+  const showSummaryColumn =
+    !!product && state.step !== 'producto' && state.step !== 'resultado';
 
   const currentIdx = STEP_ORDER.indexOf(state.step);
   const isFirstStep = currentIdx <= 0;
@@ -398,9 +474,18 @@ export default function Cotizador(): ReactElement {
 
   // --- Desktop aside ("TU COTIZACIÓN") ---
   const lineItem = product ? buildLineItem(state) : null;
-  const amountText = quote.requiresQuote ? 'Por WhatsApp' : `$${(quote.amount ?? 0).toFixed(2)}`;
-  const totalText = total !== null ? `$${total.toFixed(2)}` : quote.requiresQuote ? 'Por WhatsApp' : 'Por confirmar';
-  const zoneKnown = state.entrega === 'retiro' || (state.zone !== '' && getZoneFee(state.zone) !== undefined);
+  const amountText = quote.requiresQuote
+    ? 'Por WhatsApp'
+    : `$${(quote.amount ?? 0).toFixed(2)}`;
+  const totalText =
+    total !== null
+      ? `$${total.toFixed(2)}`
+      : quote.requiresQuote
+        ? 'Por WhatsApp'
+        : 'Por confirmar';
+  const zoneKnown =
+    state.entrega === 'retiro' ||
+    (state.zone !== '' && getZoneFee(state.zone) !== undefined);
   const depositAmount = total !== null ? Math.round(total * 80) / 100 : 0;
   const balanceAmount = total !== null ? total - depositAmount : 0;
   // Same one-liner "Hola ALCUSA, quiero cotizar: <producto> · <medida>." the
@@ -409,11 +494,17 @@ export default function Cotizador(): ReactElement {
   // link) — built from the one real builder (buildWaLink), never a second
   // wa.me literal.
   const quoteWaHref =
-    product && lineItem ? buildWaLink(`Hola ALCUSA, quiero cotizar: ${product.name} · ${lineItem.detail}.`) : buildWaLink();
+    product && lineItem
+      ? buildWaLink(`Hola ALCUSA, quiero cotizar: ${product.name} · ${lineItem.detail}.`)
+      : buildWaLink();
 
   let aside: AsideView | null = null;
   if (product && lineItem) {
-    const baseItem: AsideItem = { name: product.name, detail: lineItem.detail, price: amountText };
+    const baseItem: AsideItem = {
+      name: product.name,
+      detail: lineItem.detail,
+      price: amountText,
+    };
     const siguiente = (disabled: boolean): ReactElement => (
       <a
         className="btn btn-primary cotizador-aside__cta"
@@ -453,9 +544,17 @@ export default function Cotizador(): ReactElement {
       };
     } else if (state.step === 'zonaEntrega') {
       const transporteDetail =
-        state.entrega === 'retiro' ? 'Retiro en tienda' : zoneKnown ? state.zone : 'Municipio por confirmar';
+        state.entrega === 'retiro'
+          ? 'Retiro en tienda'
+          : zoneKnown
+            ? state.zone
+            : 'Municipio por confirmar';
       const transportePrice =
-        state.entrega === 'retiro' ? 'Sin costo' : zoneKnown ? `$${(zoneFee ?? 0).toFixed(2)}` : 'Por confirmar';
+        state.entrega === 'retiro'
+          ? 'Sin costo'
+          : zoneKnown
+            ? `$${(zoneFee ?? 0).toFixed(2)}`
+            : 'Por confirmar';
       const note =
         state.entrega === 'retiro'
           ? 'Retiro en tienda · 15% de descuento aplicado.'
@@ -468,7 +567,10 @@ export default function Cotizador(): ReactElement {
         totalLabel: 'Total estimado',
         totalValue: totalText,
         note,
-        items: [baseItem, { name: 'Transporte', detail: transporteDetail, price: transportePrice }],
+        items: [
+          baseItem,
+          { name: 'Transporte', detail: transporteDetail, price: transportePrice },
+        ],
         showDeposit: false,
         ctas: (
           <>
@@ -477,11 +579,23 @@ export default function Cotizador(): ReactElement {
           </>
         ),
       };
-    } else if (state.step === 'resumen' || state.step === 'formaPago' || state.step === 'wompi') {
+    } else if (
+      state.step === 'resumen' ||
+      state.step === 'formaPago' ||
+      state.step === 'wompi'
+    ) {
       const transporteDetail =
-        state.entrega === 'retiro' ? 'Retiro en tienda' : zoneKnown ? state.zone : 'Municipio por confirmar';
+        state.entrega === 'retiro'
+          ? 'Retiro en tienda'
+          : zoneKnown
+            ? state.zone
+            : 'Municipio por confirmar';
       const transportePrice =
-        state.entrega === 'retiro' ? 'Sin costo' : zoneKnown ? `$${(zoneFee ?? 0).toFixed(2)}` : 'Por confirmar';
+        state.entrega === 'retiro'
+          ? 'Sin costo'
+          : zoneKnown
+            ? `$${(zoneFee ?? 0).toFixed(2)}`
+            : 'Por confirmar';
       aside = {
         totalLabel: 'Total estimado',
         totalValue: totalText,
@@ -499,7 +613,10 @@ export default function Cotizador(): ReactElement {
         showDeposit: total !== null,
         ctas:
           state.step === 'wompi' ? (
-            <span className="cotizador-aside__cta cotizador-aside__cta--loading" aria-hidden="true">
+            <span
+              className="cotizador-aside__cta cotizador-aside__cta--loading"
+              aria-hidden="true"
+            >
               <IconSpinner size={20} />
               Creando enlace de pago…
             </span>
@@ -510,6 +627,16 @@ export default function Cotizador(): ReactElement {
 
   return (
     <div ref={rootRef} className="cotizador" data-testid="cotizador-root" data-hydrated="false">
+      {advisorProduct ? (
+        <div className="cotizador__advisor" role="status" data-testid="advisor-notice">
+          <p>
+            <strong>{advisorProduct}</strong>: esta combinación la cotiza un asesor.
+          </p>
+          <a href={buildWaLink(buildAdvisorMessage(advisorProduct))} target="_blank" rel="noopener noreferrer">
+            Cotiza con asesor
+          </a>
+        </div>
+      ) : null}
       <div className="cotizador__header">
         {isFirstStep ? (
           <a href="/#inicio" className="cotizador__back">
@@ -519,13 +646,15 @@ export default function Cotizador(): ReactElement {
         ) : (
           <button type="button" className="cotizador__back" onClick={back}>
             <IconChevronLeft />
-            {STEP_LABELS[
-              // S7 — mirrors back()'s zonaEntrega skip so the label always
-              // names the step the click will actually land on.
-              STEP_ORDER[currentIdx - 1] === 'zonaEntrega' && zoneDecided
-                ? STEP_ORDER[Math.max(currentIdx - 2, 0)]
-                : STEP_ORDER[currentIdx - 1]
-            ]}
+            {
+              STEP_LABELS[
+                // S7 — mirrors back()'s zonaEntrega skip so the label always
+                // names the step the click will actually land on.
+                STEP_ORDER[currentIdx - 1] === 'zonaEntrega' && zoneDecided
+                  ? STEP_ORDER[Math.max(currentIdx - 2, 0)]
+                  : STEP_ORDER[currentIdx - 1]
+              ]
+            }
           </button>
         )}
         <h2 id="cotizador-page-title" tabIndex={-1} className="cotizador__page-title">
@@ -533,13 +662,21 @@ export default function Cotizador(): ReactElement {
         </h2>
       </div>
 
-      <div className="cotizador__rail-col" data-mobile-empty={showMobileStepper ? undefined : 'true'}>
+      <div
+        className="cotizador__rail-col"
+        data-mobile-empty={showMobileStepper ? undefined : 'true'}
+      >
         {showMobileStepper && (
           <div className="step-rail-wrap">
             <div className="step-rail__connector" aria-hidden="true" />
             <ol className="step-rail" aria-label="Pasos del cotizador">
               {MOBILE_STEPPER_STEPS.map((step, index) => {
-                const itemState = index < currentIdx ? 'done' : index === currentIdx ? 'current' : 'upcoming';
+                const itemState =
+                  index < currentIdx
+                    ? 'done'
+                    : index === currentIdx
+                      ? 'current'
+                      : 'upcoming';
                 return (
                   <li
                     key={step}
@@ -547,7 +684,9 @@ export default function Cotizador(): ReactElement {
                     data-state={itemState}
                     aria-current={itemState === 'current' ? 'step' : undefined}
                   >
-                    <span className="step-rail__dot">{itemState === 'done' ? <IconCheck /> : index + 1}</span>
+                    <span className="step-rail__dot">
+                      {itemState === 'done' ? <IconCheck /> : index + 1}
+                    </span>
                     <span className="step-rail__label">{STEP_LABELS[step]}</span>
                   </li>
                 );
@@ -563,7 +702,10 @@ export default function Cotizador(): ReactElement {
               Paso {railStepNumber} de {STEP_ORDER.length}
             </p>
             <div className="rail-desktop__progress" aria-hidden="true">
-              <div className="rail-desktop__progress-fill" style={{ width: `${railProgressPct}%` }} />
+              <div
+                className="rail-desktop__progress-fill"
+                style={{ width: `${railProgressPct}%` }}
+              />
             </div>
           </div>
           <ol className="rail-desktop__list">
@@ -571,7 +713,12 @@ export default function Cotizador(): ReactElement {
               // 'resultado' (index railIdx+1) shares the "current" look while
               // isPaymentPhase, without aria-current — see the railIdx comment.
               const isExtraCurrent = isPaymentPhase && index === railIdx + 1;
-              const itemState = index < railIdx ? 'done' : index === railIdx || isExtraCurrent ? 'current' : 'upcoming';
+              const itemState =
+                index < railIdx
+                  ? 'done'
+                  : index === railIdx || isExtraCurrent
+                    ? 'current'
+                    : 'upcoming';
               const item = RAIL_ITEMS[step];
               return (
                 <li
@@ -580,9 +727,13 @@ export default function Cotizador(): ReactElement {
                   data-state={itemState}
                   aria-current={index === railIdx ? 'step' : undefined}
                 >
-                  {index < STEP_ORDER.length - 1 && <span className="rail-desktop__connector" aria-hidden="true" />}
+                  {index < STEP_ORDER.length - 1 && (
+                    <span className="rail-desktop__connector" aria-hidden="true" />
+                  )}
                   <div className="rail-desktop__row">
-                    <span className="rail-desktop__dot">{itemState === 'done' ? <IconCheck /> : index + 1}</span>
+                    <span className="rail-desktop__dot">
+                      {itemState === 'done' ? <IconCheck /> : index + 1}
+                    </span>
                     <span className="rail-desktop__text">
                       <span className="rail-desktop__title">{item.title}</span>
                       <span className="rail-desktop__sub">{item.sub}</span>
@@ -613,7 +764,13 @@ export default function Cotizador(): ReactElement {
           />
         )}
         {state.step === 'medidas' && product && (
-          <Step1Medidas product={product} state={state} dispatch={dispatch} quote={quote} onNext={next} />
+          <Step1Medidas
+            product={product}
+            state={state}
+            dispatch={dispatch}
+            quote={quote}
+            onNext={next}
+          />
         )}
         {state.step === 'precio' && product && (
           <Step2Precio
@@ -664,11 +821,18 @@ export default function Cotizador(): ReactElement {
           />
         )}
         {state.step === 'wompi' && product && (
-          <Step6Wompi state={state} quote={quote} zoneFee={zoneFee} total={total} dispatch={dispatch} onNext={next} />
+          <Step6Wompi
+            state={state}
+            quote={quote}
+            zoneFee={zoneFee}
+            total={total}
+            dispatch={dispatch}
+            onNext={next}
+          />
         )}
-        {state.step === 'resultado' && product && (
+        {state.step === 'resultado' && (product || state.wompiOutcome !== null) && (
           <Step7Resultado
-            product={product}
+            product={product ?? undefined}
             state={state}
             quote={quote}
             zoneFee={zoneFee}
@@ -679,7 +843,10 @@ export default function Cotizador(): ReactElement {
       </div>
 
       {showSummaryColumn && aside && (
-        <aside className="cotizador-aside cotizador__summary-col" aria-label="Resumen de tu cotización">
+        <aside
+          className="cotizador-aside cotizador__summary-col"
+          aria-label="Resumen de tu cotización"
+        >
           <div className="cotizador-aside__hero">
             <span className="cotizador-aside__shine" aria-hidden="true" />
             <div className="cotizador-aside__hero-top">
@@ -689,7 +856,11 @@ export default function Cotizador(): ReactElement {
               </span>
             </div>
             <span className="cotizador-aside__total-label">{aside.totalLabel}</span>
-            <span className="cotizador-aside__total-value" aria-live="polite" data-testid="summary-price-value">
+            <span
+              className="cotizador-aside__total-value"
+              aria-live="polite"
+              data-testid="summary-price-value"
+            >
               {aside.totalValue}
             </span>
             <span className="cotizador-aside__note">{aside.note}</span>
