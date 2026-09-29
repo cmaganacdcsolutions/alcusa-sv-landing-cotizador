@@ -1,2 +1,44 @@
-// Shared Wompi request/response types. Implemented in Slice 5.
-export type WompiMode = 'mock' | 'live';
+// Shared Wompi request/response types (browser <-> our api/*.php only).
+// The browser never talks to Wompi and never sees a Wompi credential (ADR-003).
+
+/** PUBLIC_COTIZADOR_MODE. Anything other than 'wompi' resolves to mock. */
+export type WompiMode = 'mock' | 'wompi';
+
+export interface CreateLinkItem {
+  name: string;
+  subtotal: number;
+}
+
+/** POST /api/wompi-create-link.php. No amount to charge: the server derives it. */
+export interface CreateLinkRequest {
+  pct: 80 | 100;
+  total: number;
+  items: CreateLinkItem[];
+}
+
+export interface CreateLinkResponse {
+  urlEnlace: string;
+  reference: string;
+  amount: number;
+}
+
+/** Stable error envelope of every api/wompi-*.php endpoint. */
+export interface ApiErrorEnvelope {
+  error: { code: string; message: string };
+}
+
+/** Result the return endpoint puts in `#cotizador/7-resultado?pago=...&ref=...`. */
+export type ReturnOutcome = 'aprobado' | 'rechazado' | 'pendiente';
+
+export interface WompiReturn {
+  pago: ReturnOutcome;
+  ref: string | null;
+}
+
+/** Snapshot kept across the redirect to Wompi (the wizard state does not survive it). */
+export interface PendingPayment {
+  reference: string;
+  pct: 80 | 100;
+  zone: string;
+  entrega: 'instalacion' | 'retiro';
+}
