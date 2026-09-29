@@ -23,8 +23,21 @@ export interface Violation {
 
 export async function runAudit(page: Page, checkModelImages: boolean): Promise<Violation[]> {
   return page.evaluate((checkModelImages: boolean) => {
+    // sf-cot-resp typecheck fix — `type` must be the same literal union as
+    // Violation['type'], not `string`, or every push() below widens the
+    // array's inferred element type and the function's declared
+    // Promise<Violation[]> return type no longer matches (tsc error).
     const viol: {
-      type: string;
+      type:
+        | 'page-overflow'
+        | 'fixed-overflow'
+        | 'element-overflow'
+        | 'clipped-text'
+        | 'sibling-overlap'
+        | 'form-aside-overlap'
+        | 'bottom-bar-overlap'
+        | 'broken-image'
+        | 'missing-model-image';
       selector: string;
       detail: string;
     }[] = [];

@@ -405,6 +405,10 @@
 
   .estimate-card__head {
     flex-grow: 1;
+    /* sf-cot-resp BUG-3 — shrink-safe at 1024-1279px too: without this the
+       row's automatic minimum size can still be larger than the available
+       middle-column width and bleed into the aside. */
+    min-width: 0;
   }
 
   .estimate-card__image {
@@ -467,11 +471,14 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
   font-size: var(--font-size-caption-mobile);
   color: var(--color-ink-muted);
 }
 
 .window-row__input {
+  width: 100%;
+  min-width: 0;
   height: 44px;
   padding: 0 var(--space-2);
   border-radius: var(--radius-sm);
