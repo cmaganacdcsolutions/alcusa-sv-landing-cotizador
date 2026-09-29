@@ -4,6 +4,7 @@ import { hasZoneFee, ZONE_NAMES } from '@engine/pricing';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import type { CotizadorState, Entrega } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
+import { orderItemsSubtotal, type OrderLineItem } from '../state/order';
 import { IconArrowRight, IconCheck, IconChevronDown, IconWarningCircle } from '../icons';
 import { IconStore, IconTruck } from '../icons-checkout';
 import '@styles/cotizador-checkout.css';
@@ -12,6 +13,12 @@ export interface Step3ZonaEntregaProps {
   product: CatalogProduct;
   state: CotizadorState;
   quote: QuoteResult;
+  // sf-cot-s7gaps gap 2 — the whole order (cart + current item), same list
+  // Step4Resumen/state/order.ts build; used only to roll the breakdown's
+  // first row up into "N productos" + the order subtotal when there are
+  // 2+ items, so this card stays consistent with Resumen/orderTotal
+  // instead of showing just the current item's price.
+  items: OrderLineItem[];
   zoneFee: number | undefined;
   total: number | null;
   onEntregaChange: (entrega: Entrega) => void;
@@ -25,6 +32,7 @@ export default function Step3ZonaEntrega({
   product,
   state,
   quote,
+  items,
   zoneFee,
   total,
   onEntregaChange,
@@ -41,6 +49,21 @@ export default function Step3ZonaEntrega({
   const zoneUnselected = inst && !state.zone;
   const zoneNotFound = inst && !!state.zone && !hasZoneFee(state.zone);
   const canProceed = !zoneUnselected && !zoneNotFound;
+  // sf-cot-s7gaps gap 2 — 2+ items: roll the first breakdown row up into
+  // "N productos" + the order subtotal instead of just this item's price,
+  // consistent with Resumen/orderTotal (this step is order-phase now, see
+  // Cotizador.tsx isOrderPhase).
+  const multiItem = items.length > 1;
+  const itemsSubtotal = orderItemsSubtotal(items);
+  const entregaSuffix = inst ? ' · con instalación' : pickupHasDiscount ? ' · retiro −15%' : ' · retiro';
+  const productLabel = multiItem
+    ? `${items.length} productos${entregaSuffix}`
+    : inst
+      ? `${product.name} · con instalación`
+      : pickupHasDiscount
+        ? `${product.name} · retiro −15%`
+        : `${product.name} · retiro`;
+  const productPriceText = multiItem ? `$${itemsSubtotal.toFixed(2)}` : `$${price.toFixed(2)}`;
 
   return (
     <section aria-labelledby="step3-heading">
@@ -164,14 +187,8 @@ export default function Step3ZonaEntrega({
       {canProceed && (
         <dl className="breakdown" style={{ marginTop: 20 }}>
           <div className="breakdown__row">
-            <dt>
-              {inst
-                ? `${product.name} · con instalación`
-                : pickupHasDiscount
-                  ? `${product.name} · retiro −15%`
-                  : `${product.name} · retiro`}
-            </dt>
-            <dd>${price.toFixed(2)}</dd>
+            <dt>{productLabel}</dt>
+            <dd>{productPriceText}</dd>
           </div>
           <div className="breakdown__row">
             <dt>{inst ? `Transporte · ${state.zone}` : 'Transporte'}</dt>

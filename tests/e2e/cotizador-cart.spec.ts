@@ -70,6 +70,61 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     await expect(page.getByTestId('resumen-total-value')).toHaveText('$484.00');
   });
 
+  test('sf-cot-s7gaps gap 1 — desktop Editar on item 1 updates it in place (same row order)', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only affordance, desktop-05-cotizador-resumen.dc.html');
+    await addRectaThenLoop(page);
+    await page.getByRole('button', { name: 'Cabina en L' }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    await expect(page.locator('.summary-item')).toHaveCount(2);
+
+    // Item 1 (recta) is the first row — its Editar takes us to Medidas with
+    // the recta fields loaded (not Cabina en L's).
+    await page.getByRole('button', { name: 'Editar Puerta de baño recta' }).click();
+    await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
+    await expect(page.locator('#ancho')).toHaveValue('110');
+
+    await page.locator('#ancho').fill('150');
+    await page.getByRole('button', { name: 'Siguiente' }).click(); // -> Precio
+    await page.getByRole('button', { name: 'Siguiente' }).click(); // zoneDecided -> straight to Resumen
+
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    const rows = page.locator('.summary-item');
+    await expect(rows).toHaveCount(2);
+    // still 2 rows, recta FIRST (its position kept) with the updated detail.
+    await expect(rows.nth(0)).toContainText('Puerta de baño recta');
+    await expect(rows.nth(0)).toContainText('1.50 × 1.85 m');
+    await expect(rows.nth(1)).toContainText('Cabina en L');
+    // 328 (recta 150cm natural/claro) + 444 (corner) + 40 (Soyapango) = 812.
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$812.00');
+  });
+
+  test('sf-cot-s7gaps gap 2 — "Cambiar" zone with 2 items shows the whole-order breakdown, total matches Resumen', async ({
+    page,
+  }) => {
+    await addRectaThenLoop(page);
+    await page.getByRole('button', { name: 'Cabina en L' }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    const resumenTotal = await page.getByTestId('resumen-total-value').textContent();
+    expect(resumenTotal).toBe('$706.00');
+
+    await page.getByRole('button', { name: 'Cambiar' }).click();
+    await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
+
+    // Breakdown's first row rolls up into "N productos" + the order
+    // subtotal (222 + 444 = 666) instead of just Cabina en L's own price —
+    // consistent with Resumen/orderTotal (gap 2).
+    await expect(page.getByText('2 productos · con instalación')).toBeVisible();
+    await expect(page.locator('.breakdown__row', { hasText: '2 productos' })).toContainText('$666.00');
+    await expect(page.getByTestId('zona-total-value')).toHaveText(resumenTotal!);
+  });
+
   test('the cart survives a reload (sessionStorage) — the committed item is still there', async ({ page }) => {
     await addRectaThenLoop(page); // cart: [recta $222], back at step 0
 

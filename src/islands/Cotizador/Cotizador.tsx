@@ -329,21 +329,43 @@ export default function Cotizador(): ReactElement {
     dispatch({ type: 'REMOVE_ITEM', id });
   }
 
+  // sf-cot-s7gaps gap 1 — desktop-only "Editar" on a Resumen row: loads a
+  // committed cart item into the editable slot and jumps to Medidas.
+  // `id: 'current'` is already the item being edited — no cart action
+  // needed, just navigate there.
+  function editItem(id: string): void {
+    if (id === 'current') {
+      goToStep('medidas');
+      return;
+    }
+    dispatch({ type: 'EDIT_ITEM', id });
+    window.history.pushState(null, '', `#cotizador/${STEP_SLUGS.medidas}`);
+  }
+
   const quote = useMemo(() => computeQuote(state), [state]);
   const zoneFee = state.entrega === 'instalacion' ? getZoneFee(state.zone) : 0;
-  // Single-current-item total — still what steps 0-3 show ("Estimado sin
-  // transporte" / the live zone breakdown) since "Agregar otro producto"
-  // always resets to step 0, so cart items are never in play while the
-  // user is still configuring an item through steps 1-3 for the first time.
+  // Single-current-item total — what steps 0-2 show ("Estimado sin
+  // transporte" / the live per-item price) before there's an order-level
+  // total to speak of. zonaEntrega (step 3) is order-phase (see
+  // isOrderPhase below, sf-cot-s7gaps gap 2): even the first time through,
+  // orderItems already equals [current] there, so orderTotalValue and
+  // singleItemTotal agree when the cart is still empty.
   const singleItemTotal = quote.amount !== null ? quote.amount + (zoneFee ?? 0) : null;
 
   // S7 — the whole order: every committed cart item + the current item (if
   // any), one subtotal each, transport (zoneFee) added exactly ONCE
   // (T7.2) regardless of item count. This is what Resumen/Forma de
   // pago/Wompi/Resultado must show as "the total" — see HANDOFF to S8.
+  // sf-cot-s7gaps gap 2 — 'zonaEntrega' is included here too: when it's
+  // reopened via Resumen's "Cambiar" with 2+ items already in the cart, its
+  // breakdown must total the whole order, not just the current item.
   const orderItems = useMemo(() => buildOrderItems(state, CATALOG_PRODUCTS), [state]);
   const isOrderPhase =
-    state.step === 'resumen' || state.step === 'formaPago' || state.step === 'wompi' || state.step === 'resultado';
+    state.step === 'zonaEntrega' ||
+    state.step === 'resumen' ||
+    state.step === 'formaPago' ||
+    state.step === 'wompi' ||
+    state.step === 'resultado';
   const orderTotalValue = orderItems.length > 0 ? computeOrderTotal(orderItems, zoneFee ?? 0) : null;
   const total = isOrderPhase ? orderTotalValue : singleItemTotal;
 
@@ -607,6 +629,7 @@ export default function Cotizador(): ReactElement {
             product={product}
             state={state}
             quote={quote}
+            items={orderItems}
             zoneFee={zoneFee}
             total={total}
             onEntregaChange={(entrega) => dispatch({ type: 'SET_ENTREGA', entrega })}
@@ -625,6 +648,7 @@ export default function Cotizador(): ReactElement {
             onEditZone={() => goToStep('zonaEntrega')}
             onAddAnother={addToCart}
             onRemoveItem={removeItem}
+            onEditItem={editItem}
             asideCtaTarget={portalCtaEl}
           />
         )}

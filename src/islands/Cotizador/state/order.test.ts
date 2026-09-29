@@ -61,4 +61,20 @@ describe('state/order — T7.2 order-level transport + totals', () => {
     expect(items).toHaveLength(0);
     expect(orderItemsSubtotal(items)).toBe(0);
   });
+
+  it('sf-cot-s7gaps gap 1 — a re-edited item (editingItem set) is reinserted at its original index, not trailing', () => {
+    let state: CotizadorState = { ...initialCotizadorState, productId: 'recta', width: '110', color: 'natural', glass: 'claro' };
+    state = cotizadorReducer(state, { type: 'ADD_TO_CART' }); // cart: [recta]
+    state = { ...state, productId: 'l', color: 'natural', cornerModel: 'aquaclara' };
+    state = cotizadorReducer(state, { type: 'ADD_TO_CART' }); // cart: [recta, corner]
+
+    const rectaId = state.cart[0].id;
+    state = cotizadorReducer(state, { type: 'EDIT_ITEM', id: rectaId }); // current: recta @ index 0
+    state = { ...state, width: '150' };
+
+    const items = buildOrderItems(state, CATALOG_PRODUCTS);
+    expect(items).toHaveLength(2);
+    expect(items[0]).toMatchObject({ id: 'current', productId: 'recta' });
+    expect(items[1].productId).toBe('l');
+  });
 });

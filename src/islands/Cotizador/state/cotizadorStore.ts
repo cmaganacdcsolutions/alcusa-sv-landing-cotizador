@@ -124,6 +124,15 @@ export interface CotizadorState {
   // being edited through steps 1-3; zone/entrega/pay/wompi fields are
   // order-level (shared, charged/decided once) and never snapshotted here.
   cart: CartItem[];
+  // --- sf-cot-s7gaps: desktop "Editar" on a committed cart item (gap 1) ---
+  // Set by EDIT_ITEM while a committed cart item's fields are loaded into
+  // the "current" slot for re-editing through steps 1-3. `index` is the
+  // item's original position in the combined cart+current list, so
+  // state/order.ts's buildOrderItems can re-insert the (possibly edited)
+  // current item there instead of always trailing — "replaced in place,
+  // not duplicated" (sf-cot-s7gaps gap 1 AC). Cleared by ADD_TO_CART and by
+  // REMOVE_ITEM('current'), the two actions that retire the current slot.
+  editingItem: { id: string; index: number } | null;
 }
 
 // --- S7: cart item snapshot helpers ---
@@ -196,6 +205,7 @@ export const initialCotizadorState: CotizadorState = {
   wompiOutcome: null,
   wompiOrderNumber: null,
   cart: [],
+  editingItem: null,
 };
 
 // The initial values of just the "per item" fields — used to reset the
@@ -226,7 +236,7 @@ export function applyCartItem(state: CotizadorState, item: CartItem): CotizadorS
 
 /** Resets the current item to a blank slate and sends the wizard back to step 0. */
 function resetCurrentItem(state: CotizadorState): CotizadorState {
-  return { ...state, ...INITIAL_ITEM_FIELDS, step: 'producto' };
+  return { ...state, ...INITIAL_ITEM_FIELDS, step: 'producto', editingItem: null };
 }
 
 export type CotizadorAction =
@@ -278,7 +288,14 @@ export type CotizadorAction =
   // items, the most recently committed one is promoted back into the
   // "current" slot (still editable via steps 1-3); if the cart is empty,
   // this was the last item — falls back to step 0 (prototype-spec.md §2.1).
-  | { type: 'REMOVE_ITEM'; id: string };
+  | { type: 'REMOVE_ITEM'; id: string }
+  // --- sf-cot-s7gaps: desktop "Editar" on a committed cart item (gap 1) ---
+  // Loads a committed cart item's fields into the "current" slot (steps
+  // 1-3 editable) and jumps to Medidas. Any item already in progress is
+  // committed to the cart first so nothing is lost. `index` is recorded so
+  // state/order.ts reinserts the edited item at its original position once
+  // the wizard returns to Resumen, instead of trailing at the end.
+  | { type: 'EDIT_ITEM'; id: string };
 
 /** Accepts meters ("1.10") or centimeters ("110"): values < 10 are ×100. */
 export function parseWidthCm(raw: string): number {
@@ -382,6 +399,16 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
     // --- S7: multi-item cart ---
     case 'ADD_TO_CART': {
       if (!state.productId) return state;
+      // sf-cot-s7gaps — if the item being committed was itself loaded via
+      // EDIT_ITEM, reinsert it at its original position (same id) instead
+      // of appending a new entry at the end.
+      if (state.editingItem) {
+        const { id, index } = state.editingItem;
+        const item = snapshotCartItem(state, id);
+        const at = Math.min(index, state.cart.length);
+        const cart = [...state.cart.slice(0, at), item, ...state.cart.slice(at)];
+        return resetCurrentItem({ ...state, cart });
+      }
       const item = snapshotCartItem(state, `item-${state.cart.length}-${Date.now()}`);
       return resetCurrentItem({ ...state, cart: [...state.cart, item] });
     }
@@ -389,9 +416,36 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       if (action.id === 'current') {
         if (state.cart.length === 0) return resetCurrentItem(state);
         const promoted = state.cart[state.cart.length - 1];
-        return applyCartItem({ ...state, cart: state.cart.slice(0, -1) }, promoted);
+        return applyCartItem({ ...state, cart: state.cart.slice(0, -1), editingItem: null }, promoted);
       }
-      return { ...state, cart: state.cart.filter((i) => i.id !== action.id) };
+      const removedIdx = state.cart.findIndex((i) => i.id === action.id);
+      const cart = state.cart.filter((i) => i.id !== action.id);
+      // Keep a pending EDIT_ITEM's recorded position correct if a row
+      // before it just shifted the array left.
+      const editingItem =
+        state.editingItem && removedIdx !== -1 && removedIdx < state.editingItem.index
+          ? { ...state.editingItem, index: state.editingItem.index - 1 }
+          : state.editingItem;
+      return { ...state, cart, editingItem };
+    }
+    // --- sf-cot-s7gaps: desktop "Editar" on a committed cart item (gap 1) ---
+    case 'EDIT_ITEM': {
+      const idx = state.cart.findIndex((i) => i.id === action.id);
+      if (idx === -1) return state;
+      const target = state.cart[idx];
+      const cartWithoutTarget = state.cart.filter((i) => i.id !== action.id);
+      // Nothing was in progress (e.g. mid-edit already) → no commit needed.
+      // Random suffix (not just length+timestamp) avoids an id collision
+      // with the item just removed above, which can share the same
+      // cart-length "slot" and millisecond in fast, synchronous test runs.
+      const cart = state.productId
+        ? [
+            ...cartWithoutTarget,
+            snapshotCartItem(state, `item-${cartWithoutTarget.length}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
+          ]
+        : cartWithoutTarget;
+      const next = applyCartItem({ ...state, cart, editingItem: { id: target.id, index: idx } }, target);
+      return { ...next, step: 'medidas' };
     }
     default:
       return state;
