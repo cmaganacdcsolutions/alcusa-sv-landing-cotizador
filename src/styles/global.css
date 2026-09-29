@@ -37,6 +37,24 @@ a {
   color: var(--color-accent);
 }
 
+/* Anchored sections (TopBar/Drawer/Footer links land here): keep headings
+   clear of the sticky top bar (64px mobile / 80px desktop, TopBar.astro). */
+#inicio,
+#modelos,
+#proceso,
+#galeria {
+  scroll-margin-top: 64px;
+}
+
+@media (min-width: 1024px) {
+  #inicio,
+  #modelos,
+  #proceso,
+  #galeria {
+    scroll-margin-top: 80px;
+  }
+}
+
 /* Icon SVGs are inline outline glyphs per the boards: stroke-only, no fill,
    round caps/joins. Any icon that needs a filled glyph sets its own
    fill/stroke inline (none do today - all board icons are outline). */
