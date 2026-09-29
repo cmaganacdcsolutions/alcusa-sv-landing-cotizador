@@ -50,7 +50,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
 
       <div className="field">
         <span className="field__label">Modelo</span>
-        <div className="chip-row">
+        <div className="chip-row" role="group" aria-label="Modelo">
           {MODELS.map((m) => (
             <button
               key={m}
@@ -128,7 +128,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
 
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color del marco</span>
-        <div className="chip-row">
+        <div className="chip-row" role="group" aria-label="Color del marco">
           {FRAMES.map((f) => (
             <button
               key={f}
@@ -146,7 +146,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
 
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Tipo de vidrio</span>
-        <div className="chip-row">
+        <div className="chip-row" role="group" aria-label="Tipo de vidrio">
           {GLASSES.map((g) => (
             <button
               key={g}

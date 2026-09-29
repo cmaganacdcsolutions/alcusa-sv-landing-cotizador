@@ -169,11 +169,11 @@ export function buildLineItem(state: CotizadorState): LineItemView {
     case 'jardin': {
       const q = computeGardenQuote(state);
       return {
-        detail: `${q.widthM.toFixed(2)} × ${q.heightM.toFixed(2)} m · ${COLOR_LABELS[state.gardenColor]} · ${state.gardenGlass}`,
+        detail: `${q.widthM.toFixed(2)} × ${q.heightM.toFixed(2)} m · ${COLOR_LABELS[state.gardenColor]} · ${GLASS_LABELS[state.gardenGlass]}`,
         anchoM: q.widthM,
         altoM: q.heightM,
         color: COLOR_LABELS[state.gardenColor],
-        vidrio: state.gardenGlass,
+        vidrio: GLASS_LABELS[state.gardenGlass],
         cantidad: q.qty > 1 ? q.qty : undefined,
       };
     }

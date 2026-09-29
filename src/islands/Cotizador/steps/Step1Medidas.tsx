@@ -8,6 +8,7 @@ import HingedForm from './measures/HingedForm';
 import StraightForm from './measures/StraightForm';
 import TemperedForm from './measures/TemperedForm';
 import WindowForm from './measures/WindowForm';
+import '@styles/cotizador-medidas.css';
 
 export interface Step1MedidasProps {
   product: CatalogProduct;
