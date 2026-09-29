@@ -19,6 +19,7 @@ import {
 } from '../../state/cotizadorStore';
 import { parseHingedQty, type QuoteResult } from '../../state/quote';
 import { IconArrowRight, IconWarningTriangle } from '../../icons';
+import { GlassSwatch } from './glassSwatches';
 
 const COLORS: { id: AluminumColor; dot: string }[] = [
   { id: 'natural', dot: '#c9ced6' },
@@ -107,7 +108,7 @@ export default function HingedForm({ product, state, dispatch, quote, onNext }: 
 
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color del aluminio</span>
-        <div className="chip-row">
+        <div className="chip-row" role="group" aria-label="Color del aluminio">
           {COLORS.map((c) => (
             <button
               key={c.id}
@@ -125,7 +126,7 @@ export default function HingedForm({ product, state, dispatch, quote, onNext }: 
 
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Tipo de vidrio</span>
-        <div className="glass-grid">
+        <div className="glass-grid" role="group" aria-label="Tipo de vidrio">
           {GLASSES.map((g) => (
             <button
               key={g.id}
@@ -134,7 +135,7 @@ export default function HingedForm({ product, state, dispatch, quote, onNext }: 
               aria-pressed={state.glass === g.id}
               onClick={() => dispatch({ type: 'SET_GLASS', glass: g.id })}
             >
-              <span className="glass-chip__swatch" />
+              <GlassSwatch glass={g.id} />
               {GLASS_LABELS[g.id]}
             </button>
           ))}

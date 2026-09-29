@@ -42,7 +42,7 @@ export default function CornerForm({ product, state, dispatch, quote, onNext }: 
 
       <div className="field">
         <span className="field__label">Modelo</span>
-        <div className="chip-row">
+        <div className="chip-row" role="group" aria-label="Modelo">
           {MODELS.map((m) => (
             <button
               key={m}
@@ -59,7 +59,7 @@ export default function CornerForm({ product, state, dispatch, quote, onNext }: 
 
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color del aluminio</span>
-        <div className="chip-row">
+        <div className="chip-row" role="group" aria-label="Color del aluminio">
           {COLORS.map((c) => (
             <button
               key={c.id}

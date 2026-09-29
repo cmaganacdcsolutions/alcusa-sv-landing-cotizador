@@ -1,0 +1,501 @@
+/* sf-cot-medidas — styles for Step0Producto, Step1Medidas/steps/measures/*
+   and Step2Precio, matched 1:1 to desktop-03/04 + ios-03/04 + android-03/04
+   (boards/desktop-03-cotizador-producto-medidas.dc.html etc). Consumes
+   tokens.css custom properties only; literal px are used wherever the board
+   value doesn't line up with an existing token (documented inline).
+
+   Some blocks below were RELOCATED verbatim (or lightly refreshed) from
+   src/styles/cotizador.css — they were already exclusive to these steps, so
+   moving them here is a pure file move, not a rewrite of shared rules that
+   sf-cot-shell/sf-cot-checkout also touch. New rules (product images, glass
+   photo swatches, the estimate card, Fraunces headings for these 3 steps)
+   are additions for the gaps called out in this slice. */
+
+/* ---------- Step0 — "Elige tu producto" heading + section headings ------
+   Boards give every step's <h2> the display typeface (Fraunces) at 32px/40
+   desktop, 22px/1.3 mobile. `.cotizador__section-heading` (shared with
+   Step3/4 in cotizador.css) already has the right mobile size/weight — it's
+   only missing the font-family and the desktop bump. Scoped by id (higher
+   specificity than the shared class, so no edit to the shared rule) to the
+   three headings this slice owns. */
+#step0-heading,
+#step1-heading,
+#step2-heading {
+  font-family: var(--font-family-display);
+}
+
+@media (min-width: 1024px) {
+  #step0-heading,
+  #step1-heading,
+  #step2-heading {
+    font-size: 2rem; /* 32px */
+    line-height: 1.25; /* 40px */
+  }
+}
+
+/* ---------- Step0 — product grid/cards (gap #1: real photos) ------------ */
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.product-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 10px;
+  text-align: left;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.product-card[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+  background: var(--color-surface-tint);
+}
+
+.product-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.product-card__image {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.product-card__body {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  gap: 2px;
+}
+
+.product-card__name {
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: var(--font-weight-body-bold);
+}
+
+.product-card__price {
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-primary);
+}
+
+.product-card__check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-card__badge {
+  font-size: var(--font-size-caption-mobile);
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border-radius: var(--radius-xs);
+  padding: 0 6px;
+  align-self: flex-start;
+}
+
+/* Step0's "no product picked yet" tile (boards: dashed placeholder). */
+.callout--empty {
+  padding: 28px 24px;
+  border: 1.5px dashed var(--color-border-input);
+  background: transparent;
+  align-items: center;
+  text-align: center;
+}
+
+.callout-empty__title {
+  font-size: 1rem; /* 16px */
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+
+.callout-empty__body {
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink-muted);
+}
+
+@media (min-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-4); /* 16px */
+  }
+
+  .product-card {
+    gap: var(--space-4);
+    min-height: 96px;
+    padding: var(--space-4);
+  }
+
+  .product-card__image {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md); /* 14px */
+  }
+
+  .product-card__check {
+    top: 12px;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .callout--empty {
+    padding: 48px 32px;
+  }
+
+  .callout-empty__title {
+    font-size: 1.125rem; /* 18px */
+  }
+
+  .callout-empty__body {
+    font-size: 0.9375rem; /* 15px */
+  }
+}
+
+/* ---------- Medidas — color chips, "Tipo de vidrio" swatches (gap #2) ---- */
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2); /* 8px */
+}
+
+.chip {
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: 600;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+  background: var(--color-surface-tint);
+}
+
+.chip__dot {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border-input);
+}
+
+.chip__badge {
+  font-size: var(--font-size-caption-mobile);
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-warning);
+  background: var(--color-warning-bg);
+  border-radius: var(--radius-xs);
+  padding: 0 6px;
+  margin-left: var(--space-2);
+}
+
+.glass-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.glass-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--font-size-caption-mobile);
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+.glass-chip[aria-pressed='true'] {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+  background: var(--color-surface-tint);
+}
+
+/* Swatch box: background is either a photo (claro/nevado/decorado) or a
+   flat/patterned CSS background (mallado/duplex) set inline by
+   steps/measures/glassSwatches.tsx's <GlassSwatch>, copied from the boards'
+   `g.swatch` value. */
+.glass-chip__swatch {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: block;
+}
+
+.glass-chip__swatch-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .chip-row {
+    gap: 10px;
+  }
+
+  .chip {
+    min-height: 56px;
+    padding: 0 14px 0 12px;
+    font-size: 0.9375rem; /* 15px */
+  }
+
+  .glass-grid {
+    gap: var(--space-3); /* 12px */
+  }
+
+  .glass-chip {
+    padding: 12px 8px 14px;
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.33; /* 20px */
+  }
+
+  .glass-chip__swatch {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* ---------- Step2 — estimate card typography (gap #3) -------------------- */
+
+.estimate-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.estimate-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.estimate-card__image {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
+
+.estimate-card__meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.estimate-card__name {
+  font-size: 1rem; /* 16px */
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+
+.estimate-card__detail {
+  font-size: var(--font-size-body-sm-mobile); /* 14px */
+  color: var(--color-ink-muted);
+}
+
+.estimate-card__price {
+  display: flex;
+  flex-direction: column;
+}
+
+.estimate-card__label {
+  margin-top: 10px;
+  font-size: 0.75rem; /* 12px */
+  font-weight: var(--font-weight-body-bold);
+  letter-spacing: 0.1em;
+  color: var(--color-ink-muted);
+}
+
+.estimate-card__value {
+  font-size: 2.5rem; /* 40px */
+  line-height: 1.1;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.estimate-card__note {
+  margin: 4px 0 0;
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink-muted);
+}
+
+@media (min-width: 1024px) {
+  .estimate-card {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 28px;
+    border: 1px solid var(--color-border);
+  }
+
+  .estimate-card__head {
+    flex-grow: 1;
+  }
+
+  .estimate-card__image {
+    width: 72px;
+    height: 72px;
+  }
+
+  .estimate-card__name {
+    font-size: 1.125rem; /* 18px */
+    line-height: 1.45; /* 26px */
+  }
+
+  .estimate-card__price {
+    flex-shrink: 0;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .estimate-card__label {
+    margin-top: 0;
+    font-size: 0.8125rem; /* 13px */
+  }
+
+  .estimate-card__note {
+    /* board: the note is a separate <p> under the (non-wrapping) row, full
+       width. Recreated here as a flex item that always wraps onto its own
+       line instead of duplicating the JSX per breakpoint. */
+    flex-basis: 100%;
+    margin-top: 0;
+    font-size: 0.9375rem; /* 15px */
+  }
+}
+
+/* ---------- Medidas — "Ventana" repeatable rows (WindowForm only) -------- */
+
+.window-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.window-row {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr 1fr auto;
+  align-items: end;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.window-row__index {
+  font-size: var(--font-size-caption-mobile);
+  color: var(--color-ink-muted);
+  font-weight: var(--font-weight-body-bold);
+}
+
+.window-row__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-size-caption-mobile);
+  color: var(--color-ink-muted);
+}
+
+.window-row__input {
+  height: 44px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-input);
+  background: var(--color-surface);
+  font-size: 1rem;
+  color: var(--color-ink);
+}
+
+.window-row__remove {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.row-add-btn {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border-input);
+  background: transparent;
+  color: var(--color-accent);
+  font-weight: var(--font-weight-body-bold);
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.extras-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink);
+}
+
+@media (max-width: 480px) {
+  .window-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .window-row__index {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react';
 import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
 import { IconCheck } from '../icons';
+import { PRODUCT_IMAGES } from './productImages';
+import '@styles/cotizador-medidas.css';
 
 export interface Step0ProductoProps {
   selectedId: ProductId | null;
@@ -28,6 +30,7 @@ export default function Step0Producto({ selectedId, onSelect }: Step0ProductoPro
               aria-pressed={selected}
               onClick={() => p.enabled && onSelect(p.id)}
             >
+              <img src={PRODUCT_IMAGES[p.id]} alt="" className="product-card__image" width={64} height={64} />
               <span className="product-card__body">
                 <span className="product-card__name">{p.name}</span>
                 <span className="product-card__price">Desde ${p.fromPrice}</span>
@@ -44,10 +47,8 @@ export default function Step0Producto({ selectedId, onSelect }: Step0ProductoPro
       </div>
       {!selectedId && (
         <div className="callout callout--empty" role="status" style={{ marginTop: 16 }}>
-          <span style={{ fontWeight: 700 }}>Aún no eliges un producto</span>
-          <span style={{ fontSize: 14, color: 'var(--color-ink-muted)' }}>
-            Toca una opción para ver sus medidas y acabados.
-          </span>
+          <span className="callout-empty__title">Aún no eliges un producto</span>
+          <span className="callout-empty__body">Toca una opción para ver sus medidas y acabados.</span>
         </div>
       )}
     </section>
