@@ -82,3 +82,60 @@ describe('cotizadorReducer — S7 cart (REMOVE_ITEM)', () => {
     expect(next.productId).toBe('templado'); // current item untouched
   });
 });
+
+// sf-cot-s7gaps gap 1 — desktop "Editar" on a committed cart item.
+describe('cotizadorReducer — sf-cot-s7gaps (EDIT_ITEM)', () => {
+  it('loads a committed item into the current slot, records its index, and jumps to Medidas', () => {
+    let state: CotizadorState = { ...initialCotizadorState, ...recta110 };
+    state = cotizadorReducer(state, { type: 'ADD_TO_CART' }); // cart: [recta]
+    state = { ...state, ...cornerNatural };
+    state = cotizadorReducer(state, { type: 'ADD_TO_CART' }); // cart: [recta, corner], current: blank
+    state = { ...state, productId: 'templado', width: '150' }; // configuring item 3
+
+    const cornerId = state.cart[1].id;
+    const next = cotizadorReducer(state, { type: 'EDIT_ITEM', id: cornerId });
+
+    expect(next.step).toBe('medidas');
+    expect(next.productId).toBe('l');
+    expect(next.color).toBe('natural');
+    expect(next.editingItem).toEqual({ id: cornerId, index: 1 });
+    // item 3 (templado, in progress) is not lost — committed to the cart.
+    expect(next.cart).toHaveLength(2);
+    expect(next.cart.some((i) => i.productId === 'templado' && i.width === '150')).toBe(true);
+    // the edited corner item is no longer a separate cart row.
+    expect(next.cart.some((i) => i.id === cornerId)).toBe(false);
+  });
+
+  it('is a no-op for an unknown id', () => {
+    const state: CotizadorState = { ...initialCotizadorState, ...recta110 };
+    const next = cotizadorReducer(state, { type: 'EDIT_ITEM', id: 'does-not-exist' });
+    expect(next).toBe(state);
+  });
+
+  it('ADD_TO_CART after an edit reinserts the item at its original index (same id), not at the end', () => {
+    let state: CotizadorState = { ...initialCotizadorState, ...recta110 };
+    state = cotizadorReducer(state, { type: 'ADD_TO_CART' }); // cart: [recta]
+    state = { ...state, ...cornerNatural };
+    state = cotizadorReducer(state, { type: 'ADD_TO_CART' }); // cart: [recta, corner]
+
+    const rectaId = state.cart[0].id;
+    state = cotizadorReducer(state, { type: 'EDIT_ITEM', id: rectaId }); // cart: [corner], current: recta (index 0)
+    state = { ...state, width: '150' }; // edit the measure
+
+    const next = cotizadorReducer(state, { type: 'ADD_TO_CART' });
+    expect(next.cart).toHaveLength(2);
+    expect(next.cart[0]).toMatchObject({ id: rectaId, productId: 'recta', width: '150' });
+    expect(next.cart[1].productId).toBe('l');
+    expect(next.editingItem).toBeNull();
+  });
+
+  it('REMOVE_ITEM("current") clears a pending edit', () => {
+    let state: CotizadorState = { ...initialCotizadorState, ...recta110 };
+    state = cotizadorReducer(state, { type: 'ADD_TO_CART' });
+    const rectaId = state.cart[0].id;
+    state = cotizadorReducer(state, { type: 'EDIT_ITEM', id: rectaId });
+
+    const next = cotizadorReducer(state, { type: 'REMOVE_ITEM', id: 'current' });
+    expect(next.editingItem).toBeNull();
+  });
+});

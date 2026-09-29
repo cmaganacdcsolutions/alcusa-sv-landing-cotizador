@@ -302,10 +302,11 @@
 
 /* sf-cot-mobile item 3 — rebuilt 1:1 from ios-05/android-05's per-item
    `sc-for` row: name, then up to two detail lines, then a price+"Quitar"
-   footer row (`margin-top: 4px`, space-between). The boards draw ONLY a
-   "Quitar" (remove) control per item — no separate "Editar" — so the old
-   `.summary-item__action`/`--edit` pair (an unrequested extra affordance)
-   is dropped along with the name+price top row this replaces. */
+   footer row (`margin-top: 4px`, space-between). The mobile boards draw
+   ONLY "Quitar" — no "Editar" — below 1024px (cotizador-mobile.spec.ts).
+   sf-cot-s7gaps gap 1 adds `.summary-item__edit` back for desktop only,
+   1:1 from desktop-05-cotizador-resumen.dc.html ~L83-85 (its `it.editLabel`
+   link + `it.remove` button, wrapped in one `gap: 4px` action group). */
 .summary-item__footer {
   display: flex;
   align-items: center;
@@ -321,10 +322,23 @@
   white-space: nowrap;
 }
 
+.summary-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: -10px;
+  flex-shrink: 0;
+}
+
+.summary-item__edit {
+  /* desktop-only (see the 1024px override below); board: min-height 40px,
+     padding 0 12px, radius 10px, 15px/700 #073b92, gap 6px. */
+  display: none;
+}
+
 .summary-item__remove {
   min-height: 44px;
   padding: 0 10px;
-  margin-right: -10px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1018,6 +1032,38 @@
   .summary-item__name,
   .summary-item__price {
     font-size: 1.125rem;
+  }
+
+  /* sf-cot-s7gaps gap 1 — desktop-05-cotizador-resumen.dc.html ~L83-85. */
+  .summary-item__actions {
+    gap: 4px;
+    margin-right: -12px;
+  }
+
+  .summary-item__edit {
+    display: inline-flex;
+    min-height: 40px;
+    padding: 0 12px;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-size: 0.9375rem;
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-primary);
+    cursor: pointer;
+  }
+
+  .summary-item__edit:hover {
+    background: var(--color-surface-tint);
+  }
+
+  .summary-item__remove {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 0.9375rem;
+    font-weight: var(--font-weight-body-bold);
   }
 
   .payment-option {

@@ -46,7 +46,15 @@ export function buildOrderItems(state: CotizadorState, products: readonly Catalo
   const fromCart = state.cart.map((item) => toLine(applyCartItem(state, item), item.id, item.productId));
 
   if (!state.productId) return fromCart;
-  return [...fromCart, toLine(state, 'current', state.productId)];
+  const current = toLine(state, 'current', state.productId);
+  // sf-cot-s7gaps gap 1 — a committed cart item loaded via EDIT_ITEM keeps
+  // its original position ("replaced in place, not duplicated") instead of
+  // always trailing at the end like a genuinely new in-progress item.
+  if (state.editingItem) {
+    const at = Math.min(state.editingItem.index, fromCart.length);
+    return [...fromCart.slice(0, at), current, ...fromCart.slice(at)];
+  }
+  return [...fromCart, current];
 }
 
 /** Sum of every priced item's subtotal (requiresQuote items contribute $0, never null-poisoned). */
@@ -120,9 +128,17 @@ export function buildOrderMessageItems(
     }
   };
 
-  const itemStates = [
-    ...state.cart.map((item) => applyCartItem(state, item)),
-    ...(state.productId ? [state] : []),
-  ];
+  const cartStates = state.cart.map((item) => applyCartItem(state, item));
+  // Mirror buildOrderItems' edit-in-place ordering (sf-cot-s7gaps gap 1) so
+  // the WhatsApp message lists items in the same order as Resumen.
+  const itemStates = state.productId
+    ? state.editingItem
+      ? [
+          ...cartStates.slice(0, Math.min(state.editingItem.index, cartStates.length)),
+          state,
+          ...cartStates.slice(Math.min(state.editingItem.index, cartStates.length)),
+        ]
+      : [...cartStates, state]
+    : cartStates;
   return itemStates.flatMap(toMessageItems);
 }

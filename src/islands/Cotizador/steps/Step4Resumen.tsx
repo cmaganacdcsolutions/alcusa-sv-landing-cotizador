@@ -6,7 +6,7 @@ import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
 import type { CotizadorState } from '../state/cotizadorStore';
 import { buildOrderMessageItems, orderItemsSubtotal, type OrderLineItem } from '../state/order';
 import { IconArrowRight, IconPlus, IconWarningTriangle, IconWhatsApp } from '../icons';
-import { IconLocationPin, IconTrash } from '../icons-checkout';
+import { IconEdit, IconLocationPin, IconTrash } from '../icons-checkout';
 import { PRODUCT_IMAGES } from './productImages';
 import '@styles/cotizador-checkout.css';
 
@@ -30,6 +30,11 @@ export interface Step4ResumenProps {
   // cart item back into it, or falling back to step 0 if the cart empties
   // too); any other id removes that committed cart item.
   onRemoveItem: (id: string) => void;
+  // sf-cot-s7gaps gap 1 — desktop-only "Editar" (desktop-05-cotizador-
+  // resumen.dc.html ~L84), drawn for every row like the board (uniform
+  // `sc-for` loop, no special-case for the in-progress item): jumps to
+  // Medidas with that item's fields loaded into the editable slot.
+  onEditItem: (id: string) => void;
   // sf-cot-polish item 3 — desktop-05 draws "Enviar por WhatsApp para
   // confirmar"/"Pagar ahora" ONLY in the "TU COTIZACIÓN" aside (never in the
   // main content column); ios-05/android-05 draw them ONLY in the main
@@ -60,6 +65,7 @@ export default function Step4Resumen({
   onEditZone,
   onAddAnother,
   onRemoveItem,
+  onEditItem,
   asideCtaTarget,
 }: Step4ResumenProps): ReactElement {
   const [liveMessage, setLiveMessage] = useState('');
@@ -88,6 +94,10 @@ export default function Step4Resumen({
   function handleRemove(item: OrderLineItem): void {
     setLiveMessage(`${item.name} quitado de tu cotización.`);
     onRemoveItem(item.id);
+  }
+
+  function handleEdit(item: OrderLineItem): void {
+    onEditItem(item.id);
   }
 
   const ctas = (
@@ -142,15 +152,30 @@ export default function Step4Resumen({
                 <span className="summary-item__price">
                   {item.requiresQuote ? 'Por WhatsApp' : `$${item.subtotal.toFixed(2)}`}
                 </span>
-                <button
-                  type="button"
-                  className="summary-item__remove"
-                  aria-label={`Quitar ${item.name}`}
-                  onClick={() => handleRemove(item)}
-                >
-                  <IconTrash />
-                  Quitar
-                </button>
+                <div className="summary-item__actions">
+                  {/* desktop-05-cotizador-resumen.dc.html ~L84 — desktop-only
+                     "Editar", mobile boards (ios-05/android-05) draw only
+                     "Quitar"; cotizador-mobile.spec.ts asserts no Editar
+                     below 1024px. */}
+                  <button
+                    type="button"
+                    className="summary-item__edit"
+                    aria-label={`Editar ${item.name}`}
+                    onClick={() => handleEdit(item)}
+                  >
+                    <IconEdit />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="summary-item__remove"
+                    aria-label={`Quitar ${item.name}`}
+                    onClick={() => handleRemove(item)}
+                  >
+                    <IconTrash />
+                    Quitar
+                  </button>
+                </div>
               </div>
             </div>
           </article>
