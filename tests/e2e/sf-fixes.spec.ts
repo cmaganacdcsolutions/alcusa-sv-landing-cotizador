@@ -192,6 +192,101 @@ test.describe('sf-fixes — galería lightbox prev/next + strip controls', () =>
   });
 });
 
+test.describe('sf-drawer — drawer + top bar fidelity vs the hi-fi boards', () => {
+  test('drawer header shows the "Disfrutar con calidad" lockup image', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    const logo = page.locator('#drawer-panel img[alt="ALCUSA · Disfrutar con calidad"]');
+    await expect(logo).toBeVisible();
+  });
+
+  test('drawer "Síguenos" label and the 3 social links are visible', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    const drawer = page.locator('#drawer-panel');
+    await expect(drawer.getByText('Síguenos', { exact: true })).toBeVisible();
+    await expect(drawer.getByRole('link', { name: 'Instagram @alcusasv' })).toBeVisible();
+    await expect(drawer.getByRole('link', { name: 'TikTok @alcusaes' })).toBeVisible();
+    await expect(drawer.getByRole('link', { name: 'YouTube @alcusaelsalvador8209' })).toBeVisible();
+  });
+
+  test('drawer WhatsApp entry uses the real +503 7680-2410 number', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    const whatsapp = page.locator('#drawer-panel .drawer__whatsapp');
+    await expect(whatsapp).toContainText('7680-2410');
+    const href = await whatsapp.getAttribute('href');
+    expect(href).toMatch(/^https:\/\/wa\.me\/50376802410/);
+  });
+
+  test('drawer nav items carry a section icon on desktop (board-drawn); hidden on mobile boards', async ({
+    page,
+  }, testInfo) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    const inicioIcon = page.locator('#drawer-panel .drawer__link', { hasText: 'Inicio' }).locator('.drawer__link-icon');
+    if (testInfo.project.name === 'desktop1920') {
+      await expect(inicioIcon).toBeVisible();
+    } else {
+      await expect(inicioIcon).toBeHidden();
+    }
+  });
+
+  test('desktop-only drawer contacts + location block matches the board copy', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop1920', 'contacts/location block is desktop-only per the boards');
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    const drawer = page.locator('#drawer-panel');
+    await expect(drawer.getByText('2278-2460 · 2208-4101 · 2563-7742')).toBeVisible();
+    await expect(drawer.getByText('Calle El Pedregal, Ciudad Merliot')).toBeVisible();
+  });
+
+  test('mobile drawers hide the desktop-only contacts + location block', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'desktop1920', 'desktop-only assertion counterpart');
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await expect(page.locator('#drawer-panel .drawer__contacts')).toBeHidden();
+  });
+
+  test('Escape closes the drawer and returns focus to the trigger', async ({ page }) => {
+    await page.goto('/');
+    const trigger = page.getByRole('button', { name: 'Abrir menú' });
+    await trigger.click();
+    await expect(page.locator('#drawer-panel')).toHaveAttribute('aria-hidden', 'false');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#drawer-panel')).toHaveAttribute('aria-hidden', 'true');
+    await expect(trigger).toBeFocused();
+  });
+
+  test('Tab is trapped inside the open drawer (last focusable wraps to the first)', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    const drawer = page.locator('#drawer-panel');
+    const focusable = drawer.locator(
+      'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    const count = await focusable.count();
+    await focusable.nth(count - 1).focus();
+    await page.keyboard.press('Tab');
+    await expect(focusable.first()).toBeFocused();
+  });
+
+  test('top bar CTAs match the board per breakpoint (mobile icon-only vs desktop labelled)', async ({
+    page,
+  }, testInfo) => {
+    await page.goto('/');
+    const topBar = page.locator('.top-bar');
+    if (testInfo.project.name === 'desktop1920') {
+      await expect(topBar.getByRole('link', { name: 'Llamar al 2278-2460' })).toBeVisible();
+      await expect(topBar.getByRole('link', { name: 'Cotizar', exact: true })).toBeVisible();
+      await expect(topBar.getByText('Menú', { exact: true })).toBeVisible();
+    } else {
+      await expect(topBar.getByRole('link', { name: 'Llamar al 2278-2460' })).toBeHidden();
+      await expect(topBar.getByRole('link', { name: 'Cotizar', exact: true })).toBeHidden();
+    }
+  });
+});
+
 test.describe('sf-fixes — galería + footer fidelity follow-ups', () => {
   test('galería caption links out to Instagram', async ({ page }) => {
     await page.goto('/');
