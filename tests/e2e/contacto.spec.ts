@@ -27,22 +27,115 @@ test.describe('contacto — info block + socials', () => {
     ).toHaveAttribute('href', 'https://youtube.com/@alcusaelsalvador8209');
   });
 
-  test('WhatsApp quick link in the info block is a bare wa.me URL', async ({ page }) => {
+  test('WhatsApp quick link in the info block is a bare wa.me URL', async ({
+    page,
+  }, testInfo) => {
     await page.goto('/contacto');
-    const href = await page
-      .getByRole('link', { name: '7680-2410', exact: true })
-      .getAttribute('href');
+    // ios-08/android-08 show "7680-2410"; desktop-08 shows "+503 7680-2410"
+    // (~L49) — two nodes swapped by CSS per breakpoint, same href.
+    const label = testInfo.project.name === 'desktop1920' ? '+503 7680-2410' : '7680-2410';
+    const href = await page.getByRole('link', { name: label, exact: true }).getAttribute('href');
     expect(href).toBe('https://wa.me/50376802410');
   });
 
   test('hours and email show the literal placeholder text', async ({ page }) => {
     await page.goto('/contacto');
     await expect(page.getByText('[HORARIO — confirmar]')).toBeVisible();
-    await expect(page.getByText('[correo — confirmar]')).toBeVisible();
+    await expect(page.getByText('[CORREO — confirmar]')).toBeVisible();
+  });
+
+  test('the 4 info boxes (WhatsApp/Teléfonos/Horario/Correo) share one parent, in that order', async ({
+    page,
+  }) => {
+    await page.goto('/contacto');
+    const list = page.getByTestId('contacto-info-list');
+    const items = list.locator('> li');
+    await expect(items).toHaveCount(4);
+    await expect(items.nth(0)).toContainText('WhatsApp');
+    await expect(items.nth(1)).toContainText('Teléfonos');
+    await expect(items.nth(2)).toContainText('Horario');
+    await expect(items.nth(3)).toContainText('Correo');
+  });
+
+  test('layout order: info list, then the map, then the 3 social cards', async ({ page }) => {
+    await page.goto('/contacto');
+    const info = page.locator('.contacto__info');
+    const children = info.locator('> *');
+    const classes = await children.evaluateAll((els) => els.map((el) => el.className));
+    const listIdx = classes.findIndex((c) => c.includes('contacto__list'));
+    const mapIdx = classes.findIndex((c) => c.includes('contacto__map'));
+    const socialIdx = classes.findIndex((c) => c.includes('contacto__social'));
+    expect(listIdx).toBeGreaterThanOrEqual(0);
+    expect(mapIdx).toBeGreaterThan(listIdx);
+    expect(socialIdx).toBeGreaterThan(mapIdx);
+  });
+
+  test('the map is a real embedded iframe with an accessible title', async ({ page }) => {
+    await page.goto('/contacto');
+    const iframe = page.getByTestId('contacto-map-iframe');
+    await expect(iframe).toBeVisible();
+    await expect(iframe).toHaveAttribute('title', 'Mapa de ALCUSA, taller en Ciudad Merliot');
+    await expect(iframe).toHaveAttribute('loading', 'lazy');
+    const src = await iframe.getAttribute('src');
+    expect(src).toContain('google.com/maps');
+    expect(src).toContain('output=embed');
+    await expect(
+      page.getByRole('link', { name: /Ver ubicación en el mapa/ }),
+    ).toHaveAttribute(
+      'href',
+      'https://www.google.com/maps/search/?api=1&query=ALCUSA+Calle+El+Pedregal+Ciudad+Merliot',
+    );
+  });
+
+  test('the 3 social cards are visible below the map, each with a non-empty icon', async ({
+    page,
+  }) => {
+    await page.goto('/contacto');
+    const cards = page.getByTestId('contacto-social-grid').locator('> a');
+    await expect(cards).toHaveCount(3);
+    for (const name of ['Instagram', 'TikTok', 'YouTube']) {
+      await expect(cards.filter({ hasText: name })).toBeVisible();
+    }
+  });
+
+  test('every info/map/social icon renders a visible, non-empty stroked svg', async ({ page }) => {
+    await page.goto('/contacto');
+    const icons = page.locator(
+      '.contacto__list svg, .contacto__map svg, .contacto__social svg',
+    );
+    const count = await icons.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      const icon = icons.nth(i);
+      const box = await icon.boundingBox();
+      expect(box?.width).toBeGreaterThan(0);
+      expect(box?.height).toBeGreaterThan(0);
+      const stroke = await icon.evaluate((el) => getComputedStyle(el).stroke);
+      expect(stroke).not.toBe('none');
+    }
   });
 });
 
 test.describe('contacto — webform lifecycle', () => {
+  test('inputs show the boards’ exact placeholder copy (desktop-08 ~L98-124)', async ({
+    page,
+  }) => {
+    await page.goto('/contacto');
+    await expect(page.getByLabel('Nombre')).toHaveAttribute('placeholder', 'Tu nombre');
+    await expect(page.getByLabel('Teléfono')).toHaveAttribute('placeholder', '7680-2410');
+    await expect(page.getByLabel('Mensaje')).toHaveAttribute(
+      'placeholder',
+      'Cuéntanos medidas aproximadas, ubicación o cualquier duda.',
+    );
+  });
+
+  test('"prefer the cotizador" note links to /cotizador', async ({ page }) => {
+    await page.goto('/contacto');
+    await expect(
+      page.getByRole('link', { name: 'Usa el cotizador' }),
+    ).toHaveAttribute('href', '/cotizador');
+  });
+
   test('empty state: submit is disabled with no name/phone', async ({ page }) => {
     await page.goto('/contacto');
     await expect(

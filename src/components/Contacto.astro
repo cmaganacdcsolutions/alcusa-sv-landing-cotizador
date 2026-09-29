@@ -17,7 +17,11 @@ const waHref = buildWaLink();
 
   <div class="contacto__grid">
     <div class="contacto__info">
-      <ul aria-label="Datos de contacto" class="contacto__list">
+      <!-- 4 shared-container boxes (desktop-08 ~L48-53): WhatsApp / Teléfonos /
+           Horario / Correo. Taller lives in the map figure below, not here
+           (matches what the boards actually draw — Taller has its own card
+           with the location, not a 5th grid cell). -->
+      <ul aria-label="Datos de contacto" class="contacto__list" data-testid="contacto-info-list">
         <li class="contacto__item">
           <span class="contacto__icon contacto__icon--whatsapp" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24"
@@ -28,8 +32,10 @@ const waHref = buildWaLink();
           </span>
           <div class="contacto__item-body">
             <span class="contacto__item-label">WhatsApp</span>
-            <a href={waHref} class="contacto__item-value">7680-2410</a>
+            <a href={waHref} class="contacto__item-value contacto__item-value--mobile">7680-2410</a>
+            <a href={waHref} class="contacto__item-value contacto__item-value--desktop">+503 7680-2410</a>
           </div>
+          <a href={waHref} class="contacto__item-cta">Escribir</a>
         </li>
         <li class="contacto__item">
           <span class="contacto__icon" aria-hidden="true">
@@ -49,31 +55,6 @@ const waHref = buildWaLink();
         </li>
         <li class="contacto__item">
           <span class="contacto__icon" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24"
-              ><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"></path><circle
-                cx="12"
-                cy="10"
-                r="2.3"></circle></svg
-            >
-          </span>
-          <div class="contacto__item-body">
-            <span class="contacto__item-label">Taller</span>
-            <span class="contacto__item-value"
-              >Calle El Pedregal, local 29 G, Ciudad Merliot <span class="contacto__badge"
-                >[municipio — confirmar]</span
-              ></span
-            >
-            <a
-              href="https://www.google.com/maps/search/?api=1&query=ALCUSA+Calle+El+Pedregal+Ciudad+Merliot"
-              class="contacto__map-link"
-            >
-              Ver ubicación en el mapa
-              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 16L16 8M9 8h7v7"></path></svg>
-            </a>
-          </div>
-        </li>
-        <li class="contacto__item">
-          <span class="contacto__icon" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"
               ></path></svg
             >
@@ -86,41 +67,119 @@ const waHref = buildWaLink();
         <li class="contacto__item contacto__item--last">
           <span class="contacto__icon" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24"
-              ><rect x="3.5" y="5" width="17" height="14" rx="2.5"></rect><path d="M4 6.5l8 6 8-6"></path></svg
+              ><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"></rect><path d="M4 7l8 6 8-6"></path></svg
             >
           </span>
           <div class="contacto__item-body">
             <span class="contacto__item-label">Correo</span>
-            <span class="contacto__badge">[correo — confirmar]</span>
+            <span class="contacto__badge">[CORREO — confirmar]</span>
           </div>
         </li>
       </ul>
 
-      <div class="contacto__social">
-        <span class="contacto__social-label">Síguenos</span>
-        <div class="contacto__social-icons">
-          <a href="https://instagram.com/alcusasv" aria-label="Instagram @alcusasv" rel="noopener" class="contacto__social-icon"
-            ><svg width="20" height="20" viewBox="0 0 24 24"
-              ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
-              ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
-            ></a
+      <!-- Real embedded map (user decision, replaces the board's "MAPA ·
+           MARCADOR DE POSICIÓN" placeholder box, desktop-08 ~L56-71). Same
+           card treatment (border/radius/shadow) as the board's figure. -->
+      <figure class="contacto__map" aria-labelledby="taller-title" data-testid="contacto-map">
+        <div class="contacto__map-frame">
+          <iframe
+            src="https://www.google.com/maps?q=ALCUSA+Calle+El+Pedregal+Ciudad+Merliot&output=embed"
+            title="Mapa de ALCUSA, taller en Ciudad Merliot"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+            data-testid="contacto-map-iframe"></iframe>
+        </div>
+        <figcaption class="contacto__map-caption">
+          <span class="contacto__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24"
+              ><path
+                d="M4 9.5l1.5-5h13l1.5 5M4 9.5h16M5 9.5v10h14v-10M10 19.5v-5h4v5"
+              ></path></svg
+            >
+          </span>
+          <div class="contacto__item-body">
+            <span id="taller-title" class="contacto__item-label">Taller</span>
+            <span class="contacto__item-value"
+              >Calle El Pedregal, local 29 G, Ciudad Merliot <span class="contacto__badge"
+                >[municipio — confirmar]</span
+              ></span
+            >
+          </div>
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=ALCUSA+Calle+El+Pedregal+Ciudad+Merliot"
+            class="contacto__map-cta"
           >
-          <a href="https://tiktok.com/@alcusaes" aria-label="TikTok @alcusaes" rel="noopener" class="contacto__social-icon"
-            ><svg width="20" height="20" viewBox="0 0 24 24"
-              ><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path><path d="M14 4c.4 2.6 2.2 4.3 5 4.5"></path></svg
-            ></a
+            Ver ubicación en el mapa
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+          </a>
+        </figcaption>
+      </figure>
+
+      <!-- 3 social cards (desktop-08 ~L79-86), below the map. -->
+      <nav aria-labelledby="redes-title" class="contacto__social">
+        <p id="redes-title" class="contacto__social-label">Síguenos</p>
+        <div class="contacto__social-grid" data-testid="contacto-social-grid">
+          <a
+            href="https://instagram.com/alcusasv"
+            aria-label="Instagram @alcusasv"
+            rel="noopener"
+            class="contacto__social-card"
           >
+            <span class="contacto__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24"
+                ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
+                ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
+              >
+            </span>
+            <span class="contacto__social-card-body">
+              <span class="contacto__social-card-name">Instagram</span>
+              <span class="contacto__social-card-handle">@alcusasv</span>
+            </span>
+            <span class="contacto__social-card-arrow" aria-hidden="true"
+              ><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span
+            >
+          </a>
+          <a
+            href="https://tiktok.com/@alcusaes"
+            aria-label="TikTok @alcusaes"
+            rel="noopener"
+            class="contacto__social-card"
+          >
+            <span class="contacto__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24"
+                ><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path><path d="M14 4c.4 2.6 2.2 4.3 5 4.5"></path></svg
+              >
+            </span>
+            <span class="contacto__social-card-body">
+              <span class="contacto__social-card-name">TikTok</span>
+              <span class="contacto__social-card-handle">@alcusaes</span>
+            </span>
+            <span class="contacto__social-card-arrow" aria-hidden="true"
+              ><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span
+            >
+          </a>
           <a
             href="https://youtube.com/@alcusaelsalvador8209"
             aria-label="YouTube @alcusaelsalvador8209"
             rel="noopener"
-            class="contacto__social-icon"
-            ><svg width="20" height="20" viewBox="0 0 24 24"
-              ><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="M10.5 9.5v5l4.3-2.5z"></path></svg
-            ></a
+            class="contacto__social-card"
           >
+            <span class="contacto__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24"
+                ><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="M10.5 9.5v5l4.3-2.5z"></path></svg
+              >
+            </span>
+            <span class="contacto__social-card-body">
+              <span class="contacto__social-card-name">YouTube</span>
+              <span class="contacto__social-card-handle">@alcusaelsalvador8209</span>
+            </span>
+            <span class="contacto__social-card-arrow" aria-hidden="true"
+              ><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span
+            >
+          </a>
         </div>
-      </div>
+      </nav>
     </div>
 
     <ContactForm client:visible />
@@ -162,6 +221,10 @@ const waHref = buildWaLink();
     color: var(--color-ink-muted);
   }
 
+  .contacto__item-value--desktop {
+    display: none;
+  }
+
   .contacto__grid {
     display: flex;
     flex-direction: column;
@@ -176,24 +239,30 @@ const waHref = buildWaLink();
 
   .contacto__list {
     margin: 0;
-    padding: 0 var(--space-5);
+    padding: var(--space-1) var(--space-5);
     list-style: none;
     border-radius: var(--radius-lg);
     background: var(--color-surface);
-    box-shadow: 0 1px 2px rgba(16, 33, 61, 0.06);
+    box-shadow: var(--shadow-xs);
     display: flex;
     flex-direction: column;
   }
 
   .contacto__item {
     display: flex;
+    align-items: center;
     gap: var(--space-4);
-    padding: var(--space-4) 0;
-    border-bottom: 1px solid #dfe6ef;
+    padding: var(--space-3-5) 0;
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
   }
 
   .contacto__item--last {
     border-bottom: 0;
+  }
+
+  .contacto__item-cta {
+    display: none;
   }
 
   .contacto__icon {
@@ -202,7 +271,7 @@ const waHref = buildWaLink();
     height: 40px;
     border-radius: var(--radius-full);
     background: var(--color-surface-tint);
-    color: var(--color-focus);
+    color: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -224,12 +293,14 @@ const waHref = buildWaLink();
   .contacto__item-body {
     display: flex;
     flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
     gap: 2px;
     line-height: 1.4;
   }
 
   .contacto__item-label {
-    font-size: 0.75rem;
+    font-size: var(--font-size-caption-mobile);
     font-weight: 700;
     color: var(--color-ink-muted);
   }
@@ -261,54 +332,135 @@ const waHref = buildWaLink();
   .contacto__badge {
     display: inline-block;
     font-size: var(--font-size-body-sm-mobile);
-    background: #fff4e0;
-    color: #8a5a00;
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
     border-radius: var(--radius-xs);
     padding: 0 var(--space-2);
     width: fit-content;
   }
 
-  .contacto__map-link {
+  /* Map figure — replaces the board's "MAPA · MARCADOR DE POSICIÓN"
+     placeholder with a real embed (user decision). Same card treatment
+     (border/radius/shadow) as the board's figure, desktop-08 ~L55. */
+  .contacto__map {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+  }
+
+  .contacto__map-frame {
+    position: relative;
+    /* No board draws the map at mobile/tablet widths (only desktop-08 has
+       the figure); 4:3 is a reasonable, usable ratio for a real embed at
+       390/412, not a literal board value. */
+    aspect-ratio: 4 / 3;
+    background: var(--color-surface-tint);
+  }
+
+  .contacto__map-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
+  .contacto__map-caption {
+    padding: var(--space-4) var(--space-5);
     display: flex;
     align-items: center;
-    gap: 4px;
-    min-height: 32px;
+    gap: var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .contacto__map-cta {
+    flex-shrink: 0;
+    min-height: var(--icon-min-tap-target);
+    padding: 0 var(--space-4);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border-input);
+    background: var(--color-surface);
+    color: var(--color-ink);
     font-size: var(--font-size-body-sm-mobile);
     font-weight: 700;
+    white-space: nowrap;
   }
 
   .contacto__social {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: var(--space-3);
   }
 
   .contacto__social-label {
+    margin: 0;
     font-size: var(--font-size-body-sm-mobile);
     font-weight: 700;
   }
 
-  .contacto__social-icons {
+  .contacto__social-grid {
     display: flex;
-    gap: var(--space-2);
+    flex-direction: column;
+    gap: var(--space-3);
   }
 
-  .contacto__social-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: var(--radius-full);
-    background: var(--color-surface);
-    border: 1px solid #dfe6ef;
-    color: var(--color-focus);
+  .contacto__social-card {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: var(--space-3-5);
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-xs);
+    color: var(--color-ink);
   }
 
-  .contacto__social-icon svg {
+  .contacto__social-card .contacto__icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .contacto__social-card-body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+    line-height: 1.35;
+  }
+
+  .contacto__social-card-name {
+    font-size: var(--font-size-body-mobile);
+    font-weight: 700;
+  }
+
+  .contacto__social-card-handle {
+    font-size: var(--font-size-body-sm-mobile);
+    color: var(--color-ink-muted);
+  }
+
+  .contacto__social-card-arrow {
+    flex-shrink: 0;
+    color: var(--color-ink-muted);
+    display: flex;
+  }
+
+  .contacto__icon svg,
+  .contacto__map-cta svg,
+  .contacto__social-card-arrow svg {
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.5;
+    stroke-width: var(--icon-stroke-width);
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -327,6 +479,21 @@ const waHref = buildWaLink();
       padding: var(--space-16) var(--space-8);
     }
 
+    .contacto__title {
+      font-size: var(--font-size-display-2xl-desktop);
+      line-height: var(--font-line-height-display-2xl-desktop);
+      letter-spacing: var(--letter-spacing-display-tight);
+    }
+
+    .contacto__kicker {
+      font-size: var(--font-size-body-sm-desktop);
+    }
+
+    .contacto__lead {
+      font-size: var(--font-size-body-lg-desktop);
+      line-height: 28px;
+    }
+
     .contacto__grid {
       flex-direction: row;
       align-items: flex-start;
@@ -335,6 +502,105 @@ const waHref = buildWaLink();
 
     .contacto__info {
       flex: 0 0 58%;
+      gap: var(--space-6);
+    }
+
+    .contacto__item-value--mobile {
+      display: none;
+    }
+
+    .contacto__item-value--desktop {
+      display: inline;
+    }
+
+    .contacto__list {
+      padding: 0;
+      border: 1px solid var(--color-border);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: hidden;
+    }
+
+    .contacto__item {
+      align-items: center;
+      padding: var(--space-6) var(--space-7);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .contacto__item:nth-child(odd) {
+      border-right: 1px solid var(--color-border);
+    }
+
+    .contacto__item:nth-child(3),
+    .contacto__item:nth-child(4) {
+      border-bottom: 0;
+    }
+
+    .contacto__item-cta {
+      flex-shrink: 0;
+      min-height: 44px;
+      padding: 0 var(--space-5);
+      display: flex;
+      align-items: center;
+      border-radius: var(--radius-full);
+      background: var(--color-whatsapp-tint);
+      color: var(--color-whatsapp-strong);
+      font-size: 0.9375rem;
+      font-weight: 700;
+    }
+
+    .contacto__icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    .contacto__item-label {
+      font-size: var(--font-size-caption-desktop);
+    }
+
+    .contacto__item-value,
+    .contacto__item-phones {
+      font-size: 1.0625rem;
+    }
+
+    a.contacto__item-value {
+      font-size: 1.25rem;
+    }
+
+    .contacto__map-frame {
+      aspect-ratio: 920 / 280;
+    }
+
+    .contacto__map-caption {
+      padding: var(--space-6) var(--space-7);
+      gap: var(--space-5);
+    }
+
+    .contacto__map-cta {
+      min-height: 48px;
+      padding: 0 var(--space-5);
+      font-size: 0.9375rem;
+    }
+
+    .contacto__social {
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .contacto__social-label {
+      font-size: var(--font-size-caption-desktop);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+    }
+
+    .contacto__social-grid {
+      flex-direction: row;
+      gap: var(--space-4);
+    }
+
+    .contacto__social-card {
+      padding: var(--space-4) var(--space-5);
     }
   }
 </style>

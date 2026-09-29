@@ -37,6 +37,10 @@
   gap: var(--space-2);
 }
 
+.contact-form__row {
+  display: contents;
+}
+
 .contact-form__label {
   font-size: var(--font-size-body-sm-mobile);
   font-weight: 700;
@@ -69,13 +73,53 @@
   box-shadow: var(--shadow-focus);
 }
 
+.contact-form__select-wrap {
+  position: relative;
+}
+
+.contact-form__select {
+  width: 100%;
+  padding-right: var(--space-12);
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--color-surface);
+}
+
+.contact-form__select-chevron {
+  position: absolute;
+  right: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted);
+  pointer-events: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .contact-form__error {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-2);
   font-size: var(--font-size-body-sm-mobile);
   font-weight: 600;
   color: var(--color-error);
+}
+
+.contact-form__error-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contact-form__error-icon--desktop {
+  display: none;
 }
 
 .contact-form__submit,
@@ -120,8 +164,88 @@
   text-align: center;
 }
 
+.contact-form__submit-icon {
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* "¿Prefieres conocer tu precio primero? Usa el cotizador" (desktop-08
+   ~L134) — only the desktop board draws it; shipped at every breakpoint
+   since it is a straightforward, useful escape hatch out of the form. */
+.contact-form__quote-note {
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-body-sm-mobile);
+  line-height: 1.5;
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+
+.contact-form__quote-note a {
+  font-weight: 700;
+  color: var(--color-ink-muted);
+}
+
 @media (min-width: 768px) {
   .contact-form {
     padding: var(--space-8);
+  }
+}
+
+@media (min-width: 1024px) {
+  .contact-form {
+    position: sticky;
+    top: var(--space-6);
+    padding: var(--space-10);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .contact-form__title {
+    font-size: 2rem;
+  }
+
+  .contact-form__subtitle {
+    font-size: var(--font-size-body-lg-desktop);
+  }
+
+  .contact-form__input:not(.contact-form__input--textarea) {
+    /* Board literal (desktop-08 ~L98-124), matches the codebase's existing
+       convention of an untokenized 56px input/button height (see
+       cotizador.css ~L643/902/914) — no --space step lands on 56. */
+    height: 56px;
+  }
+
+  .contact-form__input {
+    font-size: var(--font-size-body-lg-desktop);
+  }
+
+  .contact-form__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .contact-form__submit,
+  .contact-form__submit--disabled {
+    min-height: 56px;
+  }
+
+  .contact-form__error-icon--desktop {
+    display: block;
+  }
+
+  .contact-form__error-icon--mobile {
+    display: none;
+  }
+
+  .contact-form__quote-note {
+    font-size: 0.9375rem;
   }
 }

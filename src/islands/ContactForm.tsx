@@ -58,6 +58,7 @@ export default function ContactForm(): ReactElement {
         <p className="contact-form__subtitle">Tu mensaje se abre listo en WhatsApp.</p>
       </div>
 
+      <div className="contact-form__row">
       <div className="contact-form__field">
         <label htmlFor="nombre" className="contact-form__label">
           Nombre
@@ -67,6 +68,7 @@ export default function ContactForm(): ReactElement {
           name="nombre"
           type="text"
           autoComplete="name"
+          placeholder="Tu nombre"
           className="contact-form__input"
           value={nombre}
           onChange={(e: ChangeEvent<HTMLInputElement>) => setNombre(e.target.value)}
@@ -83,6 +85,7 @@ export default function ContactForm(): ReactElement {
           type="tel"
           inputMode="tel"
           autoComplete="tel"
+          placeholder="7680-2410"
           className="contact-form__input"
           data-invalid={telError}
           aria-invalid={telError}
@@ -92,29 +95,55 @@ export default function ContactForm(): ReactElement {
         />
         {telError && (
           <span id={telHelpId} className="contact-form__error" role="alert">
+            <svg
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              className="contact-form__error-icon contact-form__error-icon--desktop"
+            >
+              <path d="M12 4l9 16H3z" />
+              <path d="M12 10v4M12 17h.01" />
+            </svg>
+            <svg
+              aria-hidden="true"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              className="contact-form__error-icon contact-form__error-icon--mobile"
+            >
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5v5.5M12 16v.2" />
+            </svg>
             Ingresa un teléfono de 8 dígitos, por ejemplo 7680-2410.
           </span>
         )}
+      </div>
       </div>
 
       <div className="contact-form__field">
         <label htmlFor="producto" className="contact-form__label">
           Producto de interés
         </label>
-        <select
-          id="producto"
-          name="producto"
-          className="contact-form__input"
-          value={producto}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => setProducto(e.target.value)}
-        >
-          <option value="">Selecciona una opción</option>
-          {PRODUCTO_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <div className="contact-form__select-wrap">
+          <select
+            id="producto"
+            name="producto"
+            className="contact-form__input contact-form__select"
+            value={producto}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setProducto(e.target.value)}
+          >
+            <option value="">Selecciona una opción</option>
+            {PRODUCTO_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" className="contact-form__select-chevron">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </div>
       </div>
 
       <div className="contact-form__field">
@@ -125,6 +154,7 @@ export default function ContactForm(): ReactElement {
           id="mensaje"
           name="mensaje"
           rows={3}
+          placeholder="Cuéntanos medidas aproximadas, ubicación o cualquier duda."
           className="contact-form__input contact-form__input--textarea"
           value={mensaje}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setMensaje(e.target.value)}
@@ -133,16 +163,28 @@ export default function ContactForm(): ReactElement {
 
       {ready ? (
         <a href={waHref} target="_blank" rel="noopener noreferrer" className="contact-form__submit">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" className="contact-form__submit-icon">
+            <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
+            <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
+          </svg>
           Enviar por WhatsApp
         </a>
       ) : (
         <div className="contact-form__submit-disabled-wrap">
           <button type="button" disabled className="contact-form__submit contact-form__submit--disabled">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" className="contact-form__submit-icon">
+              <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
+              <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
+            </svg>
             Enviar por WhatsApp
           </button>
           <span className="contact-form__submit-helper">Completa tu nombre y teléfono para enviar.</span>
         </div>
       )}
+
+      <p className="contact-form__quote-note">
+        ¿Prefieres conocer tu precio primero? <a href="/cotizador">Usa el cotizador</a>
+      </p>
     </form>
   );
 }

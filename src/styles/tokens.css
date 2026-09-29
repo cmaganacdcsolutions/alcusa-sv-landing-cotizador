@@ -18,6 +18,9 @@
   --color-whatsapp: #18a96b;
   --color-whatsapp-strong: #087348;
   --color-whatsapp-strong-hover: #06603c;
+  /* Desktop contacto "Escribir" chip bg (desktop-08 ~L49) — a light
+     WhatsApp tint distinct from --color-surface-tint (which is blue). */
+  --color-whatsapp-tint: #e8f5ee;
   --color-success: #0d9b66;
   --color-error: #d63232;
   --color-warning: #8a5a00;
@@ -84,8 +87,15 @@
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  /* Contacto info-list item vertical padding / social-card icon gap
+     (ios-08/android-08 ~L36-43, desktop-08 ~L82-84): 14px — breaks the 4/8
+     grid but is the board's literal value, not an invented one. */
+  --space-3-5: 14px;
   --space-5: 20px;
   --space-6: 24px;
+  /* Desktop contacto info list / social cards cell padding (desktop-08
+     ~L49-52, L82-84): 24px 28px. No existing 4/8-grid step fits 28px. */
+  --space-7: 28px;
   --space-8: 32px;
   --space-10: 40px;
   --space-12: 48px;
@@ -122,6 +132,10 @@
   --shadow-sm: 0 2px 6px rgba(16, 33, 61, 0.08);
   --shadow-md: 0 8px 20px rgba(16, 33, 61, 0.10);
   --shadow-lg: 0 16px 40px rgba(16, 33, 61, 0.12);
+  /* Desktop contacto sticky form card (desktop-08 ~L90): 0 16px 40px /
+     0.10 alpha — close to --shadow-lg but a different alpha, so its own
+     token rather than reusing/rounding. */
+  --shadow-xl: 0 16px 40px rgba(16, 33, 61, 0.1);
   --shadow-focus: 0 0 0 3px rgba(9, 86, 216, 0.35);
 
   /* Iconografía */
