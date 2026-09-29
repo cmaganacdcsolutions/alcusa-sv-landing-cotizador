@@ -15,7 +15,7 @@ export interface Step0ProductoProps {
 export default function Step0Producto({ selectedId, onSelect }: Step0ProductoProps): ReactElement {
   return (
     <section aria-labelledby="step0-heading">
-      <h3 id="step0-heading" className="cotizador__section-heading" style={{ marginBottom: 12 }}>
+      <h3 id="step0-heading" tabIndex={-1} className="cotizador__section-heading" style={{ marginBottom: 12 }}>
         Elige tu producto
       </h3>
       <div className="product-grid">

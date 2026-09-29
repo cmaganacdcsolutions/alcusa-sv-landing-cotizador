@@ -6,14 +6,22 @@
   --cotizador-ring-shadow: 0 0 0 4px rgba(9, 86, 216, 0.12);
   --cotizador-cta-shadow: 0 8px 20px rgba(7, 59, 146, 0.22);
   --cotizador-aside-shadow: 0 16px 40px rgba(16, 33, 61, 0.1);
-  /* sf-cot-polish item 2 — .bottom-bar's own rendered height below 1024px,
-     reserved as scroll room on .cotizador__form-col so the sticky bar never
-     covers the last field/CTA of any step. Measured worst case (Step3
-     ZonaEntrega, price block + button) is ~124px at 390px; 136px leaves
-     headroom for the tallest variant across steps. env(safe-area-inset-bottom)
-     is added separately (not baked in here) since .bottom-bar already adds it
-     on top of its own bottom padding, and doubling it would over-pad. */
+  /* sf-cot-mobile item 1 — .bottom-bar's own rendered height below 1024px,
+     reserved as scroll room on .cotizador__form-col so the now-`fixed` bar
+     never covers the last field/CTA of any step. This 136px is only the
+     pre-hydration/no-JS fallback (matches the tallest variant seen across
+     steps at 390px) — Cotizador.tsx measures the real height per step with a
+     ResizeObserver and overrides this custom property inline, which wins the
+     cascade. env(safe-area-inset-bottom) is added separately (not baked in
+     here) since .bottom-bar already adds it on top of its own bottom
+     padding, and doubling it would over-pad. */
   --cotizador-bottom-bar-height: 136px;
+  /* sf-cot-mobile item 2 — TopBar's own sticky height below 1024px (see
+     src/components/TopBar.astro .top-bar__inner), duplicated here (a real
+     literal, not read from TopBar's scope) so .cotizador__header can stick
+     directly beneath it without JS. TopBar only changes this at >=1024px,
+     where .cotizador__header is no longer sticky (see the desktop rule). */
+  --cotizador-topbar-height-mobile: 64px;
 }
 
 .cotizador {
@@ -52,6 +60,24 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* sf-cot-mobile item 2 (user-reported: "no hay forma de ver los pasos
+   previos") — not drawn in any ios/android board as a standalone sticky
+   element, but the boards' own header block (back link + H1, read from
+   .cotizador__header) is reused as-is here rather than inventing new
+   markup: below 1024px it now sticks directly under the site's sticky
+   .top-bar (see --cotizador-topbar-height-mobile) instead of scrolling away
+   with the rest of the step content, so the back control stays reachable at
+   every scroll position. Desktop is unaffected — flag for design review. */
+@media (max-width: 1023.98px) {
+  .cotizador__header {
+    position: sticky;
+    top: var(--cotizador-topbar-height-mobile);
+    z-index: 20;
+    background: var(--color-bg);
+    padding: var(--space-2) 0;
+  }
 }
 
 .cotizador__page-title {
@@ -117,6 +143,13 @@
 }
 
 .step-rail__item {
+  /* sf-cot-mobile item 5 (user-reported: labels collide at ~320-360px) —
+     grid items default to min-width:auto same as flex items, which let a
+     one-word label like "Producto" overflow its ~42px track at 320px
+     instead of shrinking, visually overlapping the next item. The track
+     itself was already minmax(0, …) (see .step-rail below); the item also
+     needs min-width:0 to actually respect it. */
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -126,6 +159,15 @@
   /* var(--color-muted) fails WCAG AA at this size/weight on --color-bg —
      use the darker ink-muted token instead (axe: color-contrast). */
   color: var(--color-ink-muted);
+}
+
+.step-rail__label {
+  /* Companion fix — one-word labels have no space to wrap at, so allow a
+     mid-word break instead of overflowing into the neighboring column, and
+     center any wrapped second line to match the centered dot above it. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .step-rail__dot {
@@ -314,8 +356,20 @@
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   box-shadow: 0 -8px 20px rgba(16, 33, 61, 0.06);
-  position: sticky;
+  /* sf-cot-mobile item 1 (user-reported: the card "va a tener ese div
+     blanco, que sea posición fixed y que abarque todo el ancho") —
+     `sticky` never actually engaged in this layout (the bar scrolled 1:1
+     with the page instead of pinning), so it's `fixed` now: pinned to the
+     real viewport edges regardless of which step/component renders it (see
+     Cotizador.tsx's ResizeObserver for --cotizador-bottom-bar-height, which
+     keeps .cotizador__form-col's scroll room in sync with this element's
+     actual height). Reset back to `static`/full-width-less on desktop below
+     (no fixed bar there — see the media query). */
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: 0;
+  z-index: 20;
 }
 
 .bottom-bar__price {

@@ -77,6 +77,22 @@ const PAGE_TITLES: Record<CotizadorStep, string> = {
   resultado: 'Resultado',
 };
 
+// sf-cot-mobile item 4 — the id of the heading each step should scroll/focus
+// into view on transition. Steps 0-3 own a per-step <h3> (step0-heading …
+// step3-heading, each already `tabIndex={-1}` for programmatic focus);
+// resumen/formaPago/wompi/resultado render no sub-heading of their own (see
+// the PAGE_TITLES comment above) so the shared page <h2> is the target.
+const HEADING_ID: Record<CotizadorStep, string> = {
+  producto: 'step0-heading',
+  medidas: 'step1-heading',
+  precio: 'step2-heading',
+  zonaEntrega: 'step3-heading',
+  resumen: 'cotizador-page-title',
+  formaPago: 'cotizador-page-title',
+  wompi: 'cotizador-page-title',
+  resultado: 'cotizador-page-title',
+};
+
 function stepFromHash(hash: string): CotizadorStep | null {
   const raw = hash.replace(/^#/, '');
   const [section, slug] = raw.split('/');
@@ -168,6 +184,57 @@ export default function Cotizador(): ReactElement {
       window.removeEventListener('popstate', syncFromHash);
     };
   }, []);
+
+  // sf-cot-mobile item 4 — every step transition (Siguiente, back, rail
+  // click, Editar links, product pick — all funnel through GOTO_STEP/
+  // goToStep) scrolls the window so the new step's heading lands just below
+  // the sticky site TopBar (mobile: also below the sticky .cotizador__header
+  // stacked under it), instead of leaving the user wherever the previous,
+  // now-unmounted step happened to be scrolled to. Skips the very first
+  // render so it never fights the ADR-005 initial-hash scrollIntoView above.
+  const didMountRef = useRef(false);
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    const headingId = HEADING_ID[state.step];
+    const heading = document.getElementById(headingId);
+    if (!heading) return;
+    const topBar = document.querySelector('.top-bar');
+    const header = rootRef.current?.querySelector('.cotizador__header');
+    const isMobile = window.innerWidth < 1024;
+    const topBarHeight = topBar?.getBoundingClientRect().height ?? 0;
+    const headerStackHeight =
+      isMobile && headingId !== 'cotizador-page-title' ? (header?.getBoundingClientRect().height ?? 0) : 0;
+    const offset = topBarHeight + headerStackHeight + (isMobile ? 0 : 24);
+    const targetY = Math.max(window.scrollY + heading.getBoundingClientRect().top - offset, 0);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: targetY, behavior: reduceMotion ? 'auto' : 'smooth' });
+    heading.focus({ preventScroll: true });
+  }, [state.step]);
+
+  // sf-cot-mobile item 1 — .bottom-bar's real rendered height (it differs per
+  // step and now needs to be exact since the bar is `position: fixed` on
+  // mobile, see cotizador.css), measured live instead of the old worst-case
+  // 136px magic number. Overridden as an inline custom property (wins the
+  // cascade over the :root fallback in cotizador.css, which still covers the
+  // instant before this effect's first run). Steps with no bottom bar at all
+  // (producto, wompi, resultado) get 0 — no bar to clear.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const bar = root.querySelector<HTMLElement>('.bottom-bar');
+    if (!bar) {
+      root.style.setProperty('--cotizador-bottom-bar-height', '0px');
+      return;
+    }
+    const update = () => root.style.setProperty('--cotizador-bottom-bar-height', `${bar.getBoundingClientRect().height}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, [state.step]);
 
   const product = useMemo(() => CATALOG_PRODUCTS.find((p) => p.id === state.productId) ?? null, [state.productId]);
 
@@ -342,7 +409,7 @@ export default function Cotizador(): ReactElement {
             {STEP_LABELS[STEP_ORDER[currentIdx - 1]]}
           </button>
         )}
-        <h2 id="cotizador-page-title" className="cotizador__page-title">
+        <h2 id="cotizador-page-title" tabIndex={-1} className="cotizador__page-title">
           {PAGE_TITLES[state.step]}
         </h2>
       </div>
@@ -362,7 +429,7 @@ export default function Cotizador(): ReactElement {
                     aria-current={itemState === 'current' ? 'step' : undefined}
                   >
                     <span className="step-rail__dot">{itemState === 'done' ? <IconCheck /> : index + 1}</span>
-                    <span>{STEP_LABELS[step]}</span>
+                    <span className="step-rail__label">{STEP_LABELS[step]}</span>
                   </li>
                 );
               })}

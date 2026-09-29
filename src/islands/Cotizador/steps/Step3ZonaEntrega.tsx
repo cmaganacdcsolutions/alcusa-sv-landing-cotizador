@@ -44,7 +44,7 @@ export default function Step3ZonaEntrega({
 
   return (
     <section aria-labelledby="step3-heading">
-      <h3 id="step3-heading" className="cotizador__section-heading" style={{ marginBottom: 12 }}>
+      <h3 id="step3-heading" tabIndex={-1} className="cotizador__section-heading" style={{ marginBottom: 12 }}>
         Entrega y zona
       </h3>
 

@@ -10,7 +10,7 @@ import { computeGardenQuote, computeWindowQuote } from '../state/quoteWindowGard
 import { GARDEN_HOJAS_LABELS } from './measures/GardenForm';
 import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './measures/WindowForm';
 import { IconArrowRight, IconPlus, IconWarningTriangle, IconWhatsApp } from '../icons';
-import { IconEdit, IconLocationPin, IconTrash } from '../icons-checkout';
+import { IconLocationPin, IconTrash } from '../icons-checkout';
 import { PRODUCT_IMAGES } from './productImages';
 import '@styles/cotizador-checkout.css';
 
@@ -128,43 +128,31 @@ export default function Step4Resumen({
               <img
                 src={PRODUCT_IMAGES[product.id]}
                 alt=""
+                width={56}
+                height={56}
                 className="summary-item__thumb"
                 style={{ objectFit: 'cover' }}
               />
               <div className="summary-item__meta">
-                <div className="summary-item__top">
-                  <span className="summary-item__name">{item.producto}</span>
-                  <span className="summary-item__price">${item.subtotal.toFixed(2)}</span>
-                </div>
+                <span className="summary-item__name">{item.producto}</span>
                 <span className="summary-item__detail">
                   {item.anchoM.toFixed(2)} × {item.altoM.toFixed(2)} m · {item.color} · {item.vidrio}
                 </span>
-                <div className="summary-item__actions">
-                  <span className="summary-item__detail">
-                    {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
-                  </span>
-                  <div className="summary-item__buttons">
-                    <button
-                      type="button"
-                      className="summary-item__action summary-item__action--edit"
-                      disabled
-                      aria-disabled="true"
-                      aria-label={`Editar ${item.producto}`}
-                    >
-                      <IconEdit />
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      className="summary-item__action"
-                      disabled
-                      aria-disabled="true"
-                      aria-label={`Quitar ${item.producto}`}
-                    >
-                      <IconTrash />
-                      Quitar
-                    </button>
-                  </div>
+                <span className="summary-item__detail">
+                  {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
+                </span>
+                <div className="summary-item__footer">
+                  <span className="summary-item__price">${item.subtotal.toFixed(2)}</span>
+                  <button
+                    type="button"
+                    className="summary-item__remove"
+                    disabled
+                    aria-disabled="true"
+                    aria-label={`Quitar ${item.producto}`}
+                  >
+                    <IconTrash />
+                    Quitar
+                  </button>
                 </div>
               </div>
             </article>
@@ -283,39 +271,32 @@ export default function Step4Resumen({
           )}
         </div>
         <article className="summary-item">
-          <img src={PRODUCT_IMAGES[product.id]} alt="" className="summary-item__thumb" style={{ objectFit: 'cover' }} />
+          <img
+            src={PRODUCT_IMAGES[product.id]}
+            alt=""
+            width={56}
+            height={56}
+            className="summary-item__thumb"
+            style={{ objectFit: 'cover' }}
+          />
           <div className="summary-item__meta">
-            <div className="summary-item__top">
-              <span className="summary-item__name">{product.name}</span>
-              <span className="summary-item__price">${subtotal.toFixed(2)}</span>
-            </div>
+            <span className="summary-item__name">{product.name}</span>
             <span className="summary-item__detail">{item.detail}</span>
-            <div className="summary-item__actions">
-              <span className="summary-item__detail">
-                {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
-              </span>
-              <div className="summary-item__buttons">
-                <button
-                  type="button"
-                  className="summary-item__action summary-item__action--edit"
-                  disabled
-                  aria-disabled="true"
-                  aria-label={`Editar ${product.name}`}
-                >
-                  <IconEdit />
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className="summary-item__action"
-                  disabled
-                  aria-disabled="true"
-                  aria-label={`Quitar ${product.name}`}
-                >
-                  <IconTrash />
-                  Quitar
-                </button>
-              </div>
+            <span className="summary-item__detail">
+              {entregaLabel === 'con instalación' ? `Con instalación · ${state.zone}` : 'Retiro en tienda'}
+            </span>
+            <div className="summary-item__footer">
+              <span className="summary-item__price">${subtotal.toFixed(2)}</span>
+              <button
+                type="button"
+                className="summary-item__remove"
+                disabled
+                aria-disabled="true"
+                aria-label={`Quitar ${product.name}`}
+              >
+                <IconTrash />
+                Quitar
+              </button>
             </div>
           </div>
         </article>
