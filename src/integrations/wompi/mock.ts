@@ -14,7 +14,8 @@ export interface WompiMockResult {
 /** Zero-padded 4-digit sequence from a reference string, deterministic per call. */
 function orderSuffix(reference: string): string {
   let hash = 0;
-  for (let i = 0; i < reference.length; i += 1) hash = (hash * 31 + reference.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < reference.length; i += 1)
+    hash = (hash * 31 + reference.charCodeAt(i)) >>> 0;
   return String(hash % 10000).padStart(4, '0');
 }
 

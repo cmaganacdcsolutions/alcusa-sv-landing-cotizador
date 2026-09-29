@@ -116,7 +116,7 @@ export interface CotizadorState {
   // Set by SET_WOMPI_RESULT once src/integrations/wompi/mock.ts "resolves" a
   // mock payment attempt; null until then. No real gateway data lands here
   // until the live integration slice.
-  wompiOutcome: 'approved' | 'declined' | null;
+  wompiOutcome: 'approved' | 'declined' | 'pending' | null;
   wompiOrderNumber: string | null;
   // --- S7: multi-item cart ---
   // Committed items from a previous "+ Agregar otro producto" loop. The
@@ -278,7 +278,7 @@ export type CotizadorAction =
   // --- sf-cot-checkout: Step5 forma de pago + mock Wompi result ---
   | { type: 'SET_PAY_METHOD'; method: 'wa' | 'pay' }
   | { type: 'SET_PAY_AMOUNT_PCT'; pct: 80 | 100 }
-  | { type: 'SET_WOMPI_RESULT'; outcome: 'approved' | 'declined'; orderNumber: string }
+  | { type: 'SET_WOMPI_RESULT'; outcome: 'approved' | 'declined' | 'pending'; orderNumber: string }
   // --- S7: multi-item cart ---
   // Commits the current item into `cart` and resets step 0 with a fresh
   // item (the "+ Agregar otro producto" loop, prototype-spec.md §2.1 step 4).
