@@ -36,6 +36,20 @@ test.describe('landing — catálogo + galería (S4)', () => {
     expect(href).toBe('/cotizador?producto=bisagra');
   });
 
+  test('catálogo shows the desktop-only Acabados swatches block', async ({ page }) => {
+    // Absent from both mobile boards (Main.dc.html / android-01-inicio
+    // §modelos) — only desktop-01-inicio.dc.html has it (~L106-114).
+    test.skip((page.viewportSize()?.width ?? 0) < 1024, 'Acabados is desktop-only per the boards');
+
+    await page.goto('/');
+    const modelos = page.locator('#modelos');
+    await modelos.scrollIntoViewIfNeeded();
+    await expect(modelos.getByRole('heading', { name: 'Vidrios para puertas de baño' })).toBeVisible();
+    for (const finish of ['Aquaclara', 'Frosted', 'Aquafold']) {
+      await expect(modelos.getByText(finish, { exact: true })).toBeVisible();
+    }
+  });
+
   test('galería shows exactly the 6 real customer photos, no AI-generated or third-party image', async ({ page }) => {
     await page.goto('/');
     const galeria = page.locator('#galeria');

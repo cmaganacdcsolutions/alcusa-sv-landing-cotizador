@@ -9,6 +9,15 @@
 // `producto` query param (Foreman correction, 2026-09-28: the cotizador is
 // moving off the landing page to its own `/cotizador` route in this wave).
 // S5/S6 read `?producto=` to preselect step 0 — see HANDOFF below.
+//
+// Fidelity pass (sf-fidelity3): desktop-01-inicio.dc.html §modelos
+// (~L93-118) uses a 4-col desktop grid (not 3) — CATALOG_PRODUCTS' 6 items
+// fill row 1 (recta/l/templado/bisagra) and the first 2 cells of row 2
+// (jardin/ventana); the "Acabados" swatch block is the board's 7th grid
+// item, `grid-column: span 2`, auto-flowing into the remaining 2 cells of
+// row 2 — same order as CATALOG_PRODUCTS, so no reordering needed here.
+// Acabados is desktop-only: absent from both mobile boards (Main.dc.html /
+// android-01-inicio §modelos), so it is CSS-hidden below 1024px.
 import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
 
 interface CardImage {
@@ -30,6 +39,15 @@ const CARD_IMAGES: Record<ProductId, CardImage | null> = {
   jardin: null,
   ventana: { src: '/images/catalog-ventana.jpeg', alt: 'Ventana Francesa o Bilbao de aluminio', width: 400, height: 533 },
 };
+
+// "Acabados" swatches (desktop-01-inicio.dc.html ~L110-114). No rights-
+// cleared photos exist yet for these glass finishes (same gap as "jardin"
+// above) — placeholder tiles render until real swatch photos land.
+const ACABADOS = [
+  { name: 'Aquaclara' },
+  { name: 'Frosted' },
+  { name: 'Aquafold' },
+] as const;
 ---
 
 <section id="modelos" class="catalogo" aria-labelledby="catalogo-title">
@@ -98,6 +116,23 @@ const CARD_IMAGES: Record<ProductId, CardImage | null> = {
           );
         })
       }
+      <li class="catalogo__item catalogo__item--acabados">
+        <div class="acabados">
+          <p class="acabados__kicker">Acabados</p>
+          <h3 class="acabados__title">Vidrios para puertas de ba&ntilde;o</h3>
+          <p class="acabados__lead">Elige tu vidrio al cotizar tu puerta de ba&ntilde;o.</p>
+          <ul class="acabados__swatches">
+            {
+              ACABADOS.map((finish) => (
+                <li class="acabados__swatch">
+                  <div class="acabados__swatch-img" aria-hidden="true" />
+                  <span class="acabados__swatch-name">{finish.name}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </li>
     </ul>
   </div>
 </section>
@@ -136,7 +171,9 @@ const CARD_IMAGES: Record<ProductId, CardImage | null> = {
     padding: 0;
     list-style: none;
     display: grid;
-    grid-template-columns: repeat(1, minmax(0, 1fr));
+    /* Both mobile boards (Main.dc.html/390, android-01-inicio/412) use a
+       2-col grid from the smallest width — not a 1-col stack. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-4);
   }
 
@@ -152,7 +189,7 @@ const CARD_IMAGES: Record<ProductId, CardImage | null> = {
 
   .catalogo__card-img {
     width: 100%;
-    height: 220px;
+    height: 140px;
     object-fit: cover;
     display: block;
   }
@@ -205,10 +242,10 @@ const CARD_IMAGES: Record<ProductId, CardImage | null> = {
     color: var(--color-primary);
   }
 
-  @media (min-width: 768px) {
-    .catalogo__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  /* Acabados — desktop-only per the boards; see the desktop media query
+     below for the visible layout. */
+  .catalogo__item--acabados {
+    display: none;
   }
 
   @media (min-width: 1024px) {
@@ -227,21 +264,107 @@ const CARD_IMAGES: Record<ProductId, CardImage | null> = {
     }
 
     .catalogo__grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: var(--space-8);
     }
 
+    .catalogo__card {
+      border: 1px solid var(--color-border);
+    }
+
     .catalogo__card-img {
-      height: 260px;
+      height: 280px;
+    }
+
+    .catalogo__card-body {
+      padding: var(--space-6);
+      gap: var(--space-1);
     }
 
     .catalogo__card-name {
       font-size: var(--font-size-h3-desktop);
     }
 
-    .catalogo__card-price,
+    .catalogo__card-price {
+      font-size: var(--font-size-body-lg-desktop);
+    }
+
     .catalogo__card-cta {
-      font-size: var(--font-size-body-desktop);
+      margin-top: var(--space-3);
+      font-size: var(--font-size-body-sm-desktop);
+    }
+
+    /* Acabados — desktop-only block, absent from both mobile boards (hidden
+       by default outside this media query; see .catalogo__item--acabados
+       base rule below). */
+    .catalogo__item--acabados {
+      display: block;
+      grid-column: span 2;
+    }
+
+    .acabados {
+      height: 100%;
+      padding: var(--space-10);
+      border-radius: var(--radius-lg);
+      background: var(--color-surface-tint);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .acabados__kicker {
+      margin: 0;
+      font-size: var(--font-size-caption-mobile);
+      font-weight: var(--font-weight-body-bold);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+    }
+
+    .acabados__title {
+      margin: 0;
+      font-family: var(--font-family-display);
+      font-weight: var(--font-weight-display-medium);
+      font-size: var(--font-size-display-sm-desktop);
+      line-height: var(--font-line-height-heading);
+      color: var(--color-ink);
+    }
+
+    .acabados__lead {
+      margin: 0;
+      font-size: var(--font-size-body-lg-desktop);
+      line-height: var(--font-line-height-body);
+      color: var(--color-ink-muted);
+    }
+
+    .acabados__swatches {
+      margin: var(--space-4) 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-6);
+    }
+
+    .acabados__swatch {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .acabados__swatch-img {
+      height: 176px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+    }
+
+    .acabados__swatch-name {
+      font-size: var(--font-size-body-mobile);
+      font-weight: var(--font-weight-body-bold);
+      line-height: var(--font-line-height-heading);
+      color: var(--color-ink);
     }
   }
 </style>

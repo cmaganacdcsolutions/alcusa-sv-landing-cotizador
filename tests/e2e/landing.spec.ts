@@ -61,6 +61,27 @@ test.describe('landing — hero, cómo funciona, confianza, info importante (S3)
     expect(hasHorizontalScroll).toBe(false);
   });
 
+  test('cómo funciona: desktop shows the "sin visitas previas" lead copy and step 4\'s filled badge', async ({
+    page,
+  }) => {
+    // Both are desktop-only per desktop-01-inicio.dc.html — absent from the
+    // mobile boards (Main.dc.html / android-01-inicio).
+    test.skip((page.viewportSize()?.width ?? 0) < 1024, 'lead copy + filled step 4 badge are desktop-only');
+
+    await page.goto('/');
+    const proceso = page.locator('#proceso');
+    await proceso.scrollIntoViewIfNeeded();
+    await expect(
+      proceso.getByText('Sin visitas previas para saber el precio', { exact: false }),
+    ).toBeVisible();
+
+    const step4Badge = proceso.getByText('04', { exact: true });
+    await expect(step4Badge).toBeVisible();
+    // Steps 1-3 keep the light tint background; only step 4 is solid
+    // primary-filled (desktop-01-inicio.dc.html ~L88).
+    await expect(step4Badge).toHaveCSS('background-color', 'rgb(7, 59, 146)');
+  });
+
   test('confianza shows the literal bracketed placeholders for años and track record, not a picked number', async ({
     page,
   }) => {
@@ -83,6 +104,22 @@ test.describe('landing — hero, cómo funciona, confianza, info importante (S3)
     await expect(info.getByText('Crédito y débito, excepto American Express.')).toBeVisible();
     await expect(info.getByText('[Tasa 0% — confirmar si se mantiene]')).toBeVisible();
     await expect(info.getByText('Retiro en tienda −15%')).toBeVisible();
+  });
+
+  test('"Antes de comprar" and "¿Tienes dudas...?" share the same #info container', async ({ page }) => {
+    // desktop-01-inicio.dc.html nests <aside id="contacto"> INSIDE
+    // <section id="info"> as its 2nd grid column (~L186-207); both mobile
+    // boards stack them but they remain the same merged section. Assert the
+    // DOM nesting, not just co-visibility, so a future regression that pulls
+    // ContactoTeaser back out to a sibling section fails here.
+    await page.goto('/');
+    const info = page.locator('#info');
+    await info.scrollIntoViewIfNeeded();
+    await expect(info.getByRole('heading', { name: 'Información importante' })).toBeVisible();
+
+    const contacto = info.locator('#contacto');
+    await expect(contacto).toBeVisible();
+    await expect(contacto.getByRole('heading', { name: '¿Tienes dudas sobre tu medida?' })).toBeVisible();
   });
 
   test('landing sections (hero, proceso, confianza, info) have zero critical/serious axe violations', async ({

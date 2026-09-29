@@ -3,6 +3,16 @@
 // source of truth for this wording; the cotizador payment step (S8) must
 // reuse the exact same strings for the 80/20 + AMEX-exclusion lines (T3.4
 // AC) — don't fork the copy.
+//
+// Fidelity pass (sf-fidelity3): desktop-01-inicio.dc.html nests the
+// "¿Tienes dudas...?" card (ContactoTeaser) INSIDE this same <section
+// id="info"> as its fixed 648px second grid column (~L186-207) — not as a
+// separate section. Both mobile boards keep it as its own stacked block
+// directly below, which the mobile styles below (single column, no grid)
+// already produce. #info and #contacto anchors are both preserved (the
+// section keeps id="info"; ContactoTeaser's root keeps id="contacto").
+import ContactoTeaser from './ContactoTeaser.astro';
+
 const ITEMS = [
   {
     icon: 'split',
@@ -47,27 +57,30 @@ const ICON_PATHS: Record<string, string> = {
 
 <section id="info" class="info" aria-labelledby="info-title">
   <div class="info__inner">
-    <p class="info__kicker">Antes de comprar</p>
-    <h2 id="info-title" class="info__title">Informaci&oacute;n importante</h2>
-    <ul class="info__list">
-      {
-        ITEMS.map((item) => (
-          <li class:list={['info__item', { 'info__item--wide': 'wide' in item && item.wide }]}>
-            <span class="info__icon" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-                <path d={ICON_PATHS[item.icon]} />
-              </svg>
-            </span>
-            <span class="info__copy">
-              <span class="info__item-title">
-                {item.placeholder ? <span class="info__placeholder">{item.title}</span> : item.title}
+    <div class="info__main">
+      <p class="info__kicker">Antes de comprar</p>
+      <h2 id="info-title" class="info__title">Informaci&oacute;n importante</h2>
+      <ul class="info__list">
+        {
+          ITEMS.map((item) => (
+            <li class:list={['info__item', { 'info__item--wide': 'wide' in item && item.wide }]}>
+              <span class="info__icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d={ICON_PATHS[item.icon]} />
+                </svg>
               </span>
-              <span class="info__detail">{item.detail}</span>
-            </span>
-          </li>
-        ))
-      }
-    </ul>
+              <span class="info__copy">
+                <span class="info__item-title">
+                  {item.placeholder ? <span class="info__placeholder">{item.title}</span> : item.title}
+                </span>
+                <span class="info__detail">{item.detail}</span>
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <ContactoTeaser />
   </div>
 </section>
 
@@ -77,6 +90,12 @@ const ICON_PATHS: Record<string, string> = {
   }
 
   .info__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .info__main {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
@@ -125,6 +144,14 @@ const ICON_PATHS: Record<string, string> = {
     display: none;
   }
 
+  /* Pre-existing gap: title + detail are separate stacked lines in the
+     board (Main.dc.html §info li) but this wrapper had no mobile
+     flex-column rule, so they ran together inline. */
+  .info__copy {
+    display: flex;
+    flex-direction: column;
+  }
+
   .info__item-title {
     font-size: var(--font-size-body-mobile);
     font-weight: var(--font-weight-body-bold);
@@ -153,7 +180,14 @@ const ICON_PATHS: Record<string, string> = {
     .info__inner {
       max-width: var(--container-page);
       margin: 0 auto;
-      gap: var(--space-8);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 648px;
+      align-items: start;
+      gap: var(--space-16);
+    }
+
+    .info__main {
+      gap: var(--space-12);
     }
 
     .info__title {

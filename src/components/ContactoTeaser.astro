@@ -1,72 +1,71 @@
 ---
-// ContactoTeaser — landing "¿Tienes dudas sobre tu medida?" CTA card
-// (Main.dc.html #contacto, desktop-01-inicio #contacto). The full contact
-// webform now lives on its own route (/contacto, S5 page split).
+// ContactoTeaser — "¿Tienes dudas sobre tu medida?" card (spec §1 item 7).
 //
-// desktop-01-inicio's card grows into 2 columns: this heading/lead/CTA
-// column plus a second column with the address/phone/WhatsApp detail list
-// (below the actions, under a hairline, in the board). Mobile (Main.dc.html)
-// has none of that detail list — desktop-only, see CSS below.
+// Fidelity pass (sf-fidelity3): desktop-01-inicio.dc.html nests this
+// <aside id="contacto"> INSIDE the same <section id="info"> as "Antes de
+// comprar" (~L186-207) — it is the fixed 648px second column of that
+// section's grid, not its own top-level section. InfoImportante.astro now
+// imports and renders this component as that second column; keep this a
+// standalone fragment (no outer <section>, no page-level padding/max-width —
+// InfoImportante owns that). Both mobile boards (Main.dc.html L139-154,
+// android-01-inicio) still render it as its own full-width stacked block
+// directly below "Antes de comprar" — the mobile styles below already match
+// that (single column, own card).
+//
+// The full contact webform now lives on its own route (/contacto, S5 page
+// split).
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 const waHref = buildWaLink();
 ---
 
-<section id="contacto" class="contacto-teaser" aria-labelledby="contacto-teaser-title">
-  <div class="contacto-teaser__card">
-    <div class="contacto-teaser__copy">
-      <h3 id="contacto-teaser-title" class="contacto-teaser__title">¿Tienes dudas sobre tu medida?</h3>
-      <p class="contacto-teaser__lead">Escríbenos o visita nuestro taller en Ciudad Merliot.</p>
-      <div class="contacto-teaser__actions">
-        <a href="/contacto" class="contacto-teaser__btn contacto-teaser__btn--secondary">Contacto</a>
-        <a href={waHref} class="contacto-teaser__btn contacto-teaser__btn--whatsapp">
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
-            <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
-          </svg>
-          WhatsApp
-        </a>
-      </div>
-    </div>
-    <ul class="contacto-teaser__details">
-      <li class="contacto-teaser__detail">
-        <span class="contacto-teaser__detail-icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
-            <circle cx="12" cy="10" r="2.3" />
-          </svg>
-        </span>
-        Calle El Pedregal, local 29 G, Ciudad Merliot
-      </li>
-      <li class="contacto-teaser__detail">
-        <span class="contacto-teaser__detail-icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6.5 3.5h3l1.5 4-2 1.2a11 11 0 0 0 6.3 6.3l1.2-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z" />
-          </svg>
-        </span>
-        Teléfonos 2278-2460 · 2208-4101 · 2563-7742
-      </li>
-      <li class="contacto-teaser__detail contacto-teaser__detail--whatsapp">
-        <span class="contacto-teaser__detail-icon contacto-teaser__detail-icon--whatsapp" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
-            <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
-          </svg>
-        </span>
-        WhatsApp 7680-2410
-      </li>
-    </ul>
+<aside id="contacto" class="contacto-teaser" aria-labelledby="contacto-teaser-title">
+  <h3 id="contacto-teaser-title" class="contacto-teaser__title">¿Tienes dudas sobre tu medida?</h3>
+  <p class="contacto-teaser__lead">Escríbenos o visita nuestro taller en Ciudad Merliot.</p>
+  <div class="contacto-teaser__actions">
+    <a href="/contacto" class="contacto-teaser__btn contacto-teaser__btn--secondary">Contacto</a>
+    <a href={waHref} class="contacto-teaser__btn contacto-teaser__btn--whatsapp">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
+        <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
+      </svg>
+      WhatsApp
+    </a>
   </div>
-</section>
+  <ul class="contacto-teaser__details">
+    <li class="contacto-teaser__detail">
+      <span class="contacto-teaser__detail-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+          <circle cx="12" cy="10" r="2.3" />
+        </svg>
+      </span>
+      Calle El Pedregal, local 29 G, Ciudad Merliot
+    </li>
+    <li class="contacto-teaser__detail">
+      <span class="contacto-teaser__detail-icon" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6.5 3.5h3l1.5 4-2 1.2a11 11 0 0 0 6.3 6.3l1.2-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z" />
+        </svg>
+      </span>
+      Teléfonos 2278-2460 · 2208-4101 · 2563-7742
+    </li>
+    <li class="contacto-teaser__detail contacto-teaser__detail--whatsapp">
+      <span class="contacto-teaser__detail-icon contacto-teaser__detail-icon--whatsapp" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
+          <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
+        </svg>
+      </span>
+      WhatsApp 7680-2410
+    </li>
+  </ul>
+</aside>
 
 <style>
   .contacto-teaser {
     padding: var(--space-6);
-  }
-
-  .contacto-teaser__card {
-    padding: var(--space-6);
-    border-radius: var(--radius-xl);
+    border-radius: var(--radius-lg);
     background: var(--color-surface-tint);
     display: flex;
     flex-direction: column;
@@ -77,7 +76,7 @@ const waHref = buildWaLink();
     margin: 0;
     font-family: var(--font-family-display);
     font-weight: var(--font-weight-display-medium);
-    font-size: var(--font-size-h3-mobile);
+    font-size: var(--font-size-h2-mobile);
     line-height: var(--font-line-height-heading);
   }
 
@@ -125,28 +124,14 @@ const waHref = buildWaLink();
 
   @media (min-width: 1024px) {
     .contacto-teaser {
-      max-width: var(--container-page);
-      margin: 0 auto;
-      padding: var(--space-8) var(--space-6) var(--space-24);
-    }
-
-    .contacto-teaser__card {
       padding: var(--space-12);
+      border-radius: var(--radius-xl);
       gap: var(--space-4);
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 420px;
-      align-items: start;
-      gap: var(--space-10);
-    }
-
-    .contacto-teaser__copy {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
     }
 
     .contacto-teaser__title {
-      font-size: var(--font-size-display-lg-desktop);
+      font-size: var(--font-size-display-sm-desktop);
+      line-height: var(--font-line-height-heading);
     }
 
     .contacto-teaser__lead {
@@ -155,7 +140,6 @@ const waHref = buildWaLink();
 
     .contacto-teaser__actions {
       margin-top: var(--space-4);
-      max-width: 480px;
     }
 
     .contacto-teaser__btn {
@@ -168,7 +152,7 @@ const waHref = buildWaLink();
       display: flex;
       flex-direction: column;
       gap: var(--space-4);
-      margin: 0;
+      margin: var(--space-4) 0 0;
       padding: var(--space-6) 0 0;
       list-style: none;
       border-top: 1px solid var(--color-border-input);
