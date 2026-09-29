@@ -11,7 +11,10 @@ test.describe('sf-fixes — logo + nav links', () => {
   }) => {
     for (const path of ['/', '/cotizador', '/contacto']) {
       await page.goto(path);
-      const href = await page.getByRole('link', { name: 'ALCUSA, inicio' }).first().getAttribute('href');
+      const href = await page
+        .getByRole('link', { name: 'ALCUSA, inicio' })
+        .first()
+        .getAttribute('href');
       expect(href).toBe('/');
     }
 
@@ -23,11 +26,16 @@ test.describe('sf-fixes — logo + nav links', () => {
   test('Drawer header brand also links to /', async ({ page }) => {
     await page.goto('/contacto');
     await page.getByRole('button', { name: 'Abrir menú' }).click();
-    const href = await page.getByRole('link', { name: 'ALCUSA, inicio' }).last().getAttribute('href');
+    const href = await page
+      .getByRole('link', { name: 'ALCUSA, inicio' })
+      .last()
+      .getAttribute('href');
     expect(href).toBe('/');
   });
 
-  test('drawer nav links close the drawer and scroll to the section on /', async ({ page }) => {
+  test('drawer nav links close the drawer and scroll to the section on /', async ({
+    page,
+  }) => {
     await page.goto('/');
     const drawer = page.locator('#drawer-panel');
     const targets: Array<[string, string]> = [
@@ -43,15 +51,25 @@ test.describe('sf-fixes — logo + nav links', () => {
     }
   });
 
-  test('drawer nav links navigate from /cotizador back to / and land on the section', async ({ page }) => {
+  test('drawer nav links navigate from /cotizador back to / and land on the section', async ({
+    page,
+  }) => {
     await page.goto('/cotizador');
     await page.getByRole('button', { name: 'Abrir menú' }).click();
-    await page.locator('#drawer-panel').getByRole('link', { name: 'Proyectos reales', exact: true }).click();
+    await page
+      .locator('#drawer-panel')
+      .getByRole('link', { name: 'Proyectos reales', exact: true })
+      .click();
     await expect(page).toHaveURL(/\/#galeria$/);
     await expect(page.locator('#galeria')).toBeInViewport();
   });
 
-  test('footer nav links scroll to each section on / and navigate from /contacto', async ({ page }) => {
+  test('footer nav links scroll to each section on / and navigate from /contacto', async ({
+    page,
+  }, testInfo) => {
+    // Catálogo/Cómo funciona/Galería are desktop-only footer links per the
+    // boards (sf-landing5 fidelity pass) — mobile only has Inicio/Cotizar/Contacto.
+    test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only footer links');
     await page.goto('/');
     const footer = page.locator('.site-footer__nav');
     for (const [label, id] of [
@@ -64,12 +82,17 @@ test.describe('sf-fixes — logo + nav links', () => {
     }
 
     await page.goto('/contacto');
-    await page.locator('.site-footer__nav').getByRole('link', { name: 'Catálogo', exact: true }).click();
+    await page
+      .locator('.site-footer__nav')
+      .getByRole('link', { name: 'Catálogo', exact: true })
+      .click();
     await expect(page).toHaveURL(/\/#modelos$/);
     await expect(page.locator('#modelos')).toBeInViewport();
   });
 
-  test('footer nav links have no underline and a visible focus style', async ({ page }) => {
+  test('footer nav links have no underline and a visible focus style', async ({
+    page,
+  }) => {
     await page.goto('/');
     const link = page.locator('.site-footer__nav a').first();
     await expect(link).toHaveCSS('text-decoration-line', 'none');
@@ -79,37 +102,65 @@ test.describe('sf-fixes — logo + nav links', () => {
 });
 
 test.describe('sf-fixes — hero category cards open the cotizador', () => {
-  test('"Ventanas" card lands on /cotizador with Ventana preselected', async ({ page }) => {
+  test('"Ventanas" card lands on /cotizador with Ventana preselected', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.getByRole('link', { name: /Ventanas.*desde \$108/i }).click();
     await expect(page).toHaveURL(/\/cotizador\?producto=ventana$/);
-    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await expect(page.getByRole('button', { name: /Ventana Francesa o Bilbao/, pressed: true })).toBeVisible();
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
+    await expect(
+      page.getByRole('button', { name: /Ventana Francesa o Bilbao/, pressed: true }),
+    ).toBeVisible();
   });
 
-  test('"Puertas de jardín" card lands on /cotizador with Puerta de jardín preselected', async ({ page }) => {
+  test('"Puertas de jardín" card lands on /cotizador with Puerta de jardín preselected', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.getByRole('link', { name: /Puertas de jardín.*desde \$410/i }).click();
     await expect(page).toHaveURL(/\/cotizador\?producto=jardin$/);
-    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await expect(page.getByRole('button', { name: /Puerta de jardín/, pressed: true })).toBeVisible();
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
+    await expect(
+      page.getByRole('button', { name: /Puerta de jardín/, pressed: true }),
+    ).toBeVisible();
   });
 
-  test('"Puertas de baño" card preselects the recta product (product-chooser decision)', async ({ page }) => {
+  test('"Puertas de baño" card preselects the recta product (product-chooser decision)', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.getByRole('link', { name: /Puertas de baño.*desde \$222/i }).click();
     await expect(page).toHaveURL(/\/cotizador\?producto=recta$/);
-    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await expect(page.getByRole('button', { name: /Puerta de baño recta/, pressed: true })).toBeVisible();
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
+    await expect(
+      page.getByRole('button', { name: /Puerta de baño recta/, pressed: true }),
+    ).toBeVisible();
   });
 
-  test('a "Cotizar este modelo" catálogo CTA opens the cotizador hydrated with that product', async ({ page }) => {
+  test('a "Cotizar este modelo" catálogo CTA opens the cotizador hydrated with that product', async ({
+    page,
+  }) => {
     await page.goto('/');
     const card = page.locator('#modelos li', { hasText: 'Puerta con bisagra' });
     await card.getByRole('link', { name: 'Cotizar este modelo' }).click();
     await expect(page).toHaveURL(/\/cotizador\?producto=bisagra$/);
-    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await expect(page.getByRole('button', { name: /Puerta con bisagra/, pressed: true })).toBeVisible();
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
+    await expect(
+      page.getByRole('button', { name: /Puerta con bisagra/, pressed: true }),
+    ).toBeVisible();
   });
 });
 
@@ -121,7 +172,9 @@ test.describe('sf-fixes — sticky top bar', () => {
     { width: 1920, height: 1080 },
   ];
 
-  test('top bar stays pinned to the viewport top after scrolling, at every breakpoint', async ({ page }) => {
+  test('top bar stays pinned to the viewport top after scrolling, at every breakpoint', async ({
+    page,
+  }) => {
     for (const size of sizes) {
       await page.setViewportSize(size);
       await page.goto('/');
@@ -135,7 +188,9 @@ test.describe('sf-fixes — sticky top bar', () => {
 });
 
 test.describe('sf-fixes — galería lightbox prev/next + strip controls', () => {
-  test('prev/next buttons and the n/6 counter move through the photos', async ({ page }) => {
+  test('prev/next buttons and the n/6 counter move through the photos', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.locator('#galeria').scrollIntoViewIfNeeded();
     await page.locator('[data-lightbox-trigger]').first().click();
@@ -173,8 +228,13 @@ test.describe('sf-fixes — galería lightbox prev/next + strip controls', () =>
     await expect(page.locator('#galeria-lightbox-counter')).toHaveText('2 / 6');
   });
 
-  test('mobile snap-scroll strip has prev/next controls that scroll the strip', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'desktop1920', 'strip nav is mobile-only; desktop uses the masonry');
+  test('mobile snap-scroll strip has prev/next controls that scroll the strip', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name === 'desktop1920',
+      'strip nav is mobile-only; desktop uses the masonry',
+    );
     await page.goto('/');
     const strip = page.locator('#galeria-strip');
     await strip.scrollIntoViewIfNeeded();
@@ -185,7 +245,9 @@ test.describe('sf-fixes — galería lightbox prev/next + strip controls', () =>
     expect(after).toBeGreaterThan(before);
   });
 
-  test('desktop hides the mobile strip prev/next controls', async ({ page }, testInfo) => {
+  test('desktop hides the mobile strip prev/next controls', async ({
+    page,
+  }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only assertion');
     await page.goto('/');
     await expect(page.locator('.galeria__strip-nav').first()).toBeHidden();
@@ -193,7 +255,9 @@ test.describe('sf-fixes — galería lightbox prev/next + strip controls', () =>
 });
 
 test.describe('sf-drawer — drawer + top bar fidelity vs the hi-fi boards', () => {
-  test('drawer header shows the "Disfrutar con calidad" lockup image', async ({ page }) => {
+  test('drawer header shows the "Disfrutar con calidad" lockup image', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Abrir menú' }).click();
     const logo = page.locator('#drawer-panel img[alt="ALCUSA · Disfrutar con calidad"]');
@@ -207,7 +271,9 @@ test.describe('sf-drawer — drawer + top bar fidelity vs the hi-fi boards', () 
     await expect(drawer.getByText('Síguenos', { exact: true })).toBeVisible();
     await expect(drawer.getByRole('link', { name: 'Instagram @alcusasv' })).toBeVisible();
     await expect(drawer.getByRole('link', { name: 'TikTok @alcusaes' })).toBeVisible();
-    await expect(drawer.getByRole('link', { name: 'YouTube @alcusaelsalvador8209' })).toBeVisible();
+    await expect(
+      drawer.getByRole('link', { name: 'YouTube @alcusaelsalvador8209' }),
+    ).toBeVisible();
   });
 
   test('drawer WhatsApp entry uses the real +503 7680-2410 number', async ({ page }) => {
@@ -224,7 +290,9 @@ test.describe('sf-drawer — drawer + top bar fidelity vs the hi-fi boards', () 
   }, testInfo) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Abrir menú' }).click();
-    const inicioIcon = page.locator('#drawer-panel .drawer__link', { hasText: 'Inicio' }).locator('.drawer__link-icon');
+    const inicioIcon = page
+      .locator('#drawer-panel .drawer__link', { hasText: 'Inicio' })
+      .locator('.drawer__link-icon');
     if (testInfo.project.name === 'desktop1920') {
       await expect(inicioIcon).toBeVisible();
     } else {
@@ -232,8 +300,13 @@ test.describe('sf-drawer — drawer + top bar fidelity vs the hi-fi boards', () 
     }
   });
 
-  test('desktop-only drawer contacts + location block matches the board copy', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop1920', 'contacts/location block is desktop-only per the boards');
+  test('desktop-only drawer contacts + location block matches the board copy', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'desktop1920',
+      'contacts/location block is desktop-only per the boards',
+    );
     await page.goto('/');
     await page.getByRole('button', { name: 'Abrir menú' }).click();
     const drawer = page.locator('#drawer-panel');
@@ -241,8 +314,13 @@ test.describe('sf-drawer — drawer + top bar fidelity vs the hi-fi boards', () 
     await expect(drawer.getByText('Calle El Pedregal, Ciudad Merliot')).toBeVisible();
   });
 
-  test('mobile drawers hide the desktop-only contacts + location block', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'desktop1920', 'desktop-only assertion counterpart');
+  test('mobile drawers hide the desktop-only contacts + location block', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name === 'desktop1920',
+      'desktop-only assertion counterpart',
+    );
     await page.goto('/');
     await page.getByRole('button', { name: 'Abrir menú' }).click();
     await expect(page.locator('#drawer-panel .drawer__contacts')).toBeHidden();
@@ -258,7 +336,9 @@ test.describe('sf-drawer — drawer + top bar fidelity vs the hi-fi boards', () 
     await expect(trigger).toBeFocused();
   });
 
-  test('Tab is trapped inside the open drawer (last focusable wraps to the first)', async ({ page }) => {
+  test('Tab is trapped inside the open drawer (last focusable wraps to the first)', async ({
+    page,
+  }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Abrir menú' }).click();
     const drawer = page.locator('#drawer-panel');
@@ -277,12 +357,20 @@ test.describe('sf-drawer — drawer + top bar fidelity vs the hi-fi boards', () 
     await page.goto('/');
     const topBar = page.locator('.top-bar');
     if (testInfo.project.name === 'desktop1920') {
-      await expect(topBar.getByRole('link', { name: 'Llamar al 2278-2460' })).toBeVisible();
-      await expect(topBar.getByRole('link', { name: 'Cotizar', exact: true })).toBeVisible();
+      await expect(
+        topBar.getByRole('link', { name: 'Llamar al 2278-2460' }),
+      ).toBeVisible();
+      await expect(
+        topBar.getByRole('link', { name: 'Cotizar', exact: true }),
+      ).toBeVisible();
       await expect(topBar.getByText('Menú', { exact: true })).toBeVisible();
     } else {
-      await expect(topBar.getByRole('link', { name: 'Llamar al 2278-2460' })).toBeHidden();
-      await expect(topBar.getByRole('link', { name: 'Cotizar', exact: true })).toBeHidden();
+      await expect(
+        topBar.getByRole('link', { name: 'Llamar al 2278-2460' }),
+      ).toBeHidden();
+      await expect(
+        topBar.getByRole('link', { name: 'Cotizar', exact: true }),
+      ).toBeHidden();
     }
   });
 });
@@ -296,7 +384,13 @@ test.describe('sf-fixes — galería + footer fidelity follow-ups', () => {
     await expect(link).toHaveAttribute('rel', 'noopener');
   });
 
-  test('footer shows the Instagram/TikTok handles next to the social icons', async ({ page }) => {
+  test('footer shows the Instagram/TikTok handles next to the social icons (desktop only)', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'desktop1920',
+      'handles line is desktop-only per the boards',
+    );
     await page.goto('/');
     await expect(page.getByText('@alcusasv · @alcusaes')).toBeVisible();
   });
