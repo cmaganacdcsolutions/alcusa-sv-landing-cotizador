@@ -2,9 +2,24 @@
 // Drawer — static markup + a small vanilla-JS toggle script (open/close,
 // focus trap, Esc, veil click, back-button close). No pricing/cart state,
 // no hardcoded wa.me (README §4) — WhatsApp link built via integrations/.
+//
+// Fidelity source: 02-design/boards/{desktop,ios,android}-02-drawer-open.dc.html.
+// Section icons + the "Síguenos"/contacts/location block only render on the
+// desktop board (>= --breakpoint-lg); the two mobile boards draw the same nav
+// list with no icons and no contacts/location block, so those pieces are
+// desktop-only here too (see the `@media (min-width: 1024px)` rules below).
+//
+// Nav label note: the boards read "Galería" for that link; this repo already
+// ships "Proyectos reales" for the same #galeria destination consistently in
+// Footer.astro, Galeria.astro and their tests (sf-fixes.spec.ts, contacto.spec.ts).
+// Kept the established site copy here instead of forking the wording between
+// the drawer and the footer nav — flagged in the HANDOFF.
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 const waHref = buildWaLink();
+const pathname = Astro.url.pathname;
+const isHome = pathname === '/';
+const isContact = pathname === '/contacto';
 ---
 
 <div id="drawer-veil" class="drawer-veil" hidden></div>
@@ -17,7 +32,15 @@ const waHref = buildWaLink();
   data-drawer-panel
 >
   <div class="drawer__head">
-    <a href="/" class="drawer__brand" aria-label="ALCUSA, inicio">Alcusa</a>
+    <a href="/" class="drawer__brand" aria-label="ALCUSA, inicio">
+      <img
+        src="/images/logo-primary.png"
+        alt="ALCUSA · Disfrutar con calidad"
+        width="144"
+        height="81"
+        class="drawer__brand-img"
+      />
+    </a>
     <button type="button" id="drawer-close-btn" class="drawer__close" aria-label="Cerrar menú">
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
         ><path d="M6 6l12 12M18 6L6 18"></path></svg
@@ -26,17 +49,78 @@ const waHref = buildWaLink();
   </div>
 
   <div class="drawer__links">
-    <a href="/#inicio" data-drawer-link class="drawer__link">Inicio</a>
-    <a href="/#modelos" data-drawer-link class="drawer__link">Catálogo</a>
-    <a href="/#proceso" data-drawer-link class="drawer__link">Cómo funciona</a>
-    <a href="/#galeria" data-drawer-link class="drawer__link">Proyectos reales</a>
+    <a
+      href="/#inicio"
+      data-drawer-link
+      class="drawer__link"
+      aria-current={isHome ? 'page' : undefined}
+    >
+      <span class="drawer__link-icon" aria-hidden="true"
+        ><svg width="22" height="22" viewBox="0 0 24 24"
+          ><path d="M4 11l8-6.5 8 6.5M6 9.5v10h12v-10"></path></svg
+        ></span
+      >Inicio</a
+    >
+    <a href="/#modelos" data-drawer-link class="drawer__link">
+      <span class="drawer__link-icon" aria-hidden="true"
+        ><svg width="22" height="22" viewBox="0 0 24 24"
+          ><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect
+            x="13"
+            y="4"
+            width="7"
+            height="7"
+            rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect
+            x="13"
+            y="13"
+            width="7"
+            height="7"
+            rx="1.5"></rect></svg
+        ></span
+      >Catálogo</a
+    >
+    <a href="/#proceso" data-drawer-link class="drawer__link">
+      <span class="drawer__link-icon" aria-hidden="true"
+        ><svg width="22" height="22" viewBox="0 0 24 24"
+          ><path d="M9 6.5h11M9 12h11M9 17.5h11"></path><circle cx="4.8" cy="6.5" r="1.3"
+          ></circle><circle cx="4.8" cy="12" r="1.3"></circle><circle cx="4.8" cy="17.5" r="1.3"
+          ></circle></svg
+        ></span
+      >Cómo funciona</a
+    >
+    <a href="/#galeria" data-drawer-link class="drawer__link">
+      <span class="drawer__link-icon" aria-hidden="true"
+        ><svg width="22" height="22" viewBox="0 0 24 24"
+          ><rect x="3.5" y="4.5" width="17" height="15" rx="3"></rect><circle
+            cx="9"
+            cy="9.5"
+            r="1.8"></circle><path d="M4 17l4.5-4.5 3.5 3.5 2.5-2.5L20 18"></path></svg
+        ></span
+      >Proyectos reales</a
+    >
     <a href="/cotizador" data-drawer-link class="drawer__link drawer__link--pill">
-      Cotizar
+      <span class="drawer__link-icon drawer__link-icon--pill" aria-hidden="true"
+        ><svg width="22" height="22" viewBox="0 0 24 24"
+          ><rect x="5" y="3.5" width="14" height="17" rx="2.5"></rect><path
+            d="M8.5 7.5h7M8.5 12h1M12 12h1M15 12h.5M8.5 16h1M12 16h1M15 16h.5"
+          ></path></svg
+        ></span
+      ><span class="drawer__link-label">Cotizar</span>
       <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
         ><path d="M5 12h14M13 6l6 6-6 6"></path></svg
       >
     </a>
-    <a href="/contacto" data-drawer-link class="drawer__link">Contacto</a>
+    <a
+      href="/contacto"
+      data-drawer-link
+      class="drawer__link"
+      aria-current={isContact ? 'page' : undefined}
+    >
+      <span class="drawer__link-icon" aria-hidden="true"
+        ><svg width="22" height="22" viewBox="0 0 24 24"
+          ><path d="M4.5 5.5h15v10h-8l-4.5 3.5v-3.5h-2.5z"></path></svg
+        ></span
+      >Contacto</a
+    >
   </div>
 
   <div class="drawer__footer">
@@ -48,28 +132,50 @@ const waHref = buildWaLink();
       >
       WhatsApp · 7680-2410
     </a>
-    <div class="drawer__social">
-      <a href="https://instagram.com/alcusasv" aria-label="Instagram @alcusasv" class="drawer__social-icon"
-        ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-          ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
-          ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
-        ></a
-      >
-      <a href="https://tiktok.com/@alcusaes" aria-label="TikTok @alcusaes" class="drawer__social-icon"
-        ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-          ><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path><path d="M14 4c.4 2.6 2.2 4.3 5 4.5"
+
+    <div class="drawer__contacts">
+      <span class="drawer__contacts-row"
+        ><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"
+          ><path
+            d="M6.5 3.5h3l1.5 4-2 1.2a11 11 0 0 0 6.3 6.3l1.2-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"
           ></path></svg
-        ></a
+        >2278-2460 · 2208-4101 · 2563-7742</span
       >
-      <a
-        href="https://youtube.com/@alcusaelsalvador8209"
-        aria-label="YouTube @alcusaelsalvador8209"
-        class="drawer__social-icon"
-        ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-          ><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="M10.5 9.5v5l4.3-2.5z"
-          ></path></svg
-        ></a
+      <span class="drawer__contacts-row"
+        ><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"
+          ><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"></path><circle
+            cx="12"
+            cy="10"
+            r="2.3"></circle></svg
+        >Calle El Pedregal, Ciudad Merliot</span
       >
+    </div>
+
+    <div class="drawer__follow">
+      <span class="drawer__follow-label">Síguenos</span>
+      <div class="drawer__social">
+        <a href="https://instagram.com/alcusasv" aria-label="Instagram @alcusasv" class="drawer__social-icon"
+          ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+            ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
+            ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
+          ></a
+        >
+        <a href="https://tiktok.com/@alcusaes" aria-label="TikTok @alcusaes" class="drawer__social-icon"
+          ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+            ><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path><path d="M14 4c.4 2.6 2.2 4.3 5 4.5"
+            ></path></svg
+          ></a
+        >
+        <a
+          href="https://youtube.com/@alcusaelsalvador8209"
+          aria-label="YouTube @alcusaelsalvador8209"
+          class="drawer__social-icon"
+          ><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+            ><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="M10.5 9.5v5l4.3-2.5z"
+            ></path></svg
+          ></a
+        >
+      </div>
     </div>
   </div>
 </nav>
@@ -87,11 +193,11 @@ const waHref = buildWaLink();
     left: 0;
     top: 0;
     bottom: 0;
-    width: min(320px, 85vw);
+    width: min(360px, 83vw);
     background: var(--color-surface);
     border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
     box-shadow: var(--shadow-lg);
-    padding: var(--space-6) var(--space-5) var(--space-8);
+    padding: max(var(--space-6), env(safe-area-inset-top)) var(--space-5) var(--space-8);
     display: flex;
     flex-direction: column;
     gap: var(--space-5);
@@ -115,16 +221,20 @@ const waHref = buildWaLink();
   }
 
   .drawer__brand {
-    font-family: var(--font-family-display);
-    font-size: 1.375rem;
-    font-weight: var(--font-weight-display-semibold);
-    color: var(--color-primary);
-    text-decoration: none;
+    display: block;
+    line-height: 0;
+  }
+
+  .drawer__brand-img {
+    border-radius: var(--radius-md);
+    object-fit: cover;
+    display: block;
   }
 
   .drawer__close {
     width: 44px;
     height: 44px;
+    flex-shrink: 0;
     border-radius: var(--radius-full);
     border: 1px solid var(--color-border);
     background: transparent;
@@ -146,11 +256,32 @@ const waHref = buildWaLink();
     padding: 0 var(--space-3);
     display: flex;
     align-items: center;
+    gap: var(--space-3);
     border-radius: var(--radius-sm);
     color: var(--color-ink);
     font-size: 1.0625rem;
     font-weight: var(--font-weight-body-medium);
     text-decoration: none;
+  }
+
+  .drawer__link[aria-current='page'] {
+    background: var(--color-surface-tint);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-body-bold);
+  }
+
+  .drawer__link-icon {
+    display: none;
+    color: var(--color-ink-muted);
+    flex-shrink: 0;
+  }
+
+  .drawer__link-icon svg {
+    stroke: currentColor;
+  }
+
+  .drawer__link[aria-current='page'] .drawer__link-icon {
+    color: var(--color-primary);
   }
 
   .drawer__link--pill {
@@ -163,6 +294,14 @@ const waHref = buildWaLink();
     color: var(--color-surface);
     font-weight: var(--font-weight-body-bold);
     box-shadow: var(--shadow-md);
+  }
+
+  .drawer__link--pill .drawer__link-icon--pill {
+    color: var(--color-surface);
+  }
+
+  .drawer__link-label {
+    flex-grow: 1;
   }
 
   .drawer__footer {
@@ -183,14 +322,30 @@ const waHref = buildWaLink();
     border-radius: var(--radius-md);
     background: var(--color-whatsapp-strong);
     color: var(--color-surface);
-    font-weight: var(--font-weight-body-bold);
+    font-size: 1rem;
+    font-weight: 600;
     text-decoration: none;
+  }
+
+  .drawer__contacts {
+    display: none;
+  }
+
+  .drawer__follow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .drawer__follow-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-ink-muted);
   }
 
   .drawer__social {
     display: flex;
     gap: var(--space-2);
-    justify-content: center;
   }
 
   .drawer__social-icon {
@@ -202,6 +357,105 @@ const waHref = buildWaLink();
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  @media (min-width: 1024px) {
+    .drawer {
+      width: 440px;
+      border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+      /* Board-drawn value (desktop-02-drawer-open.dc.html:82) — stronger than
+         --shadow-lg (which the two mobile boards use verbatim). */
+      box-shadow: 0 24px 60px rgba(16, 33, 61, 0.22);
+      padding: var(--space-6) var(--space-10) var(--space-10);
+      gap: var(--space-6);
+    }
+
+    .drawer__brand-img {
+      width: 160px;
+      height: 90px;
+    }
+
+    .drawer__close {
+      width: 48px;
+      height: 48px;
+    }
+
+    .drawer__close svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .drawer__link {
+      min-height: 56px;
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: 1.125rem;
+      font-weight: var(--font-weight-body-bold);
+    }
+
+    .drawer__link:not([aria-current='page']) {
+      font-weight: 600;
+    }
+
+    .drawer__link-icon {
+      display: flex;
+      align-items: center;
+    }
+
+    .drawer__link--pill {
+      min-height: 60px;
+      padding: 0 var(--space-5) 0 var(--space-4);
+      /* Board-drawn value (desktop-02-drawer-open.dc.html:92) — primary-tinted,
+         distinct from --shadow-md. */
+      box-shadow: 0 8px 20px rgba(7, 59, 146, 0.22);
+    }
+
+    .drawer__footer {
+      gap: var(--space-5);
+      padding-top: var(--space-6);
+    }
+
+    .drawer__whatsapp {
+      min-height: 56px;
+      gap: 10px;
+      font-size: 1.0625rem;
+      font-weight: var(--font-weight-body-bold);
+    }
+
+    .drawer__contacts {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      color: var(--color-ink-muted);
+    }
+
+    .drawer__contacts-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .drawer__contacts-row svg {
+      stroke: currentColor;
+      flex-shrink: 0;
+    }
+
+    .drawer__follow-label {
+      font-size: 0.9375rem;
+      font-weight: var(--font-weight-body-bold);
+    }
+
+    .drawer__social {
+      gap: 10px;
+    }
+
+    .drawer__social-icon {
+      width: 48px;
+      height: 48px;
+      border: 1px solid var(--color-surface-tint);
+    }
   }
 </style>
 
