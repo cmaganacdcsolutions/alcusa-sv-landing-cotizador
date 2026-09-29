@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useReducer, useRef, useState, type ReactElement } from 'react';
 import '@styles/cotizador.css';
-import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
+import { CATALOG_PRODUCTS } from '@content/catalog';
+import { parseDeepLink } from '@content/deepLink';
 import { getZoneFee } from '@engine/pricing';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
+import { buildAdvisorMessage } from '@integrations/whatsapp/buildMessage';
 import {
   cotizadorReducer,
   initialCotizadorState,
@@ -102,17 +104,6 @@ function stepFromHash(hash: string): CotizadorStep | null {
   return slugToStep(slug);
 }
 
-function isCatalogProductId(value: string | null): value is ProductId {
-  return !!value && CATALOG_PRODUCTS.some((p) => p.id === value);
-}
-
-// Reads the S5 `?producto=<id>` preselect contract (catalog CTAs link to
-// `/cotizador?producto=<id>`, per the Foreman's page-split correction).
-function productIdFromSearch(search: string): ProductId | null {
-  const raw = new URLSearchParams(search).get('producto');
-  return isCatalogProductId(raw) ? raw : null;
-}
-
 // Desktop aside item row (kicker "TU COTIZACIÓN" card, boards 03-06).
 interface AsideItem {
   name: string;
@@ -185,14 +176,29 @@ export default function Cotizador(): ReactElement {
   // Portal mount for the resumen/formaPago aside CTAs — see the AsideView.ctas
   // comment below and Step4Resumen/Step5FormaPago's `asideCtaTarget` prop.
   const [portalCtaEl, setPortalCtaEl] = useState<HTMLDivElement | null>(null);
+  // advisorOnly deep link: name of the product to quote with an advisor.
+  const [advisorProduct, setAdvisorProduct] = useState<string | null>(null);
 
   useEffect(() => {
     const initialHash = window.location.hash;
     const initial = stepFromHash(initialHash);
     if (initial) dispatch({ type: 'GOTO_STEP', step: initial });
 
-    const preselectId = productIdFromSearch(window.location.search);
-    if (preselectId) dispatch({ type: 'PRESELECT_PRODUCT', productId: preselectId });
+    // ADR-008 §3: `?producto=<slug>` (leaf, variant or legacy alias). Invalid
+    // slugs are ignored; advisorOnly slugs never enter the wizard.
+    const deepLink = parseDeepLink(window.location.search);
+    if (deepLink.kind === 'priced') {
+      const { preset, quoterModel } = deepLink;
+      if (preset.cornerFinish) dispatch({ type: 'SET_CORNER_MODEL', model: preset.cornerFinish });
+      if (preset.gardenHojas) dispatch({ type: 'SET_GARDEN_HOJAS', hojas: preset.gardenHojas });
+      if (preset.windowType) dispatch({ type: 'SET_WINDOW_MODEL', model: preset.windowType });
+      // Legacy ids and an explicit `#cotizador/<step>` hash only preselect;
+      // a canonical slug jumps to Medidas.
+      dispatch({ type: deepLink.advance && !initial ? 'SELECT_PRODUCT' : 'PRESELECT_PRODUCT', productId: quoterModel });
+    } else if (deepLink.kind === 'advisor') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only read of location.search (no SSR access)
+      setAdvisorProduct(deepLink.name);
+    }
 
     // ADR-005: browsers won't auto-scroll a compound "#cotizador/<slug>"
     // fragment, so the island scrolls itself into view on mount.
@@ -510,6 +516,16 @@ export default function Cotizador(): ReactElement {
 
   return (
     <div ref={rootRef} className="cotizador" data-testid="cotizador-root" data-hydrated="false">
+      {advisorProduct ? (
+        <div className="cotizador__advisor" role="status" data-testid="advisor-notice">
+          <p>
+            <strong>{advisorProduct}</strong>: esta combinación la cotiza un asesor.
+          </p>
+          <a href={buildWaLink(buildAdvisorMessage(advisorProduct))} target="_blank" rel="noopener noreferrer">
+            Cotiza con asesor
+          </a>
+        </div>
+      ) : null}
       <div className="cotizador__header">
         {isFirstStep ? (
           <a href="/#inicio" className="cotizador__back">

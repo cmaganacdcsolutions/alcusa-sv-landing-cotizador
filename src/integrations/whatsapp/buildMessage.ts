@@ -54,3 +54,11 @@ export function buildQuoteMessage(input: QuoteMessageInput): string {
     'Por favor confirmen medidas, disponibilidad y forma de pago. ¡Gracias!'
   );
 }
+
+/**
+ * Prefilled message for advisorOnly catalog leaves (ADR-008 §3). Carries no
+ * price on purpose: these combinations are quoted by an advisor.
+ */
+export function buildAdvisorMessage(productName: string): string {
+  return `Hola ALCUSA, me interesa cotizar: ${productName}. ¿Me pueden asesorar con medidas y precio?`;
+}
