@@ -1,8 +1,12 @@
 node_modules/
 dist/
+.vite-cache/
+.astro/
 coverage/
 playwright-report/
+playwright-report-responsive/
 test-results/
+blob-report/
 .env
 .env.*
 !.env.example

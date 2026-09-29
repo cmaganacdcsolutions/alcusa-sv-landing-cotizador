@@ -1,0 +1,15 @@
+# ALCUSA — Hostinger shared hosting (Apache)
+# Security headers + static/api routing. See docs/architecture/README.md §2 NFRs.
+# Deploy artifact — wiring finalized in the hardening slice (S6).
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), camera=(), microphone=()"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>

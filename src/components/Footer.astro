@@ -1,0 +1,362 @@
+---
+// Footer — final landing section (spec §1 item 9, T9.3).
+//
+// User correction 2026-09-28 (sf-landing5): the footer must show ONLY what
+// each board draws, nothing more. Content differs by breakpoint:
+// - Mobile (Main.dc.html ~L150-160 / android-01-inicio.dc.html ~L154-166):
+//   flat stack, no column titles. Legal line has no "local 29 G". Nav is
+//   just Inicio/Cotizar/Contacto in a row. No NIT, no Instagram/TikTok
+//   handles line, no phones line, no bottom-bar border — copyright is just
+//   the last stacked line.
+// - Desktop (desktop-01-inicio.dc.html ~L211-227): 4-col grid with visible
+//   column titles (NAVEGACIÓN/SÍGUENOS/COTIZA POR WHATSAPP), full 6-link
+//   nav (the board labels #galeria "Galería"; we ship "Proyectos reales" to match the drawer and the section title, per the user's decision), the handles line, the
+//   phones line, and a bordered bottom bar with the Wompi/AMEX note.
+// Both the NIT placeholder and the extra "— ALCUSA" legal-name suffix from
+// the previous slice were invented (not in any board) and are removed.
+import { buildWaLink } from '@integrations/whatsapp/waLink';
+
+const waHref = buildWaLink();
+
+const NAV_LINKS = [
+  { label: 'Inicio', href: '/#inicio', mobile: true },
+  { label: 'Catálogo', href: '/#modelos', mobile: false },
+  { label: 'Cómo funciona', href: '/#proceso', mobile: false },
+  { label: 'Proyectos reales', href: '/#galeria', mobile: false },
+  { label: 'Cotizar', href: '/cotizador', mobile: true },
+  { label: 'Contacto', href: '/contacto', mobile: true },
+] as const;
+---
+
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__brand-col">
+      <div class="site-footer__brand">
+        <img src="/images/logo-primary.png" alt="" width="36" height="36" />
+        <div>
+          <p class="site-footer__wordmark">Alcusa</p>
+          <p class="site-footer__tagline">Disfrutar con calidad</p>
+        </div>
+      </div>
+      <p class="site-footer__legal site-footer__legal--mobile">
+        Aluminios Cuzcatlán, S.A. de C.V. · Calle El Pedregal, Ciudad Merliot
+      </p>
+      <p class="site-footer__legal site-footer__legal--desktop">
+        Aluminios Cuzcatlán, S.A. de C.V. · Calle El Pedregal, local 29 G, Ciudad Merliot
+      </p>
+    </div>
+
+    <nav aria-label="Enlaces del pie" class="site-footer__nav">
+      <p class="site-footer__col-title">Navegación</p>
+      {NAV_LINKS.map((link) => (
+        <a
+          href={link.href}
+          class={link.mobile ? '' : 'site-footer__nav-link--desktop-only'}
+        >
+          {link.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="site-footer__social-col">
+      <p class="site-footer__col-title">Síguenos</p>
+      <div class="site-footer__social">
+        <a
+          href="https://instagram.com/alcusasv"
+          aria-label="Instagram @alcusasv"
+          rel="noopener"
+          class="site-footer__social-icon"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
+            <circle cx="12" cy="12" r="4"></circle>
+            <circle cx="17.2" cy="6.8" r=".6"></circle>
+          </svg>
+        </a>
+        <a
+          href="https://tiktok.com/@alcusaes"
+          aria-label="TikTok @alcusaes"
+          rel="noopener"
+          class="site-footer__social-icon"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path>
+            <path d="M14 4c.4 2.6 2.2 4.3 5 4.5"></path>
+          </svg>
+        </a>
+        <a
+          href="https://youtube.com/@alcusaelsalvador8209"
+          aria-label="YouTube @alcusaelsalvador8209"
+          rel="noopener"
+          class="site-footer__social-icon"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24">
+            <rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect>
+            <path d="M10.5 9.5v5l4.3-2.5z"></path>
+          </svg>
+        </a>
+      </div>
+      <p class="site-footer__handles">@alcusasv &middot; @alcusaes</p>
+    </div>
+
+    <div class="site-footer__wa-col">
+      <p class="site-footer__col-title">Cotiza por WhatsApp</p>
+      <a href={waHref} class="site-footer__whatsapp">
+        Cotizar por WhatsApp · 7680-2410
+      </a>
+      <span class="site-footer__phones">Teléfonos 2278-2460 · 2208-4101 · 2563-7742</span>
+    </div>
+  </div>
+
+  <div class="site-footer__bottom">
+    <span class="site-footer__copy">© 2026 ALCUSA. Todos los derechos reservados.</span>
+    <span class="site-footer__wompi">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="5" y="10.5" width="14" height="10" rx="2.5"></rect>
+        <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"></path>
+      </svg>
+      Pago con tarjeta vía Wompi · excepto American Express
+    </span>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    padding: var(--space-10) var(--space-6) var(--space-8);
+    background: var(--color-ink);
+    color: #c9d3e3;
+  }
+
+  .site-footer__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .site-footer__brand-col,
+  .site-footer__social-col,
+  .site-footer__wa-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .site-footer__nav {
+    display: flex;
+    gap: var(--space-5);
+  }
+
+  .site-footer__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .site-footer__brand img {
+    border-radius: var(--radius-sm);
+    display: block;
+  }
+
+  .site-footer__wordmark {
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-size: 1.375rem;
+    font-weight: var(--font-weight-display-semibold);
+    color: var(--color-surface);
+  }
+
+  .site-footer__tagline {
+    margin: 0;
+    font-size: var(--font-size-caption-mobile);
+  }
+
+  .site-footer__legal {
+    margin: 0;
+    font-size: var(--font-size-body-sm-mobile);
+  }
+
+  .site-footer__legal--desktop {
+    display: none;
+  }
+
+  .site-footer__col-title {
+    display: none;
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--color-surface);
+  }
+
+  .site-footer__nav a {
+    color: var(--color-surface);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .site-footer__nav a.site-footer__nav-link--desktop-only {
+    display: none;
+  }
+
+  .site-footer__nav a:focus-visible,
+  .site-footer__whatsapp:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  .site-footer__handles,
+  .site-footer__phones {
+    display: none;
+  }
+
+  .site-footer__social {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .site-footer__social-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    border: 1px solid #33456a;
+    color: var(--color-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .site-footer__social-icon svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .site-footer__whatsapp {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    background: var(--color-whatsapp-strong);
+    color: var(--color-surface);
+    font-size: var(--font-size-body-mobile);
+    font-weight: 600; /* board: 600, no body-weight token between 500/700 */
+    text-decoration: none;
+  }
+
+  .site-footer__bottom {
+    margin-top: var(--space-5);
+    display: block;
+  }
+
+  .site-footer__copy {
+    display: block;
+    font-size: var(--font-size-caption-mobile);
+    color: #9fb0c9;
+  }
+
+  .site-footer__wompi {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .site-footer {
+      padding: var(--space-16) var(--space-8) var(--space-8);
+    }
+
+    .site-footer__inner {
+      max-width: var(--container-page);
+      margin: 0 auto;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1.3fr;
+      gap: var(--space-16);
+    }
+
+    .site-footer__legal--mobile {
+      display: none;
+    }
+
+    .site-footer__legal--desktop {
+      display: block;
+      font-size: 0.9375rem; /* 15px, no matching token */
+      line-height: 24px;
+      max-width: 380px;
+    }
+
+    .site-footer__col-title {
+      display: block;
+    }
+
+    .site-footer__nav {
+      flex-direction: column;
+      gap: 10px; /* board: gap 10px, no matching space-* token */
+    }
+
+    .site-footer__nav a {
+      min-height: 0;
+      font-size: var(--font-size-body-mobile);
+      line-height: 26px;
+    }
+
+    .site-footer__nav a.site-footer__nav-link--desktop-only {
+      display: flex;
+    }
+
+    .site-footer__handles {
+      display: block;
+      margin: var(--space-4) 0 0;
+      font-size: var(--font-size-body-sm-mobile);
+      line-height: 22px;
+    }
+
+    .site-footer__phones {
+      display: block;
+      font-size: 0.9375rem; /* 15px, no matching token */
+      line-height: 24px;
+    }
+
+    .site-footer__whatsapp {
+      min-height: 56px;
+      font-size: var(--font-size-body-lg-mobile);
+      font-weight: var(--font-weight-body-bold);
+    }
+
+    .site-footer__bottom {
+      display: flex;
+      justify-content: space-between;
+      max-width: var(--container-page);
+      margin: var(--space-6) auto 0;
+      padding-top: var(--space-8);
+      border-top: 1px solid #33456a;
+    }
+
+    .site-footer__copy {
+      font-size: var(--font-size-body-sm-mobile);
+      line-height: 22px;
+    }
+
+    .site-footer__wompi {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-size-body-sm-mobile);
+      line-height: 22px;
+      color: #9fb0c9;
+    }
+
+    .site-footer__wompi svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+  }
+</style>

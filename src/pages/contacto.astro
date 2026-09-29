@@ -1,0 +1,25 @@
+---
+// /contacto — standalone contact webform route (spec §1 item 8, §2.9, page
+// split S5). Same shell as the landing (TopBar/Drawer/Footer); reuses the
+// existing Contacto.astro section (static info list + ContactForm island),
+// unchanged from what used to render inline on the landing.
+import BaseLayout from '@layouts/BaseLayout.astro';
+import TopBar from '@components/TopBar.astro';
+import Drawer from '@components/Drawer.astro';
+import Contacto from '@components/Contacto.astro';
+import Footer from '@components/Footer.astro';
+---
+
+<BaseLayout
+  title="Contacto | ALCUSA"
+  description="Escríbenos por WhatsApp, llámanos o visita nuestro taller de aluminio y vidrio en Ciudad Merliot, El Salvador."
+>
+  <TopBar />
+  <Drawer />
+
+  <main>
+    <Contacto />
+  </main>
+
+  <Footer />
+</BaseLayout>

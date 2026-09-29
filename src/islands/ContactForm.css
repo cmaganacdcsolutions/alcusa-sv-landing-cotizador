@@ -1,0 +1,324 @@
+/* ContactForm island (T9.2). Scoped to this component only — does not
+   reuse cotizador.css (that stylesheet is scoped to the Cotizador island). */
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: 0 8px 20px rgba(16, 33, 61, 0.1);
+}
+
+.contact-form__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.contact-form__title {
+  margin: 0;
+  font-family: var(--font-family-display);
+  font-weight: 500;
+  font-size: 1.375rem;
+  line-height: 1.3;
+}
+
+.contact-form__subtitle {
+  margin: 0;
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink-muted);
+}
+
+.contact-form__field {
+  display: flex;
+  flex-direction: column;
+  /* ios-08/android-08 ~L57-58: label-to-input gap is 6px on mobile, 8px on
+     desktop (desktop-08 ~L96-97, overridden below). */
+  gap: var(--space-1-5);
+}
+
+.contact-form__row {
+  display: contents;
+}
+
+.contact-form__label {
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: 700;
+}
+
+.contact-form__input {
+  height: 48px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-input);
+  background: var(--color-surface);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-body-mobile);
+  /* Inputs/selects/buttons don't inherit body line-height by default in
+     Chromium (computed as "normal") — the boards render every form control
+     at the page's 1.6 body line-height. */
+  line-height: var(--font-line-height-body);
+  color: var(--color-ink);
+}
+
+.contact-form__input--textarea {
+  height: auto;
+  padding: var(--space-3) var(--space-4);
+  resize: none;
+  line-height: 1.5;
+}
+
+.contact-form__input[data-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.contact-form__input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.contact-form__select-wrap {
+  position: relative;
+}
+
+.contact-form__select {
+  width: 100%;
+  padding-right: var(--space-12);
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--color-surface);
+}
+
+.contact-form__select-chevron {
+  position: absolute;
+  right: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-ink-muted);
+  pointer-events: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contact-form__error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: 600;
+  /* ios-08/android-08 ~L64/L70 use a darker red than desktop-08 ~L103
+     (overridden to --color-error below). */
+  color: var(--color-error-mobile);
+}
+
+.contact-form__error-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.contact-form__error-icon--desktop {
+  display: none;
+}
+
+.contact-form__submit,
+.contact-form__submit--disabled {
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-size-body-mobile);
+  font-weight: 700;
+  line-height: var(--font-line-height-body);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.contact-form__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  background: var(--color-whatsapp-strong);
+  color: var(--color-surface);
+}
+
+.contact-form__submit:hover {
+  background: var(--color-whatsapp-strong-hover);
+}
+
+/* ios-08/android-08 ~L87: the disabled state is a plain centered-text
+   button with no icon on mobile; desktop-08 ~L132 keeps the icon + pill
+   layout (restored at 1024 below). */
+.contact-form__submit--disabled {
+  display: block;
+  gap: normal;
+  text-align: center;
+  background: var(--color-border);
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
+.contact-form__submit--disabled .contact-form__submit-icon {
+  display: none;
+}
+
+.contact-form__submit-disabled-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.contact-form__submit-helper {
+  /* ios-08/android-08 ~L87: 12px; desktop-08 ~L132: 14px (overridden
+     below). */
+  font-size: var(--font-size-caption-mobile);
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+
+.contact-form__submit-icon {
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke-width);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* "¿Prefieres conocer tu precio primero? Usa el cotizador" (desktop-08
+   ~L134) — only the desktop board draws it; shipped at every breakpoint
+   since it is a straightforward, useful escape hatch out of the form. */
+.contact-form__quote-note {
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-body-sm-mobile);
+  line-height: 1.5;
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+
+.contact-form__quote-note a {
+  font-weight: 700;
+  color: var(--color-ink-muted);
+}
+
+@media (min-width: 768px) {
+  .contact-form {
+    padding: var(--space-8);
+  }
+}
+
+@media (min-width: 1024px) {
+  .contact-form {
+    position: sticky;
+    top: var(--space-6);
+    padding: var(--space-10);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xl);
+    /* desktop-08 ~L90: the form's own top-level gap is 22px, not the 16px
+       base value (--space-4, still correct for the nombre/telefono row
+       grid below). */
+    gap: var(--space-5-5);
+  }
+
+  .contact-form__title {
+    font-size: 2rem;
+    /* Board literal 40px (desktop-08 ~L92); the global h3 line-height
+       (1.3) would give 41.6px. */
+    line-height: 2.5rem;
+  }
+
+  .contact-form__subtitle {
+    font-size: var(--font-size-body-lg-desktop);
+  }
+
+  .contact-form__field {
+    gap: var(--space-2);
+  }
+
+  .contact-form__label {
+    font-size: 0.9375rem;
+    line-height: var(--font-line-height-body);
+  }
+
+  .contact-form__input:not(.contact-form__input--textarea) {
+    /* Board literal (desktop-08 ~L98-124), matches the codebase's existing
+       convention of an untokenized 56px input/button height (see
+       cotizador.css ~L643/902/914) — no --space step lands on 56. */
+    height: 56px;
+  }
+
+  .contact-form__input {
+    font-size: var(--font-size-body-lg-desktop);
+    padding-left: var(--space-4-5);
+    padding-right: var(--space-4-5);
+    border-radius: var(--radius-md);
+  }
+
+  .contact-form__select {
+    padding-right: var(--space-12);
+  }
+
+  .contact-form__input--textarea {
+    /* Board literal (desktop-08 ~L124): 14px 18px. */
+    padding: 14px var(--space-4-5);
+  }
+
+  .contact-form__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: start;
+  }
+
+  .contact-form__error {
+    color: var(--color-error);
+    font-size: 0.9375rem;
+  }
+
+  .contact-form__submit,
+  .contact-form__submit--disabled {
+    min-height: 56px;
+    gap: var(--space-2-5);
+  }
+
+  .contact-form__submit--disabled {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .contact-form__submit--disabled .contact-form__submit-icon {
+    display: block;
+  }
+
+  .contact-form__submit-helper {
+    font-size: var(--font-size-body-sm-desktop);
+  }
+
+  .contact-form__error-icon--desktop {
+    display: block;
+  }
+
+  .contact-form__error-icon--mobile {
+    display: none;
+  }
+
+  .contact-form__quote-note {
+    font-size: 0.9375rem;
+    line-height: var(--font-line-height-body);
+    padding-top: var(--space-4-5);
+  }
+}

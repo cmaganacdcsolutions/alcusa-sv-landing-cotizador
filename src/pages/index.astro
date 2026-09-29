@@ -1,0 +1,36 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import TopBar from '@components/TopBar.astro';
+import Drawer from '@components/Drawer.astro';
+import Hero from '@components/Hero.astro';
+import ComoFunciona from '@components/ComoFunciona.astro';
+import Catalogo from '@components/Catalogo.astro';
+import Galeria from '@components/Galeria.astro';
+import Confianza from '@components/Confianza.astro';
+import CotizadorTeaser from '@components/CotizadorTeaser.astro';
+// ContactoTeaser is rendered by InfoImportante — they share one <section
+// id="info"> at desktop per desktop-01-inicio.dc.html (sf-fidelity3, spec
+// item 4). Do not add a standalone <ContactoTeaser /> tag here.
+import InfoImportante from '@components/InfoImportante.astro';
+import Footer from '@components/Footer.astro';
+---
+
+<BaseLayout
+  title="ALCUSA | Aluminio y vidrio en El Salvador"
+  description="ALCUSA: ventanas, puertas y trabajos de aluminio y vidrio a la medida en El Salvador. Cotiza en línea y confirma por WhatsApp."
+>
+  <TopBar />
+  <Drawer />
+
+  <main>
+    <Hero />
+    <ComoFunciona />
+    <Catalogo />
+    <Galeria />
+    <Confianza />
+    <CotizadorTeaser />
+    <InfoImportante />
+  </main>
+
+  <Footer />
+</BaseLayout>

@@ -1,0 +1,799 @@
+---
+// Contacto — #contacto section (spec §1 item 8, §2.9). Static info block
+// (T9.1) + the interactive ContactForm island (T9.2), hydrated
+// client:visible since it is far down the page.
+import { buildWaLink } from '@integrations/whatsapp/waLink';
+import ContactForm from '@islands/ContactForm';
+
+const waHref = buildWaLink();
+---
+
+<section id="contacto" class="contacto">
+  <div class="contacto__grid">
+    <div class="contacto__info">
+      <!-- Board desktop-08 ~L40 nests the kicker/title/lead intro INSIDE the
+           same left column as the info list/map/social (48px gap between
+           the two sub-groups), so the sticky form's top aligns with the
+           kicker, not with the info list. Mobile stacks everything in one
+           flat column either way, so this move is visually invisible
+           there. -->
+      <div class="contacto__intro">
+        <p class="contacto__kicker">CONTACTO</p>
+        <h2 class="contacto__title">Hablemos de tu proyecto</h2>
+        <p class="contacto__lead">Escríbenos por WhatsApp o visita nuestro taller en Ciudad Merliot.</p>
+      </div>
+
+      <!-- 4 shared-container boxes (desktop-08 ~L48-53): WhatsApp / Teléfonos /
+           Horario / Correo. Taller lives in the map figure below, not here
+           (matches what the boards actually draw — Taller has its own card
+           with the location, not a 5th grid cell). -->
+      <ul aria-label="Datos de contacto" class="contacto__list" data-testid="contacto-info-list">
+        <li class="contacto__item">
+          <span class="contacto__icon contacto__icon--whatsapp" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24"
+              ><path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z"></path><path
+                d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z"
+              ></path></svg
+            >
+          </span>
+          <div class="contacto__item-body">
+            <span class="contacto__item-label">WhatsApp</span>
+            <a href={waHref} class="contacto__item-value contacto__item-value--mobile">7680-2410</a>
+            <a href={waHref} class="contacto__item-value contacto__item-value--desktop">+503 7680-2410</a>
+          </div>
+          <a href={waHref} class="contacto__item-cta">Escribir</a>
+        </li>
+        <li class="contacto__item">
+          <span class="contacto__icon" aria-hidden="true">
+            <!-- Teléfonos glyph differs mobile vs desktop (ios-08/android-08
+                 ~L38 vs desktop-08 ~L50) — two paths, CSS-toggled by
+                 breakpoint like the ContactForm tel-error icon. -->
+            <svg width="20" height="20" viewBox="0 0 24 24" class="contacto__icon-svg contacto__icon-svg--mobile"
+              ><path d="M5 4.5h3l1.5 4-2 1.3a10.5 10.5 0 0 0 6.7 6.7l1.3-2 4 1.5v3a1.5 1.5 0 0 1-1.6 1.5A16 16 0 0 1 3.5 6.1 1.5 1.5 0 0 1 5 4.5z"
+              ></path></svg
+            >
+            <svg width="20" height="20" viewBox="0 0 24 24" class="contacto__icon-svg contacto__icon-svg--desktop"
+              ><path d="M6.5 3.5h3l1.5 4-2 1.2a11 11 0 0 0 6.3 6.3l1.2-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"
+              ></path></svg
+            >
+          </span>
+          <div class="contacto__item-body">
+            <span class="contacto__item-label">Teléfonos</span>
+            <span class="contacto__item-phones">
+              <a href="tel:+50322782460">2278-2460</a>
+              <a href="tel:+50322084101">2208-4101</a>
+              <a href="tel:+50325637742">2563-7742</a>
+            </span>
+          </div>
+        </li>
+        <li class="contacto__item">
+          <span class="contacto__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"
+              ></path></svg
+            >
+          </span>
+          <div class="contacto__item-body">
+            <span class="contacto__item-label">Horario</span>
+            <span class="contacto__badge">[HORARIO — confirmar]</span>
+          </div>
+        </li>
+        <li class="contacto__item contacto__item--last">
+          <span class="contacto__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24"
+              ><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"></rect><path d="M4 7l8 6 8-6"></path></svg
+            >
+          </span>
+          <div class="contacto__item-body">
+            <span class="contacto__item-label">Correo</span>
+            <span class="contacto__badge">[CORREO — confirmar]</span>
+          </div>
+        </li>
+      </ul>
+
+      <!-- Real embedded map (user decision, replaces the board's "MAPA ·
+           MARCADOR DE POSICIÓN" placeholder box, desktop-08 ~L56-71). Same
+           card treatment (border/radius/shadow) as the board's figure. -->
+      <figure class="contacto__map" aria-labelledby="taller-title" data-testid="contacto-map">
+        <div class="contacto__map-frame">
+          <iframe
+            src="https://www.google.com/maps?q=ALCUSA+Calle+El+Pedregal+Ciudad+Merliot&output=embed"
+            title="Mapa de ALCUSA, taller en Ciudad Merliot"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+            data-testid="contacto-map-iframe"></iframe>
+          <!-- Pin badge overlay (desktop-08 ~L67-70): the board's decorative
+               grid/blobs illustration is replaced by the real iframe
+               (user decision), but the pin badge itself stays on top,
+               marking ALCUSA's spot on the embed. -->
+          <div class="contacto__map-pin" aria-hidden="true">
+            <span class="contacto__map-pin-label">ALCUSA · Taller</span>
+            <span class="contacto__map-pin-marker">
+              <svg width="28" height="28" viewBox="0 0 24 24"
+                ><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"></path><circle
+                  cx="12"
+                  cy="10"
+                  r="2.3"
+                ></circle></svg
+              >
+            </span>
+          </div>
+        </div>
+        <figcaption class="contacto__map-caption">
+          <span class="contacto__icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24"
+              ><path
+                d="M4 9.5l1.5-5h13l1.5 5M4 9.5h16M5 9.5v10h14v-10M10 19.5v-5h4v5"
+              ></path></svg
+            >
+          </span>
+          <div class="contacto__item-body">
+            <span id="taller-title" class="contacto__item-label">Taller</span>
+            <span class="contacto__item-value"
+              >Calle El Pedregal, local 29 G, Ciudad Merliot <span class="contacto__badge"
+                >[municipio — confirmar]</span
+              ></span
+            >
+          </div>
+          <a
+            href="https://www.google.com/maps/search/?api=1&query=ALCUSA+Calle+El+Pedregal+Ciudad+Merliot"
+            class="contacto__map-cta"
+          >
+            Ver ubicación en el mapa
+            <!-- ios-08/android-08 ~L39 draw a diagonal arrow at 16px for
+                 the mobile text-link CTA; desktop-08 ~L75 a horizontal
+                 arrow at 20px for the pill button. -->
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              class="contacto__map-cta-arrow contacto__map-cta-arrow--mobile"
+              ><path d="M8 16L16 8M9 8h7v7"></path></svg
+            >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              class="contacto__map-cta-arrow contacto__map-cta-arrow--desktop"
+              ><path d="M5 12h14M13 6l6 6-6 6"></path></svg
+            >
+          </a>
+        </figcaption>
+      </figure>
+
+      <!-- 3 social cards (desktop-08 ~L79-86), below the map. -->
+      <nav aria-labelledby="redes-title" class="contacto__social">
+        <p id="redes-title" class="contacto__social-label">Síguenos</p>
+        <div class="contacto__social-grid" data-testid="contacto-social-grid">
+          <a
+            href="https://instagram.com/alcusasv"
+            aria-label="Instagram @alcusasv"
+            rel="noopener"
+            class="contacto__social-card"
+          >
+            <span class="contacto__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24"
+                ><rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect><circle cx="12" cy="12" r="4"
+                ></circle><circle cx="17.2" cy="6.8" r=".6"></circle></svg
+              >
+            </span>
+            <span class="contacto__social-card-body">
+              <span class="contacto__social-card-name">Instagram</span>
+              <span class="contacto__social-card-handle">@alcusasv</span>
+            </span>
+            <span class="contacto__social-card-arrow" aria-hidden="true"
+              ><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span
+            >
+          </a>
+          <a
+            href="https://tiktok.com/@alcusaes"
+            aria-label="TikTok @alcusaes"
+            rel="noopener"
+            class="contacto__social-card"
+          >
+            <span class="contacto__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24"
+                ><path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path><path d="M14 4c.4 2.6 2.2 4.3 5 4.5"></path></svg
+              >
+            </span>
+            <span class="contacto__social-card-body">
+              <span class="contacto__social-card-name">TikTok</span>
+              <span class="contacto__social-card-handle">@alcusaes</span>
+            </span>
+            <span class="contacto__social-card-arrow" aria-hidden="true"
+              ><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span
+            >
+          </a>
+          <a
+            href="https://youtube.com/@alcusaelsalvador8209"
+            aria-label="YouTube @alcusaelsalvador8209"
+            rel="noopener"
+            class="contacto__social-card"
+          >
+            <span class="contacto__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24"
+                ><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="M10.5 9.5v5l4.3-2.5z"></path></svg
+              >
+            </span>
+            <span class="contacto__social-card-body">
+              <span class="contacto__social-card-name">YouTube</span>
+              <span class="contacto__social-card-handle">@alcusaelsalvador8209</span>
+            </span>
+            <span class="contacto__social-card-arrow" aria-hidden="true"
+              ><svg width="20" height="20" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span
+            >
+          </a>
+        </div>
+      </nav>
+    </div>
+
+    <ContactForm client:visible />
+  </div>
+</section>
+
+<style>
+  /* Board base reset (every board's <style> block ~L15): a{text-decoration:none}.
+     This component has no global reset to lean on, so every link inside it
+     opts in explicitly. */
+  .contacto a {
+    text-decoration: none;
+  }
+
+  .contacto {
+    padding: var(--space-8) var(--space-6) var(--space-10);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .contacto__intro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .contacto__kicker {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--color-primary);
+  }
+
+  .contacto__title {
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-weight: 600;
+    font-size: 1.875rem;
+    line-height: 1.15;
+  }
+
+  .contacto__lead {
+    margin: 0;
+    color: var(--color-ink-muted);
+  }
+
+  .contacto__item-value--desktop {
+    display: none;
+  }
+
+  .contacto__grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+  }
+
+  .contacto__info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-7);
+  }
+
+  .contacto__list {
+    margin: 0;
+    padding: var(--space-1) var(--space-5);
+    list-style: none;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-xs);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .contacto__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3-5);
+    padding: var(--space-3-5) 0;
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+  }
+
+  .contacto__item--last {
+    border-bottom: 0;
+  }
+
+  .contacto__item-cta {
+    display: none;
+  }
+
+  .contacto__icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-tint);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .contacto__icon svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .contacto__icon--whatsapp {
+    background: var(--color-whatsapp-strong);
+    color: var(--color-surface);
+  }
+
+  /* Teléfonos icon: two board-literal paths, one per breakpoint. */
+  .contacto__icon-svg--desktop {
+    display: none;
+  }
+
+  .contacto__item-body {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+    gap: 2px;
+    line-height: 1.4;
+  }
+
+  .contacto__item-label {
+    font-size: var(--font-size-caption-mobile);
+    font-weight: 700;
+    color: var(--color-ink-muted);
+  }
+
+  .contacto__item-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+
+  a.contacto__item-value {
+    font-size: 1.0625rem;
+    font-weight: 700;
+  }
+
+  .contacto__item-phones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px var(--space-3);
+    font-size: var(--font-size-body-mobile);
+    font-weight: 600;
+  }
+
+  .contacto__item-phones a,
+  .contacto__item-value a {
+    color: var(--color-ink);
+  }
+
+  .contacto__badge {
+    display: inline-block;
+    font-size: var(--font-size-body-sm-mobile);
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    border-radius: var(--radius-xs);
+    padding: 0 var(--space-2);
+    width: fit-content;
+  }
+
+  /* Map figure — replaces the board's "MAPA · MARCADOR DE POSICIÓN"
+     placeholder with a real embed (user decision). Same card treatment
+     (border/radius/shadow) as the board's figure, desktop-08 ~L55. */
+  .contacto__map {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+  }
+
+  .contacto__map-frame {
+    position: relative;
+    /* No board draws the map at mobile/tablet widths (only desktop-08 has
+       the figure); 4:3 is a reasonable, usable ratio for a real embed at
+       390/412, not a literal board value. */
+    aspect-ratio: 4 / 3;
+    background: var(--color-surface-tint);
+  }
+
+  .contacto__map-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
+  /* Pin badge overlay (desktop-08 ~L67-70): board positions it at
+     left: 486px of a 920px-wide illustration (52.8%) and top: 58px, so a
+     percentage left keeps it centered over the pin spot regardless of the
+     figure's actual (container-dependent) width. */
+  .contacto__map-pin {
+    position: absolute;
+    left: 52.8%;
+    top: 58px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .contacto__map-pin-label {
+    padding: var(--space-1-5) var(--space-3-5);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-pin-label);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 20px;
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+
+  .contacto__map-pin-marker {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: var(--color-surface);
+    box-shadow: var(--shadow-pin-ring);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .contacto__map-pin-marker svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--icon-stroke-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* No board draws the map figure at mobile (ios-08/android-08 fold Taller
+     into a plain li — allowed deviation, see the .contacto__map comment
+     above). Below 1024 this reuses that li's own CTA treatment instead:
+     icon + column (label/address, then a small text link, not a pill),
+     wrapping the CTA onto its own row aligned under the text
+     (ios-08 ~L39: icon 40px + li gap 14px). */
+  .contacto__map-caption {
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .contacto__map-cta {
+    flex-shrink: 0;
+    flex-basis: 100%;
+    margin-left: calc(40px + var(--space-4));
+    min-height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--space-1);
+    border-radius: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-accent);
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .contacto__map-cta-arrow--desktop {
+    display: none;
+  }
+
+  /* Mobile: a single row — "Síguenos" label + 3 icon-only circles
+     (ios-08/android-08 ~L43-49). Desktop swaps to a label-above + 3 named
+     cards layout (desktop-08 ~L79-86) via the 1024 override below. */
+  .contacto__social {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .contacto__social-label {
+    margin: 0;
+    font-size: var(--font-size-body-sm-mobile);
+    font-weight: 700;
+  }
+
+  .contacto__social-grid {
+    display: flex;
+    flex-direction: row;
+    gap: var(--space-2);
+  }
+
+  .contacto__social-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: none;
+    color: var(--color-primary);
+  }
+
+  .contacto__social-card .contacto__icon {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    color: inherit;
+  }
+
+  /* Mobile: icon-only circle (ios-08/android-08 ~L45-48) — name/handle/
+     arrow hide, restored at 1024 below. */
+  .contacto__social-card-body {
+    display: none;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 0;
+    line-height: 1.35;
+  }
+
+  .contacto__social-card-name {
+    font-size: var(--font-size-body-mobile);
+    font-weight: 700;
+  }
+
+  .contacto__social-card-handle {
+    font-size: var(--font-size-body-sm-mobile);
+    color: var(--color-ink-muted);
+  }
+
+  .contacto__social-card-arrow {
+    display: none;
+    flex-shrink: 0;
+    color: var(--color-ink-muted);
+  }
+
+  .contacto__icon svg,
+  .contacto__map-cta svg,
+  .contacto__social-card-arrow svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--icon-stroke-width);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  @media (min-width: 768px) {
+    .contacto {
+      padding: var(--space-10) var(--space-8) var(--space-12);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .contacto {
+      max-width: var(--container-page);
+      margin: 0 auto;
+      width: 100%;
+      /* Board's 1600px content div has zero horizontal padding — the
+         1600 cap + margin:auto does the centering (desktop-08 ~L38: padding
+         80px 0 120px). */
+      padding: var(--space-20) 0 var(--space-30);
+    }
+
+    .contacto__title {
+      font-size: var(--font-size-display-2xl-desktop);
+      line-height: var(--font-line-height-display-2xl-desktop);
+      letter-spacing: var(--letter-spacing-display-tight);
+    }
+
+    .contacto__kicker {
+      font-size: var(--font-size-body-sm-desktop);
+      line-height: 20px;
+    }
+
+    .contacto__lead {
+      font-size: var(--font-size-body-lg-desktop);
+      line-height: 28px;
+    }
+
+    .contacto__grid {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: var(--space-8);
+    }
+
+    .contacto__info {
+      flex: 0 0 58%;
+      gap: var(--space-12);
+    }
+
+    .contacto__intro {
+      gap: var(--space-4);
+    }
+
+    .contacto__item-value--mobile {
+      display: none;
+    }
+
+    .contacto__item-value--desktop {
+      display: inline;
+    }
+
+    .contacto__list {
+      padding: 0;
+      border: 1px solid var(--color-border);
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: hidden;
+    }
+
+    .contacto__item {
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-6) var(--space-7);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .contacto__item:nth-child(odd) {
+      border-right: 1px solid var(--color-border);
+    }
+
+    .contacto__item:nth-child(3),
+    .contacto__item:nth-child(4) {
+      border-bottom: 0;
+    }
+
+    .contacto__icon-svg--mobile {
+      display: none;
+    }
+
+    .contacto__icon-svg--desktop {
+      display: block;
+    }
+
+    .contacto__item-cta {
+      flex-shrink: 0;
+      min-height: 44px;
+      padding: 0 var(--space-4-5);
+      display: flex;
+      align-items: center;
+      border-radius: var(--radius-full);
+      background: var(--color-whatsapp-tint);
+      color: var(--color-whatsapp-strong);
+      font-size: 0.9375rem;
+      font-weight: 700;
+    }
+
+    .contacto__icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    .contacto__item-label {
+      font-size: var(--font-size-caption-desktop);
+    }
+
+    .contacto__item-value,
+    .contacto__item-phones {
+      font-size: 1.0625rem;
+    }
+
+    a.contacto__item-value {
+      font-size: 1.25rem;
+    }
+
+    .contacto__map-frame {
+      /* desktop-08 ~L56: literal fixed height, not width-relative. */
+      aspect-ratio: auto;
+      height: 280px;
+    }
+
+    .contacto__map-caption {
+      padding: var(--space-5-5) var(--space-7);
+      flex-wrap: nowrap;
+      gap: var(--space-5);
+    }
+
+    .contacto__map-cta {
+      /* desktop-08 ~L75: back to the pill button (mobile above swaps it
+         for a small text link, ios-08 ~L39). */
+      flex-basis: auto;
+      margin-left: 0;
+      min-height: 48px;
+      padding: 0 var(--space-5);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border-input);
+      background: var(--color-surface);
+      color: var(--color-ink);
+      font-size: 0.9375rem;
+      gap: var(--space-2-5);
+      line-height: 1.2;
+    }
+
+    .contacto__map-cta-arrow--mobile {
+      display: none;
+    }
+
+    .contacto__map-cta-arrow--desktop {
+      display: block;
+    }
+
+    .contacto__social {
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      gap: var(--space-3);
+    }
+
+    .contacto__social-label {
+      font-size: var(--font-size-caption-desktop);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+    }
+
+    .contacto__social-grid {
+      /* desktop-08 ~L81: a 1x3 grid row, not a flex row — flex let the
+         long YouTube handle push cards unevenly/onto separate lines. */
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .contacto__social-card {
+      width: auto;
+      height: auto;
+      justify-content: flex-start;
+      gap: var(--space-3-5);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xs);
+      color: var(--color-ink);
+    }
+
+    .contacto__social-card .contacto__icon {
+      width: 44px;
+      height: 44px;
+      background: var(--color-surface-tint);
+      color: var(--color-primary);
+    }
+
+    .contacto__social-card-body,
+    .contacto__social-card-arrow {
+      display: flex;
+    }
+  }
+</style>

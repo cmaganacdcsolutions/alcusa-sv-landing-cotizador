@@ -1,0 +1,247 @@
+---
+// TopBar — static component, no business logic, no hardcoded wa.me (README §4).
+// STICKY (user decision 2026-09-28, overrides the old non-fixed T1.1 AC):
+// stays visible on scroll so the drawer trigger is always reachable.
+//
+// Fidelity source: 02-design/boards/{desktop-01-inicio,Main,android-01-inicio}.dc.html
+// (mobile) and the header block in desktop-02-drawer-open.dc.html (desktop —
+// hamburger becomes a labelled "Menú" pill, plus phone/WhatsApp/Cotizar CTAs
+// appear from --breakpoint-lg up). Contact numbers reused from Contacto.astro.
+import { buildWaLink } from '@integrations/whatsapp/waLink';
+
+const waHref = buildWaLink();
+---
+
+<header class="top-bar">
+  <div class="top-bar__inner">
+    <div class="top-bar__left">
+      <button
+        type="button"
+        id="drawer-open-btn"
+        class="top-bar__menu-btn"
+        aria-haspopup="true"
+        aria-expanded="false"
+        aria-controls="drawer-panel"
+        aria-label="Abrir menú"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"></path></svg>
+        <span class="top-bar__menu-label">Menú</span>
+      </button>
+      <a href="/" class="top-bar__wordmark" aria-label="ALCUSA, inicio">
+        <img src="/images/logo-mark-tienda.webp" alt="" width="30" height="30" class="top-bar__logo" />
+        <span class="top-bar__brand">Alcusa</span>
+      </a>
+    </div>
+    <div class="top-bar__right">
+      <a href="tel:+50322782460" class="top-bar__phone" aria-label="Llamar al 2278-2460">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+          ><path
+            d="M6.5 3.5h3l1.5 4-2 1.2a11 11 0 0 0 6.3 6.3l1.2-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"
+          ></path></svg
+        >2278-2460</a
+      >
+      <a href={waHref} class="top-bar__whatsapp" aria-label="Escribir por WhatsApp al 7680-2410">
+        <svg viewBox="0 0 24 24" aria-hidden="true"
+          ><path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z"></path><path
+            d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z"
+          ></path></svg
+        ><span class="top-bar__whatsapp-label">WhatsApp</span></a
+      >
+      <a href="/cotizador" class="top-bar__cta">Cotizar</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border-soft);
+  }
+
+  .top-bar__inner {
+    height: 64px;
+    margin: 0 auto;
+    padding: 0 var(--space-3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .top-bar__left,
+  .top-bar__right {
+    display: contents;
+  }
+
+  .top-bar__menu-btn {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    border: 0;
+    background: transparent;
+    color: var(--color-ink);
+    cursor: pointer;
+  }
+
+  .top-bar__menu-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+  }
+
+  .top-bar__menu-label {
+    display: none;
+  }
+
+  .top-bar__wordmark {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .top-bar__logo {
+    border-radius: var(--radius-sm);
+    display: block;
+  }
+
+  .top-bar__brand {
+    font-family: var(--font-family-display);
+    font-size: 1.3125rem;
+    font-weight: var(--font-weight-display-semibold);
+  }
+
+  .top-bar__phone,
+  .top-bar__cta {
+    display: none;
+  }
+
+  .top-bar__whatsapp {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--color-whatsapp-strong);
+    color: var(--color-surface);
+    text-decoration: none;
+  }
+
+  .top-bar__whatsapp svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+  }
+
+  .top-bar__whatsapp-label {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .top-bar__inner {
+      height: 88px;
+      max-width: var(--container-page);
+      padding: 0;
+    }
+
+    .top-bar__left,
+    .top-bar__right {
+      display: flex;
+      align-items: center;
+    }
+
+    .top-bar__left {
+      gap: var(--space-6);
+    }
+
+    .top-bar__right {
+      gap: var(--space-3);
+    }
+
+    .top-bar__menu-btn {
+      width: auto;
+      height: 48px;
+      padding: 0 var(--space-4) 0 var(--space-3);
+      gap: var(--space-2);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      font-size: 0.9375rem;
+      font-weight: var(--font-weight-body-bold);
+    }
+
+    .top-bar__menu-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .top-bar__menu-label {
+      display: inline;
+    }
+
+    .top-bar__logo {
+      width: 40px;
+      height: 40px;
+    }
+
+    .top-bar__brand {
+      font-size: 1.75rem;
+    }
+
+    .top-bar__phone {
+      min-height: 48px;
+      padding: 0 var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--color-ink);
+      font-size: 1rem;
+      font-weight: var(--font-weight-body-bold);
+      text-decoration: none;
+    }
+
+    .top-bar__phone svg {
+      stroke: currentColor;
+    }
+
+    .top-bar__whatsapp {
+      width: auto;
+      height: auto;
+      min-height: 48px;
+      padding: 0 var(--space-5) 0 var(--space-4);
+      border-radius: var(--radius-full);
+      gap: var(--space-2);
+      font-size: 0.9375rem;
+      font-weight: var(--font-weight-body-bold);
+    }
+
+    .top-bar__whatsapp-label {
+      display: inline;
+    }
+
+    .top-bar__cta {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      padding: 0 var(--space-8);
+      border-radius: var(--radius-full);
+      background: var(--color-primary);
+      color: var(--color-surface);
+      font-size: 0.9375rem;
+      font-weight: var(--font-weight-body-bold);
+      text-decoration: none;
+      /* Board-drawn value (desktop-02-drawer-open.dc.html:33) — no matching
+         token; the primary-tinted CTA shadow is distinct from --shadow-md. */
+      box-shadow: 0 6px 16px rgba(7, 59, 146, 0.2);
+    }
+  }
+</style>

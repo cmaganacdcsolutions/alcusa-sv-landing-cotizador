@@ -1,0 +1,97 @@
+# Pitch — ALCUSA Landing + Cotizador (Cycle 1: build on `dev`)
+
+Status: design APPROVED (02-design). Architect shaping stack/ADRs in parallel —
+this pitch describes **behavior**, not framework.
+
+## Problem
+
+Today ALCUSA runs two disconnected web properties: `alcusasv.com` (Wix,
+brochure-only, dead contact form, no navigation) and
+`alcusa-tienda.alcusasv.chatgpt.site` (a store with 4 separate quoters + a
+cart, a 321px sticky header that eats 38% of the first mobile screen, and
+prices hidden behind an address field before the customer ever sees a
+number). A shopper who wants a shower door has to find the right quoter among
+five near-duplicate nav links, fill in an address just to see a price, and
+then discovers payment options buried in a footer. Sales are lost to
+confusion, not to price. `02-design/prototype-spec.md` (approved) already
+fixes the IA and the cotizador flow; this cycle builds it.
+
+## Appetite
+
+**Big Batch, 4 weeks** (local build + tests on `dev`, merge to `main` when
+green). Deploy to Hostinger, email migration and DNS are explicitly the next
+cycle — see No-gos.
+
+## Solution (sketch, stack-agnostic)
+
+- One landing, section order per spec §1: Hero → Cómo funciona → Catálogo →
+  Galería → Confianza → Cotizador → Info importante → Contacto → Footer.
+- Non-sticky top bar (hamburger left → left drawer, wordmark center, WhatsApp
+  quick-icon right). Drawer: Inicio/Catálogo/Cómo funciona/Galería/**Cotizar**
+  (primary pill, visually distinct)/Contacto/socials.
+- One unified cotizador (spec §2, steps 0–7) replacing the 4 quoters + cart:
+  product → medidas/acabado → precio en vivo → entrega y zona → resumen
+  multi-item → forma de pago (WhatsApp handoff or Wompi 80/20 or 100%, no
+  AMEX, Tasa 0% credit-card only) → Wompi payment → resultado.
+- Pricing engine implements the verified formulas/tables in
+  `exploratory-report.md` §3.1–3.4 (straight/corner/tempered, hinged,
+  windows, garden) + 23-municipio zone-fee table, transport charged **once
+  per order** (assumption flagged to client, see client-questions.md).
+- WhatsApp deep-link (`wa.me/50376802410?text=…`) for: cotización
+  confirmation, contact webform, quick-contact icon, drawer footer.
+- Contacto section: phone/WhatsApp, address, map link, IG @alcusasv, TikTok
+  @alcusaes, YouTube @alcusaelsalvador8209, webform.
+- Motion: soft/elegant/cinematic-but-calm ("experiencia religiosa") applied
+  last, on top of a functionally complete build, respecting
+  `motion-language.md` (no shake/error-wiggle; reduced-motion honored).
+- Responsive: iOS 390, Android 412, desktop 1920 — one codebase, no
+  platform forks beyond the annotated back-gesture/safe-area differences in
+  the boards.
+
+## Rabbit holes (already decided)
+
+- **Pricing engine correctness** is the highest-risk unknown → it is its own
+  slice (S2/S3) with unit tests against the verified check-values in
+  `exploratory-report.md` §3.1–3.4 *before* it's wired to any UI. Do not
+  hand-derive formulas again inside FE components.
+- **Wompi integration** — build against a **local mock/sandbox** only this
+  cycle. Never call the real Wompi API or generate a real payment link in
+  tests or CI. Real credentials/go-live is a client-owned decision
+  (client-questions.md) and out of scope until answered.
+- **WhatsApp message building** — one shared template function, tested by
+  asserting on the generated `wa.me` URL string. Tests must **never** open or
+  send a real WhatsApp message.
+- **23-zone combobox + "cotización personalizada" edge states** — these are
+  first-class states (not a silent hide), build them alongside the happy
+  path in the same slice, not as an afterthought.
+- **Drawer anchor + non-sticky bar** is a deliberate reversal of both legacy
+  sites' patterns — do not "fix" it back to sticky; it's the point.
+
+## No-gos (this cycle)
+
+- Hostinger deploy, hosting/plan setup.
+- Wix → Hostinger email migration.
+- DNS cutover / domain ownership changes.
+- Real Wompi go-live (real API keys, real charges).
+- Any of the unresolved brand/content facts in `client-questions.md` (years
+  in business, client count, bronce surcharge rule, vector logo, real
+  photos) — ship with `[PLACEHOLDER — confirmar]` copy exactly as the spec
+  marks it; never invent a number.
+- Non-quoted legacy services (oficina doors, fachadas, divisiones,
+  pizarras, espejos/vitrales, sillas y mesas) — pending client answer to
+  open question #10, tracked, not built.
+
+These move to **Cycle 2: Go-live** once client answers land.
+
+## Success signal
+
+- CI green on `dev` (lint, typecheck, unit + e2e tests, build) across
+  iOS 390 / Android 412 / desktop 1920.
+- A shopper can complete the tracer-bullet flow (pick straight shower door →
+  live price → zone → summary → WhatsApp deep link with correct amount)
+  without touching an address field before seeing a price.
+- Pricing engine unit tests match 100% of the verified check-values table in
+  `exploratory-report.md` §3.1–3.4.
+- Zero real WhatsApp messages or real Wompi charges generated by the test
+  suite (asserted, not just assumed).
+- PR `dev → main` opened only when every slice in `backlog.md` is done.

@@ -1,0 +1,33 @@
+---
+import '@styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const siteUrl = import.meta.env.PUBLIC_SITE_URL ?? 'https://alcusasv.com';
+const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
+---
+
+<!doctype html>
+<html lang="es-SV">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta name="theme-color" content="#10213d" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

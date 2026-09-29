@@ -1,0 +1,196 @@
+/* ALCUSA — Design Tokens (CSS Custom Properties)
+   Fuente de la verdad: tokens.json (mismo directorio).
+   Nombres idénticos a brand-system.md / prototipo — no renombrar. */
+
+:root {
+  /* Color */
+  --color-bg: #f6f3ed;
+  --color-surface: #ffffff;
+  --color-surface-tint: #eaf2ff;
+  --color-ink: #10213d;
+  --color-ink-muted: #445068;
+  --color-muted: #65738a;
+  --color-border: #dfe6ef;
+  --color-border-soft: #e7e1d6;
+  --color-border-input: #cfd8e5;
+  --color-primary: #073b92;
+  --color-accent: #0956d8;
+  --color-whatsapp: #18a96b;
+  --color-whatsapp-strong: #087348;
+  --color-whatsapp-strong-hover: #06603c;
+  /* Desktop contacto "Escribir" chip bg (desktop-08 ~L49) — a light
+     WhatsApp tint distinct from --color-surface-tint (which is blue). */
+  --color-whatsapp-tint: #e8f5ee;
+  --color-success: #0d9b66;
+  --color-error: #d63232;
+  --color-warning: #8a5a00;
+  --color-warning-bg: #fff4e0;
+  --color-focus: #0956d8;
+  --color-scrim-ink: rgba(16, 33, 61, 0.55);
+  /* Contacto tel-error copy: mobile boards (ios-08/android-08 ~L64/L70) use
+     a darker red than the desktop board (desktop-08 ~L103, #d63232 =
+     --color-error). Two distinct board literals, two tokens. */
+  --color-error-mobile: #b42424;
+
+  /* Tipografía */
+  --font-family-display: 'Fraunces', Georgia, serif;
+  --font-family-body: 'Manrope', system-ui, sans-serif;
+
+  --font-weight-display-regular: 400;
+  --font-weight-display-medium: 500;
+  --font-weight-display-semibold: 600;
+  --font-weight-body-regular: 400;
+  --font-weight-body-medium: 500;
+  --font-weight-body-bold: 700;
+
+  --font-size-display-xl-mobile: 2.25rem;
+  --font-size-display-xl-desktop: 3.5rem;
+  --font-size-display-lg-mobile: 1.875rem;
+  --font-size-display-lg-desktop: 2.75rem;
+  --font-size-h1-mobile: 1.625rem;
+  --font-size-h1-desktop: 2.25rem;
+  --font-size-h2-mobile: 1.375rem;
+  --font-size-h2-desktop: 1.75rem;
+  --font-size-h3-mobile: 1.125rem;
+  --font-size-h3-desktop: 1.375rem;
+  /* Desktop-only 32px/500 Fraunces tier used by the "¿Tienes dudas...?" card
+     title and the Acabados block title (desktop-01-inicio.dc.html ~L108,
+     L199) — sits between h3-desktop (22px) and display-lg-desktop (44px),
+     no existing token fit. No mobile pairing needed: both boards use
+     h2-mobile (22px) at mobile for these titles. */
+  --font-size-display-sm-desktop: 2rem;
+  /* Hero H1 desktop tier — desktop-01-inicio.dc.html ~L56 (88px/96px,
+     letter-spacing -0.01em). Mobile keeps display-xl-mobile (36px), which
+     already matches Main.dc.html/android-01-inicio ~L31/L33. */
+  --font-size-display-2xl-desktop: 5.5rem;
+  --font-line-height-display-2xl-desktop: 6rem;
+  --letter-spacing-display-tight: -0.01em;
+  /* Landing section h2s: 30px/1.15 mobile, 56px/64px desktop on every
+     section of the boards; the mobile "Cotiza en línea" title is 28px. */
+  --font-line-height-display-xl-desktop: 4rem;
+  --font-size-display-md-mobile: 1.75rem;
+  /* Hero category card label/subtitle desktop tiers — desktop-01-inicio
+     ~L58 (20px label, 15px subtitle; price reuses body-desktop 16px). */
+  --font-size-hero-category-label-desktop: 1.25rem;
+  --font-size-hero-category-subtitle-desktop: 0.9375rem;
+  --font-size-body-lg-mobile: 1.0625rem;
+  --font-size-body-lg-desktop: 1.125rem;
+  --font-size-body-mobile: 1rem;
+  --font-size-body-desktop: 1rem;
+  --font-size-body-sm-mobile: 0.875rem;
+  --font-size-body-sm-desktop: 0.875rem;
+  --font-size-caption-mobile: 0.75rem;
+  --font-size-caption-desktop: 0.8125rem;
+
+  --font-line-height-display: 1.15;
+  --font-line-height-heading: 1.3;
+  --font-line-height-body: 1.6;
+  /* Section kicker desktop line-height — boards use an absolute 14px/20px
+     pair (desktop-01-inicio.dc.html ~L94/~L106), not the 1.3 heading ratio
+     (18.2px). sf-user-0929: added for Catalogo's header kicker fidelity. */
+  --font-line-height-kicker-desktop: 1.25rem;
+
+  /* Espaciado (grid 4/8) */
+  --space-1: 4px;
+  /* Contacto form field label-to-input gap on mobile (ios-08/android-08
+     ~L57-58: gap 6px), vs 8px on desktop (desktop-08 ~L96-97). */
+  --space-1-5: 6px;
+  --space-2: 8px;
+  /* Desktop contacto submit-button / map-cta icon gap (desktop-08 ~L75,
+     L131-132: gap 10px). */
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  /* Contacto info-list item vertical padding / social-card icon gap
+     (ios-08/android-08 ~L36-43, desktop-08 ~L82-84): 14px — breaks the 4/8
+     grid but is the board's literal value, not an invented one. */
+  --space-3-5: 14px;
+  /* Desktop contacto form input horizontal padding (desktop-08 ~L98) and
+     quote-note padding-top (desktop-08 ~L134): 18px. */
+  --space-4-5: 18px;
+  --space-5: 20px;
+  /* Desktop contacto sticky form card internal gap (desktop-08 ~L90: gap
+     22px) and map-caption vertical padding (desktop-08 ~L72: 22px 28px). */
+  --space-5-5: 22px;
+  --space-6: 24px;
+  /* Desktop contacto info list / social cards cell padding (desktop-08
+     ~L49-52, L82-84): 24px 28px. No existing 4/8-grid step fits 28px. */
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  /* Desktop contacto section bottom padding (desktop-08 ~L38: padding 80px
+     0 120px). */
+  --space-30: 120px;
+
+  /* Contenedores y breakpoints */
+  --container-sm: 640px;
+  --container-md: 840px;
+  --container-lg: 1120px;
+  --container-xl: 1320px;
+  /* Desktop landing sections (1920 frame): render-brief.md desktop specifics
+     — 12-col grid, content container 1600 wide. --container-xl (1320) stays
+     for narrower in-page blocks (e.g. proceso title). */
+  --container-page: 1600px;
+
+  --breakpoint-xs: 0px;
+  --breakpoint-sm: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+
+  /* Radios */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* Sombras */
+  --shadow-xs: 0 1px 2px rgba(16, 33, 61, 0.06);
+  --shadow-sm: 0 2px 6px rgba(16, 33, 61, 0.08);
+  --shadow-md: 0 8px 20px rgba(16, 33, 61, 0.10);
+  --shadow-lg: 0 16px 40px rgba(16, 33, 61, 0.12);
+  /* Desktop contacto sticky form card (desktop-08 ~L90): 0 16px 40px /
+     0.10 alpha — close to --shadow-lg but a different alpha, so its own
+     token rather than reusing/rounding. */
+  --shadow-xl: 0 16px 40px rgba(16, 33, 61, 0.1);
+  --shadow-focus: 0 0 0 3px rgba(9, 86, 216, 0.35);
+  /* Contacto map pin badge (desktop-08 ~L68-69): label pill shadow + pin
+     ring glow. Board-literal, distinct from shadow-md/--color-primary
+     ring alpha so their own tokens. */
+  --shadow-pin-label: 0 8px 20px rgba(16, 33, 61, 0.12);
+  --shadow-pin-ring: 0 0 0 10px rgba(7, 59, 146, 0.12);
+
+  /* Iconografía */
+  --icon-stroke-width: 1.5px;
+  --icon-grid: 24px;
+  --icon-min-tap-target: 44px;
+
+  /* Movimiento */
+  --motion-duration-fast: 120ms;
+  --motion-duration-base: 200ms;
+  --motion-duration-slow: 320ms;
+  --motion-duration-slower: 480ms;
+  --motion-duration-sweep: 1100ms;
+
+  --motion-ease-ui: cubic-bezier(.4, 0, .2, 1);
+  --motion-ease-glass: cubic-bezier(.16, 1, .3, 1);
+  --motion-ease-sheen: cubic-bezier(.65, 0, .35, 1);
+
+  --motion-reduced-motion-fallback-duration: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-fast: 150ms;
+    --motion-duration-base: 150ms;
+    --motion-duration-slow: 150ms;
+    --motion-duration-slower: 150ms;
+    --motion-duration-sweep: 0ms;
+  }
+}
