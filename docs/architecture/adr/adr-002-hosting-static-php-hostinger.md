@@ -41,3 +41,52 @@ Composer dependency beyond what's needed for an HMAC check (stdlib only).
   `.htaccess` overrides, this ADR must be revisited (blocker — see HANDOFF).
 - Exit cost: low for the static part (any static host works); the PHP
   endpoints are ~150 lines total and portable to any PHP-capable host.
+
+## Revisión 2026-09-29: VPS KVM 2
+
+Status: accepted (supersedes the shared-hosting assumption in "Context" and
+"Decision"; the rest of this ADR stands).
+
+### Change
+The client's Hostinger product is a **KVM 2 VPS** (2 vCPU, 8 GB RAM,
+100 GB NVMe), not shared web hosting. Hostinger remains the host, so the
+"single host, no new recurring cost" reasoning still holds. What changes is
+the runtime and who operates it.
+
+- **Runtime**: Ubuntu 24.04 LTS without a control panel, **Nginx + PHP-FPM 8.3**
+  (dedicated pool and user). Apache/`.htaccess` is no longer the primary
+  mechanism; the security headers, HTTPS redirect and denial of `api/_lib`,
+  `api/_dev` and dotfiles move to the Nginx vhost. The `.htaccess` files in the
+  repo stay as defense in depth and for any Apache-compatible fallback.
+- **Layout**: atomic releases (`releases/<ts>` + `current` symlink) instead of
+  uploading into `public_html/`. Wompi secrets and runtime data live in a
+  private directory outside the webroot and outside the releases, located via
+  `WOMPI_CONFIG_FILE` / `WOMPI_DATA_DIR` set in the PHP-FPM pool (the default
+  `dirname(__DIR__, 3)` path would resolve inside `releases/` and must not be
+  relied on).
+- **TLS**: certbot (Let's Encrypt) managed by us, replacing hPanel-managed
+  certificates. HSTS is enabled last and gradually.
+- **Deploy**: SSH/rsync from CI is now possible (no FTPS fallback needed);
+  the pipeline is owned by senior-devops.
+- **DNS/domain**: the domain is being moved from Wix to Hostinger before the
+  cutover; Google Workspace mail records are preserved unchanged. See the
+  operations runbook (kept outside this public repo).
+
+### Consequences
+- Good: SSH, real atomic deploys and instant rollback, per-pool isolation,
+  `limit_req` on the payment endpoint, no dependence on shared-host limits.
+- Good: the ADR-002 "blocker if the plan lacks PHP/`.htaccess`" risk is gone.
+- Bad: we now own OS patching, firewall, TLS renewal, logging and backups
+  (unattended-upgrades, ufw, fail2ban, certbot timer, weekly Hostinger
+  snapshots plus a backup of the private data directory). This is
+  operational cost the shared plan hid.
+- Bad: a single VPS is a single point of failure (no HA). Accepted at
+  50-200 sessions/day; recovery is a rebuild from the runbook plus the
+  restored private data.
+- Bad: the runtime holds state (`data/orders`, `data/processed`) that the
+  shared-hosting assumption also had; it now needs an explicit backup, since
+  the webhook's idempotency depends on it.
+- Exit cost: unchanged (static files plus a small PHP surface run on any
+  PHP-capable host).
+- Follow-ups: S11 to finalize the CSP (Astro inline scripts), senior-devops to
+  build the SSH/rsync pipeline excluding `api/_dev`.
