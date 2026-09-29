@@ -31,10 +31,15 @@ function boardUrl(project: string): string {
 }
 
 test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards bigger/smaller, proceso title break)', () => {
-  test('hero H1 computed font-size matches the board for this breakpoint', async ({ page }, testInfo) => {
+  test('hero H1 computed font-size matches the board for this breakpoint', async ({
+    page,
+  }, testInfo) => {
     const board = await page.context().newPage();
     await board.goto(boardUrl(testInfo.project.name));
-    const boardH1 = testInfo.project.name === 'desktop1920' ? board.locator('#hero-title') : board.locator('h1').first();
+    const boardH1 =
+      testInfo.project.name === 'desktop1920'
+        ? board.locator('#hero-title')
+        : board.locator('h1').first();
     const boardFontSize = await boardH1.evaluate((el) => getComputedStyle(el).fontSize);
     await board.close();
 
@@ -46,7 +51,9 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     expect(shippedFontSize).toBe(boardFontSize);
   });
 
-  test('a hero category card bounding box matches the board within ±2px', async ({ page }, testInfo) => {
+  test('a hero category card bounding box matches the board within ±2px', async ({
+    page,
+  }, testInfo) => {
     const board = await page.context().newPage();
     await board.goto(boardUrl(testInfo.project.name));
     // :has(img) excludes the unrelated header "Cotizar" CTA on the desktop
@@ -66,11 +73,18 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     expect(Math.abs(shippedBox!.height - boardBox!.height)).toBeLessThanOrEqual(2);
   });
 
-  test('ComoFunciona title size matches the board for this breakpoint', async ({ page }, testInfo) => {
+  test('ComoFunciona title size matches the board for this breakpoint', async ({
+    page,
+  }, testInfo) => {
     const board = await page.context().newPage();
     await board.goto(boardUrl(testInfo.project.name));
-    const boardTitle = testInfo.project.name === 'desktop1920' ? board.locator('#proceso-title') : board.locator('h2').first();
-    const boardFontSize = await boardTitle.evaluate((el) => getComputedStyle(el).fontSize);
+    const boardTitle =
+      testInfo.project.name === 'desktop1920'
+        ? board.locator('#proceso-title')
+        : board.locator('h2').first();
+    const boardFontSize = await boardTitle.evaluate(
+      (el) => getComputedStyle(el).fontSize,
+    );
     await board.close();
 
     await page.goto('/');
@@ -81,8 +95,13 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     expect(shippedFontSize).toBe(boardFontSize);
   });
 
-  test('ComoFunciona title renders on 2 lines on desktop, breaking after "en"', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop1920', 'AC only requires the 2-line check at desktop');
+  test('ComoFunciona title renders on 2 lines on desktop, breaking after "en"', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'desktop1920',
+      'AC only requires the 2-line check at desktop',
+    );
 
     await page.goto('/');
     const title = page.locator('#proceso-title');
@@ -91,7 +110,10 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     const hasExplicitBreak = (await title.locator('br').count()) > 0;
     const { height, lineHeight } = await title.evaluate((el) => {
       const box = el.getBoundingClientRect();
-      return { height: box.height, lineHeight: parseFloat(getComputedStyle(el).lineHeight) };
+      return {
+        height: box.height,
+        lineHeight: parseFloat(getComputedStyle(el).lineHeight),
+      };
     });
 
     expect(hasExplicitBreak || height >= lineHeight * 1.8).toBe(true);
