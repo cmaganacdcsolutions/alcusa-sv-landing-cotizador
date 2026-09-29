@@ -60,17 +60,14 @@ async function audit(page: Page, testInfo: TestInfo, ctx: { product: string; ste
   // the HANDOFF), not from stdout (which reporters may truncate/interleave).
   await testInfo.attach('qa-resp-violations', { body: JSON.stringify(bugs, null, 2), contentType: 'application/json' });
 
-  // sf-cot-resp — `missing-model-image` (Francesa/Bilbao chips render as
-  // text only) is a REAL, tracked violation, owned by a different slice
-  // (WindowForm.tsx per-model images). It stays a live check above (never
-  // deleted, still attached to the JSON record for the HANDOFF bug table)
-  // but is excluded from this gate so it doesn't block sf-cot-resp's own
-  // fixes — xfail by filtering rather than skipping the whole test.
-  const gatingViolations = violations.filter((v) => v.type !== 'missing-model-image');
+  // sf-cot-models — `missing-model-image` is back in the gate: WindowForm.tsx
+  // now renders a real <img> per Modelo option (Francesa/Bilbao), so this
+  // check (audit.ts #8) should never fire again. Previously excluded here by
+  // sf-cot-resp while that slice was owned elsewhere (see git history).
   expect
     .soft(
-      gatingViolations,
-      `${gatingViolations.length} violation(s) at ${ctx.product} / ${ctx.step} / ${vpLabel} — screenshot: ${shotPath}`,
+      violations,
+      `${violations.length} violation(s) at ${ctx.product} / ${ctx.step} / ${vpLabel} — screenshot: ${shotPath}`,
     )
     .toEqual([]);
 }
