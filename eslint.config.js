@@ -12,6 +12,7 @@ export default tseslint.config(
       'dist/**',
       '.astro/**',
       'node_modules/**',
+      '.vite-cache/**',
       'coverage/**',
       'playwright-report/**',
       'test-results/**',
