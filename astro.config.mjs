@@ -8,6 +8,11 @@ export default defineConfig({
   site: process.env.PUBLIC_SITE_URL ?? 'https://alcusasv.com',
   integrations: [react()],
   vite: {
+    // Per-checkout Vite dep cache. Parallel git worktrees share node_modules
+    // through a junction, so the default node_modules/.vite cache was being
+    // rewritten by one worktree's server under another's (React islands then
+    // crashed in dev with "_jsxDEV is not a function").
+    cacheDir: '.vite-cache',
     resolve: {
       alias: {
         '@components': '/src/components',
