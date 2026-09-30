@@ -17,9 +17,9 @@ import { buildQuoteShareMessage, chooseDelivery, runShare, WA_ENCODED_BUDGET } f
 const read = (p: string): Uint8Array => new Uint8Array(readFileSync(new URL(`../../public/${p}`, import.meta.url)));
 const assets: QuotePdfAssets = {
   fonts: {
-    fraunces600: read('fonts/pdf/fraunces-latin-600-normal.woff'),
-    manrope400: read('fonts/pdf/manrope-latin-400-normal.woff'),
-    manrope700: read('fonts/pdf/manrope-latin-700-normal.woff'),
+    fraunces600: read('fonts/pdf/fraunces-latin-600-normal.ttf'),
+    manrope400: read('fonts/pdf/manrope-latin-400-normal.ttf'),
+    manrope700: read('fonts/pdf/manrope-latin-700-normal.ttf'),
   },
   logoPng: read('brand/pdf-logo.png'),
 };

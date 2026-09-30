@@ -18,7 +18,18 @@ async function fetchBytes(url: string): Promise<Uint8Array | undefined> {
 }
 
 /** Same-origin fonts + logo (ADR-009 §1). Missing fonts => Helvetica fallback inside the renderer. */
-export async function loadBrowserAssets(): Promise<QuotePdfAssets> {
+export function loadBrowserAssets(): Promise<QuotePdfAssets> {
+  // Cached for the session: fonts/logo are fetched once, only at PDF time, never in the page bundle.
+  assetsPromise ??= fetchAssets().then((a) => {
+    if (!a.fonts || !a.logoPng) assetsPromise = undefined; // do not cache a partial/failed load
+    return a;
+  });
+  return assetsPromise;
+}
+
+let assetsPromise: Promise<QuotePdfAssets> | undefined;
+
+async function fetchAssets(): Promise<QuotePdfAssets> {
   const u = QUOTE_COMPANY.fontUrls;
   const [fraunces600, manrope400, manrope700, logoPng] = await Promise.all([
     fetchBytes(u.fraunces600),

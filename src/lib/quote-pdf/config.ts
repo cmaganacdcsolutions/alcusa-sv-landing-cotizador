@@ -51,9 +51,9 @@ export const QUOTE_COMPANY: QuoteCompanyConfig = {
   paymentScheme: { anticipoPct: 80 },
   logoUrl: '/brand/pdf-logo.png',
   fontUrls: {
-    fraunces600: '/fonts/pdf/fraunces-latin-600-normal.woff',
-    manrope400: '/fonts/pdf/manrope-latin-400-normal.woff',
-    manrope700: '/fonts/pdf/manrope-latin-700-normal.woff',
+    fraunces600: '/fonts/pdf/fraunces-latin-600-normal.ttf',
+    manrope400: '/fonts/pdf/manrope-latin-400-normal.ttf',
+    manrope700: '/fonts/pdf/manrope-latin-700-normal.ttf',
   },
   author: 'ALCUSA',
   language: 'es-SV',

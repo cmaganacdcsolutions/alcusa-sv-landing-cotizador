@@ -166,7 +166,7 @@ export function QuoteShareToast({ share }: Pick<QuoteShareProps, 'share'>): Reac
     <div className="qs-toast" role="status" aria-live="polite" data-testid="quote-share-toast">
       <div className="qs-toast__row">
         <DownloadIcon size={28} />
-        <p className="qs-toast__msg">Descargamos tu cotización: adjuntala en el chat de WhatsApp que abrimos</p>
+        <p className="qs-toast__msg">Descargamos tu cotización: adjúntala en el chat de WhatsApp que abrimos</p>
         <button type="button" className="qs-toast__x" aria-label="Cerrar aviso" onClick={share.dismissToast}>
           <svg width="20" height="20" {...svgProps}>
             <path d="M6 6l12 12M18 6L6 18" />

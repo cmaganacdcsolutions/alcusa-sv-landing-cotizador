@@ -1,5 +1,5 @@
 import { PDFDocument, PDFName, PDFString, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib';
-import fontkit from '@pdf-lib/fontkit';
+import { ttfFontkit } from './ttf';
 import { QUOTE_COMPANY, type QuoteCompanyConfig } from './config';
 import { formatDateSv, formatUsd } from './format';
 import { BAND_H, COLORS, CUSTOMER, FOOTER, HEADER, LOGO, M, META, PAGE, TABLE, TAIL } from './layout';
@@ -75,14 +75,14 @@ export async function renderQuotePdf(
   company: QuoteCompanyConfig = QUOTE_COMPANY,
 ): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
-  pdf.registerFontkit(fontkit);
+  pdf.registerFontkit(ttfFontkit as unknown as Parameters<PDFDocument['registerFontkit']>[0]);
   let f: Fonts;
   try {
     if (!assets.fonts) throw new Error('no font bytes');
     f = {
-      display: await pdf.embedFont(assets.fonts.fraunces600, { subset: true }),
-      regular: await pdf.embedFont(assets.fonts.manrope400, { subset: true }),
-      bold: await pdf.embedFont(assets.fonts.manrope700, { subset: true }),
+      display: await pdf.embedFont(assets.fonts.fraunces600, { subset: false }),
+      regular: await pdf.embedFont(assets.fonts.manrope400, { subset: false }),
+      bold: await pdf.embedFont(assets.fonts.manrope700, { subset: false }),
     };
   } catch (err) {
     console.warn('[quote-pdf] brand fonts unavailable, using Helvetica', err);
