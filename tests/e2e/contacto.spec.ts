@@ -6,7 +6,7 @@ import { expect, test } from './fixtures';
 // /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
 // los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
 // contra el drawer/footer nuevos. Ver HANDOFF R3.
-const R3_MOVED = new Set<string>(["desktop quick links: full 6-link nav, labelled \"Proyectos reales\""]);
+const R3_MOVED = new Set<string>([]);
 // eslint-disable-next-line no-empty-pattern
 test.beforeEach(({}, info) => {
   test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
@@ -265,7 +265,7 @@ test.describe('footer — quick links + legal', () => {
     await expect(footerNav.getByRole('link', { name: 'Proyectos reales' })).toBeHidden();
   });
 
-  test('desktop quick links: full 6-link nav, labelled "Proyectos reales"', async ({
+  test('desktop quick links: 5-link nav del pie R3 (Catálogo en /catalogo, sin Galería)', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only assertion');
@@ -277,15 +277,14 @@ test.describe('footer — quick links + legal', () => {
     );
     await expect(footerNav.getByRole('link', { name: 'Catálogo' })).toHaveAttribute(
       'href',
-      '/#modelos',
+      '/catalogo',
     );
     await expect(footerNav.getByRole('link', { name: 'Cómo funciona' })).toHaveAttribute(
       'href',
       '/#proceso',
     );
-    await expect(
-      footerNav.getByRole('link', { name: 'Proyectos reales' }),
-    ).toHaveAttribute('href', '/#galeria');
+    await expect(footerNav.getByRole('link', { name: 'Proyectos reales' })).toHaveCount(0);
+    await expect(footerNav.getByRole('link', { name: 'Galería' })).toHaveCount(0);
     await expect(footerNav.getByRole('link', { name: 'Cotizar' })).toHaveAttribute(
       'href',
       '/cotizador',

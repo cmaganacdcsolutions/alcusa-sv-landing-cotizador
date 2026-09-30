@@ -16,45 +16,18 @@ test.beforeEach(({}, info) => {
 // (not shared with cotizador.spec.ts / whatsapp-links.spec.ts) to avoid
 // merge conflicts with parallel slices touching the same test directory.
 test.describe('landing — hero, cómo funciona, confianza, info importante (S3)', () => {
-  test('hero shows the 3 category teasers with prices sourced from the catalog, no zone fee', async ({ page }) => {
+  test('hero (r01): H1 + botones "Cotizar ahora" y "Ver catálogo", sin tarjetas de categoría', async ({ page }) => {
     await page.goto('/');
     const hero = page.locator('#inicio');
     await expect(hero.getByRole('heading', { level: 1 })).toHaveText('¿Qué quieres cambiar en tu casa hoy?');
-
-    await expect(hero.getByRole('link', { name: /Puertas de baño.*desde \$222/i })).toBeVisible();
-    await expect(hero.getByRole('link', { name: /Ventanas.*desde \$108/i })).toBeVisible();
-    await expect(hero.getByRole('link', { name: /Puertas de jardín.*desde \$410/i })).toBeVisible();
-  });
-
-  test('a category card tap points at /cotizador with the product id as a query param', async ({ page }) => {
-    // S5 page split: the cotizador lives on its own /cotizador route; the
-    // island reads `?producto=<id>` from location.search (Hero's
-    // responsibility is just the href).
-    await page.goto('/');
-    const href = await page.getByRole('link', { name: /Puertas de baño.*desde \$222/i }).getAttribute('href');
-    expect(href).toBe('/cotizador?producto=recta');
+    await expect(hero.getByRole('link', { name: /Cotizar ahora/ })).toHaveAttribute('href', '/cotizador');
+    await expect(hero.getByRole('link', { name: 'Ver catálogo' })).toHaveAttribute('href', '/catalogo');
+    await expect(hero.locator('.hero__category-card')).toHaveCount(0);
   });
 
   test('landing on /#cotizador scrolls the cotizador teaser into view on load', async ({ page }) => {
     await page.goto('/#cotizador');
     await expect(page.locator('#cotizador')).toBeInViewport();
-  });
-
-  test('hero "Cotizar ahora" points to /cotizador (ADR-005), WhatsApp CTA uses the shared integration', async ({
-    page,
-  }) => {
-    // The hero CTA row is desktop-only per the boards (Main.dc.html /
-    // android-01-inicio have no hero CTA buttons — WhatsApp lives in
-    // TopBar/Drawer there instead); only desktop-01-inicio shows both
-    // above the 1080 fold.
-    test.skip((page.viewportSize()?.width ?? 0) < 1024, 'hero CTA row only renders at desktop widths');
-
-    await page.goto('/');
-    const cotizarHref = await page.getByRole('link', { name: 'Cotizar ahora' }).first().getAttribute('href');
-    expect(cotizarHref).toBe('/cotizador');
-
-    const waHref = await page.getByRole('link', { name: 'Cotizar por WhatsApp' }).first().getAttribute('href');
-    expect(waHref).toMatch(/^https:\/\/wa\.me\/50376802410$/);
   });
 
   test('cómo funciona renders all 4 steps, visible, no display:none, no horizontal scroll', async ({ page }) => {

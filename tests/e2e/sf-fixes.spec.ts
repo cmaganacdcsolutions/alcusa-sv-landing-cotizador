@@ -5,7 +5,7 @@ import { expect, test } from './fixtures';
 // /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
 // los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
 // contra el drawer/footer nuevos. Ver HANDOFF R3.
-const R3_MOVED = new Set<string>(["a \"Cotizar este modelo\" catálogo CTA opens the cotizador hydrated with that product", "drawer nav links close the drawer and scroll to the section on /", "drawer nav links navigate from /cotizador back to / and land on the section", "footer nav links scroll to each section on / and navigate from /contacto", "galería caption links out to Instagram", "mobile snap-scroll strip has prev/next controls that scroll the strip", "prev/next buttons and the n/6 counter move through the photos", "swiping the lightbox image moves to the next photo"]);
+const R3_MOVED = new Set<string>(["a \"Cotizar este modelo\" catálogo CTA opens the cotizador hydrated with that product", "galería caption links out to Instagram", "mobile snap-scroll strip has prev/next controls that scroll the strip", "prev/next buttons and the n/6 counter move through the photos", "swiping the lightbox image moves to the next photo"]);
 // eslint-disable-next-line no-empty-pattern
 test.beforeEach(({}, info) => {
   test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
@@ -50,9 +50,8 @@ test.describe('sf-fixes — logo + nav links', () => {
     await page.goto('/');
     const drawer = page.locator('#drawer-panel');
     const targets: Array<[string, string]> = [
-      ['Catálogo', '#modelos'],
+      ['Promociones', '#promociones'],
       ['Cómo funciona', '#proceso'],
-      ['Proyectos reales', '#galeria'],
     ];
     for (const [label, id] of targets) {
       await page.getByRole('button', { name: 'Abrir menú' }).click();
@@ -62,6 +61,18 @@ test.describe('sf-fixes — logo + nav links', () => {
     }
   });
 
+  test('drawer "Catálogo" navigates to /catalogo (R3: el catálogo salió de la landing)', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page
+      .locator('#drawer-panel')
+      .getByRole('link', { name: 'Catálogo', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/catalogo\/?$/);
+  });
+
   test('drawer nav links navigate from /cotizador back to / and land on the section', async ({
     page,
   }) => {
@@ -69,10 +80,10 @@ test.describe('sf-fixes — logo + nav links', () => {
     await page.getByRole('button', { name: 'Abrir menú' }).click();
     await page
       .locator('#drawer-panel')
-      .getByRole('link', { name: 'Proyectos reales', exact: true })
+      .getByRole('link', { name: 'Promociones', exact: true })
       .click();
-    await expect(page).toHaveURL(/\/#galeria$/);
-    await expect(page.locator('#galeria')).toBeInViewport();
+    await expect(page).toHaveURL(/\/#promociones$/);
+    await expect(page.locator('#promociones')).toBeInViewport();
   });
 
   test('footer nav links scroll to each section on / and navigate from /contacto', async ({
@@ -84,9 +95,8 @@ test.describe('sf-fixes — logo + nav links', () => {
     await page.goto('/');
     const footer = page.locator('.site-footer__nav');
     for (const [label, id] of [
-      ['Catálogo', '#modelos'],
       ['Cómo funciona', '#proceso'],
-      ['Proyectos reales', '#galeria'],
+      ['Inicio', '#inicio'],
     ] as const) {
       await footer.getByRole('link', { name: label, exact: true }).click();
       await expect(page.locator(id)).toBeInViewport();
@@ -97,8 +107,7 @@ test.describe('sf-fixes — logo + nav links', () => {
       .locator('.site-footer__nav')
       .getByRole('link', { name: 'Catálogo', exact: true })
       .click();
-    await expect(page).toHaveURL(/\/#modelos$/);
-    await expect(page.locator('#modelos')).toBeInViewport();
+    await expect(page).toHaveURL(/\/catalogo\/?$/);
   });
 
   test('footer nav links have no underline and a visible focus style', async ({
@@ -112,66 +121,25 @@ test.describe('sf-fixes — logo + nav links', () => {
   });
 });
 
-test.describe('sf-fixes — hero category cards open the cotizador', () => {
-  test('"Ventanas" card lands on /cotizador with Ventana preselected', async ({
-    page,
-  }) => {
-    await page.goto('/');
-    await page.getByRole('link', { name: /Ventanas.*desde \$108/i }).click();
-    await expect(page).toHaveURL(/\/cotizador\?producto=ventana$/);
-    await expect(page.getByTestId('cotizador-root')).toHaveAttribute(
-      'data-hydrated',
-      'true',
-    );
-    await expect(
-      page.getByRole('button', { name: /Ventana Francesa o Bilbao/, pressed: true }),
-    ).toBeVisible();
-  });
+test.describe('sf-fixes — promo CTAs open the cotizador (R3: reemplazan las tarjetas de categoría del hero)', () => {
+  for (const [slug, producto] of [
+    ['recta', 'recta'],
+    ['ventana-francesa', 'ventana-francesa'],
+    ['jardin-3-hojas', 'jardin-3-hojas'],
+  ] as const) {
+    test(`promo "${slug}" CTA lands on /cotizador hydrated with the product`, async ({ page }) => {
+      await page.goto('/');
+      await page.locator(`[data-promo-cta][href$="producto=${producto}"]`).click();
+      await expect(page).toHaveURL((url) => url.pathname.replace(/\/$/, '') === '/cotizador' && url.searchParams.get('producto') === producto);
+      await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    });
+  }
 
-  test('"Puertas de jardín" card lands on /cotizador with Puerta de jardín preselected', async ({
-    page,
-  }) => {
+  test('promo "recta" preselects Puerta de baño recta', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: /Puertas de jardín.*desde \$410/i }).click();
-    await expect(page).toHaveURL(/\/cotizador\?producto=jardin$/);
-    await expect(page.getByTestId('cotizador-root')).toHaveAttribute(
-      'data-hydrated',
-      'true',
-    );
-    await expect(
-      page.getByRole('button', { name: /Puerta de jardín/, pressed: true }),
-    ).toBeVisible();
-  });
-
-  test('"Puertas de baño" card preselects the recta product (product-chooser decision)', async ({
-    page,
-  }) => {
-    await page.goto('/');
-    await page.getByRole('link', { name: /Puertas de baño.*desde \$222/i }).click();
-    await expect(page).toHaveURL(/\/cotizador\?producto=recta$/);
-    await expect(page.getByTestId('cotizador-root')).toHaveAttribute(
-      'data-hydrated',
-      'true',
-    );
-    await expect(
-      page.getByRole('button', { name: /Puerta de baño recta/, pressed: true }),
-    ).toBeVisible();
-  });
-
-  test('a "Cotizar este modelo" catálogo CTA opens the cotizador hydrated with that product', async ({
-    page,
-  }) => {
-    await page.goto('/');
-    const card = page.locator('#modelos li', { hasText: 'Puerta con bisagra' });
-    await card.getByRole('link', { name: 'Cotizar este modelo' }).click();
-    await expect(page).toHaveURL(/\/cotizador\?producto=bisagra$/);
-    await expect(page.getByTestId('cotizador-root')).toHaveAttribute(
-      'data-hydrated',
-      'true',
-    );
-    await expect(
-      page.getByRole('button', { name: /Puerta con bisagra/, pressed: true }),
-    ).toBeVisible();
+    await page.locator('[data-promo-cta][href$="producto=recta"]').click();
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    await expect(page.getByRole('button', { name: /Puerta de baño recta/, pressed: true })).toBeVisible();
   });
 });
 

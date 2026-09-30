@@ -24,6 +24,17 @@ const BOARD_BY_PROJECT: Record<string, string> = {
   desktop1920: 'desktop-01-inicio.dc.html',
 };
 
+// Hero: boards r01 (Revision 2026-09-29), que reemplazan al hero de Main/android-01/desktop-01.
+const R01_BY_PROJECT: Record<string, string> = {
+  ios390: 'ios-r01-landing-promos.dc.html',
+  android412: 'android-r01-landing-promos.dc.html',
+  desktop1920: 'desktop-r01-landing-promos.dc.html',
+};
+
+function heroBoardUrl(project: string): string {
+  return pathToFileURL(path.join(BOARDS_DIR!, 'revision-2026-09-29', R01_BY_PROJECT[project])).toString();
+}
+
 function boardUrl(project: string): string {
   const file = BOARD_BY_PROJECT[project];
   if (!file) throw new Error(`No board mapped for project "${project}"`);
@@ -35,7 +46,7 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     page,
   }, testInfo) => {
     const board = await page.context().newPage();
-    await board.goto(boardUrl(testInfo.project.name));
+    await board.goto(heroBoardUrl(testInfo.project.name));
     const boardH1 =
       testInfo.project.name === 'desktop1920'
         ? board.locator('#hero-title')
@@ -51,24 +62,19 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     expect(shippedFontSize).toBe(boardFontSize);
   });
 
-  test('a hero category card bounding box matches the board within ±2px', async ({
-    page,
-  }, testInfo) => {
+  test('hero "Cotizar ahora" button box matches the r01 board within ±2px', async ({ page }, testInfo) => {
     const board = await page.context().newPage();
-    await board.goto(boardUrl(testInfo.project.name));
-    // :has(img) excludes the unrelated header "Cotizar" CTA on the desktop
-    // board, which also links to a producto-medidas board but has no image.
-    const boardCard = board.locator('a[href*="producto-medidas"]:has(img)').first();
-    const boardBox = await boardCard.boundingBox();
+    await board.goto(heroBoardUrl(testInfo.project.name));
+    const boardBtn = board.locator('#inicio a.btn.bp, section a.btn.bp').first();
+    const boardBox = await boardBtn.boundingBox();
     await board.close();
     expect(boardBox).not.toBeNull();
 
     await page.goto('/');
-    const card = page.locator('.hero__category-card').first();
-    await card.scrollIntoViewIfNeeded();
-    const shippedBox = await card.boundingBox();
+    const btn = page.locator('[data-hero-cta="cotizar"]');
+    await btn.scrollIntoViewIfNeeded();
+    const shippedBox = await btn.boundingBox();
     expect(shippedBox).not.toBeNull();
-
     expect(Math.abs(shippedBox!.width - boardBox!.width)).toBeLessThanOrEqual(2);
     expect(Math.abs(shippedBox!.height - boardBox!.height)).toBeLessThanOrEqual(2);
   });

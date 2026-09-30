@@ -14,7 +14,8 @@
     "test:e2e": "playwright test",
     "test:responsive": "playwright test --config=playwright.responsive.config.ts",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "pretest:e2e": "node scripts/build-e2e-fixtures.mjs"
   },
   "dependencies": {
     "@astrojs/react": "7.0.0",

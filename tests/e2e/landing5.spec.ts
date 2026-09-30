@@ -5,7 +5,7 @@ import { expect, test } from './fixtures';
 // /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
 // los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
 // contra el drawer/footer nuevos. Ver HANDOFF R3.
-const R3_MOVED = new Set<string>(["\"Vidrios para puertas de baño\" swatches are visible on mobile", "(e) every catálogo card image renders the same box aspect ratio on desktop", "(f) Acabados finish swatches use real photos; \"Puerta de jardín\" shows the real garden-door photo", "(g) \"Proyectos reales\" header: alignment + kicker typography matches the desktop board", "(h) CotizadorTeaser: WhatsApp CTA + gradient sheen appear on desktop only", "catálogo card CTAs have no text underline in any state", "desktop footer: full 6-link nav + handles + phones + Wompi/AMEX note", "desktop product-list subtitle is 15px", "galería subtitle includes the swipe hint on mobile only", "kicker/lead/cta computed font sizes match the boards"]);
+const R3_MOVED = new Set<string>(["\"Vidrios para puertas de baño\" swatches are visible on mobile", "(e) every catálogo card image renders the same box aspect ratio on desktop", "(f) Acabados finish swatches use real photos; \"Puerta de jardín\" shows the real garden-door photo", "(g) \"Proyectos reales\" header: alignment + kicker typography matches the desktop board", "(h) CotizadorTeaser: WhatsApp CTA + gradient sheen appear on desktop only", "catálogo card CTAs have no text underline in any state", "desktop product-list subtitle is 15px", "galería subtitle includes the swipe hint on mobile only", "kicker/lead/cta computed font sizes match the boards"]);
 // eslint-disable-next-line no-empty-pattern
 test.beforeEach(({}, info) => {
   test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
@@ -132,7 +132,7 @@ test.describe('landing5 — footer content parity with the boards', () => {
     await expect(footer.locator('.site-footer__col-title').first()).toBeHidden();
   });
 
-  test('desktop footer: full 6-link nav + handles + phones + Wompi/AMEX note', async ({
+  test('desktop footer: 5-link nav (R3) + handles + phones + Wompi/AMEX note', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only assertion');
@@ -145,7 +145,6 @@ test.describe('landing5 — footer content parity with the boards', () => {
       'Inicio',
       'Catálogo',
       'Cómo funciona',
-      'Proyectos reales',
       'Cotizar',
       'Contacto',
     ]);

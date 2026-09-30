@@ -13,3 +13,4 @@ blob-report/
 .DS_Store
 Thumbs.db
 *.log
+dist-e2e/

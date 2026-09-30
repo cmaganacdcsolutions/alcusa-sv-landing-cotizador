@@ -3,7 +3,10 @@ import {
   PROMOTIONS,
   PromotionsDataError,
   activePromotions,
+  MAX_PROMOS,
   discountPct,
+  formatUsd,
+  getActivePromotions,
   isActive,
   parsePromotions,
   savings,
@@ -106,5 +109,18 @@ describe('vigencia', () => {
   it('etiqueta "Vigente hasta el D de mes"', () => {
     expect(vigenciaLabel('2026-10-31')).toBe('Vigente hasta el 31 de octubre');
     expect(vigenciaLabel('2026-11-15')).toBe('Vigente hasta el 15 de noviembre');
+  });
+});
+
+describe('formato y tope', () => {
+  it('formatUsd usa separador de miles como el board r02 ($1,260)', () => {
+    expect(formatUsd(260)).toBe('$260');
+    expect(formatUsd(1260)).toBe('$1,260');
+    expect(formatUsd(1071)).toBe('$1,071');
+    expect(formatUsd(12.5)).toBe('$12.50');
+  });
+  it('la landing muestra como maximo 3 promos vigentes (decision 2026-09-30)', () => {
+    expect(MAX_PROMOS).toBe(3);
+    expect(getActivePromotions(new Date('2026-09-30T18:00:00Z')).length).toBeLessThanOrEqual(3);
   });
 });

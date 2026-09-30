@@ -223,3 +223,12 @@
   --color-on-primary-kicker: #cfe0ff;
   --color-on-primary-soft: #e3ecfb;
 }
+
+/* R3 hero r01 (ios/android/desktop-r01-landing-promos). Valores literales de los boards. */
+:root {
+  --font-size-hero-h1-mobile: 34px;
+  --font-size-hero-h1-desktop-md: 72px; /* <1600 (.hh media query del board) */
+  --line-height-hero-h1-desktop-md: 80px;
+  --shadow-btn-primary: 0 8px 20px rgba(7, 59, 146, 0.22);
+  --gradient-hero-photo: linear-gradient(180deg, transparent 60%, rgba(16, 33, 61, 0.45) 100%);
+}

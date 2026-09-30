@@ -435,6 +435,7 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
     }
     .promo-card__cta {
       min-height: 56px;
+      white-space: nowrap; /* desktop .btn del board: la etiqueta no se parte */
       font-size: 17px;
     }
   }
@@ -462,6 +463,10 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
       grid-row: 1 / -1;
       width: 376px;
       height: 376px;
+    }
+    .promos[data-count='1'] .promo-card__badge {
+      top: var(--space-6);
+      left: var(--space-6);
     }
     .promos[data-count='1'] .promo-card__body {
       display: contents;

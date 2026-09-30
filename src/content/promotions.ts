@@ -2,6 +2,7 @@
 // contrato publico de ADR-011 §4 (`/api/promotions.json` que publicara el panel
 // admin). Cuando ALCUSA mande el contenido real solo se reemplaza el JSON.
 // Validacion en build: datos invalidos lanzan PromotionsDataError con mensaje claro.
+import { readFileSync } from 'node:fs';
 import raw from './promotions.json';
 import { findBySlug } from './catalog';
 import { cotizadorHref } from './deepLink';
@@ -150,8 +151,9 @@ export function vigenciaLabel(hastaYmd: string): string {
   return `Vigente hasta el ${d} de ${MONTHS[m - 1]}`;
 }
 
+/** $1,260 (separador de miles como en el board r02). */
 export function formatUsd(n: number): string {
-  return `$${Number.isInteger(n) ? n : n.toFixed(2)}`;
+  return `$${Number.isInteger(n) ? n.toLocaleString('en-US') : n.toFixed(2)}`;
 }
 
 /** Enlace del CTA "Cotizar esta promo" al cotizador con el producto preseleccionado. */
@@ -159,10 +161,22 @@ export function promoHref(p: Pick<Promotion, 'productSlug'>): string {
   return cotizadorHref(p.productSlug);
 }
 
-/** Todas las promos del archivo (validadas; lanza en build si el JSON es invalido). */
-export const PROMOTIONS: readonly Promotion[] = parsePromotions(raw);
+/**
+ * Ganchos SOLO de build para e2e (scripts/build-e2e-fixtures.mjs): permiten construir la
+ * landing con un JSON de fixture y una fecha congelada, para que las pruebas no dependan
+ * de la vigencia del seed. En produccion no se definen y no tienen efecto.
+ */
+const FIXTURE_FILE = process.env.ALCUSA_PROMOS_FILE;
+const FROZEN_TODAY = process.env.ALCUSA_PROMOS_TODAY;
+const source: unknown = FIXTURE_FILE ? JSON.parse(readFileSync(FIXTURE_FILE, 'utf8')) : raw;
 
-/** Promos vigentes hoy (SV). Vacio = la seccion no se renderiza. */
+/** Todas las promos del archivo (validadas; lanza en build si el JSON es invalido). */
+export const PROMOTIONS: readonly Promotion[] = parsePromotions(source);
+
+/** Decision de Carlos (2026-09-30): la landing muestra como maximo 3 promos vigentes. */
+export const MAX_PROMOS = 3;
+
+/** Promos vigentes hoy (SV), maximo MAX_PROMOS. Vacio = la seccion no se renderiza. */
 export function getActivePromotions(now: Date = new Date()): Promotion[] {
-  return activePromotions(PROMOTIONS, todayInSV(now));
+  return activePromotions(PROMOTIONS, FROZEN_TODAY ?? todayInSV(now)).slice(0, MAX_PROMOS);
 }

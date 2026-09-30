@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-09-30T00:00:00-06:00",
+  "promotions": [
+    {
+      "id": "fx-uno",
+      "placeholder": true,
+      "title": "Puerta de baño recta",
+      "description": "Vidrio claro y perfil a tu elección, fabricada a tu medida.",
+      "image": "/images/catalog-recta.jpg",
+      "image_alt": "Puerta de baño recta corrediza con vidrio claro",
+      "price_before": 260,
+      "price_promo": 222,
+      "product_slug": "recta",
+      "starts_on": "2026-09-01",
+      "ends_on": "2026-10-31",
+      "rules": []
+    }
+  ]
+}

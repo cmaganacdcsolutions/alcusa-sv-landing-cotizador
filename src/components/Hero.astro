@@ -1,143 +1,87 @@
 ---
-// Hero — kicker + H1 + hero image + 3 category teasers (spec §1 item 1).
-// Prices are read from CATALOG_PRODUCTS (@content/catalog), the single
-// source of truth also used by the cotizador island — never duplicated
-// here as raw numbers (T3.1 AC).
-// "Cotizar ahora" / WhatsApp CTAs + trust checklist are desktop-only
-// (>=1024px) per the boards: Main.dc.html / android-01-inicio have no
-// hero CTA row (WhatsApp lives in TopBar/Drawer instead), desktop-01-inicio
-// shows both above the 1080 fold.
-import { buildWaLink } from '@integrations/whatsapp/waLink';
-import { getCategoryTeasers } from '@content/categoryTeasers';
-
-const waHref = buildWaLink();
-
-// Display grouping + copy per the boards (Main.dc.html / desktop-01-inicio).
-// Catalog names are the finer-grained per-model names shown later in
-// Catálogo (S4); these three are the broader category labels for the hero.
-// Shared with CotizadorTeaser's desktop product-list column — see
-// @content/categoryTeasers.
-const teasers = getCategoryTeasers();
+// Hero r01 (Revision 2026-09-29): kicker + H1 + lede + botones "Cotizar ahora" / "Ver catalogo"
+// + figura con PhotoFrame (4:3 movil, 3:2 desktop, degradado solo en el tercio inferior).
+// Fidelidad: 02-design/boards/revision-2026-09-29/{ios,android,desktop}-r01-landing-promos
+// y 02-design/specs/image-frame-rule.md. Las tarjetas de categoria, la fila de confianza,
+// el CTA de WhatsApp y la insignia de Google ya no estan en el board: salen.
+import PhotoFrame from './PhotoFrame';
 ---
 
 <section id="inicio" class="hero" aria-labelledby="hero-title">
+  <figure class="hero__media">
+    <PhotoFrame
+      src="/images/hero-ventana-bilbao-800.webp"
+      srcSet="/images/hero-ventana-bilbao-480.webp 480w, /images/hero-ventana-bilbao-800.webp 800w, /images/hero-ventana-bilbao-1200.webp 1200w, /images/hero-ventana-bilbao-1920.webp 1920w"
+      sizes="(min-width: 1024px) 944px, 100vw"
+      alt="Ventana Bilbao de aluminio y vidrio polarizado fabricada por ALCUSA"
+      ratio="4/3"
+      loading="eager"
+      fetchPriority="high"
+      className="hero__photo"
+    >
+      <div class="hero__grad"></div>
+    </PhotoFrame>
+    <figcaption class="hero__caption">Ventana Bilbao &middot; a tu medida</figcaption>
+  </figure>
+
   <div class="hero__intro">
-    <p class="hero__kicker">ALCUSA &middot; Fabricado a tu medida</p>
+    <p class="hero__kicker"><span class="hero__kicker-rule" aria-hidden="true"></span>ALCUSA &middot; FABRICADO A TU MEDIDA</p>
     <h1 id="hero-title" class="hero__title">&iquest;Qu&eacute; quieres cambiar en tu casa hoy?</h1>
     <p class="hero__lede">
       Un ba&ntilde;o que se vea mejor, ventanas que renueven tus espacios o una puerta que te conecte con tu
       jard&iacute;n. En ALCUSA lo hacemos a tu medida.
     </p>
-
     <div class="hero__cta-row">
-      <a href="/cotizador" class="hero__cta hero__cta--primary">
+      <a href="/cotizador" class="hero__btn hero__btn--primary" data-hero-cta="cotizar">
         Cotizar ahora
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
       </a>
-      <a href={waHref} class="hero__cta hero__cta--whatsapp">
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z" />
-          <path d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z" />
-        </svg>
-        Cotizar por WhatsApp
-      </a>
+      <a href="/catalogo" class="hero__btn hero__btn--secondary" data-hero-cta="catalogo">Ver cat&aacute;logo</a>
     </div>
-
-    <ul class="hero__trust-list">
-      <li>Precio antes de dar tu direcci&oacute;n</li>
-      <li>Entrega en 8&ndash;10 d&iacute;as h&aacute;biles</li>
-      <li>6 meses de garant&iacute;a</li>
-    </ul>
-  </div>
-
-  <figure class="hero__media">
-    <img
-      src="/images/hero-ventana-bilbao-800.webp"
-      srcset="/images/hero-ventana-bilbao-480.webp 480w,
-              /images/hero-ventana-bilbao-800.webp 800w,
-              /images/hero-ventana-bilbao-1200.webp 1200w,
-              /images/hero-ventana-bilbao-1920.webp 1920w"
-      sizes="(min-width: 1024px) 720px, 100vw"
-      alt="Ventana Bilbao de aluminio y vidrio fabricada por ALCUSA"
-      width="800"
-      height="1067"
-      fetchpriority="high"
-      decoding="async"
-      class="hero__media-img"
-    />
-    <figcaption class="hero__media-caption">Ventana Bilbao &middot; a tu medida</figcaption>
-    <div class="hero__media-rating" aria-hidden="true">
-      <span class="hero__media-rating-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 4l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.6-4.8 2.6 1-5.4-4-3.7 5.4-.7z" />
-        </svg>
-      </span>
-      <span class="hero__media-rating-text">
-        <span class="hero__media-rating-score">4.2 en Google</span>
-        <span class="hero__media-rating-count">130 rese&ntilde;as de clientes</span>
-      </span>
-    </div>
-  </figure>
-
-  <div class="hero__categories">
-    {
-      teasers.map((teaser) => (
-        <a
-          href={`/cotizador?producto=${teaser.productId}`}
-          class="hero__category-card"
-          aria-label={`Cotizar ${teaser.label}, desde $${teaser.fromPrice}`}
-        >
-          <img
-            src={`/images/${teaser.imageBase}-128.webp`}
-            srcset={`/images/${teaser.imageBase}-128.webp 128w, /images/${teaser.imageBase}-256.webp 256w`}
-            sizes="(min-width: 1024px) 104px, 64px"
-            alt=""
-            width="128"
-            height="128"
-            loading="lazy"
-            decoding="async"
-            class="hero__category-img"
-          />
-          <span class="hero__category-copy">
-            <span class="hero__category-label">{teaser.label}</span>
-            <span class="hero__category-subtitle">{teaser.subtitle}</span>
-            <span class="hero__category-price">Desde ${teaser.fromPrice}</span>
-          </span>
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" class="hero__category-arrow">
-            <path d="M5 12h14M13 6l6 6-6 6" />
-          </svg>
-        </a>
-      ))
-    }
   </div>
 </section>
 
 <style>
+  /* Movil (ios/android-r01): .sec padding 0 24, gap 16, padding-top 16. */
   .hero {
-    padding: var(--space-5) var(--space-6) 0;
-    display: grid;
-    gap: var(--space-4);
-  }
-
-  .hero__intro {
+    padding: var(--space-4) var(--space-6) 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-4);
   }
 
+  .hero__intro {
+    display: contents;
+  }
+
   .hero__kicker {
+    order: 1;
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
     font-size: var(--font-size-caption-mobile);
+    line-height: 1.6;
     font-weight: var(--font-weight-body-bold);
     letter-spacing: 0.14em;
-    text-transform: uppercase;
     color: var(--color-primary);
   }
 
+  .hero__kicker-rule {
+    display: none;
+    width: 32px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-accent);
+  }
+
   .hero__title {
-    font-size: var(--font-size-display-xl-mobile);
+    order: 2;
+    margin: 0;
+    font-size: var(--font-size-hero-h1-mobile);
     font-weight: var(--font-weight-display-semibold);
     line-height: var(--font-line-height-display);
+    color: var(--color-ink);
     background: linear-gradient(100deg, var(--color-ink) 0%, var(--color-primary) 55%, var(--color-accent) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -146,79 +90,44 @@ const teasers = getCategoryTeasers();
   }
 
   .hero__lede {
+    order: 3;
     margin: 0;
     color: var(--color-ink-muted);
     text-wrap: pretty;
   }
 
-  .hero__cta-row,
-  .hero__trust-list {
-    display: none;
-  }
-
   .hero__media {
-    margin: 0;
+    order: 4;
+    margin: var(--space-1) 0 0;
     position: relative;
-    height: 250px;
     border-radius: var(--radius-xl);
     overflow: hidden;
     box-shadow: var(--shadow-sm);
   }
 
-  .hero__media-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 50% 42%;
-    display: block;
-  }
-
-  .hero__media::after {
-    content: '';
+  .hero__grad {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(16, 33, 61, 0) 40%, rgba(16, 33, 61, 0.5) 100%);
+    z-index: 2;
+    background: var(--gradient-hero-photo);
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    .hero__media::before {
-      content: '';
-      position: absolute;
-      top: -20%;
-      bottom: -20%;
-      left: 34%;
-      width: 25%;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.42) 50%, rgba(255, 255, 255, 0) 100%);
-      transform: rotate(12deg) translateX(-160%);
-      animation: hero-sweep var(--motion-duration-sweep) var(--motion-ease-sheen) 300ms 1 both;
-      z-index: 1;
-    }
-  }
-
-  @keyframes hero-sweep {
-    to {
-      transform: rotate(12deg) translateX(160%);
-    }
-  }
-
-  .hero__media-caption {
+  .hero__caption {
     position: absolute;
+    z-index: 2;
     left: var(--space-4);
     bottom: var(--space-4);
-    padding: var(--space-1) var(--space-3);
+    padding: var(--space-1-5) var(--space-3);
     border-radius: var(--radius-full);
     background: rgba(255, 255, 255, 0.9);
     font-size: var(--font-size-caption-mobile);
-    font-weight: var(--font-weight-body-medium);
+    font-weight: var(--font-weight-body-semibold);
+    line-height: 1.4;
     color: var(--color-ink);
-    z-index: 2;
   }
 
-  .hero__media-rating {
-    display: none;
-  }
-
-  .hero__categories {
+  .hero__cta-row {
+    order: 5;
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
@@ -226,246 +135,140 @@ const teasers = getCategoryTeasers();
     padding-bottom: var(--space-8);
   }
 
-  .hero__category-card {
+  .hero__btn {
+    min-height: 52px;
+    padding: 0 var(--space-6);
+    border-radius: var(--radius-full);
     display: flex;
     align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-3);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xs);
-    color: var(--color-ink);
+    justify-content: center;
+    gap: var(--space-2);
+    font-size: 16px;
+    font-weight: var(--font-weight-body-bold);
+    line-height: 1.2;
     text-decoration: none;
-    min-height: 48px;
+    white-space: nowrap;
   }
 
-  .hero__category-card:focus-visible {
+  .hero__btn--primary {
+    background: var(--color-primary);
+    color: var(--color-surface);
+    box-shadow: var(--shadow-btn-primary);
+  }
+
+  .hero__btn--secondary {
+    background: var(--color-surface);
+    color: var(--color-primary);
+    border: 1px solid var(--color-border);
+  }
+
+  .hero__btn:focus-visible {
     outline: none;
     box-shadow: var(--shadow-focus);
   }
 
-  .hero__category-img {
-    width: 64px;
-    height: 64px;
-    border-radius: var(--radius-md);
-    object-fit: cover;
-    display: block;
-    flex-shrink: 0;
+  .hero__btn svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
-  .hero__category-copy {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    line-height: 1.4;
-  }
-
-  .hero__category-label {
-    font-size: var(--font-size-body-lg-mobile);
-    font-weight: var(--font-weight-body-bold);
-  }
-
-  .hero__category-subtitle {
-    font-size: var(--font-size-body-sm-mobile);
-    color: var(--color-ink-muted);
-  }
-
-  .hero__category-price {
-    font-size: var(--font-size-body-sm-mobile);
-    font-weight: var(--font-weight-body-bold);
-    color: var(--color-primary);
-  }
-
-  .hero__category-arrow {
-    color: var(--color-primary);
-    flex-shrink: 0;
-  }
-
+  /* Desktop (desktop-r01): figura absoluta a la derecha, 944 a 1920 (3:2), bloque de
+     texto 784 x min 596 centrado vertical; padding 64 0 96. Bajo 1920 la figura escala
+     con el viewport (49.17vw = 944/1920) y el texto cede el ancho. */
   @media (min-width: 1024px) {
     .hero {
-      max-width: var(--container-page);
-      margin: 0 auto;
-      padding: var(--space-16) var(--space-6) 0;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 640px);
-      column-gap: var(--space-16);
-    }
-
-    .hero__intro {
-      grid-column: 1;
-      grid-row: 1;
-    }
-
-    .hero__title {
-      font-size: var(--font-size-display-2xl-desktop);
-      line-height: var(--font-line-height-display-2xl-desktop);
-      letter-spacing: var(--letter-spacing-display-tight);
-    }
-
-    .hero__cta-row {
-      display: flex;
-      gap: var(--space-4);
-      margin-top: var(--space-2);
-    }
-
-    .hero__cta {
-      min-height: 56px;
-      padding: 0 var(--space-6);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: var(--space-2);
-      border-radius: var(--radius-full);
-      font-size: var(--font-size-body-lg-desktop);
-      font-weight: var(--font-weight-body-bold);
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .hero__cta--primary {
-      background: var(--color-primary);
-      color: var(--color-surface);
-      box-shadow: var(--shadow-md);
-    }
-
-    .hero__cta--whatsapp {
-      background: var(--color-surface);
-      border: 1px solid var(--color-border);
-      color: var(--color-whatsapp-strong);
-    }
-
-    .hero__cta:focus-visible {
-      outline: none;
-      box-shadow: var(--shadow-focus);
-    }
-
-    .hero__trust-list {
-      display: flex;
-      gap: var(--space-6);
-      margin: var(--space-6) 0 0;
-      padding: 0;
-      list-style: none;
-      font-size: var(--font-size-body-sm-desktop);
-      font-weight: var(--font-weight-body-bold);
-      color: var(--color-ink-muted);
-    }
-
-    .hero__trust-list li {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-    }
-
-    .hero__trust-list li::before {
-      content: '';
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
-      background: var(--color-success);
-      clip-path: polygon(20% 55%, 40% 75%, 80% 25%, 92% 38%, 40% 95%, 8% 63%);
+      position: relative;
+      display: block;
+      padding: var(--space-16) 0 var(--space-24);
     }
 
     .hero__media {
-      /* Row 1 only — the category row below now spans the full hero width
-         (both columns), so media must not also occupy row 2 or the two
-         would overlap the same grid cell. */
-      grid-column: 2;
-      grid-row: 1;
-      height: 100%;
-      min-height: 560px;
-      border-radius: var(--radius-xl);
-    }
-
-    .hero__media::after {
-      background: linear-gradient(180deg, rgba(16, 33, 61, 0) 52%, rgba(16, 33, 61, 0.45) 100%);
-    }
-
-    .hero__media-caption {
-      left: var(--space-6);
-      bottom: var(--space-6);
-      font-size: var(--font-size-body-sm-desktop);
-      padding: var(--space-2) var(--space-4);
-    }
-
-    .hero__media-rating {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
       position: absolute;
-      right: var(--space-6);
-      bottom: var(--space-6);
-      padding: var(--space-3) var(--space-5) var(--space-3) var(--space-3);
-      border-radius: var(--radius-lg);
-      background: rgba(255, 255, 255, 0.95);
-      box-shadow: var(--shadow-md);
-      z-index: 2;
+      top: var(--space-10);
+      right: 0;
+      width: min(944px, 49.17vw);
+      margin: 0;
+      border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+      box-shadow: var(--shadow-lg);
     }
 
-    .hero__media-rating-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius-full);
-      background: var(--color-surface-tint);
-      color: var(--color-primary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
+    .hero__media :global(.hero__photo) {
+      aspect-ratio: 3 / 2 !important;
     }
 
-    .hero__media-rating-text {
+    .hero__caption {
+      left: var(--space-8);
+      bottom: var(--space-8);
+      padding: var(--space-2) var(--space-4);
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 15px;
+      line-height: 24px;
+    }
+
+    .hero__intro {
       display: flex;
       flex-direction: column;
-      line-height: 1.3;
+      justify-content: center;
+      position: relative;
+      box-sizing: border-box;
+      max-width: var(--container-page);
+      margin: 0 auto;
+      padding-inline: var(--space-6);
+      width: 100%;
+      min-height: 596px;
     }
 
-    .hero__media-rating-score {
-      font-size: var(--font-size-h3-mobile);
-      font-weight: var(--font-weight-body-bold);
-      color: var(--color-ink);
+    .hero__intro > * {
+      width: min(784px, 100%);
+      max-width: calc(100% - min(944px, 49.17vw) - var(--space-8));
     }
 
-    .hero__media-rating-count {
-      font-size: var(--font-size-body-sm-desktop);
-      color: var(--color-ink-muted);
+    .hero__kicker {
+      font-size: 14px;
+      line-height: 20px;
     }
 
-    .hero__categories {
-      /* Full-bleed row spanning both grid columns, matching the board's
-         3-across layout at the hero's full 1600px width (desktop-01-inicio
-         ~L58): the card grid ignores the hero's inline padding via the
-         negative margin below so cards compute to exactly 512px wide
-         ((1600 - 2*32) / 3), not the narrower single (1fr) text column. */
-      grid-column: 1 / -1;
-      grid-row: 2;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-8);
+    .hero__kicker-rule {
+      display: block;
+    }
+
+    .hero__title {
+      margin-top: var(--space-6);
+      font-size: var(--font-size-hero-h1-desktop-md);
+      line-height: var(--line-height-hero-h1-desktop-md);
+      letter-spacing: var(--letter-spacing-display-tight);
+    }
+
+    .hero__lede {
+      margin-top: 28px;
+      font-size: var(--font-size-body-lg-desktop);
+      line-height: 28px;
+      max-width: min(620px, 100%);
+    }
+
+    .hero__cta-row {
+      flex-direction: row;
+      gap: var(--space-4);
       margin-top: var(--space-10);
-      margin-inline: calc(var(--space-6) * -1);
-      padding-bottom: var(--space-16);
+      padding-bottom: 0;
     }
 
-    .hero__category-card {
-      min-height: 136px;
-      padding: var(--space-4) var(--space-6) var(--space-4) var(--space-4);
+    .hero__btn {
+      display: inline-flex;
+      min-height: 60px;
+      padding: 0 var(--space-8);
+      gap: var(--space-2-5);
+      font-size: var(--font-size-body-lg-desktop);
     }
+  }
 
-    .hero__category-img {
-      width: 104px;
-      height: 104px;
-    }
-
-    .hero__category-label {
-      font-size: var(--font-size-hero-category-label-desktop);
-    }
-
-    .hero__category-subtitle {
-      font-size: var(--font-size-hero-category-subtitle-desktop);
-    }
-
-    .hero__category-price {
-      font-size: var(--font-size-body-desktop);
+  @media (min-width: 1600px) {
+    .hero__title {
+      font-size: var(--font-size-display-2xl-desktop);
+      line-height: var(--font-line-height-display-2xl-desktop);
     }
   }
 </style>

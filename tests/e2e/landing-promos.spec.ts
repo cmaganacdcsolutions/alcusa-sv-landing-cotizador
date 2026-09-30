@@ -2,8 +2,8 @@ import { test, expect } from './fixtures';
 
 // R3 — Landing: Promociones del mes + CTA catalogo + drawer.
 // Fidelidad contra 02-design/boards/revision-2026-09-29/{ios,android,desktop}-r01/r02/r00.
-// Las promos semilla (placeholder) vencen el 31-oct-2026; con el JSON real de ALCUSA
-// las aserciones de conteo/textos deben actualizarse junto con los datos.
+// El seed vence el 31-oct-2026: el e2e corre contra dist-e2e/* (hoy congelado al 2026-09-30,
+// scripts/build-e2e-fixtures.mjs), asi que no depende de la fecha real.
 
 const VIEWPORTS = [
   { w: 360, h: 780, desktop: false },

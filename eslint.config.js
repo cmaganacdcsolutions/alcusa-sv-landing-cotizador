@@ -10,6 +10,7 @@ export default tseslint.config(
   {
     ignores: [
       'dist/**',
+      'dist-e2e/**',
       '.astro/**',
       'node_modules/**',
       '.vite-cache/**',
