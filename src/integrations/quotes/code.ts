@@ -3,6 +3,8 @@
 // (sin window/Date global): `now` se inyecta. Mismas reglas que el PHP (B6).
 
 export const QUOTE_CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+/** sessionStorage: folio del que viene el carrito (r5 lo escribe, r4 lo lee como supersedesCode). */
+export const LOADED_FROM_KEY = 'alcusa-cotizador-loaded-from';
 export const QUOTE_CODE_PREFIX = 'ALC';
 /** ADR-012 §3, supuesto pendiente de confirmar con el cliente. */
 export const LOAD_MAX_AGE_DAYS = 90;

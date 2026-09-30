@@ -31,6 +31,16 @@
      a darker red than the desktop board (desktop-08 ~L103, #d63232 =
      --color-error). Two distinct board literals, two tokens. */
   --color-error-mobile: #b42424;
+  /* R07 customer form / share cards (ios/android/desktop-r07): input + checkbox
+     border (4.4:1 on white), placeholder, error card fill + border, info card border. */
+  --color-border-input-strong: #6b7a90;
+  --color-placeholder: #5f6b80;
+  --color-error-bg: #fdeeee;
+  --color-error-border: #f0c2c2;
+  --color-info-border: #cfe0ff;
+  /* R5 selector (promoted from cotizador-selector.css). */
+  --color-placeholder-border: #6f9cff;
+  --color-scrim-ink-dialog: rgba(16, 33, 61, 0.48);
 
   /* Tipografía */
   --font-family-display: 'Fraunces', Georgia, serif;
@@ -160,6 +170,12 @@
      token rather than reusing/rounding. */
   --shadow-xl: 0 16px 40px rgba(16, 33, 61, 0.1);
   --shadow-focus: 0 0 0 3px rgba(9, 86, 216, 0.35);
+  /* R07: bottom sheet, modal/toast, WhatsApp button focus-ready ring. */
+  --shadow-sheet: 0 -8px 20px rgba(16, 33, 61, 0.1);
+  --shadow-modal: 0 16px 40px rgba(16, 33, 61, 0.25);
+  --shadow-whatsapp-ring: 0 0 0 3px rgba(8, 115, 72, 0.22);
+  --shadow-bar-top: 0 -6px 16px rgba(16, 33, 61, 0.06);
+  --shadow-btn-primary: 0 8px 20px rgba(7, 59, 146, 0.22);
   /* Contacto map pin badge (desktop-08 ~L68-69): label pill shadow + pin
      ring glow. Board-literal, distinct from shadow-md/--color-primary
      ring alpha so their own tokens. */

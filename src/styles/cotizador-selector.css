@@ -1,17 +1,7 @@
 /* R5 selector (3 niveles) + F4 "Cargar cotizacion" (ADR-012 §6).
    Fuente: boards revision-2026-09-29 ios/android/desktop-r03 (REDLINE).
    Movil-first (390); >=768 usa las medidas del board desktop 1920.
-   Tokens nuevos locales (ver HANDOFF, pendientes de subir a tokens.css):
-   --color-placeholder-border, --color-scrim-ink-dialog, --shadow-bar-top. */
-
-.sel,
-.qload,
-.qnotice {
-  --color-placeholder-border: #6f9cff;
-  --color-scrim-ink-dialog: rgba(16, 33, 61, 0.48);
-  --shadow-bar-top: 0 -6px 16px rgba(16, 33, 61, 0.06);
-  --shadow-btn-primary: 0 8px 20px rgba(7, 59, 146, 0.22);
-}
+   Tokens (placeholder-border, scrim-ink-dialog, shadow-bar-top, shadow-btn-primary) viven en tokens.css. */
 
 .qsvg { fill: none; stroke: currentColor; stroke-width: var(--icon-stroke-width); stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 

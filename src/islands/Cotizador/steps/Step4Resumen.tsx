@@ -3,12 +3,16 @@ import { createPortal } from 'react-dom';
 import { CATALOG_PRODUCTS, type CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
-import type { CotizadorState } from '../state/cotizadorStore';
+import { snapshotCartItem, type CotizadorState } from '../state/cotizadorStore';
 import { buildOrderMessageItems, orderItemsSubtotal, type OrderLineItem } from '../state/order';
-import { IconArrowRight, IconPlus, IconWarningTriangle, IconWhatsApp } from '../icons';
+import { IconArrowRight, IconPlus, IconWarningTriangle } from '../icons';
 import { IconEdit, IconLocationPin, IconTrash } from '../icons-checkout';
 import { PRODUCT_IMAGES } from './productImages';
 import QuoteChangeNotice from './quote/QuoteChangeNotice';
+import PhotoFrame from '../../../components/PhotoFrame';
+import { useQuoteShare } from '../share/useQuoteShare';
+import { QuoteShareButton, QuoteShareNotices, QuoteShareToast } from '../share/QuoteShare';
+import { CustomerDialog } from '../share/CustomerDialog';
 import '@styles/cotizador-checkout.css';
 
 export interface Step4ResumenProps {
@@ -90,6 +94,23 @@ export default function Step4Resumen({
     buildQuoteMessage({ items: waMsgItems, transporte, total: grandTotal, anticipo, saldo }),
   );
 
+  // R4 — PDF + WhatsApp share (ios/android/desktop-r07). `waHref` stays as the
+  // text-only fallback in the G error card.
+  const configs = Object.fromEntries(
+    items.map((it) => {
+      const snap: object = (it.id === 'current' ? snapshotCartItem(state, it.id) : state.cart.find((c) => c.id === it.id)) ?? {};
+      return [it.id, Object.fromEntries(Object.entries(snap).filter(([k]) => k !== 'id'))];
+    }),
+  );
+  const share = useQuoteShare({
+    items,
+    configs,
+    entrega: state.entrega === 'instalacion' ? 'instalacion' : 'retiro',
+    zone: state.zone,
+    transport: transporte,
+    total: grandTotal,
+  });
+
   function handleAddAnother(): void {
     setLiveMessage(`${product.name} agregado. Elige otro producto.`);
     onAddAnother();
@@ -106,11 +127,15 @@ export default function Step4Resumen({
 
   const ctas = (
     <>
-      <a href={waHref} className="btn btn-whatsapp" style={{ width: '100%' }}>
-        <IconWhatsApp />
-        Enviar por WhatsApp para confirmar
-      </a>
-      <button type="button" className="btn btn-primary" style={{ width: '100%' }} onClick={onNext}>
+      <QuoteShareNotices share={share} textOnlyHref={waHref} variant="aside" />
+      <QuoteShareButton share={share} />
+      <button
+        type="button"
+        className="btn btn-primary"
+        style={{ width: '100%' }}
+        disabled={share.status === 'preparing'}
+        onClick={onNext}
+      >
         Pagar ahora
         <IconArrowRight />
       </button>
@@ -141,14 +166,7 @@ export default function Step4Resumen({
 
         {items.map((item) => (
           <article className="summary-item" key={item.id}>
-            <img
-              src={PRODUCT_IMAGES[item.productId]}
-              alt=""
-              width={56}
-              height={56}
-              className="summary-item__thumb"
-              style={{ objectFit: 'cover' }}
-            />
+            <PhotoFrame src={PRODUCT_IMAGES[item.productId]} alt="" ratio="1/1" loading="eager" className="summary-item__thumb" />
             <div className="summary-item__meta">
               <span className="summary-item__name">{item.name}</span>
               <span className="summary-item__detail">{item.detail}</span>
@@ -234,6 +252,9 @@ export default function Step4Resumen({
         </dl>
       </div>
 
+      <QuoteShareNotices share={share} textOnlyHref={waHref} variant="main" />
+      <QuoteShareToast share={share} />
+      <CustomerDialog share={share} />
       <div className="bottom-bar cotizador__mobile-only-ctas">{ctas}</div>
       {asideCtaTarget && createPortal(ctas, asideCtaTarget)}
     </section>

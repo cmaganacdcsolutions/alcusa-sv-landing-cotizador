@@ -1,4 +1,6 @@
-import { expect, pickProduct, test } from './fixtures';
+import { expect, pickProduct, test, textOnlyWaLink } from './fixtures';
+
+test.use({ blockQuotePdf: true });
 
 // Asserts the built wa.me href matches the expected encoded template.
 // Never clicks through (ADR-006) — fixtures.ts also aborts wa.me/wompi
@@ -19,7 +21,7 @@ test.describe('whatsapp links — cotizador handoff', () => {
     await page.locator('#municipio').selectOption('Soyapango');
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
-    const href = await page.getByRole('link', { name: 'Enviar por WhatsApp para confirmar' }).getAttribute('href');
+    const href = await (await textOnlyWaLink(page)).getAttribute('href');
     expect(href).toBe(
       'https://wa.me/50376802410?text=' +
         encodeURIComponent(

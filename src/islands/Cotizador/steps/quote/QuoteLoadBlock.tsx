@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
-import { formatQuoteCode, groupQuoteInput, normalizeQuoteCode } from '@integrations/quotes/code';
+import { LOADED_FROM_KEY, formatQuoteCode, groupQuoteInput, normalizeQuoteCode } from '@integrations/quotes/code';
 import { getQuoteClient, QuoteLoadFailure, type QuoteClient } from '@integrations/quotes';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { IconWhatsApp } from '../../icons';
@@ -17,7 +17,7 @@ import {
 import { QUOTE_COPY as C } from './quoteCopy';
 
 /** sessionStorage: folio del que viene el carrito (luego viaja como `supersedesCode`). Sin datos de cliente. */
-export const LOADED_FROM_KEY = 'alcusa-cotizador-loaded-from';
+export { LOADED_FROM_KEY };
 
 type Problem = 'incomplete' | 'check' | 'contingency' | 'not_found' | 'rate_limited' | 'offline' | 'server';
 type Phase = { kind: 'idle' } | { kind: 'loading' } | { kind: 'error'; problem: Problem };

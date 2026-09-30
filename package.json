@@ -21,6 +21,7 @@
     "@fontsource/fraunces": "5.3.0",
     "@fontsource/manrope": "5.3.0",
     "astro": "7.3.5",
+    "pdf-lib": "1.17.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

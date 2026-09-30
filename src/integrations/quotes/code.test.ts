@@ -11,7 +11,7 @@ import {
 const NOW = new Date('2026-09-30T12:00:00Z');
 // Vectores calculados a mano con check = ALPHABET[(sum v_i*(i+1)) mod 31].
 // K7QM3X9: 19+14+69+80+15+174+63 = 434 = 14*31 -> '0'. (El ejemplo del ADR,
-// "...K7QM3X9T", NO cumple su propia formula: aqui se fija la formula.)
+// "...K7QM3X90", NO cumple su propia formula: aqui se fija la formula.)
 const GOOD = 'ALC-20260930-K7QM3X90';
 
 describe('quoteCheckChar (vectores)', () => {
