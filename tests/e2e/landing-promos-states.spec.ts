@@ -133,7 +133,7 @@ test.describe('promos r02 — estados C y D (fixtures)', () => {
 });
 
 test.describe('promos r02 — columnas por ancho', () => {
-  test('@768 dos promos = 2 columnas del mismo ancho y la misma fila', async ({ page }) => {
+  test('@768 dos promos = 2 columnas del mismo ancho y la misma fila (bajo 1024 no cambia)', async ({ page }) => {
     await open(page, STATES, 768, 1024);
     const [a, b] = [await box(page.locator('.promo-card').nth(0)), await box(page.locator('.promo-card').nth(1))];
     expect(Math.round(a.width)).toBe(Math.round((768 - 80 - 32) / 2));
@@ -141,13 +141,27 @@ test.describe('promos r02 — columnas por ancho', () => {
     expect(Math.abs(a.y - b.y)).toBeLessThan(1);
   });
 
-  test('@1366 dos promos = 2 columnas', async ({ page }) => {
-    await open(page, STATES, 1366, 768);
-    const [a, b] = [await box(page.locator('.promo-card').nth(0)), await box(page.locator('.promo-card').nth(1))];
-    expect(Math.round(a.width)).toBe(Math.round((1366 - 80 - 32) / 2));
-    expect(Math.abs(a.y - b.y)).toBeLessThan(1);
-    expect(b.x).toBeGreaterThan(a.x + a.width);
-  });
+  // Foreman ruling (sin board de 2 promos en desktop): >=1024 con 2 promos = mosaicos
+  // horizontales apilados (patron 1600x380 del estado A), no rejilla de 2 columnas.
+  for (const [w, h, tile] of [
+    [1920, 1080, 380],
+    [1366, 768, 380],
+    [1024, 768, 304],
+  ] as const) {
+    test(`@${w} dos promos = mosaicos horizontales apilados (alto ${tile}), foto cuadrada`, async ({ page }) => {
+      await open(page, STATES, w, h);
+      const cards = page.locator('.promo-card');
+      await expect(cards).toHaveCount(2);
+      const [a, b] = [await box(cards.nth(0)), await box(cards.nth(1))];
+      expect(Math.round(a.height)).toBe(tile);
+      expect(Math.round(b.height)).toBe(tile);
+      expect(Math.abs(a.width - b.width)).toBeLessThan(1);
+      expect(Math.abs(a.x - b.x)).toBeLessThan(1);
+      expect(Math.round(b.y - (a.y + a.height))).toBe(32);
+      const photo = await box(cards.nth(0).locator('.promo-card__photo'));
+      expect(Math.abs(photo.width - photo.height)).toBeLessThan(1);
+    });
+  }
 
   test('@768 tres promos = 2 columnas y la tercera baja a la segunda fila', async ({ page }) => {
     await open(page, BASE, 768, 1024);

@@ -86,21 +86,14 @@ test.describe('sf-fixes — logo + nav links', () => {
     await expect(page.locator('#promociones')).toBeInViewport();
   });
 
-  test('footer nav links scroll to each section on / and navigate from /contacto', async ({
+  test('footer nav links scroll to the top on / and navigate from /contacto', async ({
     page,
-  }, testInfo) => {
-    // Catálogo/Cómo funciona/Galería are desktop-only footer links per the
-    // boards (sf-landing5 fidelity pass) — mobile only has Inicio/Cotizar/Contacto.
-    test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only footer links');
+  }) => {
+    // R3 fidelity: 4 footer links at every viewport (Inicio/Catálogo/Cotizar/Contacto).
     await page.goto('/');
     const footer = page.locator('.site-footer__nav');
-    for (const [label, id] of [
-      ['Cómo funciona', '#proceso'],
-      ['Inicio', '#inicio'],
-    ] as const) {
-      await footer.getByRole('link', { name: label, exact: true }).click();
-      await expect(page.locator(id)).toBeInViewport();
-    }
+    await footer.getByRole('link', { name: 'Inicio', exact: true }).click();
+    await expect(page.locator('#inicio')).toBeInViewport();
 
     await page.goto('/contacto');
     await page
@@ -364,14 +357,14 @@ test.describe('sf-fixes — galería + footer fidelity follow-ups', () => {
     await expect(link).toHaveAttribute('rel', 'noopener');
   });
 
-  test('footer shows the Instagram/TikTok handles next to the social icons (desktop only)', async ({
+  test('footer keeps the three social links and drops the handles line (board r01)', async ({
     page,
-  }, testInfo) => {
-    test.skip(
-      testInfo.project.name !== 'desktop1920',
-      'handles line is desktop-only per the boards',
-    );
+  }) => {
     await page.goto('/');
-    await expect(page.getByText('@alcusasv · @alcusaes')).toBeVisible();
+    const footer = page.locator('.site-footer');
+    await expect(footer.getByRole('link', { name: /Instagram @alcusasv/ })).toBeVisible();
+    await expect(footer.getByRole('link', { name: /TikTok @alcusaes/ })).toBeVisible();
+    await expect(footer.getByRole('link', { name: /YouTube/ })).toBeVisible();
+    await expect(footer.getByText('@alcusasv · @alcusaes')).toHaveCount(0);
   });
 });

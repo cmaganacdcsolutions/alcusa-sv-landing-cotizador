@@ -33,7 +33,7 @@
   --color-error-mobile: #b42424;
 
   /* Tipografía */
-  --font-family-display: 'Fraunces', Georgia, serif;
+  --font-family-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
   --font-family-body: 'Manrope', system-ui, sans-serif;
 
   --font-weight-display-regular: 400;

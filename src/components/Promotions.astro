@@ -237,6 +237,16 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
     flex-direction: column;
     gap: var(--space-1-5);
   }
+  /* android (>=400): board cuerpo gap 8 (iOS 6); estado A (1 promo) padding 12 16 16. */
+  @media (min-width: 400px) {
+    .promo-card__body,
+    .promo-card__text {
+      gap: var(--space-2);
+    }
+    .promos[data-count='1'] .promo-card__body {
+      padding-bottom: var(--space-4);
+    }
+  }
   .promo-card__title,
   .promo-card__desc {
     margin: 0;
@@ -247,6 +257,7 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
     overflow: hidden;
   }
   .promo-card__title {
+    font-family: var(--font-family-body); /* board: Manrope, not the global h3 Fraunces */
     font-size: 17px;
     line-height: 1.3;
     font-weight: var(--font-weight-body-bold);
@@ -351,6 +362,10 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
       font-size: 14px;
       line-height: 20px;
     }
+    .promos__list,
+    .promos[data-count='1'] .promos__list {
+      margin-top: var(--space-10); /* board: gap 16 + margin-top 24 */
+    }
     .promos__title-row {
       flex-direction: row;
       align-items: flex-end;
@@ -440,59 +455,74 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
     }
   }
 
-  /* >=1280: 3 columnas; 2 promos = 2 columnas; 1 promo = tarjeta horizontal. */
+  /* >=1280: 3 promos = 3 columnas. */
   @media (min-width: 1280px) {
     .promos[data-count='3'] .promos__list,
     .promos:not([data-count='1']):not([data-count='2']) .promos__list {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
-    .promos[data-count='1'] .promo-card {
-      display: grid;
-      grid-template-columns: minmax(0, 376px) minmax(0, 1fr) 400px;
-      grid-template-rows: 1fr auto auto 1fr;
-      height: 380px;
+  }
+
+  /* >=1024: 1 o 2 promos = mosaicos horizontales apilados (patron 1600x380 del board
+     desktop-r02 estado A). 2 promos no tiene board: decision del Foreman = apilar los
+     mosaicos en vez de una rejilla de 2 columnas de tarjetas altas. Entre 1024 y 1279 el
+     mosaico se compacta (foto 300, panel 320) para que el texto conserve ancho util. */
+  @media (min-width: 1024px) {
+    .promos:is([data-count='1'], [data-count='2']) {
+      --tile-photo: 300px;
+      --tile-band: 320px;
+      --tile-text-x: var(--space-8);
     }
-    .promos[data-count='1'] .promo-card::after {
+    .promos:is([data-count='1'], [data-count='2']) .promos__list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .promos:is([data-count='1'], [data-count='2']) .promo-card {
+      display: grid;
+      grid-template-columns: minmax(0, var(--tile-photo)) minmax(0, 1fr) var(--tile-band);
+      grid-template-rows: 1fr auto auto 1fr;
+      height: calc(var(--tile-photo) + 4px);
+    }
+    .promos:is([data-count='1'], [data-count='2']) .promo-card::after {
       content: '';
       grid-column: 3;
       grid-row: 1 / -1;
       background: var(--color-promo);
     }
-    .promos[data-count='1'] .promo-card__photo {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__photo {
       grid-column: 1;
       grid-row: 1 / -1;
-      width: 376px;
-      height: 376px;
+      width: var(--tile-photo);
+      height: var(--tile-photo);
     }
-    .promos[data-count='1'] .promo-card__badge {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__badge {
       top: var(--space-6);
       left: var(--space-6);
     }
-    .promos[data-count='1'] .promo-card__body {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__body {
       display: contents;
     }
-    .promos[data-count='1'] .promo-card__text {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__text {
       grid-column: 2;
       grid-row: 1 / -1;
       align-self: center;
       min-width: 0;
-      padding: var(--space-12) 56px;
+      padding: var(--space-12) var(--tile-text-x);
       gap: 14px;
     }
-    .promos[data-count='1'] .promo-card__title {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__title {
       font-family: var(--font-family-display);
       font-weight: var(--font-weight-display-medium);
-      font-size: 36px;
-      line-height: 44px;
+      font-size: 28px;
+      line-height: 36px;
     }
-    .promos[data-count='1'] .promo-card__desc {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__desc {
       max-width: 560px;
-      font-size: 18px;
-      line-height: 28px;
+      font-size: 16px;
+      line-height: 24px;
       -webkit-line-clamp: 3;
       line-clamp: 3;
     }
-    .promos[data-count='1'] .promo-card__band {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__band {
       grid-column: 3;
       grid-row: 2;
       z-index: 1;
@@ -500,27 +530,50 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
       gap: var(--space-2);
       background: transparent;
     }
-    .promos[data-count='1'] .promo-card__antes {
-      font-size: 18px;
-      line-height: 28px;
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__antes {
+      font-size: 16px;
+      line-height: 24px;
     }
-    .promos[data-count='1'] .promo-card__ahora {
-      font-size: 56px;
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__ahora {
+      font-size: 44px;
     }
-    .promos[data-count='1'] .promo-card__cta-slot {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__cta-slot {
       grid-column: 3;
       grid-row: 3;
       z-index: 1;
       padding: var(--space-3) var(--space-8) 0;
       margin: 0;
     }
-    .promos[data-count='1'] .promo-card__cta {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__cta {
       background: var(--color-surface);
       color: var(--color-promo-strong);
       box-shadow: none;
     }
-    .promos[data-count='1'] .promo-card__cta:hover {
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__cta:hover {
       background: var(--color-promo-tint);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .promos:is([data-count='1'], [data-count='2']) {
+      --tile-photo: 376px;
+      --tile-band: 400px;
+      --tile-text-x: 56px;
+    }
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__title {
+      font-size: 36px;
+      line-height: 44px;
+    }
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__desc {
+      font-size: 18px;
+      line-height: 28px;
+    }
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__antes {
+      font-size: 18px;
+      line-height: 28px;
+    }
+    .promos:is([data-count='1'], [data-count='2']) .promo-card__ahora {
+      font-size: 56px;
     }
   }
 

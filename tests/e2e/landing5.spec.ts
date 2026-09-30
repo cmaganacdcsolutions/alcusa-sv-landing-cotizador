@@ -111,31 +111,9 @@ test.describe('landing5 — CotizadorTeaser typography', () => {
 });
 
 test.describe('landing5 — footer content parity with the boards', () => {
-  test('mobile footer: exactly Inicio/Cotizar/Contacto, no NIT/handles/phones/Wompi note', async ({
+  test('footer: exactly 4 links, no NIT/handles/phones/Wompi note; WhatsApp icon only on mobile', async ({
     page,
   }, testInfo) => {
-    test.skip(
-      testInfo.project.name === 'desktop1920',
-      'desktop has the fuller footer; see the next test',
-    );
-    await page.goto('/');
-    const footer = page.locator('.site-footer');
-    const navLinks = await footer
-      .locator('.site-footer__nav a:visible')
-      .allTextContents();
-    expect(navLinks.map((t) => t.trim())).toEqual(['Inicio', 'Cotizar', 'Contacto']);
-
-    await expect(footer.getByText('[NIT — confirmar]')).toHaveCount(0);
-    await expect(footer.locator('.site-footer__handles')).toBeHidden();
-    await expect(footer.locator('.site-footer__phones')).toBeHidden();
-    await expect(footer.locator('.site-footer__wompi')).toBeHidden();
-    await expect(footer.locator('.site-footer__col-title').first()).toBeHidden();
-  });
-
-  test('desktop footer: 5-link nav (R3) + handles + phones + Wompi/AMEX note', async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only assertion');
     await page.goto('/');
     const footer = page.locator('.site-footer');
     const navLinks = await footer
@@ -144,19 +122,33 @@ test.describe('landing5 — footer content parity with the boards', () => {
     expect(navLinks.map((t) => t.trim())).toEqual([
       'Inicio',
       'Catálogo',
-      'Cómo funciona',
       'Cotizar',
       'Contacto',
     ]);
 
-    await expect(footer.getByText('@alcusasv · @alcusaes')).toBeVisible();
-    await expect(
-      footer.getByText('Teléfonos 2278-2460 · 2208-4101 · 2563-7742'),
-    ).toBeVisible();
-    await expect(
-      footer.getByText('Pago con tarjeta vía Wompi · excepto American Express'),
-    ).toBeVisible();
     await expect(footer.getByText('[NIT — confirmar]')).toHaveCount(0);
+    await expect(footer.getByText('@alcusasv · @alcusaes')).toHaveCount(0);
+    await expect(footer.getByText(/Teléfonos 2278-2460/)).toHaveCount(0);
+    await expect(footer.getByText(/Wompi/)).toHaveCount(0);
+    await expect(footer.getByText('© 2026 ALCUSA. Todos los derechos reservados.')).toBeVisible();
+
+    // Board: the WhatsApp CTA carries its icon on mobile (ios/android-r01), none on desktop.
+    const wa = footer.getByRole('link', { name: /Cotizar por WhatsApp/ });
+    if (testInfo.project.name === 'desktop1920') {
+      await expect(wa.locator('svg')).toBeHidden();
+    } else {
+      await expect(wa.locator('svg')).toBeVisible();
+    }
+  });
+
+  test('desktop footer is the compact one-row footer (~225px, board desktop-r01)', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only assertion');
+    await page.goto('/');
+    const box = await page.locator('.site-footer').boundingBox();
+    expect(Math.round(box!.height)).toBeGreaterThanOrEqual(220);
+    expect(Math.round(box!.height)).toBeLessThanOrEqual(230);
   });
 });
 

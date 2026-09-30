@@ -266,6 +266,16 @@ import PhotoFrame from './PhotoFrame';
   }
 
   @media (min-width: 1600px) {
+    /* Board x=160: the 1600 container has no inner padding and the 784 column fits left of
+       the figure at every width >= 1600 (right edge = 50vw - 16 < figure left 50.83vw). */
+    .hero__intro {
+      padding-inline: 0;
+    }
+
+    .hero__intro > * {
+      max-width: none;
+    }
+
     .hero__title {
       font-size: var(--font-size-display-2xl-desktop);
       line-height: var(--font-line-height-display-2xl-desktop);

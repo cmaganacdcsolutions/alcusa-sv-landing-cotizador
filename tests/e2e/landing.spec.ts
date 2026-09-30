@@ -66,14 +66,16 @@ test.describe('landing — hero, cómo funciona, confianza, info importante (S3)
     await expect(step4Badge).toHaveCSS('background-color', 'rgb(7, 59, 146)');
   });
 
-  test('confianza shows the literal bracketed placeholders for años and track record, not a picked number', async ({
+  test('confianza shows the literal bracketed placeholder for años (4 items, as on the board), not a picked number', async ({
     page,
   }) => {
     await page.goto('/');
     const confianza = page.locator('#confianza');
     await confianza.scrollIntoViewIfNeeded();
     await expect(confianza.getByText('[AÑOS — confirmar 35/39]')).toBeVisible();
-    await expect(confianza.getByText('[+10,000/+15,000 — confirmar]')).toBeVisible();
+    // R3 fidelity: the board draws exactly 4 items; the pending clients figure is not in the UI.
+    await expect(confianza.getByText('[+10,000/+15,000 — confirmar]')).toHaveCount(0);
+    await expect(confianza.locator('li')).toHaveCount(4);
     await expect(confianza.getByText('4.2 en Google', { exact: false })).toBeVisible();
     await expect(confianza.getByText('6 meses', { exact: false })).toBeVisible();
   });

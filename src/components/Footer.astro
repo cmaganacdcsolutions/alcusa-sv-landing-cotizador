@@ -1,127 +1,97 @@
 ---
-// Footer — final landing section (spec §1 item 9, T9.3).
-//
-// User correction 2026-09-28 (sf-landing5): the footer must show ONLY what
-// each board draws, nothing more. Content differs by breakpoint:
-// - Mobile (Main.dc.html ~L150-160 / android-01-inicio.dc.html ~L154-166):
-//   flat stack, no column titles. Legal line has no "local 29 G". Nav is
-//   just Inicio/Cotizar/Contacto in a row. No NIT, no Instagram/TikTok
-//   handles line, no phones line, no bottom-bar border — copyright is just
-//   the last stacked line.
-// - Desktop (desktop-01-inicio.dc.html ~L211-227): 4-col grid with visible
-//   column titles (NAVEGACIÓN/SÍGUENOS/COTIZA POR WHATSAPP), full 6-link
-//   nav (the board labels #galeria "Galería"; we ship "Proyectos reales" to match the drawer and the section title, per the user's decision), the handles line, the
-//   phones line, and a bordered bottom bar with the Wompi/AMEX note.
-// Both the NIT placeholder and the extra "— ALCUSA" legal-name suffix from
-// the previous slice were invented (not in any board) and are removed.
+// Footer — compact sitewide footer (R3 fidelity, boards {ios,android,desktop}-r01).
+// Board: exactly 4 links (Inicio, Catálogo, Cotizar, Contacto) at every viewport,
+// socials, WhatsApp CTA (icon on mobile, none on desktop as drawn), legal and
+// copyright. Mobile = flat stack; >=1024 = one row (brand | nav | socials + WA)
+// plus a bordered legal/copyright row (~225px tall).
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 const waHref = buildWaLink();
 
 const NAV_LINKS = [
-  { label: 'Inicio', href: '/#inicio', mobile: true },
-  { label: 'Catálogo', href: '/catalogo', mobile: false },
-  { label: 'Cómo funciona', href: '/#proceso', mobile: false },
-  { label: 'Cotizar', href: '/cotizador', mobile: true },
-  { label: 'Contacto', href: '/contacto', mobile: true },
+  { label: 'Inicio', href: '/#inicio' },
+  { label: 'Catálogo', href: '/catalogo' },
+  { label: 'Cotizar', href: '/cotizador' },
+  { label: 'Contacto', href: '/contacto' },
 ] as const;
 ---
 
 <footer class="site-footer">
   <div class="site-footer__inner">
-    <div class="site-footer__brand-col">
+    <div class="site-footer__row">
       <div class="site-footer__brand">
         <img src="/images/logo-primary.png" alt="" width="36" height="36" />
-        <div>
-          <p class="site-footer__wordmark">Alcusa</p>
-          <p class="site-footer__tagline">Disfrutar con calidad</p>
+        <div class="site-footer__brand-text">
+          <span class="site-footer__wordmark">Alcusa</span>
+          <span class="site-footer__tagline">Disfrutar con calidad</span>
         </div>
       </div>
-      <p class="site-footer__legal site-footer__legal--mobile">
-        Aluminios Cuzcatlán, S.A. de C.V. · Calle El Pedregal, Ciudad Merliot
-      </p>
-      <p class="site-footer__legal site-footer__legal--desktop">
-        Aluminios Cuzcatlán, S.A. de C.V. · Calle El Pedregal, local 29 G, Ciudad Merliot
-      </p>
-    </div>
 
-    <nav aria-label="Enlaces del pie" class="site-footer__nav">
-      <p class="site-footer__col-title">Navegación</p>
-      {NAV_LINKS.map((link) => (
-        <a
-          href={link.href}
-          class={link.mobile ? '' : 'site-footer__nav-link--desktop-only'}
-        >
-          {link.label}
-        </a>
-      ))}
-    </nav>
+      <nav aria-label="Enlaces del pie" class="site-footer__nav">
+        {NAV_LINKS.map((link) => <a href={link.href}>{link.label}</a>)}
+      </nav>
 
-    <div class="site-footer__social-col">
-      <p class="site-footer__col-title">Síguenos</p>
-      <div class="site-footer__social">
-        <a
-          href="https://instagram.com/alcusasv"
-          aria-label="Instagram @alcusasv"
-          rel="noopener"
-          class="site-footer__social-icon"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
-            <circle cx="12" cy="12" r="4"></circle>
-            <circle cx="17.2" cy="6.8" r=".6"></circle>
+      <div class="site-footer__actions">
+        <div class="site-footer__social">
+          <a
+            href="https://instagram.com/alcusasv"
+            aria-label="Instagram @alcusasv"
+            rel="noopener"
+            class="site-footer__social-icon"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
+              <circle cx="12" cy="12" r="4"></circle>
+              <circle cx="17.2" cy="6.8" r=".6"></circle>
+            </svg>
+          </a>
+          <a
+            href="https://tiktok.com/@alcusaes"
+            aria-label="TikTok @alcusaes"
+            rel="noopener"
+            class="site-footer__social-icon"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path>
+              <path d="M14 4c.4 2.6 2.2 4.3 5 4.5"></path>
+            </svg>
+          </a>
+          <a
+            href="https://youtube.com/@alcusaelsalvador8209"
+            aria-label="YouTube @alcusaelsalvador8209"
+            rel="noopener"
+            class="site-footer__social-icon"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect>
+              <path d="M10.5 9.5v5l4.3-2.5z"></path>
+            </svg>
+          </a>
+        </div>
+        <a href={waHref} class="site-footer__whatsapp">
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z"></path>
+            <path
+              d="M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z"
+            ></path>
           </svg>
-        </a>
-        <a
-          href="https://tiktok.com/@alcusaes"
-          aria-label="TikTok @alcusaes"
-          rel="noopener"
-          class="site-footer__social-icon"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <path d="M14 4v10.5a3.5 3.5 0 1 1-3.5-3.5"></path>
-            <path d="M14 4c.4 2.6 2.2 4.3 5 4.5"></path>
-          </svg>
-        </a>
-        <a
-          href="https://youtube.com/@alcusaelsalvador8209"
-          aria-label="YouTube @alcusaelsalvador8209"
-          rel="noopener"
-          class="site-footer__social-icon"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect>
-            <path d="M10.5 9.5v5l4.3-2.5z"></path>
-          </svg>
+          Cotizar por WhatsApp · 7680-2410
         </a>
       </div>
-      <p class="site-footer__handles">@alcusasv &middot; @alcusaes</p>
     </div>
 
-    <div class="site-footer__wa-col">
-      <p class="site-footer__col-title">Cotiza por WhatsApp</p>
-      <a href={waHref} class="site-footer__whatsapp">
-        Cotizar por WhatsApp · 7680-2410
-      </a>
-      <span class="site-footer__phones">Teléfonos 2278-2460 · 2208-4101 · 2563-7742</span>
+    <div class="site-footer__bottom">
+      <p class="site-footer__legal">
+        Aluminios Cuzcatlán, S.A. de C.V. · Calle El Pedregal, Ciudad Merliot
+      </p>
+      <p class="site-footer__copy">© 2026 ALCUSA. Todos los derechos reservados.</p>
     </div>
-  </div>
-
-  <div class="site-footer__bottom">
-    <span class="site-footer__copy">© 2026 ALCUSA. Todos los derechos reservados.</span>
-    <span class="site-footer__wompi">
-      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-        <rect x="5" y="10.5" width="14" height="10" rx="2.5"></rect>
-        <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"></path>
-      </svg>
-      Pago con tarjeta vía Wompi · excepto American Express
-    </span>
   </div>
 </footer>
 
 <style>
   .site-footer {
-    padding: var(--space-10) var(--space-6) var(--space-8);
+    padding: var(--space-10) var(--space-6) var(--space-12);
     background: var(--color-ink);
     color: #c9d3e3;
   }
@@ -132,32 +102,33 @@ const NAV_LINKS = [
     gap: var(--space-5);
   }
 
-  .site-footer__brand-col,
-  .site-footer__social-col,
-  .site-footer__wa-col {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-
-  .site-footer__nav {
-    display: flex;
-    gap: var(--space-5);
+  /* Mobile: the wrappers dissolve so brand / legal / nav / socials / WA /
+     copyright stack in board order. */
+  .site-footer__row,
+  .site-footer__bottom,
+  .site-footer__actions {
+    display: contents;
   }
 
   .site-footer__brand {
+    order: 1;
     display: flex;
     align-items: center;
-    gap: var(--space-2);
+    gap: 10px; /* board: 10px, no matching space token */
   }
 
   .site-footer__brand img {
-    border-radius: var(--radius-sm);
+    border-radius: 10px; /* board: 10px */
     display: block;
   }
 
+  .site-footer__brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+
   .site-footer__wordmark {
-    margin: 0;
     font-family: var(--font-family-display);
     font-size: 1.375rem;
     font-weight: var(--font-weight-display-semibold);
@@ -165,61 +136,40 @@ const NAV_LINKS = [
   }
 
   .site-footer__tagline {
-    margin: 0;
-    font-size: var(--font-size-caption-mobile);
+    font-size: 0.75rem; /* board: 12px */
   }
 
   .site-footer__legal {
+    order: 2;
     margin: 0;
-    font-size: var(--font-size-body-sm-mobile);
+    font-size: 0.875rem; /* board: 14px */
   }
 
-  .site-footer__legal--desktop {
-    display: none;
-  }
-
-  .site-footer__col-title {
-    display: none;
-    margin: 0;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    color: var(--color-surface);
+  .site-footer__nav {
+    order: 3;
+    display: flex;
+    gap: var(--space-6);
+    font-size: 0.875rem;
+    font-weight: 600;
   }
 
   .site-footer__nav a {
-    color: var(--color-surface);
     min-height: 44px;
     display: flex;
     align-items: center;
-    font-size: var(--font-size-body-sm-mobile);
-    font-weight: 600;
+    color: var(--color-surface);
     text-decoration: none;
   }
 
-  .site-footer__nav a.site-footer__nav-link--desktop-only {
-    display: none;
-  }
-
-  .site-footer__nav a:focus-visible,
-  .site-footer__whatsapp:focus-visible {
-    outline: none;
-    box-shadow: var(--shadow-focus);
-  }
-
-  .site-footer__handles,
-  .site-footer__phones {
-    display: none;
-  }
-
   .site-footer__social {
+    order: 4;
     display: flex;
     gap: var(--space-2);
   }
 
   .site-footer__social-icon {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: var(--radius-full);
     border: 1px solid #33456a;
     color: var(--color-surface);
@@ -228,7 +178,9 @@ const NAV_LINKS = [
     justify-content: center;
   }
 
-  .site-footer__social-icon svg {
+  .site-footer__social-icon svg,
+  .site-footer__whatsapp svg {
+    flex-shrink: 0;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.5;
@@ -237,11 +189,13 @@ const NAV_LINKS = [
   }
 
   .site-footer__whatsapp {
+    order: 5;
     min-height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-md);
+    gap: var(--space-2);
+    border-radius: 14px; /* board: 14px */
     background: var(--color-whatsapp-strong);
     color: var(--color-surface);
     font-size: var(--font-size-body-mobile);
@@ -249,113 +203,108 @@ const NAV_LINKS = [
     text-decoration: none;
   }
 
-  .site-footer__bottom {
-    margin-top: var(--space-5);
-    display: block;
-  }
-
   .site-footer__copy {
-    display: block;
-    font-size: var(--font-size-caption-mobile);
+    order: 6;
+    margin: 0;
+    font-size: 0.75rem; /* board: 12px */
     color: #9fb0c9;
   }
 
-  .site-footer__wompi {
-    display: none;
+  .site-footer__nav a:focus-visible,
+  .site-footer__social-icon:focus-visible,
+  .site-footer__whatsapp:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
   }
 
   @media (min-width: 1024px) {
     .site-footer {
-      padding: var(--space-16) var(--space-8) var(--space-8);
+      padding: var(--space-14) var(--space-8) var(--space-10);
     }
 
     .site-footer__inner {
       max-width: var(--container-page);
       margin: 0 auto;
       width: 100%;
-      display: grid;
-      grid-template-columns: 1.6fr 1fr 1fr 1.3fr;
-      gap: var(--space-16);
+      gap: var(--space-8);
     }
 
-    .site-footer__legal--mobile {
-      display: none;
+    .site-footer__row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-12);
     }
 
-    .site-footer__legal--desktop {
-      display: block;
-      font-size: 0.9375rem; /* 15px, no matching token */
-      line-height: 24px;
-      max-width: 380px;
+    .site-footer__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
     }
 
-    .site-footer__col-title {
-      display: block;
+    .site-footer__brand {
+      gap: 14px; /* board: 14px */
+    }
+
+    .site-footer__brand img {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+    }
+
+    .site-footer__wordmark {
+      font-size: 1.75rem;
+    }
+
+    .site-footer__tagline {
+      font-size: 0.875rem;
     }
 
     .site-footer__nav {
-      flex-direction: column;
-      gap: 10px; /* board: gap 10px, no matching space-* token */
+      gap: var(--space-8);
+      font-size: 0.9375rem; /* board: 15px */
     }
 
     .site-footer__nav a {
-      min-height: 0;
-      font-size: var(--font-size-body-mobile);
-      line-height: 26px;
+      min-height: 48px;
     }
 
-    .site-footer__nav a.site-footer__nav-link--desktop-only {
-      display: flex;
-    }
-
-    .site-footer__handles {
-      display: block;
-      margin: var(--space-4) 0 0;
-      font-size: var(--font-size-body-sm-mobile);
-      line-height: 22px;
-    }
-
-    .site-footer__phones {
-      display: block;
-      font-size: 0.9375rem; /* 15px, no matching token */
-      line-height: 24px;
+    .site-footer__social {
+      gap: var(--space-3);
     }
 
     .site-footer__whatsapp {
-      min-height: 56px;
-      font-size: var(--font-size-body-lg-mobile);
-      font-weight: var(--font-weight-body-bold);
+      padding: 0 var(--space-6);
+      /* board: no icon on desktop */
+    }
+
+    .site-footer__whatsapp svg {
+      display: none;
     }
 
     .site-footer__bottom {
       display: flex;
       justify-content: space-between;
-      max-width: var(--container-page);
-      margin: var(--space-6) auto 0;
-      padding-top: var(--space-8);
+      gap: var(--space-4);
+      padding-top: var(--space-6);
       border-top: 1px solid #33456a;
+      font-size: 0.875rem;
     }
 
+    .site-footer__legal,
     .site-footer__copy {
-      font-size: var(--font-size-body-sm-mobile);
-      line-height: 22px;
+      font-size: 0.875rem;
+      line-height: 1.55; /* board root line-height */
     }
 
-    .site-footer__wompi {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--font-size-body-sm-mobile);
-      line-height: 22px;
-      color: #9fb0c9;
-    }
-
-    .site-footer__wompi svg {
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.5;
-      stroke-linecap: round;
-      stroke-linejoin: round;
+    /* DOM order is the desktop order; the mobile stacking order is reset. */
+    .site-footer__brand,
+    .site-footer__legal,
+    .site-footer__nav,
+    .site-footer__social,
+    .site-footer__whatsapp,
+    .site-footer__copy {
+      order: 0;
     }
   }
 </style>
