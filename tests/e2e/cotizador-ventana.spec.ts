@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // android412 flake fix: Cotizador is `client:load`, hydrating asynchronously.
 // Same wait pattern as tests/e2e/cotizador.spec.ts (S5).
@@ -29,12 +29,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
   async function openVentana(page: Page) {
     await page.goto('/cotizador#cotizador/0-producto');
     await waitForHydration(page);
-    const card = page.getByRole('button', { name: /Ventana Francesa o Bilbao/ });
-    const nextBtn = page.getByRole('button', { name: 'Siguiente' });
-    await expect(async () => {
-      await card.click();
-      await expect(nextBtn).toBeVisible({ timeout: 1500 });
-    }).toPass();
+    await pickProduct(page, 'ventana');
   }
 
   // sf-cot-models — Modelo (Francesa/Bilbao) option cards now render a real

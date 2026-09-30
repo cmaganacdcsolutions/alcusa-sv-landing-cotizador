@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // S7 — multi-item cart. Never opens a real WhatsApp/Wompi link (fixtures.ts
 // blocks those routes); every assertion decodes the built href instead.
@@ -14,7 +14,7 @@ async function addRectaThenLoop(page: Page): Promise<void> {
   await page.goto('/cotizador');
   await waitForHydration(page);
 
-  await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+  await pickProduct(page, 'recta');
   await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
@@ -41,7 +41,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     // quote.test.ts's own check-value). The zone step is order-level and
     // was already set on item 1, so "Siguiente" from Precio skips straight
     // to Resumen (T7.2 — never re-asks for zone/transport per item).
-    await page.getByRole('button', { name: 'Cabina en L' }).click();
+    await pickProduct(page, 'l');
     await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
@@ -75,7 +75,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only affordance, desktop-05-cotizador-resumen.dc.html');
     await addRectaThenLoop(page);
-    await page.getByRole('button', { name: 'Cabina en L' }).click();
+    await pickProduct(page, 'l');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
@@ -106,7 +106,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     page,
   }) => {
     await addRectaThenLoop(page);
-    await page.getByRole('button', { name: 'Cabina en L' }).click();
+    await pickProduct(page, 'l');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
@@ -135,7 +135,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     // Only the CART is persisted, not the order-level zone (session-only by
     // design) — so a fresh session still asks for the zone once more before
     // Resumen, same as item 1's very first pass.
-    await page.getByRole('button', { name: 'Cabina en L' }).click();
+    await pickProduct(page, 'l');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();

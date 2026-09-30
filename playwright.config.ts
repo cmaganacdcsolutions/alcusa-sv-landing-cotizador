@@ -22,6 +22,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       PUBLIC_COTIZADOR_MODE: 'mock',
+      PUBLIC_QUOTE_API: 'mock',
     },
   },
   projects: [

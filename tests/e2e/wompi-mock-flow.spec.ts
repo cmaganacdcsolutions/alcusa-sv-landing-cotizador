@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // Forces PUBLIC_COTIZADOR_MODE=mock (playwright.config.ts webServer.env),
 // asserts both the success and declined return-screen states. Step6Wompi
@@ -15,7 +15,7 @@ async function waitForHydration(page: Page): Promise<void> {
 async function toWompi(page: Page, outcomeParam: 'approved' | 'declined'): Promise<void> {
   await page.goto(`/cotizador?wompiOutcome=${outcomeParam}`);
   await waitForHydration(page);
-  await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+  await pickProduct(page, 'recta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.locator('#municipio').selectOption('Soyapango');

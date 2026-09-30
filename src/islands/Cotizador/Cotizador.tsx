@@ -158,6 +158,7 @@ interface AsideView {
 // Guarded for the Astro build's server-side render pass (no `window` there)
 // and for private-mode/quota errors (try/catch, silently drops the cart).
 const CART_STORAGE_KEY = 'alcusa-cotizador-cart';
+const FOLIO_PARAM = 'folio';
 
 function loadPersistedCart(): CotizadorState['cart'] {
   if (typeof window === 'undefined') return [];
@@ -197,6 +198,8 @@ export default function Cotizador(): ReactElement {
   const [portalCtaEl, setPortalCtaEl] = useState<HTMLDivElement | null>(null);
   // advisorOnly deep link: name of the product to quote with an advisor.
   const [advisorProduct, setAdvisorProduct] = useState<string | null>(null);
+  // F4 (ADR-012): folio from the `?folio=` deep link (read once, URL cleaned).
+  const [folioParam, setFolioParam] = useState<string | null>(null);
 
   useEffect(() => {
     const initialHash = window.location.hash;
@@ -232,6 +235,16 @@ export default function Cotizador(): ReactElement {
       );
     }
 
+    // ADR-012 §5: `?folio=` is processed once and removed from the URL.
+    const folio = new URLSearchParams(window.location.search).get(FOLIO_PARAM);
+    if (folio) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only read of location.search (no SSR access)
+      setFolioParam(folio);
+      const url = new URL(window.location.href);
+      url.searchParams.delete(FOLIO_PARAM);
+      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+
     // Post-Wompi restoration wins: the deep link must not override it.
     if (!wompiReturn) {
       // ADR-008 §3: `?producto=<slug>` (leaf, variant or legacy alias). Invalid
@@ -246,7 +259,6 @@ export default function Cotizador(): ReactElement {
         // a canonical slug jumps to Medidas.
         dispatch({ type: deepLink.advance && !initial ? 'SELECT_PRODUCT' : 'PRESELECT_PRODUCT', productId: quoterModel });
       } else if (deepLink.kind === 'advisor') {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only read of location.search (no SSR access)
         setAdvisorProduct(deepLink.name);
       }
     }
@@ -757,7 +769,19 @@ export default function Cotizador(): ReactElement {
         {state.step === 'producto' && (
           <Step0Producto
             selectedId={state.productId}
-            onSelect={(productId) => {
+            current={{ cornerFinish: state.cornerModel, gardenHojas: state.gardenHojas === 'custom' ? undefined : state.gardenHojas, windowType: state.windowModel }}
+            quoteLoad={{
+              hasItems: state.cart.length > 0,
+              autoFolio: folioParam,
+              onLoad: (applied) => {
+                dispatch({ type: 'LOAD_QUOTE', items: applied.items, entrega: applied.entrega, zone: applied.zone, notice: applied.notice });
+                window.history.pushState(null, '', `#cotizador/${STEP_SLUGS.resumen}`);
+              },
+            }}
+            onSelect={(productId, preset) => {
+              if (preset.cornerFinish) dispatch({ type: 'SET_CORNER_MODEL', model: preset.cornerFinish });
+              if (preset.gardenHojas) dispatch({ type: 'SET_GARDEN_HOJAS', hojas: preset.gardenHojas });
+              if (preset.windowType) dispatch({ type: 'SET_WINDOW_MODEL', model: preset.windowType });
               dispatch({ type: 'SELECT_PRODUCT', productId });
               window.history.pushState(null, '', `#cotizador/${STEP_SLUGS.medidas}`);
             }}
@@ -806,6 +830,7 @@ export default function Cotizador(): ReactElement {
             onAddAnother={addToCart}
             onRemoveItem={removeItem}
             onEditItem={editItem}
+            onDismissQuoteNotice={() => dispatch({ type: 'DISMISS_QUOTE_NOTICE' })}
             asideCtaTarget={portalCtaEl}
           />
         )}

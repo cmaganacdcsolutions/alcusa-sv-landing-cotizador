@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 async function expectNoSeriousOrCriticalViolations(page: import('@playwright/test').Page): Promise<void> {
   const results = await new AxeBuilder({ page }).analyze();
@@ -34,7 +34,7 @@ test.describe('a11y — home, drawer, cotizador (Slice 1)', () => {
   test('cotizador step 1 (medidas) — no serious/critical violations', async ({ page }) => {
     await page.goto('/cotizador');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
     await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
     await expectNoSeriousOrCriticalViolations(page);
   });
@@ -42,7 +42,7 @@ test.describe('a11y — home, drawer, cotizador (Slice 1)', () => {
   test('cotizador step 4 (resumen) — no serious/critical violations', async ({ page }) => {
     await page.goto('/cotizador');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.locator('#municipio').selectOption('Soyapango');

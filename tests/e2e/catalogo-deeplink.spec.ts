@@ -40,7 +40,7 @@ test.describe('catalogo -> cotizador deep link', () => {
     await page.goto('/cotizador?producto=ventana');
     await waitForHydration(page);
     await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Ventana/, pressed: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Ventanas/, pressed: true })).toBeVisible();
   });
 
   test('an invalid slug is ignored: step 0, no console errors', async ({ page }) => {

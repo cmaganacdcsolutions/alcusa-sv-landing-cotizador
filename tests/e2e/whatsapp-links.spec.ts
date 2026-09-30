@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // Asserts the built wa.me href matches the expected encoded template.
 // Never clicks through (ADR-006) — fixtures.ts also aborts wa.me/wompi
@@ -13,7 +13,7 @@ test.describe('whatsapp links — cotizador handoff', () => {
   test('resumen "Enviar por WhatsApp para confirmar" href matches the §2.6 template', async ({ page }) => {
     await page.goto('/cotizador');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.locator('#municipio').selectOption('Soyapango');
@@ -44,7 +44,7 @@ test.describe('whatsapp links — cotizador handoff', () => {
   }) => {
     await page.goto('/cotizador');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.locator('#municipio').selectOption('Soyapango');
