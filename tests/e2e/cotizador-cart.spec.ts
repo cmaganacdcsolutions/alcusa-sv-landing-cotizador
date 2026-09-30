@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, test, textOnlyWaLink } from './fixtures';
+
+test.use({ blockQuotePdf: true });
 
 // S7 — multi-item cart. Never opens a real WhatsApp/Wompi link (fixtures.ts
 // blocks those routes); every assertion decodes the built href instead.
@@ -55,7 +57,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     // 222 (recta) + 444 (corner) + 40 (Soyapango, ONCE) = 706 — never 40x2.
     await expect(page.getByTestId('resumen-total-value')).toHaveText('$706.00');
 
-    const waLink = page.getByRole('link', { name: 'Enviar por WhatsApp para confirmar' });
+    const waLink = (await textOnlyWaLink(page));
     const href = await waLink.getAttribute('href');
     const decoded = decodeURIComponent(href!.split('?text=')[1]);
     expect(decoded).toContain('1. Puerta de baño recta');

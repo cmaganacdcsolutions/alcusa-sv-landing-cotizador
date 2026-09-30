@@ -1,0 +1,332 @@
+/* R4 — "Enviar por WhatsApp (PDF)" (ios/android/desktop-r07). Literals that
+   have no token yet carry a `TODO token` marker and are listed in the R4
+   HANDOFF (tokens.css/json are frozen for this slice). */
+
+@keyframes qs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes qs-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes qs-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- main button (mobile 52 / radius 14; desktop aside 56 pill) ---- */
+.qs-wa {
+  min-height: 52px;
+  width: 100%;
+  padding: 0 var(--space-5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-whatsapp-strong);
+  color: var(--color-surface);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 22px;
+  font-weight: var(--font-weight-body-bold);
+  text-align: center;
+  white-space: normal;
+  cursor: pointer;
+}
+.qs-wa:hover,
+.qs-wa:active {
+  background: var(--color-whatsapp-strong-hover);
+}
+.qs-wa:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.qs-wa[aria-busy='true'] {
+  cursor: progress;
+  background: var(--color-whatsapp-strong);
+}
+.qs-wa--ready {
+  box-shadow: 0 0 0 3px rgba(8, 115, 72, 0.22); /* TODO token: whatsapp ring */
+}
+.qs-wa--ready:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+.qs-wa svg {
+  flex-shrink: 0;
+}
+.qs-spin {
+  width: 22px;
+  height: 22px;
+  animation: qs-spin 1.4s linear infinite;
+}
+.qs-rm {
+  display: none;
+  font-size: 1rem;
+  font-weight: var(--font-weight-body-bold);
+}
+@media (prefers-reduced-motion: reduce) {
+  .qs-spin {
+    animation: none;
+  }
+  .qs-rm {
+    display: inline;
+  }
+}
+
+/* ---- notice cards (D feedback / G error) and E helper ---- */
+.qs-notices {
+  display: flex;
+  flex-direction: column;
+}
+.qs-notices--main {
+  margin-top: var(--space-4);
+}
+.qs-notices--aside {
+  margin: 0;
+}
+.cotizador__mobile-only-ctas .qs-notices--aside {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .qs-notices--main {
+    display: none;
+  }
+}
+.qs-card {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  animation: qs-fade 200ms ease-out;
+}
+.qs-card--info {
+  background: var(--color-surface-tint);
+  border: 1px solid #cfe0ff; /* TODO token: info card border */
+}
+.qs-card--error {
+  background: #fdeeee; /* TODO token: error card bg */
+  border: 1px solid #f0c2c2; /* TODO token: error card border */
+}
+.qs-card__head {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+.qs-card__title,
+.qs-card__text {
+  margin: 0;
+}
+.qs-card__title {
+  font-size: 1rem;
+  line-height: 22px;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+.qs-card__text {
+  font-size: 0.875rem;
+  line-height: 20px;
+  color: var(--color-ink-muted);
+}
+.qs-card--info .qs-card__head svg {
+  color: var(--color-primary);
+}
+.qs-card--error .qs-card__head svg {
+  color: var(--color-error);
+}
+.qs-link,
+.qs-outline {
+  min-height: 44px;
+  font: inherit;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.qs-link {
+  padding: 0 var(--space-1);
+  border: 0;
+  background: transparent;
+  font-size: 0.875rem;
+  line-height: 20px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.qs-link--start {
+  align-self: flex-start;
+  margin-left: -4px;
+}
+.qs-outline {
+  padding: 0 14px;
+  gap: var(--space-2);
+  border: 1.5px solid var(--color-focus);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 0.9375rem;
+  line-height: 20px;
+  text-decoration: none;
+}
+.qs-link:focus-visible,
+.qs-outline:focus-visible,
+.qs-toast__btn:focus-visible,
+.qs-toast__x:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+[data-qs-platform='android'] .qs-link,
+[data-qs-platform='android'] .qs-outline {
+  min-height: 48px; /* android-r07: 48 targets (iOS 44) */
+}
+.qs-help {
+  margin: var(--space-4) var(--space-6) 0;
+  font-size: 0.875rem;
+  line-height: 20px;
+  color: var(--color-ink-muted);
+}
+.qs-notices--main .qs-help {
+  margin-inline: var(--space-1);
+}
+.qs-notices--aside .qs-help {
+  margin: 0;
+}
+
+/* ---- desktop (>=1024): pill 56, 17px, error/outline pills 48 ---- */
+@media (min-width: 1024px) {
+  .qs-wa {
+    min-height: 56px;
+    padding: 0 28px;
+    gap: 10px;
+    border-radius: var(--radius-full);
+    font-size: 1.0625rem;
+    white-space: nowrap;
+  }
+  .qs-spin {
+    width: 24px;
+    height: 24px;
+  }
+  .qs-card__text {
+    font-size: 0.9375rem;
+    line-height: 24px;
+  }
+  .qs-card__title {
+    line-height: 24px;
+  }
+  .qs-outline {
+    min-height: 48px;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-full);
+    font-size: 1rem;
+    line-height: 22px;
+  }
+}
+
+/* ---- desktop toast (state C), persistent ---- */
+.qs-toast {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--cotizador-bottom-bar-height, 136px) + var(--space-4));
+  z-index: 60;
+  width: min(560px, calc(100vw - 32px));
+  padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--color-ink);
+  color: var(--color-surface);
+  box-shadow: 0 16px 40px rgba(16, 33, 61, 0.25); /* TODO token: toast shadow */
+  animation: qs-in 200ms ease-out;
+}
+@media (min-width: 1024px) {
+  .qs-toast {
+    right: 160px;
+    bottom: var(--space-6);
+    width: min(480px, calc(100vw - 32px));
+  }
+}
+@media (min-width: 1920px) {
+  .qs-toast {
+    width: 560px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qs-toast,
+  .qs-card {
+    animation: none;
+  }
+}
+.qs-toast__row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.qs-toast__row > svg {
+  margin-top: 2px;
+}
+.qs-toast__msg {
+  margin: 0;
+  flex-grow: 1;
+  font-size: 1rem;
+  line-height: 24px;
+  font-weight: 600;
+}
+.qs-toast__x {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: -10px -6px 0 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.qs-toast__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-left: 42px;
+}
+.qs-toast__btn {
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 20px;
+  font-weight: var(--font-weight-body-bold);
+  text-decoration: none;
+  cursor: pointer;
+}
+.qs-toast__btn--solid {
+  border: 0;
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+.qs-toast__btn--ghost {
+  border: 1.5px solid var(--color-surface);
+  background: transparent;
+  color: var(--color-surface);
+}

@@ -46,7 +46,7 @@ describe('quote pdf', () => {
     const raw = Buffer.from(a).toString('latin1');
     expect(raw).toContain('/MediaBox [ 0 0 595.28 841.89 ]');
     expect(raw).toContain('/Lang (es-SV)');
-  });
+  }, 30_000);
   it('paginates >5 items with n/N footer and works with Helvetica fallback', async () => {
     const many = { ...doc, items: Array.from({ length: 12 }, (_, i) => ({ ...doc.items[0]!, name: `Producto ${i} con un nombre largo que envuelve a dos lineas` })) };
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);

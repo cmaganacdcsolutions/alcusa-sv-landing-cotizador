@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, test, textOnlyWaLink } from './fixtures';
+
+test.use({ blockQuotePdf: true });
 
 // android412 flake fix: Cotizador is `client:load`, hydrating asynchronously.
 // Same wait pattern as tests/e2e/contacto.spec.ts for ContactForm.
@@ -48,7 +50,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
     await expect(page.getByTestId('resumen-total-value')).toHaveText('$262.00');
 
-    const waLink = page.getByRole('link', { name: 'Enviar por WhatsApp para confirmar' });
+    const waLink = (await textOnlyWaLink(page));
     const href = await waLink.getAttribute('href');
     expect(href).toBeTruthy();
     expect(href).toMatch(/^https:\/\/wa\.me\/50376802410\?text=/);

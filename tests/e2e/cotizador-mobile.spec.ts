@@ -97,7 +97,7 @@ test.describe('cotizador mobile — Resumen table no overflow (sf-cot-mobile ite
         }
       }
 
-      const img = page.locator('.summary-item__thumb').first();
+      const img = page.locator('.summary-item__thumb .photo-frame__img').first();
       const naturalWidth = await img.evaluate((el: HTMLImageElement) => el.naturalWidth);
       expect(naturalWidth).toBeGreaterThan(0);
     });
