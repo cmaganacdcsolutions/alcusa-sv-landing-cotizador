@@ -56,6 +56,16 @@ async function gotoResumen(page: Page): Promise<void> {
 
 const shareButton = (page: Page) => page.getByTestId('quote-share-button').locator('visible=true');
 const shown = (page: Page, text: string) => page.getByText(text).locator('visible=true');
+/** R07.1: the trigger opens the customer dialog first; fill it and submit. */
+async function shareAndSubmit(page: Page): Promise<void> {
+  await shareButton(page).click();
+  const dlg = page.getByRole('dialog', { name: 'Tus datos para la cotización' });
+  await dlg.getByLabel('Nombre').fill('María López');
+  await dlg.getByLabel('WhatsApp').fill('71234567');
+  await dlg.getByRole('checkbox').check();
+  await dlg.getByRole('button', { name: 'Generar mi cotización' }).click();
+}
+
 const probe = (page: Page): Promise<Probe> => page.evaluate(() => window.__probe);
 
 test.describe('quote share — desktop (always download + wa.me tab)', () => {
@@ -67,9 +77,9 @@ test.describe('quote share — desktop (always download + wa.me tab)', () => {
     await expect(shareButton(page)).toHaveText('Enviar por WhatsApp (PDF)');
 
     const download = page.waitForEvent('download');
-    await shareButton(page).click();
+    await shareAndSubmit(page);
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^Cotizacion-ALC-\d{8}-L[0-9A-Z]{7}\.pdf$/);
+    expect(file.suggestedFilename()).toMatch(/^Cotizacion-ALC-\d{8}-U[0-9A-Z]{7}\.pdf$/);
 
     const toast = page.getByTestId('quote-share-toast');
     await expect(toast).toBeVisible();
@@ -78,7 +88,7 @@ test.describe('quote share — desktop (always download + wa.me tab)', () => {
     expect(href).toMatch(/^https:\/\/wa\.me\/50376802410\?text=/);
     const text = decodeURIComponent(href!.split('?text=')[1]);
     expect(text).toContain('Hola, ALCUSA. Quiero confirmar mi cotización.');
-    expect(text).toMatch(/N\.º ALC-\d{8}-L/);
+    expect(text).toMatch(/N\.º ALC-\d{8}-U/);
     expect(text).toContain('Adjunto el PDF de mi cotización.');
 
     const p = await probe(page);
@@ -94,7 +104,7 @@ test.describe('quote share — desktop (always download + wa.me tab)', () => {
   test('"Volver a descargar" downloads again', async ({ page }) => {
     await stubShare(page, 'none');
     await gotoResumen(page);
-    await shareButton(page).click();
+    await shareAndSubmit(page);
     const again = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Volver a descargar' }).click();
     expect((await again).suggestedFilename()).toMatch(/\.pdf$/);
@@ -107,12 +117,12 @@ test.describe('quote share — mobile (Web Share with files)', () => {
   test('canShare true -> navigator.share is called with the PDF; D card appears', async ({ page }) => {
     await stubShare(page, 'ok');
     await gotoResumen(page);
-    await shareButton(page).click();
+    await shareAndSubmit(page);
     await expect(shown(page, '¿Ya lo enviaste? Te respondemos por WhatsApp')).toBeVisible();
     const p = await probe(page);
     expect(p.shareCalls).toHaveLength(1);
     expect(p.shareCalls[0]).toMatchObject({ type: 'application/pdf', hasTitle: true });
-    expect(p.shareCalls[0]!.name).toMatch(/^Cotizacion-ALC-\d{8}-L/);
+    expect(p.shareCalls[0]!.name).toMatch(/^Cotizacion-ALC-\d{8}-U/);
     expect(p.opened).toHaveLength(0);
   });
 
@@ -121,7 +131,7 @@ test.describe('quote share — mobile (Web Share with files)', () => {
     await gotoResumen(page);
     let downloaded = false;
     page.on('download', () => (downloaded = true));
-    await shareButton(page).click();
+    await shareAndSubmit(page);
     await expect.poll(async () => (await probe(page)).shareCalls.length).toBe(1);
     await expect(shareButton(page)).toHaveText('Enviar por WhatsApp (PDF)');
     await expect(shareButton(page)).toBeFocused();
@@ -135,7 +145,7 @@ test.describe('quote share — mobile (Web Share with files)', () => {
   test('NotAllowedError -> E "Listo: toca para compartir", second tap shares', async ({ page }) => {
     await stubShare(page, 'notallowed');
     await gotoResumen(page);
-    await shareButton(page).click();
+    await shareAndSubmit(page);
     await expect(shareButton(page)).toHaveText('Listo: toca para compartir');
     await shareButton(page).click();
     await expect(shown(page, '¿Ya lo enviaste?')).toBeVisible();

@@ -26,7 +26,7 @@ const assets: QuotePdfAssets = {
 const doc: QuoteDocument = {
   folio: 'ALC-20260929-K7QM3X9T',
   issuedAt: new Date('2026-09-29T18:00:00Z'),
-  customer: { name: 'María Fernanda López', phone: '+503 7000-0000', zone: 'Soyapango' },
+  customer: { name: 'María Fernanda López', whatsapp: '+503 7000-0000', zone: 'Soyapango' },
   items: [
     { name: 'Puerta en L', variant: 'Aquaclara', measures: '80 × 180', qty: 1, price: 444 },
     { name: 'Puerta de jardín 2 hojas', variant: 'Aquaclara', measures: '150 × 210', qty: 1, price: 819 },
@@ -61,18 +61,20 @@ describe('quote pdf', () => {
 });
 
 const req: QuoteFolioRequest = {
-  idempotencyKey: 'k', customer: {}, delivery: { mode: 'delivery' }, items: [], transportFee: 0, total: 0,
+  idempotencyKey: 'k', customer: { name: 'María López', whatsapp: '+50371234567' }, delivery: { mode: 'delivery' }, items: [], transportFee: 0, total: 0,
+  consent: true, privacyNoticeVersion: '2026-10-v1',
 };
 describe('folio providers', () => {
-  it('local folio is L-prefixed, SV date, never collides with server alphabet', async () => {
+  it('local folio uses the U marker, SV date, never collides with server alphabet', async () => {
     const p = createLocalFolioProvider({ now: () => new Date('2026-09-30T05:00:00Z'), random: () => new Uint8Array(7).fill(1) });
     const f = await p.issue(req);
-    expect(f).toEqual({ code: 'ALC-20260929-L1111111', source: 'local' });
+    expect(f).toEqual({ code: 'ALC-20260929-U1111111', source: 'local' });
+    expect(isContingencyFolio('ALC-20260929-L1111111')).toBe(false);
     expect(isContingencyFolio(f.code)).toBe(true);
     expect(isContingencyFolio('ALC-20260929-K7QM3X9T')).toBe(false);
   });
   it('server adapter posts and returns code; contingency falls back on failure', async () => {
-    const ok = vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ code: 'ALC-20260929-K7QM3X9T' }) });
+    const ok = vi.fn().mockResolvedValue({ ok: true, status: 201, json: () => Promise.resolve({ code: 'ALC-20260929-K7QM3X9T', validUntil: '2026-10-14', total: 0 }) });
     const s = await createServerFolioProvider({ fetchImpl: ok as unknown as typeof fetch }).issue(req);
     expect(s.source).toBe('server');
     expect(ok.mock.calls[0]![0]).toBe('/api/quote-create.php');

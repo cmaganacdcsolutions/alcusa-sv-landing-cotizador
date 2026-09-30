@@ -5,7 +5,8 @@ export const M = { left: 36, right: 559.5, width: 523.5 } as const;
 export const BAND_H = 6;
 export const LOGO = { x: 36, top: 30, size: 42 } as const;
 export const HEADER = { nameX: 87, nameBase: 57.3, titleBase: 52.2, folioBase: 73.65, ruleY: 84 } as const;
-export const META = { top: 96, h: 48, dateX: 48, validX: 225, labelBase: 113.7, valueBase: 129.15 } as const;
+// R08.1: 4 columns (E08/E10/E13a/E13c): Fecha 48, Válida por 126, Cliente 264, WhatsApp 420. Header name truncates at 144 pt.
+export const META = { top: 96, h: 48, dateX: 48, validX: 126, clientX: 264, whatsappX: 420, labelBase: 113.7, valueBase: 129.15, maxNameW: 144 } as const;
 export const CUSTOMER = {
   kickerBase: 170.7,
   boxTop: 180,

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { CATALOG_PRODUCTS, type CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
-import type { CotizadorState } from '../state/cotizadorStore';
+import { snapshotCartItem, type CotizadorState } from '../state/cotizadorStore';
 import { buildOrderMessageItems, orderItemsSubtotal, type OrderLineItem } from '../state/order';
 import { IconArrowRight, IconPlus, IconWarningTriangle } from '../icons';
 import { IconEdit, IconLocationPin, IconTrash } from '../icons-checkout';
@@ -11,6 +11,7 @@ import { PRODUCT_IMAGES } from './productImages';
 import PhotoFrame from '../../../components/PhotoFrame';
 import { useQuoteShare } from '../share/useQuoteShare';
 import { QuoteShareButton, QuoteShareNotices, QuoteShareToast } from '../share/QuoteShare';
+import { CustomerDialog } from '../share/CustomerDialog';
 import '@styles/cotizador-checkout.css';
 
 export interface Step4ResumenProps {
@@ -91,8 +92,15 @@ export default function Step4Resumen({
 
   // R4 — PDF + WhatsApp share (ios/android/desktop-r07). `waHref` stays as the
   // text-only fallback in the G error card.
+  const configs = Object.fromEntries(
+    items.map((it) => {
+      const snap: object = (it.id === 'current' ? snapshotCartItem(state, it.id) : state.cart.find((c) => c.id === it.id)) ?? {};
+      return [it.id, Object.fromEntries(Object.entries(snap).filter(([k]) => k !== 'id'))];
+    }),
+  );
   const share = useQuoteShare({
     items,
+    configs,
     entrega: state.entrega === 'instalacion' ? 'instalacion' : 'retiro',
     zone: state.zone,
     transport: transporte,
@@ -239,6 +247,7 @@ export default function Step4Resumen({
 
       <QuoteShareNotices share={share} textOnlyHref={waHref} variant="main" />
       <QuoteShareToast share={share} />
+      <CustomerDialog share={share} />
       <div className="bottom-bar cotizador__mobile-only-ctas">{ctas}</div>
       {asideCtaTarget && createPortal(ctas, asideCtaTarget)}
     </section>

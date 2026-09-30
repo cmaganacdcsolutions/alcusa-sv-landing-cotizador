@@ -187,11 +187,17 @@ export async function renderQuotePdf(
       text(p, formatDateSv(doc.issuedAt), META.dateX, META.valueBase, f.bold, 10.5, COLORS.ink);
       text(p, 'Válida por', META.validX, META.labelBase, f.regular, 9, COLORS.muted);
       text(p, `${company.validityDays.value} días`, META.validX, META.valueBase, f.bold, 10.5, COLORS.ink);
+      const cu = doc.customer;
+      if (cu.name || cu.whatsapp) {
+        text(p, 'Cliente', META.clientX, META.labelBase, f.regular, 9, COLORS.muted);
+        text(p, fit(cu.name || '—', f.bold, 10.5, META.maxNameW), META.clientX, META.valueBase, f.bold, 10.5, COLORS.ink);
+        text(p, 'WhatsApp', META.whatsappX, META.labelBase, f.regular, 9, COLORS.muted);
+        text(p, cu.whatsapp || '—', META.whatsappX, META.valueBase, f.bold, 10.5, COLORS.ink);
+      }
       text(p, 'DATOS DEL CLIENTE', M.left, CUSTOMER.kickerBase, f.bold, 9, COLORS.primary);
       rect(p, M.left, CUSTOMER.boxTop, M.width, CUSTOMER.boxH, COLORS.white, COLORS.border);
-      const cu = doc.customer;
-      const vals = [fit(cu.name || '—', f.bold, 10.5, CUSTOMER.maxNameW), cu.phone || '—', cu.zone || '—'];
-      ['Nombre', 'Teléfono', 'Zona'].forEach((l, i) => {
+      const vals = [fit(cu.name || '—', f.bold, 10.5, CUSTOMER.maxNameW), cu.whatsapp || '—', cu.zone || '—'];
+      ['Nombre', 'WhatsApp', 'Zona'].forEach((l, i) => {
         text(p, l, CUSTOMER.xs[i]!, CUSTOMER.labelBase, f.regular, 9, COLORS.muted);
         text(p, vals[i]!, CUSTOMER.xs[i]!, CUSTOMER.valueBase, f.bold, 10.5, COLORS.ink);
       });

@@ -10,10 +10,11 @@ export interface QuoteDocumentItem {
 }
 
 export interface QuoteDocument {
-  /** Server folio or contingency folio starting with L (ADR-012). */
+  /** Server folio or contingency folio with the U marker (ADR-011 §5). */
   folio: string;
   issuedAt: Date;
-  customer: { name?: string; phone?: string; zone?: string };
+  /** `whatsapp` is the printed form "+503 ####-####" (E13d / E20). */
+  customer: { name?: string; whatsapp?: string; zone?: string };
   items: QuoteDocumentItem[];
   /** Label after "Transporte ·" e.g. "Soyapango"; undefined prints "Transporte". */
   transportLabel?: string;

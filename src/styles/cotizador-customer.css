@@ -1,0 +1,606 @@
+/* R07.1 — customer mini form (ios/android-r07 estado H = bottom sheet,
+   desktop-r07 estado E = centered modal from 1024). Literals without a token
+   carry `TODO token` and are listed in the HANDOFF (tokens.css is frozen). */
+
+@keyframes cf-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cf-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cf-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cf-wrap {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--cf-top, 0);
+  height: var(--cf-h, 100dvh);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  font-family: var(--font-family-body);
+  line-height: 1.4;
+  color: var(--color-ink);
+}
+.cf-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--color-scrim-ink);
+  animation: cf-fade 200ms ease-out;
+}
+
+/* ---- sheet (mobile) ---- */
+.cf-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-height: min(684px, calc(var(--cf-h, 100dvh) - 160px));
+  padding: 12px 24px calc(34px + env(safe-area-inset-bottom, 0px));
+  background: var(--color-surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: 0 -8px 20px rgba(16, 33, 61, 0.1); /* TODO token: sheet shadow */
+  animation: cf-rise 200ms ease-out;
+}
+.cf-dialog svg {
+  flex: none;
+}
+.cf-grabber {
+  flex: none;
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 12px;
+  border-radius: 2px;
+  background: var(--color-border-input);
+}
+.cf-title {
+  position: relative;
+  flex: none;
+  padding-right: 40px;
+}
+.cf-title h2 {
+  margin: 0;
+  font-family: var(--font-family-body);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+.cf-sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-ink-muted);
+}
+.cf-x {
+  position: absolute;
+  right: -12px;
+  top: -8px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.cf-x[aria-disabled='true'],
+.cf-cancel[aria-disabled='true'] {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.cf-cancel[aria-disabled='true'] {
+  opacity: 0.5;
+}
+.cf-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  /* keep focus rings (3px) from being clipped by the scroll box */
+  margin: 0 -8px;
+  padding: 0 8px;
+}
+.cf-actions {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- fields ---- */
+.cf-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+.cf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cf-field label {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+.cf-input {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: 0 16px;
+  border: 1.5px solid #6b7a90; /* TODO token: input border 4.4:1 */
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: var(--font-weight-body-medium);
+  color: var(--color-ink);
+}
+.cf-input input {
+  flex-grow: 1;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+.cf-input input::placeholder {
+  color: #5f6b80; /* TODO token: placeholder */
+  font-weight: var(--font-weight-body-regular);
+  opacity: 1;
+}
+.cf-input:focus-within {
+  border: 2px solid var(--color-accent);
+  padding: 0 15.5px;
+  box-shadow: var(--shadow-focus);
+}
+.cf-input[data-error] {
+  border: 1.5px solid var(--color-error);
+  padding: 0 16px;
+  box-shadow: none;
+}
+.cf-input[data-error]:focus-within {
+  border: 2px solid var(--color-accent);
+  padding: 0 15.5px;
+  box-shadow: var(--shadow-focus);
+}
+.cf-input[data-busy] {
+  background: var(--color-bg);
+  border-color: var(--color-border-input);
+  color: var(--color-ink-muted);
+}
+.cf-prefix {
+  align-self: stretch;
+  flex-shrink: 0;
+  margin: 0 12px 0 -16px;
+  padding: 0 12px 0 16px;
+  display: flex;
+  align-items: center;
+  background: var(--color-bg);
+  border-right: 1px solid var(--color-border-input);
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+.cf-input:focus-within .cf-prefix {
+  margin-left: -15.5px;
+  padding-left: 15.5px;
+}
+.cf-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-ink-muted);
+}
+.cf-err {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--color-error);
+}
+.cf-err svg {
+  margin-top: 2px;
+  color: var(--color-error);
+}
+.cf-err--consent {
+  margin-left: 34px;
+}
+
+/* ---- remembered-data note (H4 / E4) ---- */
+.cf-note {
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--color-ink-muted);
+}
+.cf-link {
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: var(--font-weight-body-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.cf-note .cf-link {
+  padding: 0;
+  justify-content: flex-start;
+}
+
+/* ---- consent ---- */
+.cf-consent {
+  position: relative;
+  margin: 4px 0 0;
+  display: flex;
+  align-items: flex-start;
+  min-height: 44px;
+}
+.cf-box {
+  flex: none;
+  position: relative;
+  width: 44px;
+  height: 44px;
+  margin-left: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cf-cbi {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.cf-cbv {
+  width: 24px;
+  height: 24px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #6b7a90; /* TODO token: checkbox border 4.4:1 */
+  border-radius: var(--radius-xs);
+  background: var(--color-surface);
+}
+.cf-cbv svg {
+  display: none;
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cf-cbi:checked + .cf-cbv {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.cf-cbi:checked + .cf-cbv svg {
+  display: block;
+}
+.cf-consent[data-error] .cf-cbv {
+  border-color: var(--color-error);
+}
+.cf-cbi:focus-visible + .cf-cbv {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+}
+.cf-consent[data-busy] {
+  opacity: 0.6;
+}
+.cf-consent[data-busy] .cf-cbi {
+  pointer-events: none;
+}
+.cf-ct {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 0;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: var(--font-weight-body-regular);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.cf-ct a {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-body-bold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.cf-ct a:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: 2px;
+}
+
+/* ---- server error card (H5 / E5) ---- */
+.cf-server {
+  margin: 12px 0 0;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  background: #fdeeee; /* TODO token: error card bg */
+  border: 1px solid #f0c2c2; /* TODO token: error card border */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cf-server__head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.cf-server__head svg {
+  color: var(--color-error);
+}
+.cf-server p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-ink-muted);
+}
+.cf-server__head p {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-ink);
+}
+
+/* ---- actions ---- */
+.cf-cta {
+  margin-top: 16px;
+  min-height: 52px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-whatsapp-strong);
+  color: var(--color-surface);
+  font: inherit;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: var(--font-weight-body-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  cursor: pointer;
+}
+.cf-cta:hover,
+.cf-cta:active {
+  background: var(--color-whatsapp-strong-hover);
+}
+.cf-cta:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.cf-cta[aria-busy='true'] {
+  cursor: progress;
+  background: var(--color-whatsapp-strong);
+}
+.cf-cancel {
+  margin-top: 10px;
+}
+.cf-spin {
+  width: 22px;
+  height: 22px;
+  animation: cf-spin 1.4s linear infinite;
+}
+.cf-rm {
+  display: none;
+}
+
+/* ---- android-r07: 48 targets, sheet padding 12 24 16 (+24 gesture strip) ---- */
+[data-cf-platform='android'] .cf-dialog {
+  padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+}
+[data-cf-platform='android'] .cf-x {
+  right: -14px;
+  top: -10px;
+  width: 48px;
+  height: 48px;
+}
+[data-cf-platform='android'] .cf-consent {
+  min-height: 48px;
+}
+[data-cf-platform='android'] .cf-box,
+[data-cf-platform='android'] .cf-cbi {
+  width: 48px;
+  height: 48px;
+}
+[data-cf-platform='android'] .cf-box {
+  margin-left: -12px;
+}
+[data-cf-platform='android'] .cf-ct {
+  padding: 14px 0;
+}
+[data-cf-platform='android'] .cf-link {
+  min-height: 48px;
+}
+[data-cf-platform='android'] .cf-note .cf-link {
+  min-height: 48px;
+}
+
+@media (max-width: 359px) {
+  .cf-dialog {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+/* ---- modal (desktop-r07 estado E, >= 1024) ---- */
+@media (min-width: 1024px) {
+  .cf-wrap {
+    top: 0;
+    height: 100dvh;
+    justify-content: center;
+    align-items: center;
+  }
+  .cf-dialog,
+  [data-cf-platform='android'] .cf-dialog {
+    width: min(480px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: 32px;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 16px 40px rgba(16, 33, 61, 0.25); /* TODO token: modal shadow */
+    animation: cf-pop 200ms ease-out;
+  }
+  .cf-grabber {
+    display: none;
+  }
+  .cf-title {
+    padding-right: 48px;
+  }
+  .cf-title h2 {
+    font-family: var(--font-family-display);
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: var(--font-weight-display-medium);
+    color: var(--color-primary);
+  }
+  .cf-sub {
+    margin-top: 4px;
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .cf-x,
+  [data-cf-platform='android'] .cf-x {
+    right: -12px;
+    top: -12px;
+    width: 44px;
+    height: 44px;
+  }
+  .cf-fields {
+    margin-top: 20px;
+  }
+  .cf-box,
+  .cf-cbi,
+  [data-cf-platform='android'] .cf-box,
+  [data-cf-platform='android'] .cf-cbi {
+    width: 44px;
+    height: 44px;
+  }
+  .cf-box,
+  [data-cf-platform='android'] .cf-box {
+    margin-left: -10px;
+  }
+  .cf-consent,
+  [data-cf-platform='android'] .cf-consent {
+    min-height: 44px;
+  }
+  .cf-ct,
+  [data-cf-platform='android'] .cf-ct {
+    padding: 12px 0;
+  }
+  .cf-cbi:not(:checked):hover + .cf-cbv {
+    border-color: var(--color-primary);
+  }
+  .cf-server {
+    padding: 16px 20px;
+    gap: 8px;
+  }
+  .cf-server__head p {
+    line-height: 24px;
+  }
+  .cf-server p {
+    font-size: 15px;
+    line-height: 24px;
+  }
+  .cf-cta {
+    margin-top: 20px;
+    min-height: 56px;
+    border-radius: var(--radius-full);
+    padding: 0 28px;
+    font-size: 17px;
+    line-height: 22px;
+  }
+  .cf-link,
+  [data-cf-platform='android'] .cf-link {
+    min-height: 44px;
+    font-size: 15px;
+  }
+  .cf-note .cf-link {
+    min-height: 44px;
+  }
+  .cf-cancel {
+    margin-top: 10px;
+  }
+  .cf-spin {
+    width: 24px;
+    height: 24px;
+  }
+  .cf-rm {
+    font-size: 17px;
+    font-weight: var(--font-weight-body-bold);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cf-dialog,
+  .cf-scrim {
+    animation: cf-fade 150ms ease-out;
+  }
+  .cf-spin {
+    animation: none;
+  }
+  .cf-rm {
+    display: inline;
+  }
+}

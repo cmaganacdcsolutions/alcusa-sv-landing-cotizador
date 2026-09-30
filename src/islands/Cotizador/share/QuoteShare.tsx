@@ -142,7 +142,7 @@ export function QuoteShareNotices({
             Tranquilo, tu cotización sigue guardada. Puedes descargarlo y adjuntarlo en el chat de WhatsApp, o intentarlo de
             nuevo.
           </p>
-          <button type="button" className="qs-outline" onClick={share.download}>
+          <button type="button" className="qs-outline" onClick={(e) => share.download(e.currentTarget)}>
             <DownloadIcon size={20} />
             Descargar PDF
           </button>
@@ -174,7 +174,7 @@ export function QuoteShareToast({ share }: Pick<QuoteShareProps, 'share'>): Reac
         </button>
       </div>
       <div className="qs-toast__actions">
-        <button type="button" className="qs-toast__btn qs-toast__btn--solid" onClick={share.download}>
+        <button type="button" className="qs-toast__btn qs-toast__btn--solid" onClick={(e) => share.download(e.currentTarget)}>
           Volver a descargar
         </button>
         <a className="qs-toast__btn qs-toast__btn--ghost" href={share.folioWaHref} target="_blank" rel="noopener noreferrer">
