@@ -1,7 +1,15 @@
 ---
-// /catalogo/<categoria> (R1 tracer): subcategories in model order.
+// /catalogo/<categoria> (R2, boards r05): product cards + "Más opciones".
 import CatalogShell from '@components/catalog/CatalogShell.astro';
-import { CATEGORIES, formatFromPrice, subFromPrice, type Category } from '@content/catalog';
+import CatalogMedia from '@components/catalog/CatalogMedia.astro';
+import Arrow from '@components/catalog/Arrow.astro';
+import WhatsAppIcon from '@components/catalog/WhatsAppIcon.astro';
+import { CATEGORIES, hasVariants, type Category } from '@content/catalog';
+import { contentFor } from '@content/catalogContent';
+import { assertCatalogForBuild } from '@content/catalogBuild';
+import { cardTitle, chipLabel, gridColsClass, primaryImage, priceView, splitSubcategories } from '@content/catalogView';
+import { buildAdvisorMessage } from '@integrations/whatsapp/buildMessage';
+import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 export function getStaticPaths() {
   return CATEGORIES.map((category) => ({ params: { categoria: category.slug }, props: { category } }));
@@ -9,31 +17,82 @@ export function getStaticPaths() {
 interface Props {
   category: Category;
 }
+assertCatalogForBuild();
 const { category } = Astro.props;
+const { main, more } = splitSubcategories(category);
+const lead = contentFor(category.slug).description ?? '';
 ---
 
 <CatalogShell
   title={`${category.name} | Catálogo ALCUSA`}
-  description={`${category.name} de aluminio y vidrio a la medida.`}
+  description={`${category.name} de aluminio y vidrio a la medida. ${lead}`.trim()}
   crumbs={[{ label: 'Catálogo', href: '/catalogo' }, { label: category.name }]}
 >
-  <h1>{category.name}</h1>
-  <ul class="cat-grid" data-testid="catalogo-subcategories">
+  <section class="cat-head">
+    <p class="cat-kicker">CATEGORÍA</p>
+    <h1 class="cat-h1">{category.name}</h1>
+    <p class="cat-lead">{lead}</p>
+  </section>
+
+  <section class={`cat-grid ${gridColsClass(main.length)}`} aria-label={`Modelos de ${category.name.toLocaleLowerCase('es')}`} data-testid="catalogo-subcategories">
     {
-      category.subcategories.map((s) => {
-        const from = subFromPrice(s);
+      main.map((s) => {
+        const price = priceView(s);
         return (
-          <li>
-            <article class="cat-card">
-              <h2>{s.name}</h2>
-              <p class="cat-price">{from === null ? 'Cotiza con un asesor' : `Desde ${formatFromPrice(from)}`}</p>
-              <a class="cat-link" href={`/catalogo/${category.slug}/${s.slug}`}>
-                Ver {s.name}
-              </a>
-            </article>
-          </li>
+          <a class="cat-pc" href={`/catalogo/${category.slug}/${s.slug}`}>
+            <CatalogMedia image={primaryImage(s.slug)} ratio="1/1" kind="card" />
+            <div class="cat-pc__body">
+              <h2 class="cat-pc__title">{cardTitle(s)}</h2>
+              {price.kind === 'from' && <span class="cat-pc__price">Desde {price.text}</span>}
+              {price.kind === 'advisor' && <span class="cat-pc__price cat-pc__price--advisor">Cotiza con un asesor</span>}
+              {price.kind === 'pending' && (
+                <span class="cat-pc__price">
+                  <span class="cat-am">[Desde $ — lo calcula el motor]</span>
+                </span>
+              )}
+              {hasVariants(s) && (
+                <div class="cat-chips">
+                  {s.variants.map((v) => (
+                    <span class="cat-chip">{chipLabel(v)}</span>
+                  ))}
+                </div>
+              )}
+              <span class="cat-pc__cta">
+                Ver detalle
+                <Arrow size={18} />
+              </span>
+            </div>
+          </a>
         );
       })
     }
-  </ul>
+  </section>
+
+  {
+    more.length > 0 && (
+      <section class="cat-more" aria-labelledby="mas" data-testid="catalogo-mas-opciones">
+        <h2 id="mas">Más opciones para tu jardín</h2>
+        <p>Combinaciones de paneles fijos y corredizos. Cada una se cotiza con un asesor.</p>
+        <ul class="cat-more__list">
+          {more.map((s) => (
+            <li class="cat-more__row">
+              <a class="cat-more__text" href={`/catalogo/${category.slug}/${s.slug}`}>
+                <span class="cat-more__name">{s.name}</span>
+                <span class="cat-more__sub">Cotiza con un asesor</span>
+              </a>
+              <a
+                class="cat-wa"
+                href={buildWaLink(buildAdvisorMessage(s.name))}
+                aria-label={`Cotizar ${s.name.replace('+', 'más')} por WhatsApp`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <WhatsAppIcon />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 </CatalogShell>

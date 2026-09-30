@@ -1,28 +1,78 @@
 ---
-// /catalogo (R1 tracer): the 3 category cards straight from the model.
+// /catalogo (R2, boards r04): 3 big category cards + gallery (Q11).
 import CatalogShell from '@components/catalog/CatalogShell.astro';
+import CatalogMedia from '@components/catalog/CatalogMedia.astro';
+import Arrow from '@components/catalog/Arrow.astro';
+import PhotoFrame from '@components/PhotoFrame';
 import { CATEGORIES } from '@content/catalog';
+import { contentFor } from '@content/catalogContent';
+import { CATALOG_GALLERY } from '@content/catalogGallery';
+import { assertCatalogForBuild } from '@content/catalogBuild';
+import { indexChips, primaryImage, verLabel } from '@content/catalogView';
+
+assertCatalogForBuild();
 ---
 
 <CatalogShell
+  index
   title="Catálogo | ALCUSA"
   description="Puertas de baño, puertas de jardín y ventanas de aluminio y vidrio a la medida, con precio desde."
+  crumbs={[{ label: 'Inicio', href: '/' }, { label: 'Catálogo' }]}
 >
-  <h1>Catálogo</h1>
-  <p class="cat-lead">Elija una categoría para ver los modelos y cotizar.</p>
-  <ul class="cat-grid" data-testid="catalogo-categories">
+  <section class="cat-head">
+    <p class="cat-kicker">CATÁLOGO</p>
+    <h1 class="cat-h1">Todo lo que fabricamos a tu medida</h1>
+    <p class="cat-lead">Elige una categoría, mira los modelos y cotiza el que más te guste.</p>
+  </section>
+
+  <section class="cat-index-grid" aria-label="Categorías" data-testid="catalogo-categories">
     {
       CATEGORIES.map((c) => (
-        <li>
-          <article class="cat-card">
-            <h2>{c.name}</h2>
-            <p>{c.subcategories.length} opciones</p>
-            <a class="cat-link" href={`/catalogo/${c.slug}`}>
-              Ver {c.name}
-            </a>
-          </article>
-        </li>
+        <article class="cat-card">
+          <a href={`/catalogo/${c.slug}`}>
+            <CatalogMedia image={primaryImage(c.slug)} ratio="1/1" kind="card" />
+            <div class="cat-card__body">
+              <h2 class="cat-card__title">{c.name}</h2>
+              <p class="cat-card__text">{contentFor(c.slug).blurb}</p>
+              <div class="cat-chips">
+                {indexChips(c).map((label) => (
+                  <span class="cat-chip">{label}</span>
+                ))}
+              </div>
+              <span class="cat-btn">
+                {verLabel(c)}
+                <Arrow />
+              </span>
+            </div>
+          </a>
+        </article>
       ))
     }
-  </ul>
+  </section>
+
+  {
+    CATALOG_GALLERY.length > 0 && (
+      <section class="cat-gallery" aria-labelledby="gal" data-testid="catalogo-galeria">
+        <h2 id="gal">Galería de proyectos</h2>
+        <p>
+          Instalaciones reales de nuestros clientes. <span class="cat-gallery__hint">Desliza para ver más.</span>
+        </p>
+        <ul class="cat-gallery__row" tabindex="0" aria-label="Fotos de proyectos">
+          {CATALOG_GALLERY.map((g) => (
+            <li class="cat-gallery__item">
+              <PhotoFrame src={g.src} alt={g.alt} ratio="1/1" />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
 </CatalogShell>
+
+<style is:global>
+  @media (min-width: 768px) {
+    .cat-gallery__hint {
+      display: none;
+    }
+  }
+</style>
