@@ -1,0 +1,47 @@
+{
+  "generated_at": "2026-09-30T00:00:00-06:00",
+  "promotions": [
+    {
+      "id": "promo-puerta-recta",
+      "placeholder": true,
+      "title": "Puerta de baño recta",
+      "description": "Vidrio claro y perfil a tu elección, fabricada a tu medida.",
+      "image": "/images/catalog-recta.jpg",
+      "image_alt": "Puerta de baño recta corrediza con vidrio claro",
+      "price_before": 260,
+      "price_promo": 222,
+      "product_slug": "recta",
+      "starts_on": "2026-09-01",
+      "ends_on": "2026-10-31",
+      "rules": []
+    },
+    {
+      "id": "promo-ventana-francesa",
+      "placeholder": true,
+      "title": "Ventana Francesa",
+      "description": "Luz natural y ventilación con perfil negro de aluminio.",
+      "image": "/images/catalog-ventana.jpeg",
+      "image_alt": "Ventanas francesas con perfil negro",
+      "price_before": 127,
+      "price_promo": 108,
+      "product_slug": "ventana-francesa",
+      "starts_on": "2026-09-01",
+      "ends_on": "2026-10-31",
+      "rules": []
+    },
+    {
+      "id": "promo-jardin-3-hojas",
+      "placeholder": true,
+      "title": "Puerta de jardín 3 hojas",
+      "description": "Corrediza, para conectar tu casa con el jardín.",
+      "image": "/images/catalog-jardin.webp",
+      "image_alt": "Puerta de jardín corrediza de tres hojas",
+      "price_before": 482,
+      "price_promo": 410,
+      "product_slug": "jardin-3-hojas",
+      "starts_on": "2026-09-01",
+      "ends_on": "2026-11-15",
+      "rules": []
+    }
+  ]
+}

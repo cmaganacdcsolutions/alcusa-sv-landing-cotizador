@@ -1,5 +1,16 @@
 import { expect, test } from './fixtures';
 
+
+// R3 (2026-09-30): el grid de catalogo, la galeria, el banner del cotizador y las anclas
+// /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
+// los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
+// contra el drawer/footer nuevos. Ver HANDOFF R3.
+const R3_MOVED = new Set<string>(["a \"Cotizar este modelo\" catálogo CTA opens the cotizador hydrated with that product", "drawer nav links close the drawer and scroll to the section on /", "drawer nav links navigate from /cotizador back to / and land on the section", "footer nav links scroll to each section on / and navigate from /contacto", "galería caption links out to Instagram", "mobile snap-scroll strip has prev/next controls that scroll the strip", "prev/next buttons and the n/6 counter move through the photos", "swiping the lightbox image moves to the next photo"]);
+// eslint-disable-next-line no-empty-pattern
+test.beforeEach(({}, info) => {
+  test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
+});
+
 // SF-fixes slice: logo/nav-link bugfixes, hero category CTAs, gallery
 // prev/next controls, sticky top bar, and the Galeria/Footer fidelity
 // follow-ups (Instagram caption + handles). New spec file (not shared with

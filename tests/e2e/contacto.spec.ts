@@ -1,6 +1,17 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
+
+// R3 (2026-09-30): el grid de catalogo, la galeria, el banner del cotizador y las anclas
+// /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
+// los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
+// contra el drawer/footer nuevos. Ver HANDOFF R3.
+const R3_MOVED = new Set<string>(["desktop quick links: full 6-link nav, labelled \"Proyectos reales\""]);
+// eslint-disable-next-line no-empty-pattern
+test.beforeEach(({}, info) => {
+  test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
+});
+
 // ContactForm hydrates `client:visible` (async, on intersection) — wait for
 // the marker before driving inputs so the fill isn't lost to a not-yet-
 // mounted controlled component re-rendering back to its empty initial state.
