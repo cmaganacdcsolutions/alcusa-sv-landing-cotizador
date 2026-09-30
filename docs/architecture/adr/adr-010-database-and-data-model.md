@@ -3,6 +3,8 @@
 Date: 2026-09-29
 Status: proposed (pendiente de revisión del cliente; se vuelve accepted al aprobar CR-01)
 
+> **Enmienda 2026-09-30** (se editó el borrador, no hay ADR nuevo porque sigue sin aceptarse): (1) folio `{6}`=>`{8}` (7 aleatorios + 1 de control) y `quotes.code CHAR(17)`=>`CHAR(21)` (§3, §4); (2) `quote_items.config` = snapshot completo + `config_schema_version` + `promo_ref` (§3); (3) `quotes` captura `customer_name` y `customer_whatsapp` (antes `customer_phone`) desde el mini formulario previo al PDF, más `consent_at` y `privacy_notice_version`, con índices de búsqueda del admin (§3); (4) retención de cotizaciones sin pago baja de 24 a 12 meses (§7); (5) marcador de contingencia `L`=>`U` y nota de la referencia Wompi de 24 caracteres (§4). Ver ADR-011 (Enmienda) y ADR-012.
+
 ## Contexto
 Hasta hoy el sistema no tiene base de datos. README §2 declara "RPO ≈ 0 (git es la fuente de verdad, no hay BD)";
 ADR-003 guarda órdenes Wompi como archivos planos en `alcusa-private/data/{orders,processed}`; ADR-008 mantiene las
@@ -27,7 +29,7 @@ El SO del VPS aún no está aprovisionado, así que la elección no tiene costo 
 | Concurrencia de escritura | <1 escritura/s sostenida; ráfagas del webhook de Wompi |
 | Disponibilidad | Sin SLA propio; una sola VPS. Si la BD cae, **landing, catálogo y promociones publicadas siguen sirviéndose** (ver ADR-011) |
 | RPO / RTO | RPO ≤ 24 h (dump nocturno; ver §6), RTO ≤ 2 h (reprovisionar + restore). Subir a RPO ≤ 15 min con binlog solo si ventas/día lo justifican |
-| PII | nombre, teléfono, email opcional, zona/dirección de entrega, texto libre de contactos. Nunca datos de tarjeta (SAQ-A intacto, ADR-003) |
+| PII | nombre y WhatsApp del cliente (obligatorios en toda cotización desde 2026-09-30), email opcional, zona/dirección de entrega, texto libre de contactos. Nunca datos de tarjeta (SAQ-A intacto, ADR-003) |
 | Equipo | 1 dev frontend + seniors de agente; nadie de guardia 24/7. La operación debe ser aburrida |
 | Presupuesto | Sin gasto nuevo recurrente en la BD (mismo VPS) |
 
@@ -104,18 +106,19 @@ motor equivalente en el servidor (ver tech-debt propuesto en ADR-011).
 Descartado: tabla EAV por atributo (consultas ilegibles, sin validación), columnas por regla (migración por cada idea del cliente), JSON único en `promotions` (no permite ordenar/activar reglas por separado ni auditarlas por fila).
 
 **`quotes`**
-`id`, `code` CHAR(17) UNIQUE (folio público, ver §4), `idempotency_key` CHAR(36) UNIQUE, `status`
-(`issued|awaiting_payment|partially_paid|paid|expired|cancelled|superseded`), `supersedes_quote_id` FK NULL,
-`customer_name` VARCHAR(120), `customer_phone` VARCHAR(20) (E.164), `customer_email` VARCHAR(160) NULL,
+`id`, `code` CHAR(21) UNIQUE (folio público `ALC-AAAAMMDD-XXXXXXXX`, ver §4), `idempotency_key` CHAR(36) UNIQUE, `status`
+(`issued|awaiting_payment|partially_paid|paid|expired|cancelled|superseded`), `supersedes_quote_id` FK NULL (solo enlaza: crear una cotización nueva **no cambia el estado** de la anterior; `superseded` queda como marca manual del admin),
+**datos del cliente, capturados antes de generar el PDF (mini formulario)**: `customer_name` VARCHAR(120) NULL, `customer_whatsapp` VARCHAR(16) NULL (E.164 normalizado en servidor: `+` y hasta 15 dígitos; sustituye a `customer_phone`), `customer_email` VARCHAR(160) NULL (opcional, no se pide en v1). Ambos obligatorios al crear (validación de la aplicación + `CHECK (anonymized_at IS NOT NULL OR (customer_name IS NOT NULL AND customer_whatsapp IS NOT NULL))` y `CHECK (customer_whatsapp IS NULL OR customer_whatsapp REGEXP '^\\+[1-9][0-9]{7,14}$')`); quedan NULL solo tras anonimizar. `consent_at` DATETIME NOT NULL, `privacy_notice_version` VARCHAR(20) NOT NULL,
 `delivery_mode` (`pickup|delivery`), `delivery_zone` VARCHAR(60) NULL, `delivery_address` VARCHAR(255) NULL,
-`subtotal` / `transport_fee` / `total` DECIMAL, `currency` CHAR(3) DEFAULT 'USD', `valid_until` DATE,
+`subtotal` / `transport_fee` / `total` DECIMAL(10,2) (la API los recibe como dólares decimales, ADR-011 §5), `currency` CHAR(3) DEFAULT 'USD', `valid_until` DATE,
 `pricing_source` VARCHAR(20) (`client` hoy; ver ADR-011 sobre confianza del precio), `client_cart_hash` CHAR(64),
 `source` VARCHAR(20) (`cotizador`), `ip_hash` CHAR(64) NULL, `created_at`, `updated_at`, `anonymized_at` NULL.
-Índices: `(status, created_at)`, `(customer_phone)`, `(created_at)`.
+Índices: `(status, created_at)`, `(customer_whatsapp, created_at)` (búsqueda exacta del admin y "otras cotizaciones de este cliente"), `(customer_name(40))` (búsqueda por prefijo), `(created_at)`, `(anonymized_at, status, created_at)` (barrido de retención).
+Búsqueda en el admin: el término se normaliza con la misma función E.164 del servidor y, si es un teléfono completo, usa el índice; la búsqueda por últimos dígitos (`LIKE '%1234'`) y por nombre "contiene" hace escaneo, aceptable hasta ~100,000 filas (24 meses × 30/día ≈ 22,000; revisar si se supera). La colación `utf8mb4_unicode_ci` ignora mayúsculas y acentos. Los índices sobre PII implican que la anonimización también debe poner NULL antes del purgado del índice (no hay copia aparte).
 
 **`quote_items`** — foto inmutable de lo que el cliente vio.
 `id`, `quote_id` FK (CASCADE), `position`, `product_slug`, `description` VARCHAR(255), `qty`, `unit_price`, `line_total`,
-`config` JSON (medidas, vidrio, acabado: lo que produzca el cotizador; no se consulta por sus claves).
+`config` JSON = **snapshot completo del `CartItem`** (todas las claves de `ITEM_FIELD_KEYS`, sin `id`; no se consulta por sus claves pero debe bastar para reconstruir el ítem editable, ADR-012 §2), `config_schema_version` SMALLINT NOT NULL DEFAULT 1 (sube cuando cambia `ITEM_FIELD_KEYS`), `promo_ref` VARCHAR(60) NULL (id de la promoción aplicada a la línea).
 
 **`payment_intents`** — reemplaza los archivos `data/orders/*.json` de ADR-003.
 `id`, `quote_id` FK, `reference` VARCHAR(40) UNIQUE (el `identificadorEnlaceComercio` enviado a Wompi = `<code>-P<n>`),
@@ -166,17 +169,15 @@ Opciones evaluadas:
 |---|---|---|---|---|
 | Autoincremental (`COT-000123`) | Excelente | Sí, trivial | Sí (la competencia cuenta tus cotizaciones) | No |
 | UUIDv4/ULID | Malo (36/26 chars) | No | No | Despreciable |
-| **Folio aleatorio legible `ALC-AAAAMMDD-XXXXXX`** | Bueno | No en la práctica (30 bits + fecha, sin endpoint público de consulta) | No | Se resuelve con `UNIQUE` + reintento |
+| **Folio aleatorio legible `ALC-AAAAMMDD-XXXXXXXX`** | Bueno (agrupado 4+4) | No en la práctica (35 bits + fecha + dígito de control + límites de tasa, ADR-012) | No | Se resuelve con `UNIQUE` + reintento |
 
-**Recomendación: folio aleatorio legible, generado en el servidor.** Formato `ALC-<AAAAMMDD fecha SV>-<6 chars Crockford base32>`
-(alfabeto sin I, L, O, U; 32^6 ≈ 1.07×10^9 por día), p. ej. `ALC-20260929-K7QM3X`. Es una evolución del formato de ADR-009 (4 → 6 chars): sigue
-siendo reconocible y el prefijo `ALC-` no se confunde con `ALC-<yyyy>-<sufijo>` del mock de orden.
-- Generación: `random_int` (CSPRNG) en PHP; `INSERT` con `UNIQUE(code)`; ante `ER_DUP_ENTRY` reintenta hasta 5 veces. Nunca se genera en el cliente.
-- **El folio no es una credencial.** No hay endpoint público que devuelva datos de una cotización por folio (el cliente ya tiene su PDF/WhatsApp). Por eso 30 bits bastan
-  y no se protege como secreto. Si el cliente pide "consultar mi cotización/pago" (pregunta abierta), el acceso público se hace con **folio + últimos 4 dígitos del teléfono + rate limit**, o con un token separado de 128 bits en un enlace; **nunca** con el folio solo. Requiere ADR nuevo.
+**Recomendación: folio aleatorio legible, generado en el servidor.** Formato `ALC-<AAAAMMDD fecha SV>-<8 chars Crockford base32>` (alfabeto sin I, L, O, U; **7 aleatorios (35 bits) + 1 de control**, ver ADR-012 §4), p. ej. `ALC-20260930-K7QM3X90` (mostrado agrupado `ALC-20260930-K7QM-3X90`). Longitud: 4 (`ALC-`) + 8 (fecha) + 1 (`-`) + 8 = **21 caracteres** => `quotes.code CHAR(21)`. Enmienda 2026-09-30: antes era 6 chars y `CHAR(17)`; el `17` ya estaba mal (correspondía al formato de 4 chars de ADR-009, y con 6 habría sido 19). Es una evolución del formato de ADR-009 y el prefijo `ALC-` no se confunde con `ALC-<yyyy>-<sufijo>` del mock de orden.
+- **Dígito de control**: `check = ALPHABET[(Σ v_i·(i+1)) mod 31]`, i = 0..6. Nunca produce `Z` (índice 31). Vector de referencia: `K7QM3X9` => suma 434 => `434 mod 31 = 0` => `0` => `ALC-20260930-K7QM3X90`. Los generadores (PHP, B3) y validadores (PHP B6, TS F4) se fijan a los vectores de `src/integrations/quotes/code.test.ts` (rama `r5-cotizador`).
+- Generación: `random_int` (CSPRNG) en PHP para los 7 caracteres; `INSERT` con `UNIQUE(code)`; ante `ER_DUP_ENTRY` reintenta hasta 5 veces. Nunca se genera en el cliente.
+- **El folio deja de ser solo una referencia: es la llave de lectura** de `GET /api/quotes/{code}` (ADR-012), que devuelve ítems y totales y **nunca PII** (ni nombre ni WhatsApp, ahora presentes en toda cotización). Por eso 30 bits ya no bastan y se pasó a 35 + límites de tasa. Si se quisiera mostrar estado de pago o datos de contacto: **nunca** con el folio solo; folio + últimos 4 dígitos del WhatsApp + rate limit, o un token separado de 128 bits; requiere ADR nuevo.
 - La PK interna `id` nunca sale del servidor; el admin y las URLs del panel usan `id` interno detrás de sesión, y muestran el folio.
-- Referencia de pago Wompi: `<code>-P<n>` (n = intento de pago de esa cotización). Verificar longitud/charset admitidos por `identificadorEnlaceComercio` en docs.wompi.sv antes de cerrar (slice B3).
-- Folio de contingencia: si la API no responde, el cotizador puede emitir un folio local para no bloquear la venta, con el sufijo iniciando en `L` (letra excluida del alfabeto del servidor, así que nunca colisiona). Ese folio no existe en BD y no habilita pago en línea (ver ADR-011 §5).
+- Referencia de pago Wompi: `<code>-P<n>` = 21 + 2 + 1 dígito = **24 caracteres** (máx. 9 intentos por cotización; `payment_intents.reference VARCHAR(40)` sobra). Charset `[A-Z0-9-]`. El límite de Wompi no está verificado: gate de B3 (docs.wompi.sv).
+- Folio de contingencia: si la API no responde, el cotizador emite un folio local con sufijo `U` + 7 aleatorios (`ALC-AAAAMMDD-U???????`); `U` no existe en el alfabeto del servidor ni lo corrige ninguna regla de normalización (enmienda 2026-09-30: antes `L`, ambiguo con `l`/`1` al teclear). Sin dígito de control válido, no existe en BD y no habilita pago en línea (ADR-011 §5).
 
 ### 5. Migraciones
 - SQL plano versionado en `03-dev/db/migrations/NNNN_descripcion.sql` (`0001_init.sql`, ...), **solo hacia adelante**, un cambio por archivo, idempotencia no requerida (el runner registra qué corrió).
@@ -195,13 +196,13 @@ siendo reconocible y el prefijo `ALC-` no se confunde con `ALC-<yyyy>-<sufijo>` 
 - Entrega: `senior-infrastructure` (cron, claves, destino externo), `senior-dba` (comandos, verificación, script de restore).
 
 ### 7. PII y retención
-Datos personales tratados: nombre, teléfono, email (opcional), dirección/zona, mensaje libre, hash de IP. Principio: **mínimo necesario, retención definida, sin PII en logs.**
+Datos personales tratados: nombre y WhatsApp del cliente (obligatorios en toda cotización), email (opcional), dirección/zona, mensaje libre, hash de IP. Principio: **mínimo necesario, retención definida, sin PII en logs.**
 
 | Dato | Retención propuesta (SUPUESTO, validar con el cliente/asesor legal) | Al vencer |
 |---|---|---|
 | `contacts` | 12 meses desde `created_at` | DELETE físico (o anonimizar si el cliente prefiere estadística) |
-| `quotes` sin pago | 24 meses | Anonimizar: nombre/teléfono/email/dirección → NULL, se conservan totales e ítems, `anonymized_at` |
-| `quotes` con pago + `payments` | 10 años (SUPUESTO por obligación contable; **validar con el contador**) | Anonimizar datos personales al cumplirse; el registro contable queda |
+| `quotes` sin pago (incluye las que solo generaron PDF) | **12 meses** desde `created_at` (propuesta 2026-09-30; antes 24). Desde el mini formulario se captura el contacto de todo visitante que genera un PDF, compradores o no: el valor comercial decae rápido y minimizar es más barato que proteger. SUPUESTO a validar con el cliente | Anonimizar: nombre/WhatsApp/email/dirección → NULL, se conservan totales e ítems, `anonymized_at` |
+| `quotes` con pago + `payments` (y su `raw_event`) | 10 años (SUPUESTO por obligación contable; **validar con el contador**) | Anonimizar datos personales al cumplirse; el registro contable queda |
 | `ip_hash` | 30 días | Poner en NULL |
 | `audit_log` | 12 meses | Purga por usuario de mantenimiento |
 | `admin_sessions`, `rate_limits` | Expiración + purga diaria | DELETE |
@@ -210,7 +211,7 @@ Datos personales tratados: nombre, teléfono, email (opcional), dirección/zona,
 - IP: nunca en claro; `HMAC-SHA256(ip, pepper)` con pepper en el `config.php` externo. Sirve para rate limit y correlación de abuso, no para identificar.
 - Logs de aplicación/Nginx: sin cuerpo de formularios, sin teléfonos ni emails (el patrón actual de `wompi_log` ya lo respeta; se conserva como regla de revisión).
 - Purga y anonimización: `bin/retention.php` diario por cron, con `--dry-run` y registro en `audit_log` (conteos, no datos).
-- Derechos del titular (acceso/rectificación/supresión): procedimiento manual documentado (búsqueda por teléfono en admin + `bin/anonymize-customer.php`), respuesta ≤ 30 días. El cotizador y el formulario de contacto muestran aviso de privacidad y guardan `consent_at`. **No se afirma cumplimiento de la ley salvadoreña de protección de datos personales: requiere revisión del texto legal por asesor del cliente.**
+- Derechos del titular (acceso/rectificación/supresión): procedimiento manual documentado (búsqueda por WhatsApp o nombre en admin + `bin/anonymize-customer.php`), respuesta ≤ 30 días. El cotizador (mini formulario de nombre + WhatsApp, antes de generar el PDF) y el formulario de contacto muestran aviso de privacidad y guardan el consentimiento (`quotes.consent_at` + `privacy_notice_version`; `contacts.consent_at`). Finalidad limitada: preparar la cotización, contactar al cliente sobre ella y conciliar su pago; sin uso comercial sin casilla aparte. **No se afirma cumplimiento de la ley salvadoreña de protección de datos personales: requiere revisión del texto legal por asesor del cliente.**
 - Cifrado en reposo: disco del VPS + respaldos cifrados con `age`; cifrado por columna solo para el secreto TOTP. Sin cifrado de nombre/teléfono en BD (impediría búsqueda); riesgo aceptado con acceso a BD solo por socket local.
 - Acceso a la BD: solo el pool PHP (`alcusa_app`) y root/SSH por socket. Nadie usa `alcusa_app` desde una máquina de desarrollo.
 
