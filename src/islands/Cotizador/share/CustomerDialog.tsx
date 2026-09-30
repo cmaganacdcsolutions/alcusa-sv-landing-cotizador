@@ -316,6 +316,18 @@ function DialogBody({ share }: CustomerDialogProps): ReactElement {
               </button>
             </div>
           ) : null}
+          {phase === 'server' ? (
+            <div className="cf-server" role="alert">
+              <div className="cf-server__head">
+                <svg width="24" height="24" {...svgProps}>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7.5v5.5M12 16.2v.1" />
+                </svg>
+                <p>No pudimos guardar tus datos</p>
+              </div>
+              <p>Revisa tu conexión e inténtalo de nuevo. Lo que escribiste sigue aquí.</p>
+            </div>
+          ) : null}
           <div className="cf-consent" data-error={errors.consent ? '' : undefined} data-busy={busy ? '' : undefined}>
             <span className="cf-box">
               <input
@@ -356,18 +368,6 @@ function DialogBody({ share }: CustomerDialogProps): ReactElement {
               <ErrorIcon />
               {errors.consent}
             </p>
-          ) : null}
-          {phase === 'server' ? (
-            <div className="cf-server" role="alert">
-              <div className="cf-server__head">
-                <svg width="24" height="24" {...svgProps}>
-                  <circle cx="12" cy="12" r="9" />
-                  <path d="M12 7.5v5.5M12 16.2v.1" />
-                </svg>
-                <p>No pudimos guardar tus datos</p>
-              </div>
-              <p>Revisa tu conexión e inténtalo de nuevo. Lo que escribiste sigue aquí.</p>
-            </div>
           ) : null}
         </div>
         <div className="cf-actions">

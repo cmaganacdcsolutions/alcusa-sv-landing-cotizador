@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
@@ -204,6 +205,28 @@ test.describe('customer dialog — H4/E4 remembered + success', () => {
   });
 });
 
+test.describe('customer dialog — ADR-011 s5 renew notice (proposal, not on the boards)', () => {
+  test('after a folio exists, changing the cart announces that the next send issues a new folio', async ({ page }) => {
+    await setup(page);
+    await gotoResumen(page);
+    await expect(page.getByTestId('quote-share-renew')).toHaveCount(0);
+    await trigger(page).click();
+    const d = dialog(page);
+    const download = page.waitForEvent('download', { timeout: 15_000 }).catch(() => null);
+    await fill(d, 'María López', '7123-4567');
+    await cta(d).click();
+    await expect(d).toHaveCount(0);
+    await download;
+    await page.getByRole('button', { name: 'Cambiar' }).locator('visible=true').first().click();
+    await page.locator('#municipio').selectOption({ index: 2 });
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    await expect(page.getByTestId('quote-share-renew').locator('visible=true').first()).toHaveText(
+      'Cambiaste tu cotización: al enviarla se generará un folio nuevo.',
+    );
+  });
+});
+
 test.describe('customer dialog — H5/E5 server error', () => {
   test('429 keeps the values, shows the alert and "Intentar de nuevo"; retry succeeds', async ({ page }) => {
     await setup(page, 'rate_limited');
@@ -288,5 +311,33 @@ test.describe('customer dialog — cancel, focus, layout', () => {
       expect(Math.abs(r.x + r.width / 2 - vp.width / 2)).toBeLessThan(1);
       expect(Math.abs(r.y + r.height / 2 - vp.height / 2)).toBeLessThan(1);
     }
+  });
+});
+
+test.describe('customer dialog — a11y (axe with the dialog open)', () => {
+  const serious = async (page: Page): Promise<unknown[]> => {
+    await page.waitForTimeout(450); // entrance animation: axe must not read mid-fade colours
+    const results = await new AxeBuilder({ page }).analyze();
+    return results.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+  };
+
+  test('H1/E1 empty — no serious/critical violations', async ({ page }) => {
+    await setup(page);
+    await gotoResumen(page);
+    await trigger(page).click();
+    await expect(dialog(page)).toBeVisible();
+    expect(await serious(page)).toEqual([]);
+  });
+
+  test('H2/E2 inline errors — no serious/critical violations', async ({ page }) => {
+    await setup(page);
+    await gotoResumen(page);
+    await trigger(page).click();
+    const d = dialog(page);
+    await d.getByLabel('Nombre').fill('M');
+    await d.getByLabel('WhatsApp').fill('51234567');
+    await cta(d).click();
+    await expect(d.getByText('Marca la casilla para continuar.')).toBeVisible();
+    expect(await serious(page)).toEqual([]);
   });
 });

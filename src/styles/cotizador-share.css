@@ -1,6 +1,4 @@
-/* R4 — "Enviar por WhatsApp (PDF)" (ios/android/desktop-r07). Literals that
-   have no token yet carry a `TODO token` marker and are listed in the R4
-   HANDOFF (tokens.css/json are frozen for this slice). */
+/* R4 — "Enviar por WhatsApp (PDF)" (ios/android/desktop-r07). */
 
 @keyframes qs-spin {
   to {
@@ -60,7 +58,7 @@
   background: var(--color-whatsapp-strong);
 }
 .qs-wa--ready {
-  box-shadow: 0 0 0 3px rgba(8, 115, 72, 0.22); /* TODO token: whatsapp ring */
+  box-shadow: var(--shadow-whatsapp-ring);
 }
 .qs-wa--ready:focus-visible {
   box-shadow: var(--shadow-focus);
@@ -116,11 +114,11 @@
 }
 .qs-card--info {
   background: var(--color-surface-tint);
-  border: 1px solid #cfe0ff; /* TODO token: info card border */
+  border: 1px solid var(--color-info-border);
 }
 .qs-card--error {
-  background: #fdeeee; /* TODO token: error card bg */
-  border: 1px solid #f0c2c2; /* TODO token: error card border */
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
 }
 .qs-card__head {
   display: flex;
@@ -250,7 +248,7 @@
   border-radius: var(--radius-lg);
   background: var(--color-ink);
   color: var(--color-surface);
-  box-shadow: 0 16px 40px rgba(16, 33, 61, 0.25); /* TODO token: toast shadow */
+  box-shadow: var(--shadow-modal);
   animation: qs-in 200ms ease-out;
 }
 @media (min-width: 1024px) {

@@ -20,9 +20,17 @@ export const test = base.extend<{ blockQuotePdf: boolean }>({
   },
 });
 
-/** Presses the PDF button (chunk blocked) and returns the G-card text-only wa.me link. */
+/**
+ * Presses the PDF button, completes the R07.1 customer dialog (mock folio) and, with the PDF chunk
+ * blocked, returns the G-card text-only wa.me link.
+ */
 export async function textOnlyWaLink(page: Page): Promise<Locator> {
   await page.getByTestId('quote-share-button').locator('visible=true').click();
+  const dialog = page.getByRole('dialog', { name: 'Tus datos para la cotización' });
+  await dialog.getByLabel('Nombre').fill('María López');
+  await dialog.getByLabel('WhatsApp').fill('7123-4567');
+  await dialog.getByRole('checkbox').check();
+  await dialog.getByRole('button', { name: 'Generar mi cotización' }).click();
   const link = page.getByTestId('quote-share-text-only').locator('visible=true');
   await expect(link).toBeVisible();
   return link;

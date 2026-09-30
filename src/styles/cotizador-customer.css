@@ -1,6 +1,5 @@
 /* R07.1 — customer mini form (ios/android-r07 estado H = bottom sheet,
-   desktop-r07 estado E = centered modal from 1024). Literals without a token
-   carry `TODO token` and are listed in the HANDOFF (tokens.css is frozen). */
+   desktop-r07 estado E = centered modal from 1024). */
 
 @keyframes cf-rise {
   from {
@@ -66,7 +65,7 @@
   padding: 12px 24px calc(34px + env(safe-area-inset-bottom, 0px));
   background: var(--color-surface);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  box-shadow: 0 -8px 20px rgba(16, 33, 61, 0.1); /* TODO token: sheet shadow */
+  box-shadow: var(--shadow-sheet);
   animation: cf-rise 200ms ease-out;
 }
 .cf-dialog svg {
@@ -164,7 +163,7 @@
   align-items: center;
   overflow: hidden;
   padding: 0 16px;
-  border: 1.5px solid #6b7a90; /* TODO token: input border 4.4:1 */
+  border: 1.5px solid var(--color-border-input-strong);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   font-size: 16px;
@@ -185,7 +184,7 @@
   color: inherit;
 }
 .cf-input input::placeholder {
-  color: #5f6b80; /* TODO token: placeholder */
+  color: var(--color-placeholder);
   font-weight: var(--font-weight-body-regular);
   opacity: 1;
 }
@@ -316,7 +315,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #6b7a90; /* TODO token: checkbox border 4.4:1 */
+  border: 2px solid var(--color-border-input-strong);
   border-radius: var(--radius-xs);
   background: var(--color-surface);
 }
@@ -376,8 +375,8 @@
   margin: 12px 0 0;
   padding: 12px 16px;
   border-radius: var(--radius-lg);
-  background: #fdeeee; /* TODO token: error card bg */
-  border: 1px solid #f0c2c2; /* TODO token: error card border */
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -447,9 +446,10 @@
   display: none;
 }
 
-/* ---- android-r07: 48 targets, sheet padding 12 24 16 (+24 gesture strip) ---- */
+/* ---- android-r07: 48 targets, sheet padding 12 24 16. The board's 24 dp gesture strip is
+   part of the phone mockup (.gs, outside the sheet); the real nav bar is outside the viewport. ---- */
 [data-cf-platform='android'] .cf-dialog {
-  padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 [data-cf-platform='android'] .cf-x {
   right: -14px;
@@ -470,6 +470,9 @@
 }
 [data-cf-platform='android'] .cf-ct {
   padding: 14px 0;
+}
+[data-cf-platform='android'] .cf-err--consent {
+  margin-left: 36px;
 }
 [data-cf-platform='android'] .cf-link {
   min-height: 48px;
@@ -499,14 +502,19 @@
     max-height: calc(100dvh - 32px);
     padding: 32px;
     border-radius: var(--radius-xl);
-    box-shadow: 0 16px 40px rgba(16, 33, 61, 0.25); /* TODO token: modal shadow */
+    box-shadow: var(--shadow-modal);
     animation: cf-pop 200ms ease-out;
   }
   .cf-grabber {
     display: none;
   }
+  .cf-wrap {
+    line-height: 24px;
+  }
+  /* board: 48. The static @fontsource Fraunces 500 is 368.8px wide for the title (board's variable
+     opsz build: 363.0) and the text box is 368 -> it wrapped by 0.8px; 40 still clears the 44px X. */
   .cf-title {
-    padding-right: 48px;
+    padding-right: 40px;
   }
   .cf-title h2 {
     font-family: var(--font-family-display);
@@ -545,6 +553,9 @@
   [data-cf-platform='android'] .cf-consent {
     min-height: 44px;
   }
+  [data-cf-platform='android'] .cf-err--consent {
+    margin-left: 34px;
+  }
   .cf-ct,
   [data-cf-platform='android'] .cf-ct {
     padding: 12px 0;
@@ -568,6 +579,7 @@
     min-height: 56px;
     border-radius: var(--radius-full);
     padding: 0 28px;
+    gap: 10px;
     font-size: 17px;
     line-height: 22px;
   }
@@ -576,8 +588,10 @@
     min-height: 44px;
     font-size: 15px;
   }
-  .cf-note .cf-link {
+  .cf-note .cf-link,
+  [data-cf-platform='android'] .cf-note .cf-link {
     min-height: 44px;
+    font-size: 14px;
   }
   .cf-cancel {
     margin-top: 10px;

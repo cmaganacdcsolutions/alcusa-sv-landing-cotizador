@@ -48,6 +48,8 @@ export interface UseQuoteShare {
   status: QuoteShareStatus;
   /** wa.me href that carries the folio; undefined until the folio resolves. */
   folioWaHref: string | undefined;
+  /** ADR-011 s5: a folio was already issued and the cart changed since, so the next send issues a new one. */
+  folioWillRenew: boolean;
   /** 'android' switches the touch targets from 44 to 48 (android-r07). */
   platform: 'android' | 'other';
   /** R07.1 customer dialog (H / E). */
@@ -62,6 +64,12 @@ export interface UseQuoteShare {
   submitCustomer: (c: CustomerData) => Promise<SubmitResult>;
   cancelDialog: () => void;
 }
+
+/**
+ * Cart hash of the last folio issued in this page session. Module-level on purpose: Resumen remounts
+ * when the user edits the cart and comes back, and the ADR-011 s5 notice must survive that round trip.
+ */
+let lastIssuedHash: string | undefined;
 
 const isCoarse = (): boolean => typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
 
@@ -105,6 +113,7 @@ export function useQuoteShare(input: CartShareInput, provider?: QuoteFolioProvid
   const [status, setStatus] = useState<QuoteShareStatus>('idle');
   const [folioWaHref, setFolioWaHref] = useState<string | undefined>(undefined);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [folioWillRenew, setFolioWillRenew] = useState(false);
   const platform = useMemo<'android' | 'other'>(
     () => (typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent) ? 'android' : 'other'),
     [],
@@ -144,6 +153,7 @@ export function useQuoteShare(input: CartShareInput, provider?: QuoteFolioProvid
   }, []);
   useEffect(() => {
     setStatus('idle'); // cart changed: D/E/toast no longer apply
+    setFolioWillRenew(lastIssuedHash !== undefined && lastIssuedHash !== hash);
     setFolioWaHref(undefined);
     setDialogOpen(false);
   }, [hash]);
@@ -237,6 +247,8 @@ export function useQuoteShare(input: CartShareInput, provider?: QuoteFolioProvid
     saveStoredCustomer(customer);
     if (folio.source === 'server') lastServerCode.current = folio.code;
     issuedRef.current = { hash: hashRef.current, folio, customer };
+    lastIssuedHash = hashRef.current;
+    setFolioWillRenew(false);
     setDialogOpen(false);
     window.setTimeout(() => pressedRef.current?.focus(), 0);
     if (intentRef.current === 'download') runDownloadFlow();
@@ -255,5 +267,5 @@ export function useQuoteShare(input: CartShareInput, provider?: QuoteFolioProvid
     return () => document.removeEventListener('keydown', onKey);
   }, [status, dismissToast]);
 
-  return { status, folioWaHref, platform, dialogOpen, press, shareAgain: runShareFlow, retry, download, dismissToast, submitCustomer, cancelDialog };
+  return { status, folioWaHref, folioWillRenew, platform, dialogOpen, press, shareAgain: runShareFlow, retry, download, dismissToast, submitCustomer, cancelDialog };
 }

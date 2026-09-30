@@ -156,6 +156,16 @@ export function QuoteShareNotices({
       </div>
     );
   }
+  if (status === 'idle' && share.folioWillRenew) {
+    // PROPOSAL (not on the r07 boards): ADR-011 s5 notice, styled like the E helper text.
+    return (
+      <div className={cls} {...plat}>
+        <p className="qs-help" role="status" aria-live="polite" data-testid="quote-share-renew">
+          Cambiaste tu cotización: al enviarla se generará un folio nuevo.
+        </p>
+      </div>
+    );
+  }
   return null;
 }
 
