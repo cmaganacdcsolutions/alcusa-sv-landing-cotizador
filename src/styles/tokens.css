@@ -194,3 +194,13 @@
     --motion-duration-sweep: 0ms;
   }
 }
+
+/* Foto completa (02-design/specs/image-frame-rule.md, 2026-09-30):
+   la foto nunca se recorta; relleno ambiental = misma imagen desenfocada. */
+:root {
+  --photo-frame-bg: #f6f3ed;
+  --photo-ambient-blur: 24px;
+  --photo-ambient-saturate: 1.1;
+  --photo-ambient-scale: 1.15;
+  --photo-ambient-opacity: 0.55;
+}

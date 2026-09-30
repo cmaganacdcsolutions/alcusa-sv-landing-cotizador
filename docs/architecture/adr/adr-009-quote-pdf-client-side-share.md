@@ -154,3 +154,6 @@ Exit path: replace `buildQuotePdf` implementation; if backend numbering is wante
 - `WHATSAPP_NUMBER` single constant; `wa.me` only via `buildWaLink`; `chooseDelivery` has the 3-branch unit test plus NotAllowedError branch.
 - PDF total == on-screen total test; file name matches `^Cotizacion-ALC-\d{8}-[0-9A-HJKMNP-TV-Z]{4}\.pdf$`.
 - Device checklist executed by QA on iOS Safari, iOS Chrome, Android Chrome, one in-app WebView.
+
+## Nota 2026-09-29 (CR-01)
+El §4 (número de cotización sin backend) queda **superado por ADR-010 §4 y ADR-011 §5**: el folio lo emite el servidor (`ALC-AAAAMMDD-XXXXXX`, 6 chars) y el PDF/WhatsApp se generan después de recibirlo, con folio local de contingencia si la API falla. La generación del PDF 100% en el navegador (pdf-lib) no cambia.

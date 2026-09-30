@@ -77,3 +77,38 @@ svg {
     scroll-behavior: auto !important;
   }
 }
+
+/* PhotoFrame — regla "Foto completa" (02-design/specs/image-frame-rule.md).
+   El marco fija la proporción; la foto va en contain, centrada, y detrás
+   la misma imagen desenfocada como relleno ambiental (aria-hidden). */
+.photo-frame {
+  position: relative;
+  overflow: hidden;
+  background: var(--photo-frame-bg);
+}
+.photo-frame__ambient,
+.photo-frame__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.photo-frame__ambient {
+  object-fit: cover;
+  filter: blur(var(--photo-ambient-blur)) saturate(var(--photo-ambient-saturate));
+  transform: scale(var(--photo-ambient-scale));
+  opacity: var(--photo-ambient-opacity);
+}
+.photo-frame__img {
+  z-index: 1;
+  object-fit: contain;
+  object-position: 50% 50%;
+}
+.photo-frame__overlay {
+  position: absolute;
+  z-index: 2;
+}
+@media (prefers-reduced-transparency: reduce) {
+  .photo-frame__ambient { display: none; }
+}

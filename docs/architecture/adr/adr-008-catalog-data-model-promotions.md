@@ -184,3 +184,6 @@ behind `CATEGORIES` / `PROMOTIONS`.
 - Every leaf has exactly one of quoterModel/advisorOnly; slugs unique; test derives `fromPrice` through the engine.
 - `wa.me` still only in `waLink.ts`.
 - Landing bundle stays <= 40 KB gzip (promo filter is an inline script).
+
+## Nota 2026-09-29 (CR-01)
+El §5 (Promociones) queda **parcialmente superado por ADR-010/ADR-011**: `src/content/promotions.ts` pasa a ser semilla/fallback del build; la fuente de verdad son las promociones de la BD publicadas como `/api/promotions.json` (ADR-011 §4). El resto del catálogo sigue estático y este ADR no cambia.

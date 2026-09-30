@@ -1,0 +1,64 @@
+import type { CSSProperties, ReactNode } from 'react';
+
+/** Proporciones de marco permitidas por la regla "Foto completa". */
+export type PhotoRatio = '1/1' | '4/5' | '4/3' | '3/2';
+
+export interface PhotoFrameProps {
+  src: string;
+  alt: string;
+  ratio: PhotoRatio;
+  /** srcset opcional; se reutiliza en la capa ambiental (misma descarga). */
+  srcSet?: string;
+  sizes?: string;
+  loading?: 'lazy' | 'eager';
+  className?: string;
+  style?: CSSProperties;
+  /** Insignias, figcaption, degradados: van encima (z-index 2). */
+  children?: ReactNode;
+}
+
+/**
+ * Marco de foto completa: la imagen nunca se recorta (contain, 50% 50%) y la
+ * misma imagen desenfocada rellena el marco. Render estático en Astro (sin
+ * client:*) o dentro de islas React.
+ */
+export default function PhotoFrame({
+  src,
+  alt,
+  ratio,
+  srcSet,
+  sizes,
+  loading = 'lazy',
+  className,
+  style,
+  children,
+}: PhotoFrameProps) {
+  return (
+    <div
+      className={className ? `photo-frame ${className}` : 'photo-frame'}
+      style={{ aspectRatio: ratio, ...style }}
+      data-ratio={ratio}
+    >
+      <img
+        className="photo-frame__ambient"
+        src={src}
+        srcSet={srcSet}
+        sizes={sizes}
+        alt=""
+        aria-hidden="true"
+        loading={loading}
+        decoding="async"
+      />
+      <img
+        className="photo-frame__img"
+        src={src}
+        srcSet={srcSet}
+        sizes={sizes}
+        alt={alt}
+        loading={loading}
+        decoding="async"
+      />
+      {children}
+    </div>
+  );
+}
