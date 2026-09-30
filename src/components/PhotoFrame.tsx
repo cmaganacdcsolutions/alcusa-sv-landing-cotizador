@@ -7,6 +7,8 @@ export interface PhotoFrameProps {
   src: string;
   alt: string;
   ratio: PhotoRatio;
+  /** Proporción desde el breakpoint desktop (900px); sin ella se conserva `ratio`. */
+  ratioLg?: PhotoRatio;
   /** srcset opcional; se reutiliza en la capa ambiental (misma descarga). */
   srcSet?: string;
   sizes?: string;
@@ -26,6 +28,7 @@ export default function PhotoFrame({
   src,
   alt,
   ratio,
+  ratioLg,
   srcSet,
   sizes,
   loading = 'lazy',
@@ -36,8 +39,17 @@ export default function PhotoFrame({
   return (
     <div
       className={className ? `photo-frame ${className}` : 'photo-frame'}
-      style={{ aspectRatio: ratio, ...style }}
+      style={
+        ratioLg
+          ? ({
+              '--photo-ratio': ratio.replace('/', ' / '),
+              '--photo-ratio-lg': ratioLg.replace('/', ' / '),
+              ...style,
+            } as CSSProperties)
+          : { aspectRatio: ratio, ...style }
+      }
       data-ratio={ratio}
+      data-ratio-lg={ratioLg}
     >
       <img
         className="photo-frame__ambient"

@@ -127,6 +127,10 @@ const { title, description, crumbs = [], backTo, index = false } = Astro.props;
     font-weight: 600;
     color: var(--color-ink);
   }
+  /* Board r06 mobile has its own back bar INSTEAD of the top bar. */
+  body:has(.cat-page--detail) .top-bar {
+    display: none;
+  }
   .cat-back {
     display: flex;
     align-items: center;
@@ -474,6 +478,10 @@ const { title, description, crumbs = [], backTo, index = false } = Astro.props;
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-sm);
   }
+  /* Board ios/android r06 state B (advisor): no photo shadow on mobile. */
+  .cat-detail__media--flat .photo-frame {
+    box-shadow: none;
+  }
   .cat-detail__media[hidden] {
     display: none;
   }
@@ -647,6 +655,7 @@ const { title, description, crumbs = [], backTo, index = false } = Astro.props;
   /* --- desktop: board values (1920) */
   @media (min-width: 1024px) {
     .cat-page {
+      --cat-hover-shadow: 0 12px 28px rgba(16, 33, 61, 0.14); /* desktop r04/r05 */
       gap: var(--space-8);
       padding: var(--space-8) 0 96px;
       font-size: var(--font-size-body-lg-desktop);
@@ -738,6 +747,8 @@ const { title, description, crumbs = [], backTo, index = false } = Astro.props;
       margin: 0;
     }
     .cat-pc .cat-chip {
+      padding: 6px 12px;
+      font-size: 13px;
       line-height: 18px;
     }
     .cat-pc__cta {
@@ -808,6 +819,9 @@ const { title, description, crumbs = [], backTo, index = false } = Astro.props;
     .cat-back {
       display: none;
     }
+    body:has(.cat-page--detail) .top-bar {
+      display: block;
+    }
     .cat-crumbs--detail {
       position: static;
       width: auto;
@@ -828,10 +842,9 @@ const { title, description, crumbs = [], backTo, index = false } = Astro.props;
     .cat-detail__media {
       margin: 0;
     }
-    /* Board r06: 4/5 on mobile, 1/1 from desktop. PhotoFrame inlines the
-       mobile ratio, so the desktop one needs !important. */
-    .cat-detail__media .photo-frame {
-      aspect-ratio: 1 / 1 !important;
+    /* Board r06 desktop draws the photo shadow in every priced/advisor state. */
+    .cat-detail__media--flat .photo-frame {
+      box-shadow: var(--shadow-sm);
     }
     .cat-ph--detail {
       height: auto;

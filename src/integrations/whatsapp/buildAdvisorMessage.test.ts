@@ -10,3 +10,10 @@ describe('integrations/whatsapp buildAdvisorMessage', () => {
     expect(message).not.toContain('$');
   });
 });
+
+describe('integrations/whatsapp buildCatalogAdvisorMessage', () => {
+  it('uses the catalog board copy', async () => {
+    const { buildCatalogAdvisorMessage } = await import('./buildMessage');
+    expect(buildCatalogAdvisorMessage('2 fijas + 2 corredizas')).toBe('Hola, quiero cotizar 2 fijas + 2 corredizas');
+  });
+});

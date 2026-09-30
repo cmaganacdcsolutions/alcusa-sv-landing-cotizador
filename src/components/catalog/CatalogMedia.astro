@@ -7,17 +7,18 @@ import type { CatalogImage } from '@content/catalogContent';
 interface Props {
   image: CatalogImage | null;
   ratio: PhotoRatio;
+  ratioLg?: PhotoRatio;
   /** Placeholder geometry: card (150 tall / 1:1 desktop) or detail. */
   kind: 'card' | 'detail';
   eager?: boolean;
   iconSize?: number;
 }
-const { image, ratio, kind, eager = false } = Astro.props;
+const { image, ratio, ratioLg, kind, eager = false } = Astro.props;
 ---
 
 {
   image ? (
-    <PhotoFrame src={image.src} alt={image.alt} ratio={ratio} loading={eager ? 'eager' : 'lazy'} />
+    <PhotoFrame src={image.src} alt={image.alt} ratio={ratio} ratioLg={ratioLg} loading={eager ? 'eager' : 'lazy'} />
   ) : (
     <div class={`cat-ph cat-ph--${kind}`} data-testid="foto-proximamente">
       <svg width={kind === 'detail' ? 40 : 32} height={kind === 'detail' ? 40 : 32} viewBox="0 0 24 24" aria-hidden="true">

@@ -11,7 +11,7 @@ import { contentFor } from '@content/catalogContent';
 import { assertCatalogForBuild } from '@content/catalogBuild';
 import { cotizadorHref } from '@content/deepLink';
 import { MORE_OPTIONS_GROUP, chipLabel, defaultVariant, detailTitle, primaryImage, priceView } from '@content/catalogView';
-import { buildAdvisorMessage } from '@integrations/whatsapp/buildMessage';
+import { buildCatalogAdvisorMessage } from '@integrations/whatsapp/buildMessage';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 export function getStaticPaths() {
@@ -36,7 +36,7 @@ const advisor = subcategory.advisorOnly === true;
 const price = priceView(subcategory);
 const shownPrice = selected ? formatFromPrice(selected.fromPrice as number) : price.kind === 'from' ? price.text : '';
 const ctaSlug = selected?.slug ?? subcategory.slug;
-const ctaHref = advisor ? buildWaLink(buildAdvisorMessage(subcategory.name)) : cotizadorHref(ctaSlug);
+const ctaHref = advisor ? buildWaLink(buildCatalogAdvisorMessage(subcategory.name)) : cotizadorHref(ctaSlug);
 const kicker = `${category.name}${subcategory.group === MORE_OPTIONS_GROUP ? ' · Más opciones' : ''}`.toLocaleUpperCase('es');
 const baseImage = primaryImage(subcategory.slug);
 const variantMedia = variants.flatMap((v) => {
@@ -59,13 +59,13 @@ const ctaRel = advisor ? 'noopener noreferrer' : undefined;
   ]}
 >
   <div class="cat-detail" data-detail>
-    <div class="cat-detail__media" data-media="base">
-      <CatalogMedia image={baseImage} ratio="4/5" kind="detail" eager />
+    <div class:list={['cat-detail__media', { 'cat-detail__media--flat': advisor }]} data-media="base">
+      <CatalogMedia image={baseImage} ratio="4/5" ratioLg="1/1" kind="detail" eager />
     </div>
     {
       variantMedia.map(({ slug, img }) => (
-        <div class="cat-detail__media" data-media={slug} hidden>
-          <CatalogMedia image={img} ratio="4/5" kind="detail" />
+        <div class:list={['cat-detail__media', { 'cat-detail__media--flat': advisor }]} data-media={slug} hidden>
+          <CatalogMedia image={img} ratio="4/5" ratioLg="1/1" kind="detail" />
         </div>
       ))
     }

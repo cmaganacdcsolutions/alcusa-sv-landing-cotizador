@@ -8,7 +8,7 @@ import { CATEGORIES, hasVariants, type Category } from '@content/catalog';
 import { contentFor } from '@content/catalogContent';
 import { assertCatalogForBuild } from '@content/catalogBuild';
 import { cardTitle, chipLabel, gridColsClass, primaryImage, priceView, splitSubcategories } from '@content/catalogView';
-import { buildAdvisorMessage } from '@integrations/whatsapp/buildMessage';
+import { buildCatalogAdvisorMessage } from '@integrations/whatsapp/buildMessage';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 export function getStaticPaths() {
@@ -82,7 +82,7 @@ const lead = contentFor(category.slug).description ?? '';
               </a>
               <a
                 class="cat-wa"
-                href={buildWaLink(buildAdvisorMessage(s.name))}
+                href={buildWaLink(buildCatalogAdvisorMessage(s.name))}
                 aria-label={`Cotizar ${s.name.replace('+', 'más')} por WhatsApp`}
                 target="_blank"
                 rel="noopener noreferrer"
