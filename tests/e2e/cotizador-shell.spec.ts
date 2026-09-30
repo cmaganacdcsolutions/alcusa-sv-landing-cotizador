@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // Slice sf-cot-shell — desktop-0[3-7]-*.dc.html rail/aside 1:1 parity.
 // Desktop-only markup (`.rail-desktop` / `.cotizador-aside`); every
@@ -15,7 +15,7 @@ test.describe('cotizador shell — desktop rail + aside (sf-cot-shell)', () => {
     test.skip(testInfo.project.name !== 'desktop1920', 'rail-desktop/.cotizador-aside are desktop-only (>=1024px)');
     await page.goto('/cotizador');
     await waitForHydration(page);
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
   });
 
   test('desktop rail: kicker, "Paso N de 8" + progress bar, all 8 steps, and the "¿Dudas con tu medida?" WhatsApp block', async ({

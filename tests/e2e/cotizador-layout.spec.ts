@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // Desktop grid regression: the "TU COTIZACIÓN" aside lost its grid placement
 // in the shell rewrite, auto-placed into row 1 and stretched it to its own
@@ -10,7 +10,7 @@ test.describe('cotizador — desktop layout', () => {
     test.skip(testInfo.project.name !== 'desktop1920', 'desktop grid only');
     await page.goto('/cotizador');
     await page.waitForFunction(() => !document.querySelector('astro-island[ssr]'));
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
 
     const header = await page.locator('.cotizador__header').boundingBox();
     const form = await page.locator('.cotizador__form-col').boundingBox();

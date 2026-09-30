@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // Slice sf-cot-mobile — mobile/tablet fixed action bar, always-reachable back
 // control, Resumen table overflow/fidelity, and step-transition scroll-to-top.
@@ -11,7 +11,7 @@ async function waitForHydration(page: Page): Promise<void> {
 async function selectRecta(page: Page): Promise<void> {
   await page.goto('/cotizador');
   await waitForHydration(page);
-  await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+  await pickProduct(page, 'recta');
   await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
 }
 
@@ -118,7 +118,7 @@ test.describe('cotizador — step transitions scroll the new step to the top (sf
     await page.goto('/cotizador');
     await waitForHydration(page);
     await page.evaluate(() => window.scrollTo(0, 400));
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
 
     const heading = page.locator('#step1-heading');
     // The scroll itself is `behavior: smooth` (prefers-reduced-motion honored
@@ -142,7 +142,7 @@ test.describe('cotizador — step transitions scroll the new step to the top (sf
     test.skip(testInfo.project.name !== 'desktop1920', 'desktop-specific offsets (rail-desktop, no sticky header)');
     await page.goto('/cotizador');
     await waitForHydration(page);
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click(); // -> precio
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
 

@@ -3,6 +3,7 @@
 // (islands are the only layer allowed to touch window/history).
 import type { AluminumColor, CornerModel, GardenColor, GardenGlass, GardenHojas, StraightGlass, WindowGlass, WindowModel } from '@engine/pricing';
 import type { ProductId } from '@content/catalog';
+import type { QuoteLoadNotice } from './loadQuote';
 
 export type CotizadorStep =
   | 'producto'
@@ -133,6 +134,9 @@ export interface CotizadorState {
   // not duplicated" (sf-cot-s7gaps gap 1 AC). Cleared by ADD_TO_CART and by
   // REMOVE_ITEM('current'), the two actions that retire the current slot.
   editingItem: { id: string; index: number } | null;
+  // --- F4 (ADR-012): aviso de cambios de una cotizacion cargada por folio ---
+  // null hasta LOAD_QUOTE; se vacia con DISMISS_QUOTE_NOTICE ("Entendido").
+  quoteLoad: QuoteLoadNotice | null;
 }
 
 // --- S7: cart item snapshot helpers ---
@@ -206,6 +210,7 @@ export const initialCotizadorState: CotizadorState = {
   wompiOrderNumber: null,
   cart: [],
   editingItem: null,
+  quoteLoad: null,
 };
 
 // The initial values of just the "per item" fields — used to reset the
@@ -295,7 +300,10 @@ export type CotizadorAction =
   // committed to the cart first so nothing is lost. `index` is recorded so
   // state/order.ts reinserts the edited item at its original position once
   // the wizard returns to Resumen, instead of trailing at the end.
-  | { type: 'EDIT_ITEM'; id: string };
+  | { type: 'EDIT_ITEM'; id: string }
+  // --- F4 (ADR-012): reemplaza el carrito con una cotizacion cargada por folio ---
+  | { type: 'LOAD_QUOTE'; items: CartItem[]; entrega: Entrega; zone: string; notice: QuoteLoadNotice }
+  | { type: 'DISMISS_QUOTE_NOTICE' };
 
 /** Accepts meters ("1.10") or centimeters ("110"): values < 10 are ×100. */
 export function parseWidthCm(raw: string): number {
@@ -447,6 +455,23 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       const next = applyCartItem({ ...state, cart, editingItem: { id: target.id, index: idx } }, target);
       return { ...next, step: 'medidas' };
     }
+    // --- F4 (ADR-012): cotizacion cargada por folio ---
+    // El ultimo item se promueve al slot "current" (como REMOVE_ITEM 'current')
+    // para que Resumen/EDIT_ITEM funcionen sin cambios; el resto va al carrito.
+    case 'LOAD_QUOTE': {
+      const last = action.items[action.items.length - 1];
+      if (!last) return state;
+      const base: CotizadorState = {
+        ...resetCurrentItem(state),
+        cart: action.items.slice(0, -1),
+        entrega: action.entrega,
+        zone: action.zone,
+        quoteLoad: action.notice,
+      };
+      return { ...applyCartItem(base, last), step: 'resumen' };
+    }
+    case 'DISMISS_QUOTE_NOTICE':
+      return { ...state, quoteLoad: null };
     default:
       return state;
   }

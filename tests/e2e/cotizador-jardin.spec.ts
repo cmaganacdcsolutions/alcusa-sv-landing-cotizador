@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // android412 flake fix: Cotizador is `client:load`, hydrating asynchronously.
 // Same wait pattern as tests/e2e/cotizador.spec.ts (S5).
@@ -14,12 +14,7 @@ test.describe('cotizador — jardín, promo bands + requiresQuote', () => {
   async function openJardin(page: Page) {
     await page.goto('/cotizador#cotizador/0-producto');
     await waitForHydration(page);
-    const card = page.getByRole('button', { name: /^Puerta de jardín/ });
-    const nextBtn = page.getByRole('button', { name: 'Siguiente' });
-    await expect(async () => {
-      await card.click();
-      await expect(nextBtn).toBeVisible({ timeout: 1500 });
-    }).toPass();
+    await pickProduct(page, 'jardin');
   }
 
   test('1 hoja 1.00x2.10 qty1 → $410 (promo band)', async ({ page }) => {

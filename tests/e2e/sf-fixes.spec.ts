@@ -113,7 +113,7 @@ test.describe('sf-fixes — hero category cards open the cotizador', () => {
       'true',
     );
     await expect(
-      page.getByRole('button', { name: /Ventana Francesa o Bilbao/, pressed: true }),
+      page.getByRole('button', { name: /^Ventanas/, pressed: true }),
     ).toBeVisible();
   });
 
@@ -128,7 +128,7 @@ test.describe('sf-fixes — hero category cards open the cotizador', () => {
       'true',
     );
     await expect(
-      page.getByRole('button', { name: /Puerta de jardín/, pressed: true }),
+      page.getByRole('button', { name: /^Puertas de jardín/, pressed: true }),
     ).toBeVisible();
   });
 
@@ -143,7 +143,7 @@ test.describe('sf-fixes — hero category cards open the cotizador', () => {
       'true',
     );
     await expect(
-      page.getByRole('button', { name: /Puerta de baño recta/, pressed: true }),
+      page.getByRole('button', { name: /^Rectas/, pressed: true }),
     ).toBeVisible();
   });
 
@@ -159,7 +159,7 @@ test.describe('sf-fixes — hero category cards open the cotizador', () => {
       'true',
     );
     await expect(
-      page.getByRole('button', { name: /Puerta con bisagra/, pressed: true }),
+      page.getByRole('button', { name: /^De bisagra/, pressed: true }),
     ).toBeVisible();
   });
 });

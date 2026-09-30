@@ -8,6 +8,7 @@ import { buildOrderMessageItems, orderItemsSubtotal, type OrderLineItem } from '
 import { IconArrowRight, IconPlus, IconWarningTriangle, IconWhatsApp } from '../icons';
 import { IconEdit, IconLocationPin, IconTrash } from '../icons-checkout';
 import { PRODUCT_IMAGES } from './productImages';
+import QuoteChangeNotice from './quote/QuoteChangeNotice';
 import '@styles/cotizador-checkout.css';
 
 export interface Step4ResumenProps {
@@ -35,6 +36,8 @@ export interface Step4ResumenProps {
   // `sc-for` loop, no special-case for the in-progress item): jumps to
   // Medidas with that item's fields loaded into the editable slot.
   onEditItem: (id: string) => void;
+  // F4 (ADR-012): dismiss handler for the loaded-quote notice (state.quoteLoad).
+  onDismissQuoteNotice?: () => void;
   // sf-cot-polish item 3 — desktop-05 draws "Enviar por WhatsApp para
   // confirmar"/"Pagar ahora" ONLY in the "TU COTIZACIÓN" aside (never in the
   // main content column); ios-05/android-05 draw them ONLY in the main
@@ -66,6 +69,7 @@ export default function Step4Resumen({
   onAddAnother,
   onRemoveItem,
   onEditItem,
+  onDismissQuoteNotice,
   asideCtaTarget,
 }: Step4ResumenProps): ReactElement {
   const [liveMessage, setLiveMessage] = useState('');
@@ -118,6 +122,9 @@ export default function Step4Resumen({
       <div className="visually-hidden" aria-live="polite" role="status">
         {liveMessage}
       </div>
+      {state.quoteLoad && onDismissQuoteNotice && (
+        <QuoteChangeNotice notice={state.quoteLoad} onDismiss={onDismissQuoteNotice} />
+      )}
       <div className="summary-card">
         <div className="summary-card__header">
           <span className="summary-card__count">Tus productos · {countText}</span>

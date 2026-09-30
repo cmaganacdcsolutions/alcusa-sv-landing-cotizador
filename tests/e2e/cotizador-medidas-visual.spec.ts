@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // sf-cot-medidas (S7 board pass) — gaps #1/#2/#3 asserted end to end:
 // product photos in Step0, the "Tipo de vidrio" swatch selector, and the
@@ -9,14 +9,14 @@ async function waitForHydration(page: Page): Promise<void> {
 }
 
 test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
-  test('every Step0 product card renders a real photo (gap #1)', async ({ page }) => {
+  test('every Step0 category tile renders a real photo in a PhotoFrame (gap #1, R5)', async ({ page }) => {
     await page.goto('/cotizador');
     await waitForHydration(page);
 
-    const cards = page.locator('.product-card');
-    await expect(cards).toHaveCount(6);
-    const images = page.locator('.product-card__image');
-    await expect(images).toHaveCount(6);
+    const cards = page.locator('.sel-tile--cat');
+    await expect(cards).toHaveCount(3);
+    const images = page.locator('.sel-tile--cat .photo-frame__img');
+    await expect(images).toHaveCount(3);
     for (const img of await images.all()) {
       const src = await img.getAttribute('src');
       expect(src).toMatch(/^\/img\/cotizador\/product-.*\.webp$/);
@@ -31,7 +31,7 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
   }) => {
     await page.goto('/cotizador');
     await waitForHydration(page);
-    await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+    await pickProduct(page, 'recta');
 
     const glassGroup = page.getByRole('group', { name: 'Tipo de vidrio' }).first();
     await expect(glassGroup).toBeVisible();

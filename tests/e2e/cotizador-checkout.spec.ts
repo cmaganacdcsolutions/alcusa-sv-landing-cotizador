@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // Visual/behavioral coverage for the sf-cot-checkout slice (Step3-5).
 // Never opens a real WhatsApp/Wompi link — fixtures.ts blocks those routes.
@@ -10,7 +10,7 @@ async function waitForHydration(page: Page): Promise<void> {
 async function toZonaEntrega(page: Page): Promise<void> {
   await page.goto('/cotizador');
   await waitForHydration(page);
-  await page.getByRole('button', { name: /Puerta de baño recta/ }).click();
+  await pickProduct(page, 'recta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
