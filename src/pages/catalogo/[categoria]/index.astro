@@ -27,6 +27,7 @@ const lead = contentFor(category.slug).description ?? '';
   title={`${category.name} | Catálogo ALCUSA`}
   description={`${category.name} de aluminio y vidrio a la medida. ${lead}`.trim()}
   crumbs={[{ label: 'Catálogo', href: '/catalogo' }, { label: category.name }]}
+  topBackHref="/catalogo"
 >
   <section class="cat-head">
     <p class="cat-kicker">CATEGORÍA</p>

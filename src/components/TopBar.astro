@@ -9,12 +9,26 @@
 // appear from --breakpoint-lg up). Contact numbers reused from Contacto.astro.
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
+interface Props {
+  /** Category pages only (boards r05, <1024): back chevron + wordmark + menu. */
+  backHref?: string;
+}
+const { backHref } = Astro.props;
 const waHref = buildWaLink();
 ---
 
-<header class="top-bar">
+<header class="top-bar" class:list={{ 'top-bar--back': !!backHref }}>
   <div class="top-bar__inner">
     <div class="top-bar__left">
+      {
+        backHref && (
+          <a href={backHref} class="top-bar__back" aria-label="Volver al catálogo">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </a>
+        )
+      }
       <button
         type="button"
         id="drawer-open-btn"
@@ -144,6 +158,48 @@ const waHref = buildWaLink();
 
   .top-bar__whatsapp-label {
     display: none;
+  }
+
+  .top-bar__back {
+    display: none;
+  }
+
+  @media (max-width: 1023px) {
+    .top-bar--back .top-bar__back {
+      order: 0;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+      color: var(--color-ink);
+    }
+
+    .top-bar--back .top-bar__back svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: var(--icon-stroke-width);
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .top-bar--back .top-bar__wordmark {
+      order: 1;
+    }
+
+    .top-bar--back .top-bar__logo,
+    .top-bar--back .top-bar__right {
+      display: none;
+    }
+
+    .top-bar--back .top-bar__menu-btn {
+      order: 2;
+      width: 48px;
+      height: 48px;
+    }
   }
 
   @media (min-width: 1024px) {
