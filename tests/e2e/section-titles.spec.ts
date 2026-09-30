@@ -12,8 +12,7 @@ test.beforeEach(({}, info) => {
 });
 
 // Landing section h2s per the boards (Main.dc.html, android-01-inicio.dc.html,
-// desktop-01-inicio.dc.html): 30px/1.15 on mobile (the "Cotiza en línea"
-// title is 28px), 56px/64px on desktop.
+// desktop-01-inicio.dc.html): 30px/1.15 on mobile, 44px/52px on desktop (boards r01).
 const TITLES = [
   { selector: '#proceso-title', mobile: 30 },
   { selector: '.catalogo__title', mobile: 30 },
@@ -38,8 +37,8 @@ test.describe('landing — section title typography', () => {
         };
       });
       if (isDesktop) {
-        expect(fontSize).toBe(56);
-        expect(Math.abs(lineHeight - 64)).toBeLessThanOrEqual(0.5);
+        expect(fontSize).toBe(44);
+        expect(Math.abs(lineHeight - 52)).toBeLessThanOrEqual(0.5);
       } else {
         expect(fontSize).toBe(mobile);
         expect(Math.abs(lineHeight - mobile * 1.15)).toBeLessThanOrEqual(0.5);

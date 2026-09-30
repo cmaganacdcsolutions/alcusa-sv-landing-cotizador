@@ -7,10 +7,9 @@ import ComoFunciona from '@components/ComoFunciona.astro';
 import Promotions from '@components/Promotions.astro';
 import CatalogoCta from '@components/CatalogoCta.astro';
 import Confianza from '@components/Confianza.astro';
-// ContactoTeaser is rendered by InfoImportante — they share one <section
-// id="info"> at desktop per desktop-01-inicio.dc.html (sf-fidelity3, spec
-// item 4). Do not add a standalone <ContactoTeaser /> tag here.
+// ContactoTeaser: seccion propia tras Info (solo movil; r01 desktop no la dibuja).
 import InfoImportante from '@components/InfoImportante.astro';
+import ContactoTeaser from '@components/ContactoTeaser.astro';
 import Footer from '@components/Footer.astro';
 ---
 
@@ -28,6 +27,7 @@ import Footer from '@components/Footer.astro';
     <ComoFunciona />
     <Confianza />
     <InfoImportante />
+    <ContactoTeaser />
   </main>
 
   <Footer />
