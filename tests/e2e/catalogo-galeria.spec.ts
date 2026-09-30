@@ -1,6 +1,17 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 
+
+// R3 (2026-09-30): el grid de catalogo, la galeria, el banner del cotizador y las anclas
+// /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
+// los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
+// contra el drawer/footer nuevos. Ver HANDOFF R3.
+const R3_MOVED = new Set<string>(["\"Cotizar este modelo\" on the Puerta con bisagra card points at the hinged product", "\"Puerta de jardín\" card shows the real garden-door photo, not the placeholder tile", "catálogo + galería have zero critical/serious axe violations", "catálogo grid shows 6 cards with distinct \"Desde $X\" values, no duplicate CTA targets", "catálogo header shows \"Ver todos en el cotizador\" on desktop, hidden on mobile", "catálogo shows the \"Vidrios para puertas de baño\" swatches block at every breakpoint", "each gallery photo shows a visible caption naming what it is, echoed in the lightbox counter", "galería shows exactly the 6 real customer photos, no AI-generated or third-party image", "tapping a gallery photo opens a focus-trapped lightbox; Escape closes it and restores focus"]);
+// eslint-disable-next-line no-empty-pattern
+test.beforeEach(({}, info) => {
+  test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
+});
+
 // S4: catálogo grid (#modelos) + real-photo gallery (#galeria). New spec file
 // (not shared with landing.spec.ts) to avoid merge conflicts with parallel
 // slices touching the same test directory.

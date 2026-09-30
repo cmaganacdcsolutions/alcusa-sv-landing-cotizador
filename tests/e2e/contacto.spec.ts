@@ -1,6 +1,17 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
+
+// R3 (2026-09-30): el grid de catalogo, la galeria, el banner del cotizador y las anclas
+// /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
+// los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
+// contra el drawer/footer nuevos. Ver HANDOFF R3.
+const R3_MOVED = new Set<string>([]);
+// eslint-disable-next-line no-empty-pattern
+test.beforeEach(({}, info) => {
+  test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
+});
+
 // ContactForm hydrates `client:visible` (async, on intersection) — wait for
 // the marker before driving inputs so the fill isn't lost to a not-yet-
 // mounted controlled component re-rendering back to its empty initial state.
@@ -225,56 +236,22 @@ test.describe('contacto — webform lifecycle', () => {
 });
 
 test.describe('footer — quick links + legal', () => {
-  // Footer content is per-board (sf-landing5 fidelity pass, 2026-09-28):
-  // mobile boards (Main.dc.html / android-01-inicio.dc.html) only show
-  // Inicio/Cotizar/Contacto; Catálogo/Cómo funciona/Galería are desktop-only
-  // (desktop-01-inicio.dc.html), and the footer label there is "Galería" (we ship "Proyectos reales", user decision),
-  // not "Proyectos reales".
-  test('mobile quick links: Inicio/Cotizar/Contacto only', async ({ page }, testInfo) => {
-    test.skip(
-      testInfo.project.name === 'desktop1920',
-      'desktop has the full 6-link nav; see the next test',
-    );
-    await page.goto('/');
-    const footerNav = page.getByRole('navigation', { name: 'Enlaces del pie' });
-    await expect(footerNav.getByRole('link', { name: 'Inicio' })).toHaveAttribute(
-      'href',
-      '/#inicio',
-    );
-    await expect(footerNav.getByRole('link', { name: 'Cotizar' })).toHaveAttribute(
-      'href',
-      '/cotizador',
-    );
-    await expect(footerNav.getByRole('link', { name: 'Contacto' })).toHaveAttribute(
-      'href',
-      '/contacto',
-    );
-    await expect(footerNav.getByRole('link', { name: 'Catálogo' })).toBeHidden();
-    await expect(footerNav.getByRole('link', { name: 'Cómo funciona' })).toBeHidden();
-    await expect(footerNav.getByRole('link', { name: 'Proyectos reales' })).toBeHidden();
-  });
-
-  test('desktop quick links: full 6-link nav, labelled "Proyectos reales"', async ({
+  // R3 fidelity: the boards (ios/android/desktop-r01) draw exactly 4 footer links at
+  // every viewport: Inicio, Catálogo, Cotizar, Contacto ("Cómo funciona" is gone).
+  test('quick links: exactly Inicio/Catálogo/Cotizar/Contacto at every viewport', async ({
     page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only assertion');
+  }) => {
     await page.goto('/');
     const footerNav = page.getByRole('navigation', { name: 'Enlaces del pie' });
+    await expect(footerNav.getByRole('link')).toHaveCount(4);
     await expect(footerNav.getByRole('link', { name: 'Inicio' })).toHaveAttribute(
       'href',
       '/#inicio',
     );
     await expect(footerNav.getByRole('link', { name: 'Catálogo' })).toHaveAttribute(
       'href',
-      '/#modelos',
+      '/catalogo',
     );
-    await expect(footerNav.getByRole('link', { name: 'Cómo funciona' })).toHaveAttribute(
-      'href',
-      '/#proceso',
-    );
-    await expect(
-      footerNav.getByRole('link', { name: 'Proyectos reales' }),
-    ).toHaveAttribute('href', '/#galeria');
     await expect(footerNav.getByRole('link', { name: 'Cotizar' })).toHaveAttribute(
       'href',
       '/cotizador',
@@ -283,18 +260,16 @@ test.describe('footer — quick links + legal', () => {
       'href',
       '/contacto',
     );
+    await expect(footerNav.getByRole('link', { name: 'Cómo funciona' })).toHaveCount(0);
+    await expect(footerNav.getByRole('link', { name: 'Proyectos reales' })).toHaveCount(0);
+    await expect(footerNav.getByRole('link', { name: 'Galería' })).toHaveCount(0);
   });
 
   test('legal name + WhatsApp CTA repeat (no NIT placeholder — not in any board)', async ({
     page,
-  }, testInfo) => {
+  }) => {
     await page.goto('/');
-    // Two legal-text paragraphs exist (mobile copy has no "local 29 G",
-    // desktop copy does) — only one is ever visible per breakpoint.
-    const legal =
-      testInfo.project.name === 'desktop1920'
-        ? page.locator('.site-footer__legal--desktop')
-        : page.locator('.site-footer__legal--mobile');
+    const legal = page.locator('.site-footer__legal');
     await expect(legal).toContainText('Aluminios Cuzcatlán, S.A. de C.V.');
     await expect(legal).toBeVisible();
     await expect(page.getByText('[NIT — confirmar]')).toHaveCount(0);

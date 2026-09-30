@@ -1,8 +1,7 @@
-@import '@fontsource/fraunces/400.css';
-@import '@fontsource/fraunces/500.css';
-@import '@fontsource/fraunces/600.css';
+@import '@fontsource-variable/fraunces/opsz.css';
 @import '@fontsource/manrope/400.css';
 @import '@fontsource/manrope/500.css';
+@import '@fontsource/manrope/600.css';
 @import '@fontsource/manrope/700.css';
 @import './tokens.css';
 
@@ -120,4 +119,16 @@ svg {
 }
 @media (prefers-reduced-transparency: reduce) {
   .photo-frame__ambient { display: none; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

@@ -4,14 +4,12 @@ import TopBar from '@components/TopBar.astro';
 import Drawer from '@components/Drawer.astro';
 import Hero from '@components/Hero.astro';
 import ComoFunciona from '@components/ComoFunciona.astro';
-import Catalogo from '@components/Catalogo.astro';
-import Galeria from '@components/Galeria.astro';
+import Promotions from '@components/Promotions.astro';
+import CatalogoCta from '@components/CatalogoCta.astro';
 import Confianza from '@components/Confianza.astro';
-import CotizadorTeaser from '@components/CotizadorTeaser.astro';
-// ContactoTeaser is rendered by InfoImportante — they share one <section
-// id="info"> at desktop per desktop-01-inicio.dc.html (sf-fidelity3, spec
-// item 4). Do not add a standalone <ContactoTeaser /> tag here.
+// ContactoTeaser: seccion propia tras Info (solo movil; r01 desktop no la dibuja).
 import InfoImportante from '@components/InfoImportante.astro';
+import ContactoTeaser from '@components/ContactoTeaser.astro';
 import Footer from '@components/Footer.astro';
 ---
 
@@ -24,13 +22,20 @@ import Footer from '@components/Footer.astro';
 
   <main>
     <Hero />
+    <Promotions />
+    <CatalogoCta />
     <ComoFunciona />
-    <Catalogo />
-    <Galeria />
     <Confianza />
-    <CotizadorTeaser />
     <InfoImportante />
+    <ContactoTeaser />
   </main>
 
   <Footer />
 </BaseLayout>
+
+<script is:inline>
+  // R3: el catalogo y la galeria salieron de la landing; los anclas viejas van a /catalogo.
+  if (/^#(catalogo|galeria|modelos)$/.test(window.location.hash)) {
+    window.location.replace('/catalogo');
+  }
+</script>

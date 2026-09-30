@@ -22,6 +22,7 @@ export default defineConfig({
         ignored: [
           '**/coverage/**',
           '**/dist/**',
+          '**/dist-e2e/**',
           '**/test-results/**',
           '**/playwright-report/**',
           '**/playwright-report-responsive/**',

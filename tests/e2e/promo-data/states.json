@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-09-30T00:00:00-06:00",
+  "promotions": [
+    {
+      "id": "fx-estado-c",
+      "placeholder": true,
+      "title": "Puerta de baño corrediza de vidrio templado de 10 mm con perfil negro mate y herrajes premium",
+      "description": "Fabricada a tu medida, con instalación incluida en San Salvador, Santa Tecla y Antiguo Cuscatlán durante todo el mes.",
+      "image": "/images/catalog-recta.jpg",
+      "image_alt": "Puerta de baño recta corrediza con vidrio claro",
+      "price_before": 1260,
+      "price_promo": 1071,
+      "product_slug": "recta",
+      "starts_on": "2026-09-01",
+      "ends_on": "2026-10-31",
+      "rules": []
+    },
+    {
+      "id": "fx-estado-d",
+      "placeholder": true,
+      "title": "Puerta templada 10 mm",
+      "description": "Vidrio templado de 10 mm, seguro y elegante para tu baño.",
+      "image": "/images/catalog-recta.jpg",
+      "image_alt": "Puerta de vidrio templado de 10 mm",
+      "price_before": null,
+      "price_promo": 672,
+      "product_slug": "recta",
+      "starts_on": "2026-09-01",
+      "ends_on": "2026-10-31",
+      "rules": []
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+---
+// CTA "Catalogo" de la landing (r01 #catalogo-cta). Reemplaza el grid de catalogo
+// y la galeria, que ahora viven en /catalogo (R2).
+---
+
+<section id="catalogo-cta" class="catcta" aria-labelledby="catcta-t">
+  <div class="catcta__wrap">
+    <div class="catcta__box">
+      <div class="catcta__text">
+        <p class="catcta__kicker">CATÁLOGO</p>
+        <h2 id="catcta-t" class="catcta__title">Conoce todo lo que fabricamos</h2>
+        <p class="catcta__lead">
+          Puertas de baño, puertas de jardín y ventanas. Mira los modelos y cotiza el que más te guste.
+        </p>
+      </div>
+      <a href="/catalogo" class="catcta__btn" data-catalogo-cta>
+        Ver catálogo
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .catcta {
+    padding: 0 var(--space-6) 56px;
+  }
+  .catcta__box {
+    padding: var(--space-7) var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--color-primary);
+    color: var(--color-surface);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    box-shadow: var(--shadow-lg);
+  }
+  .catcta__text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .catcta__kicker {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.6;
+    font-weight: var(--font-weight-body-bold);
+    letter-spacing: 0.14em;
+    color: var(--color-on-primary-kicker);
+  }
+  .catcta__title {
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-medium);
+    font-size: 28px;
+    line-height: 1.15;
+    color: var(--color-surface);
+    text-wrap: balance;
+  }
+  .catcta__lead {
+    margin: 0 0 var(--space-2);
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--color-on-primary-soft);
+  }
+  .catcta__btn {
+    min-height: 52px;
+    padding: 0 var(--space-6);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-size: 16px;
+    font-weight: var(--font-weight-body-bold);
+    line-height: 1.2;
+    text-decoration: none;
+  }
+  .catcta__btn:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+  @media (min-width: 768px) {
+    .catcta {
+      padding-inline: 0;
+    }
+    .catcta__wrap {
+      width: min(var(--container-page), 100% - 2 * var(--space-10));
+      margin-inline: auto;
+    }
+  }
+  @media (min-width: 1024px) {
+    .catcta {
+      padding-bottom: var(--space-30);
+    }
+    .catcta__box {
+      padding: 56px var(--space-16);
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-12);
+    }
+    .catcta__text {
+      max-width: 900px;
+    }
+    .catcta__kicker {
+      font-size: 14px;
+      line-height: 20px;
+    }
+    .catcta__title {
+      font-size: 44px;
+      line-height: 52px;
+    }
+    .catcta__lead {
+      margin: 0;
+      font-size: 18px;
+      line-height: 28px;
+    }
+    .catcta__btn {
+      display: inline-flex;
+      min-height: 60px;
+      padding: 0 var(--space-8);
+      gap: var(--space-2-5);
+      font-size: 18px;
+      white-space: nowrap;
+    }
+  }
+</style>

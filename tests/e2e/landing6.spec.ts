@@ -18,16 +18,15 @@ const BOARDS_DIR = [
 
 test.skip(!BOARDS_DIR, 'Design boards not available in this checkout');
 
-const BOARD_BY_PROJECT: Record<string, string> = {
-  ios390: 'Main.dc.html',
-  android412: 'android-01-inicio.dc.html',
-  desktop1920: 'desktop-01-inicio.dc.html',
+// Hero: boards r01 (Revision 2026-09-29), que reemplazan al hero de Main/android-01/desktop-01.
+const R01_BY_PROJECT: Record<string, string> = {
+  ios390: 'ios-r01-landing-promos.dc.html',
+  android412: 'android-r01-landing-promos.dc.html',
+  desktop1920: 'desktop-r01-landing-promos.dc.html',
 };
 
-function boardUrl(project: string): string {
-  const file = BOARD_BY_PROJECT[project];
-  if (!file) throw new Error(`No board mapped for project "${project}"`);
-  return pathToFileURL(path.join(BOARDS_DIR!, file)).toString();
+function heroBoardUrl(project: string): string {
+  return pathToFileURL(path.join(BOARDS_DIR!, 'revision-2026-09-29', R01_BY_PROJECT[project])).toString();
 }
 
 test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards bigger/smaller, proceso title break)', () => {
@@ -35,7 +34,7 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     page,
   }, testInfo) => {
     const board = await page.context().newPage();
-    await board.goto(boardUrl(testInfo.project.name));
+    await board.goto(heroBoardUrl(testInfo.project.name));
     const boardH1 =
       testInfo.project.name === 'desktop1920'
         ? board.locator('#hero-title')
@@ -51,40 +50,29 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     expect(shippedFontSize).toBe(boardFontSize);
   });
 
-  test('a hero category card bounding box matches the board within ±2px', async ({
-    page,
-  }, testInfo) => {
+  test('hero "Cotizar ahora" button box matches the r01 board within ±2px', async ({ page }, testInfo) => {
     const board = await page.context().newPage();
-    await board.goto(boardUrl(testInfo.project.name));
-    // :has(img) excludes the unrelated header "Cotizar" CTA on the desktop
-    // board, which also links to a producto-medidas board but has no image.
-    const boardCard = board.locator('a[href*="producto-medidas"]:has(img)').first();
-    const boardBox = await boardCard.boundingBox();
+    await board.goto(heroBoardUrl(testInfo.project.name));
+    const boardBtn = board.locator('#inicio a.btn.bp, section a.btn.bp').first();
+    const boardBox = await boardBtn.boundingBox();
     await board.close();
     expect(boardBox).not.toBeNull();
 
     await page.goto('/');
-    const card = page.locator('.hero__category-card').first();
-    await card.scrollIntoViewIfNeeded();
-    const shippedBox = await card.boundingBox();
+    const btn = page.locator('[data-hero-cta="cotizar"]');
+    await btn.scrollIntoViewIfNeeded();
+    const shippedBox = await btn.boundingBox();
     expect(shippedBox).not.toBeNull();
-
     expect(Math.abs(shippedBox!.width - boardBox!.width)).toBeLessThanOrEqual(2);
     expect(Math.abs(shippedBox!.height - boardBox!.height)).toBeLessThanOrEqual(2);
   });
 
-  test('ComoFunciona title size matches the board for this breakpoint', async ({
-    page,
-  }, testInfo) => {
+  test('ComoFunciona title size matches the r01 board for this breakpoint', async ({ page }, testInfo) => {
     const board = await page.context().newPage();
-    await board.goto(boardUrl(testInfo.project.name));
-    const boardTitle =
-      testInfo.project.name === 'desktop1920'
-        ? board.locator('#proceso-title')
-        : board.locator('h2').first();
-    const boardFontSize = await boardTitle.evaluate(
-      (el) => getComputedStyle(el).fontSize,
-    );
+    await board.goto(heroBoardUrl(testInfo.project.name));
+    const boardFontSize = await board
+      .locator('#proceso h2')
+      .evaluate((el) => getComputedStyle(el).fontSize);
     await board.close();
 
     await page.goto('/');
@@ -93,29 +81,5 @@ test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards big
     const shippedFontSize = await title.evaluate((el) => getComputedStyle(el).fontSize);
 
     expect(shippedFontSize).toBe(boardFontSize);
-  });
-
-  test('ComoFunciona title renders on 2 lines on desktop, breaking after "en"', async ({
-    page,
-  }, testInfo) => {
-    test.skip(
-      testInfo.project.name !== 'desktop1920',
-      'AC only requires the 2-line check at desktop',
-    );
-
-    await page.goto('/');
-    const title = page.locator('#proceso-title');
-    await title.scrollIntoViewIfNeeded();
-
-    const hasExplicitBreak = (await title.locator('br').count()) > 0;
-    const { height, lineHeight } = await title.evaluate((el) => {
-      const box = el.getBoundingClientRect();
-      return {
-        height: box.height,
-        lineHeight: parseFloat(getComputedStyle(el).lineHeight),
-      };
-    });
-
-    expect(hasExplicitBreak || height >= lineHeight * 1.8).toBe(true);
   });
 });

@@ -13,6 +13,8 @@ export interface PhotoFrameProps {
   srcSet?: string;
   sizes?: string;
   loading?: 'lazy' | 'eager';
+  /** Solo para la foto LCP (hero). */
+  fetchPriority?: 'high' | 'low' | 'auto';
   className?: string;
   style?: CSSProperties;
   /** Insignias, figcaption, degradados: van encima (z-index 2). */
@@ -32,6 +34,7 @@ export default function PhotoFrame({
   srcSet,
   sizes,
   loading = 'lazy',
+  fetchPriority,
   className,
   style,
   children,
@@ -68,6 +71,7 @@ export default function PhotoFrame({
         sizes={sizes}
         alt={alt}
         loading={loading}
+        fetchPriority={fetchPriority}
         decoding="async"
       />
       {children}

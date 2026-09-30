@@ -43,7 +43,7 @@
   --color-scrim-ink-dialog: rgba(16, 33, 61, 0.48);
 
   /* Tipografía */
-  --font-family-display: 'Fraunces', Georgia, serif;
+  --font-family-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
   --font-family-body: 'Manrope', system-ui, sans-serif;
 
   --font-weight-display-regular: 400;
@@ -219,4 +219,32 @@
   --photo-ambient-saturate: 1.1;
   --photo-ambient-scale: 1.15;
   --photo-ambient-opacity: 0.55;
+}
+
+/* R3 PromoCard intensa (02-design/specs/revision-2026-09-29.md). Espejo de
+   tokens.json color.promo* / shadow.promo*. */
+:root {
+  --color-promo: #d33a0b;
+  --color-promo-strong: #a82a04;
+  --color-promo-tint: #fff0e8;
+  --color-promo-badge: #ffd23f;
+  --shadow-promo: 0 10px 28px rgba(168, 42, 4, 0.28);
+  --shadow-promo-lg: 0 16px 40px rgba(168, 42, 4, 0.28);
+  --shadow-promo-badge: 0 4px 10px rgba(16, 33, 61, 0.28);
+  --shadow-promo-badge-lg: 0 6px 14px rgba(16, 33, 61, 0.28);
+  --shadow-promo-hover: 0 12px 28px rgba(16, 33, 61, 0.14);
+  --space-14: 56px;
+  --font-weight-body-semibold: 600;
+  --color-primary-pressed: #052a6b;
+  --color-on-primary-kicker: #cfe0ff;
+  --color-on-primary-soft: #e3ecfb;
+}
+
+/* R3 hero r01 (ios/android/desktop-r01-landing-promos). Valores literales de los boards. */
+:root {
+  --font-size-hero-h1-mobile: 34px;
+  --font-size-hero-h1-desktop-md: 72px; /* <1600 (.hh media query del board) */
+  --line-height-hero-h1-desktop-md: 80px;
+  --shadow-btn-primary: 0 8px 20px rgba(7, 59, 146, 0.22);
+  --gradient-hero-photo: linear-gradient(180deg, transparent 60%, rgba(16, 33, 61, 0.45) 100%);
 }

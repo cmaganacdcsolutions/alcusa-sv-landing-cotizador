@@ -48,11 +48,7 @@ const waHref = buildWaLink();
     </div>
     <div class="top-bar__right">
       <a href="tel:+50322782460" class="top-bar__phone" aria-label="Llamar al 2278-2460">
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-          ><path
-            d="M6.5 3.5h3l1.5 4-2 1.2a11 11 0 0 0 6.3 6.3l1.2-2 4 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"
-          ></path></svg
-        >2278-2460</a
+        2278-2460</a
       >
       <a href={waHref} class="top-bar__whatsapp" aria-label="Escribir por WhatsApp al 7680-2410">
         <svg viewBox="0 0 24 24" aria-hidden="true"
@@ -61,6 +57,7 @@ const waHref = buildWaLink();
           ></path></svg
         ><span class="top-bar__whatsapp-label">WhatsApp</span></a
       >
+      <a href="/catalogo" class="top-bar__catalogo">Catálogo</a>
       <a href="/cotizador" class="top-bar__cta">Cotizar</a>
     </div>
   </div>
@@ -76,7 +73,7 @@ const waHref = buildWaLink();
   }
 
   .top-bar__inner {
-    height: 64px;
+    height: 63px; /* + 1px border = 64 (board header 64, border inside) */
     margin: 0 auto;
     padding: 0 var(--space-3);
     display: flex;
@@ -133,6 +130,7 @@ const waHref = buildWaLink();
   }
 
   .top-bar__phone,
+  .top-bar__catalogo,
   .top-bar__cta {
     display: none;
   }
@@ -204,7 +202,7 @@ const waHref = buildWaLink();
 
   @media (min-width: 1024px) {
     .top-bar__inner {
-      height: 88px;
+      height: 87px; /* + 1px border = 88 (board header 88, border inside) */
       max-width: var(--container-page);
       padding: 0;
     }
@@ -264,15 +262,30 @@ const waHref = buildWaLink();
       text-decoration: none;
     }
 
-    .top-bar__phone svg {
-      stroke: currentColor;
+    /* Board desktop-r01: phone and WhatsApp carry no icon on desktop. */
+    .top-bar__whatsapp svg {
+      display: none;
+    }
+
+    .top-bar__catalogo {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      padding: 0 var(--space-5);
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-primary);
+      font-size: 0.9375rem;
+      font-weight: var(--font-weight-body-bold);
+      text-decoration: none;
     }
 
     .top-bar__whatsapp {
       width: auto;
       height: auto;
       min-height: 48px;
-      padding: 0 var(--space-5) 0 var(--space-4);
+      padding: 0 var(--space-5);
       border-radius: var(--radius-full);
       gap: var(--space-2);
       font-size: 0.9375rem;
