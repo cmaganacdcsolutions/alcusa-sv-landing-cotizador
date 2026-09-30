@@ -34,6 +34,12 @@ export const IconQuoteAlert = ({ size = 18 }: { size?: number }): ReactElement =
     <path d="M12 7.5v5.5M12 16.5h.01" />
   </Svg>
 );
+export const IconQuoteClock = ({ size = 18 }: { size?: number }): ReactElement => (
+  <Svg size={size} strokeWidth={2}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Svg>
+);
 export const IconQuoteSearch = ({ size = 18 }: { size?: number }): ReactElement => (
   <Svg size={size} strokeWidth={2}>
     <circle cx="11" cy="11" r="6.5" />

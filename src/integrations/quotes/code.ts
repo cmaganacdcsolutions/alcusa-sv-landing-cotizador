@@ -32,7 +32,7 @@ export function makeQuoteCode(yyyymmdd: string, body7: string): string {
   return `${QUOTE_CODE_PREFIX}-${yyyymmdd}-${body7}${quoteCheckChar(body7)}`;
 }
 
-/** `ALC-20260930-K7QM-3X9T` (agrupado 4+4 para dictar). */
+/** `ALC-20260930-K7QM-3X90` (agrupado 4+4 para dictar). */
 export function formatQuoteCode(canonical: string): string {
   const m = /^ALC-(\d{8})-([0-9A-Z]{4})([0-9A-Z]{4})$/.exec(canonical);
   return m ? `ALC-${m[1]}-${m[2]}-${m[3]}` : canonical;
@@ -52,9 +52,10 @@ const FOLIO_IN_TEXT = /(?:ALC[\s\-_.]*)?(\d{4}[\s\-_.]*\d{2}[\s\-_.]*\d{2})[\s\-
 /**
  * Normaliza lo que escribio/pego el cliente. Acepta con o sin `ALC`, con o sin
  * guiones/espacios/puntos, minusculas, y busca el folio dentro de un texto
- * largo. Sufijo solo (sin fecha) NO se acepta. `O`->`0`, `I`/`L`->`1`; `U` es
- * error (no existe en el alfabeto). Un sufijo que EMPIEZA con `L` se reconoce
- * como folio de contingencia (nunca se consulta).
+ * largo. Sufijo solo (sin fecha) NO se acepta. `O`->`0`, `I`/`L`->`1`. Un
+ * sufijo de 8 que EMPIEZA con `U` (no existe en el alfabeto; ADR-012 §4,
+ * enmienda 2026-09-30) es un folio de contingencia: se clasifica ANTES de
+ * validar el digito y nunca se consulta.
  */
 export function normalizeQuoteCode(input: string, now: Date = new Date()): NormalizedQuoteCode {
   const upper = input.trim().toUpperCase();
@@ -62,8 +63,6 @@ export function normalizeQuoteCode(input: string, now: Date = new Date()): Norma
   let date: string;
   let rawSuffix: string;
   const direct = /^(?:ALC)?(\d{8})([0-9A-Z]+)$/.exec(compact);
-  const lead = /^L(\d{8})([0-9A-Z]+)$/.exec(compact);
-  if (lead) return { ok: false, reason: 'contingency' };
   if (direct && (upper.length <= 40 || !FOLIO_IN_TEXT.test(upper))) {
     date = direct[1] as string;
     rawSuffix = direct[2] as string;
@@ -73,7 +72,7 @@ export function normalizeQuoteCode(input: string, now: Date = new Date()): Norma
     date = (found[1] as string).replace(SEP, '');
     rawSuffix = (found[2] as string).replace(SEP, '');
   }
-  if (rawSuffix.startsWith('L') && rawSuffix.length >= 7) return { ok: false, reason: 'contingency' };
+  if (rawSuffix.startsWith('U') && rawSuffix.length === 8) return { ok: false, reason: 'contingency' };
   if (rawSuffix.length < 8) return { ok: false, reason: 'incomplete' };
   if (rawSuffix.length > 8) return { ok: false, reason: 'check' };
 

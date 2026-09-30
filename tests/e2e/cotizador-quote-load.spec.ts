@@ -81,7 +81,7 @@ test.describe('F4 cargar cotizacion', () => {
     await field(page).fill(show(codes.found).slice(0, -1) + 'U');
     await field(page).blur();
     await expect(page.getByText('Revisa el código: parece que hay un carácter equivocado.')).toBeVisible();
-    await field(page).fill('L-20260930-K7QM-3X9T');
+    await field(page).fill('ALC-20260930-UK7Q-M3X9');
     await field(page).blur();
     await expect(page.getByText(/se generó sin conexión y no quedó guardada/)).toBeVisible();
     await expect(page.getByRole('link', { name: 'Escribir por WhatsApp', exact: true })).toBeVisible();
@@ -129,7 +129,13 @@ test.describe('F4 cargar cotizacion', () => {
     await field(page).fill(show(codes.expired));
     await cta(page).click();
     await expect(page.getByTestId('quote-notice')).toContainText(/Esta cotización venció el .* Cargamos tus productos con los precios de hoy\./);
-    await expect(page.getByTestId('quote-notice')).toContainText('Precios actualizados');
+    const notice = page.getByTestId('quote-notice');
+    await expect(notice).toContainText('Precios actualizados');
+    // Estado 6: amber band + total Fraunces 600 #073b92 + pill.
+    await expect(notice.locator('.qw')).toHaveCSS('background-color', 'rgb(255, 244, 224)');
+    await expect(notice.locator('.qnotice__amount')).toHaveText('$840'); // board sample is $936; mock fixture total is $840
+    await expect(notice.locator('.qnotice__amount')).toHaveCSS('color', 'rgb(7, 59, 146)');
+    await expect(notice.locator('.qnotice__amount')).toHaveCSS('font-weight', '600');
   });
 
   test('cart with items asks to confirm (Esc cancels, Reemplazar loads)', async ({ page }) => {

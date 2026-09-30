@@ -130,7 +130,9 @@
   list-style: none;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: var(--space-1);
+  /* Board r03 REDLINE: 6 columns share the full width with no gap
+     (342/6 = 57 at 390, 364/6 = 61 at 412). */
+  gap: 0;
 }
 
 .step-rail__connector {
@@ -155,7 +157,8 @@
   align-items: center;
   gap: 6px;
   font-size: var(--font-size-caption-mobile);
-  font-weight: var(--font-weight-body-bold);
+  line-height: 1.3;
+  font-weight: 600;
   /* var(--color-muted) fails WCAG AA at this size/weight on --color-bg —
      use the darker ink-muted token instead (axe: color-contrast). */
   color: var(--color-ink-muted);
@@ -166,7 +169,7 @@
      mid-word break instead of overflowing into the neighboring column, and
      center any wrapped second line to match the centered dot above it. */
   max-width: 100%;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
   text-align: center;
 }
 
@@ -203,6 +206,7 @@
 }
 
 .step-rail__item[data-state='current'] {
+  font-weight: 700;
   color: var(--color-accent);
 }
 
@@ -421,11 +425,17 @@
 @media (min-width: 1024px) {
   .cotizador {
     display: grid;
-    grid-template-columns: 320px minmax(0, 1fr) 440px;
+    /* Board r03 desktop: 1600 = rail 320 + form 744 + resumen 440, gap 48,
+       centered; 1024-1919 the container is 100vw - 80. */
+    grid-template-columns: 320px minmax(0, 744px) 440px;
     grid-template-rows: auto 1fr;
     align-items: start;
-    gap: var(--space-8);
-    padding: var(--space-8);
+    justify-content: center;
+    column-gap: 48px;
+    row-gap: var(--space-8);
+    max-width: 1680px;
+    margin-inline: auto;
+    padding: 40px 40px 96px;
   }
 
   /* desktop-0N boards: the page header (back link + H1) sits at the top of
@@ -437,6 +447,7 @@
 
   .cotizador__page-title {
     font-size: var(--font-size-display-xl-desktop);
+    line-height: 64px;
   }
 
   .cotizador__section-heading {
@@ -449,10 +460,10 @@
     grid-row: 1 / 3;
     position: sticky;
     top: var(--space-8);
-    padding: var(--space-6) var(--space-5) var(--space-5);
+    padding: 28px 24px 24px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    border-radius: 20px;
     box-shadow: var(--shadow-xs);
   }
 
@@ -591,7 +602,7 @@
      so it must keep the same horizontal 6-dot layout it uses on mobile. */
   .step-rail {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: var(--space-1);
+    gap: 0;
   }
 
   .step-rail__connector {
@@ -685,7 +696,7 @@
 .rail-desktop__paso {
   margin: 0;
   font-size: 15px;
-  font-weight: var(--font-weight-body-medium);
+  font-weight: 600;
   color: var(--color-ink-muted);
 }
 
@@ -1077,3 +1088,11 @@
   font-weight: var(--font-weight-body-bold);
   text-decoration: none;
 }
+
+/* Step 0 selector aside (board r03 ESTADO A): hero + Siguiente (374) +
+   Cotizar por WhatsApp. The sheet-level .sel-bar is mobile/tablet only. */
+.cotizador-aside--sel .bt { width: 100%; }
+.cotizador-aside--sel .cotizador-aside__hero { padding: 28px 32px 24px; }
+.cotizador-aside__total-value--sm { font-size: 40px; line-height: 48px; }
+.cotizador-aside--sel .cotizador-aside__total-value { font-size: 56px; line-height: 64px; }
+.cotizador-aside--sel .cotizador-aside__total-value--sm { font-size: 40px; line-height: 48px; }

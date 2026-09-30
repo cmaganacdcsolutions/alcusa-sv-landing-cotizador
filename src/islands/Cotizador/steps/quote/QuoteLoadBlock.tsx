@@ -6,6 +6,7 @@ import { IconWhatsApp } from '../../icons';
 import { applyLoadedQuote, type AppliedQuote } from '../../state/loadQuote';
 import {
   IconQuoteAlert,
+  IconQuoteClock,
   IconQuoteChevron,
   IconQuoteDoc,
   IconQuoteOffline,
@@ -122,7 +123,8 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
   }, [autoFolio]);
 
   const problem = phase.kind === 'error' ? phase.problem : null;
-  const inputError = problem === 'incomplete' || problem === 'check' || problem === 'not_found';
+  const inputError =
+    problem === 'incomplete' || problem === 'check' || problem === 'not_found' || problem === 'offline' || problem === 'server';
   const liveText =
     loading
       ? C.loadingLive
@@ -140,6 +142,12 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
   const warn =
     problem === 'contingency' ? C.contingency : problem === 'rate_limited' ? (limited ? C.retryIn(Math.ceil(retryLeft / 60)) : C.rateLimited) : null;
   const waHref = buildWaLink();
+  const waLink = (
+    <a className="bt bs bs--wa" href={waHref} target="_blank" rel="noopener noreferrer">
+      <IconWhatsApp size={20} />
+      {C.whatsapp}
+    </a>
+  );
 
   const onBlur = (): void => {
     if (!value || loading) return;
@@ -203,7 +211,7 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
                 )}
                 {warn && (
                   <div className="qw">
-                    <IconQuoteAlert />
+                    {problem === 'rate_limited' ? <IconQuoteClock /> : <IconQuoteAlert />}
                     <span>{warn}</span>
                   </div>
                 )}
@@ -218,16 +226,12 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
               </div>
             ) : (
               <div className="qbtns">
-                {(problem === 'contingency' || problem === 'not_found') && (
-                  <a className="bt bs bs--wa" href={waHref} target="_blank" rel="noopener noreferrer">
-                    <IconWhatsApp size={20} />
-                    {C.whatsapp}
-                  </a>
-                )}
+                {problem === 'contingency' && waLink}
                 <button type="submit" className={`bt ${valid && !loading && !limited ? 'bp' : 'bd'}`} disabled={!valid || loading || limited}>
                   {loading && <IconQuoteSpinner />}
                   {loading ? C.loadingCta : C.cta}
                 </button>
+                {problem === 'not_found' && waLink}
               </div>
             )}
           </form>

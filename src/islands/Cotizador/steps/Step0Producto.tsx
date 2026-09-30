@@ -1,4 +1,5 @@
 import { useState, type ReactElement } from 'react';
+import { createPortal } from 'react-dom';
 import {
   CATEGORIES,
   formatFromPrice,
@@ -12,7 +13,7 @@ import {
 } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import PhotoFrame from '@components/PhotoFrame';
-import { IconArrowRight, IconCheck, IconWhatsApp } from '../icons';
+import { IconArrowRight, IconCheck, IconLock, IconWhatsApp } from '../icons';
 import { PRODUCT_IMAGES } from './productImages';
 import QuoteLoadBlock, { type QuoteLoadBlockProps } from './quote/QuoteLoadBlock';
 import { IconQuoteImage, IconQuoteTriangle } from './quote/QuoteIcons';
@@ -20,6 +21,8 @@ import '@styles/cotizador-medidas.css';
 import '@styles/cotizador-selector.css';
 
 export interface Step0ProductoProps {
+  /** Desktop resumen <aside> (owned by Cotizador); the selector portals its live summary here. */
+  asideTarget: HTMLElement | null;
   selectedId: ProductId | null;
   /** Engine inputs already in the store (used to restore a preselected leaf). */
   current: QuoterPreset;
@@ -57,6 +60,19 @@ const TYPE_GROUP_LABEL: Readonly<Record<string, string>> = {
   'puertas-de-bano': 'Tipo de puerta de baño',
   'puertas-de-jardin': 'Hojas de la puerta de jardín',
   ventanas: 'Tipo de ventana',
+};
+// Desktop aside headline per type (board r03: "Puerta de baño en L · desde $444").
+const SUMMARY_NAME: Readonly<Record<string, string>> = {
+  'templada-10mm': 'Puerta de baño templada 10 mm',
+  recta: 'Puerta de baño recta',
+  'en-l': 'Puerta de baño en L',
+  bisagra: 'Puerta de baño de bisagra',
+  'jardin-1-hoja': 'Puerta de jardín 1 hoja',
+  'jardin-2-hojas': 'Puerta de jardín 2 hojas',
+  'jardin-3-hojas': 'Puerta de jardín 3 hojas',
+  'jardin-2-fijas-2-corredizas': 'Puerta de jardín · más opciones',
+  'ventana-francesa': 'Ventana francesa',
+  'ventana-bilbao': 'Ventana bilbao',
 };
 const ADVISOR_MESSAGE =
   'Hola, quiero cotizar una puerta de jardín con más opciones (2 fijas + 2 corredizas o 1 fija + 3 corredizas).';
@@ -102,7 +118,7 @@ function Check(): ReactElement {
 
 // Step 0 — 3-level selector (R5, boards r03): Categoría > Tipo > Acabado.
 // Everything renders from CATEGORIES (R1 catalog model).
-export default function Step0Producto({ selectedId, current, onSelect, quoteLoad }: Step0ProductoProps): ReactElement {
+export default function Step0Producto({ asideTarget, selectedId, current, onSelect, quoteLoad }: Step0ProductoProps): ReactElement {
   const init = restore(selectedId, current);
   const [catSlug, setCat] = useState<string | null>(init.cat);
   const [subSlug, setSub] = useState<string | null>(init.sub);
@@ -130,6 +146,19 @@ export default function Step0Producto({ selectedId, current, onSelect, quoteLoad
     : [];
   const moreTile = category?.subcategories.find((s) => s.advisorOnly);
   const typeSelected = (s: Subcategory): boolean => s.slug === subSlug || (!!s.advisorOnly && !!sub?.advisorOnly);
+
+  const summaryName = sub ? (SUMMARY_NAME[sub.slug] ?? sub.name) : null;
+  const summaryPrice = variant?.fromPrice ?? (sub ? subFromPrice(sub) : null);
+  const asideLabel = !summaryName
+    ? 'Aún no eliges un producto'
+    : advisor || summaryPrice === null
+      ? summaryName
+      : `${summaryName} · desde`;
+  const asideTotal = advisor ? 'Con asesor' : summaryName && summaryPrice !== null ? formatFromPrice(summaryPrice) : '—';
+  const asideNote = advisor
+    ? 'Este producto no continúa en el cotizador en línea.'
+    : 'El precio final depende de tus medidas.';
+  const asideWa = buildWaLink(summaryName ? `Hola ALCUSA, quiero cotizar: ${summaryName}.` : undefined);
 
   return (
     <section aria-labelledby="step0-heading" className="sel">
@@ -242,6 +271,47 @@ export default function Step0Producto({ selectedId, current, onSelect, quoteLoad
           </button>
         </section>
       )}
+
+      {asideTarget &&
+        createPortal(
+          <>
+            <div className="cotizador-aside__hero">
+              <div className="cotizador-aside__hero-top">
+                <span className="cotizador-aside__kicker">TU COTIZACIÓN</span>
+              </div>
+              <span className="cotizador-aside__total-label">{asideLabel}</span>
+              <span
+                className={`cotizador-aside__total-value${advisor ? ' cotizador-aside__total-value--sm' : ''}`}
+                aria-live="polite"
+                data-testid="summary-price-value"
+              >
+                {asideTotal}
+              </span>
+              <span className="cotizador-aside__note">{asideNote}</span>
+            </div>
+            <div className="cotizador-aside__ctas">
+              {leaf ? (
+                <button type="button" className="bt bp" onClick={() => onSelect(leaf.model, leaf.preset)}>
+                  Siguiente
+                  <IconArrowRight size={20} />
+                </button>
+              ) : (
+                <button type="button" className="bt bd" disabled>
+                  Siguiente
+                </button>
+              )}
+              <a className="bt bw" href={asideWa} target="_blank" rel="noopener noreferrer">
+                <IconWhatsApp size={20} />
+                Cotizar por WhatsApp
+              </a>
+            </div>
+            <p className="cotizador-aside__wompi-note">
+              <IconLock size={16} />
+              Pago con tarjeta vía Wompi · excepto American Express
+            </p>
+          </>,
+          asideTarget,
+        )}
 
       <div className="sel-bar">
         {leaf ? (

@@ -103,9 +103,11 @@ describe('normalizeQuoteCode', () => {
     expect(normalizeQuoteCode(edge, NOW).ok).toBe(true);
   });
 
-  it('folio de contingencia (L inicial) se reconoce sin consultar', () => {
-    expect(normalizeQuoteCode('L-20260930-K7QM-3X9T', NOW)).toEqual({ ok: false, reason: 'contingency' });
-    expect(normalizeQuoteCode('ALC-20260930-LK7QM3X9', NOW)).toEqual({ ok: false, reason: 'contingency' });
+  it('folio de contingencia (U inicial) se reconoce sin consultar', () => {
+    expect(normalizeQuoteCode('ALC-20260930-UK7Q-M3X9', NOW)).toEqual({ ok: false, reason: 'contingency' });
+    expect(normalizeQuoteCode('ALC-20260930-UK7QM3X9', NOW)).toEqual({ ok: false, reason: 'contingency' });
+    // La L ya NO es marcador: se normaliza a 1 (un folio real que empieza en 1).
+    expect(normalizeQuoteCode('ALC-20260930-LK7QM3X9', NOW)).toEqual({ ok: false, reason: 'check' });
   });
 });
 

@@ -69,7 +69,7 @@ const MOBILE_STEPPER_LAST_VISIBLE_IDX = 4; // 'resumen' — index of the last st
 // all — verified: no "¿Dudas con tu medida?"/"Paso N de 8"/"TU COTIZACIÓN"
 // string anywhere in ios-0N/android-0N).
 const RAIL_ITEMS: Record<CotizadorStep, { title: string; sub: string }> = {
-  producto: { title: 'Elige tu producto', sub: '6 modelos a tu medida' },
+  producto: { title: 'Elige tu producto', sub: 'Categoría, tipo y acabado' },
   medidas: { title: 'Medidas y acabado', sub: 'Ancho, alto y vidrio' },
   precio: { title: 'Precio estimado', sub: 'En vivo, sin transporte' },
   zonaEntrega: { title: 'Entrega y zona', sub: 'Instalación o retiro en tienda' },
@@ -196,6 +196,9 @@ export default function Cotizador(): ReactElement {
   // Portal mount for the resumen/formaPago aside CTAs — see the AsideView.ctas
   // comment below and Step4Resumen/Step5FormaPago's `asideCtaTarget` prop.
   const [portalCtaEl, setPortalCtaEl] = useState<HTMLDivElement | null>(null);
+  // Step 0 (selector): the desktop resumen aside is owned by Step0Producto
+  // (it holds the category/type/finish state); it portals its body in here.
+  const [selAsideEl, setSelAsideEl] = useState<HTMLElement | null>(null);
   // advisorOnly deep link: name of the product to quote with an advisor.
   const [advisorProduct, setAdvisorProduct] = useState<string | null>(null);
   // F4 (ADR-012): folio from the `?folio=` deep link (read once, URL cleaned).
@@ -768,6 +771,7 @@ export default function Cotizador(): ReactElement {
       <div className="cotizador__form-col">
         {state.step === 'producto' && (
           <Step0Producto
+            asideTarget={selAsideEl}
             selectedId={state.productId}
             current={{ cornerFinish: state.cornerModel, gardenHojas: state.gardenHojas === 'custom' ? undefined : state.gardenHojas, windowType: state.windowModel }}
             quoteLoad={{
@@ -866,6 +870,14 @@ export default function Cotizador(): ReactElement {
           />
         )}
       </div>
+
+      {state.step === 'producto' && (
+        <aside
+          ref={setSelAsideEl}
+          className="cotizador-aside cotizador__summary-col cotizador-aside--sel"
+          aria-label="Resumen de tu cotización"
+        />
+      )}
 
       {showSummaryColumn && aside && (
         <aside
