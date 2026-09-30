@@ -62,3 +62,11 @@ export function buildQuoteMessage(input: QuoteMessageInput): string {
 export function buildAdvisorMessage(productName: string): string {
   return `Hola ALCUSA, me interesa cotizar: ${productName}. ¿Me pueden asesorar con medidas y precio?`;
 }
+
+/**
+ * Catalog (boards r05/r06) copy for advisorOnly items: "Hola, quiero cotizar X".
+ * Kept apart from buildAdvisorMessage, which the cotizador island shares.
+ */
+export function buildCatalogAdvisorMessage(productName: string): string {
+  return `Hola, quiero cotizar ${productName}`;
+}

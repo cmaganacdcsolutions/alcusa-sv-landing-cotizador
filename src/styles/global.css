@@ -109,6 +109,15 @@ svg {
   position: absolute;
   z-index: 2;
 }
+/* ratioLg: ratio móvil y desde el breakpoint desktop, vía variables (sin !important). */
+.photo-frame[data-ratio-lg] {
+  aspect-ratio: var(--photo-ratio);
+}
+@media (min-width: 900px) {
+  .photo-frame[data-ratio-lg] {
+    aspect-ratio: var(--photo-ratio-lg);
+  }
+}
 @media (prefers-reduced-transparency: reduce) {
   .photo-frame__ambient { display: none; }
 }

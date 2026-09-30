@@ -16,12 +16,12 @@ test.describe('catalogo -> cotizador deep link', () => {
     await expect(cards).toHaveText(['Puertas de baño', 'Puertas de jardín', 'Ventanas']);
     await page.getByRole('link', { name: 'Ver Puertas de jardín' }).click();
     await expect(page).toHaveURL(/\/catalogo\/puertas-de-jardin\/?$/);
-    await expect(page.getByTestId('catalogo-subcategories').getByRole('heading', { level: 2 })).toHaveCount(5);
+    await expect(page.getByTestId('catalogo-subcategories').getByRole('heading', { level: 2 })).toHaveCount(3);
   });
 
   test('detail CTA lands in the cotizador with the product preselected on Medidas', async ({ page }) => {
     await page.goto('/catalogo/puertas-de-bano/templada-10mm');
-    const cta = page.getByTestId('catalogo-cta');
+    const cta = page.locator('[data-cta]:visible');
     await expect(cta).toHaveText('Cotizar este producto');
     await expect(cta).toHaveAttribute('href', '/cotizador?producto=templada-10mm');
     await cta.click();
