@@ -9,6 +9,8 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import type { Pool } from 'mysql2/promise';
 import type { Config } from '../config/index.ts';
 import { pingDb } from '../db/pool.ts';
+import { registerQuoteRoutes } from '../modules/quotes/routes.ts';
+import type { RateLimits } from '../modules/quotes/service.ts';
 import { envelope, installErrorHandling } from './errors.ts';
 
 /** pino redact paths (ADR-013 §2.6). Applies to bound objects and request headers. */
@@ -32,11 +34,15 @@ export const REDACT_PATHS = [
 ];
 
 export interface AppDeps {
-  config: Pick<Config, 'LOG_LEVEL' | 'TRUST_PROXY' | 'NODE_ENV' | 'SERVE_STATIC_DIR'>;
+  config: Pick<Config, 'LOG_LEVEL' | 'TRUST_PROXY' | 'NODE_ENV' | 'SERVE_STATIC_DIR'> & { IP_HASH_PEPPER?: string | undefined };
   /** Absent in pure unit tests: /health/ready then answers 503. */
   pool?: Pool;
   /** Tests inject a stream to assert on log output. */
   logStream?: Writable;
+  /** Tests override the app-level rate limits and the clock. */
+  limits?: Partial<RateLimits>;
+  now?: () => Date;
+  generateCode?: (now: Date) => string;
 }
 
 const SAFE_REQUEST_ID = /^[A-Za-z0-9._-]{8,64}$/;
@@ -68,6 +74,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.addHook('onSend', (req, reply, payload, done) => {
     void reply.header('x-request-id', req.id);
+    if (req.url.startsWith('/api/') && !reply.hasHeader('cache-control')) void reply.header('cache-control', 'no-store');
     done(null, payload);
   });
 
@@ -84,6 +91,12 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     // No details: never reveal host, user or driver error text.
     return reply.code(503).send(envelope('unavailable', 'Service unavailable'));
   });
+
+  if (pool) {
+    // Production refuses to boot without IP_HASH_PEPPER (config); the fallback is local/test only.
+    const pepper = config.IP_HASH_PEPPER ?? 'dev-only-pepper-not-for-production';
+    registerQuoteRoutes(app, { pool, pepper, ...(deps.limits ? { limits: deps.limits } : {}), ...(deps.now ? { now: deps.now } : {}), ...(deps.generateCode ? { generateCode: deps.generateCode } : {}) });
+  }
 
   if (serveStatic) {
     await app.register(fastifyStatic, { root: resolve(serveStatic), wildcard: true });
