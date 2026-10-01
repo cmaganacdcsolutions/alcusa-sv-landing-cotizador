@@ -3,6 +3,7 @@
 // exista B6 se cambia PUBLIC_QUOTE_API=http y este archivo no se usa.
 import { priceStraight } from '@engine/pricing';
 import { makeQuoteCode } from './code';
+import { loadMockQuote } from './mockStore';
 import { QuoteLoadFailure, type QuoteClient, type QuoteLoadItem, type QuoteLoadResponse } from './types';
 
 const pad = (n: number): string => String(n).padStart(2, '0');
@@ -108,6 +109,8 @@ export function createMockQuoteClient(opts: { now?: () => Date; latencyMs?: numb
           reject(new DOMException('Aborted', 'AbortError'));
         });
       });
+      const saved = loadMockQuote(code, now());
+      if (saved) return saved;
       const c = mockCodes(now());
       const fresh = daysAgo(now(), 2);
       switch (code) {

@@ -341,3 +341,31 @@ test.describe('customer dialog — a11y (axe with the dialog open)', () => {
     expect(await serious(page)).toEqual([]);
   });
 });
+
+test.describe('generate -> load it back (mock adapter, interim for B3/B6)', () => {
+  test('the code of a freshly generated quote loads the same cart after a reload', async ({ page }) => {
+    await setup(page);
+    await gotoResumen(page);
+    await trigger(page).click();
+    const d = dialog(page);
+    const download = page.waitForEvent('download', { timeout: 15_000 });
+    await fill(d, 'María López', '7123-4567');
+    await cta(d).click();
+    const name = (await download).suggestedFilename();
+    const m = /^Cotizacion-(ALC-\d{8}-[0-9A-HJKMNP-TV-Z]{8})\.pdf$/.exec(name);
+    expect(m, 'canonical folio (no U contingency marker) in mock mode').not.toBeNull();
+    const code = m![1]!;
+
+    await page.evaluate(() => sessionStorage.removeItem('alcusa-cotizador-cart')); // empty cart: no "Reemplazar" confirm
+    await page.goto('/cotizador');
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    const toggle = page.getByRole('button', { name: '¿Ya tienes una cotización?', expanded: false });
+    if (await toggle.count()) await toggle.click();
+    await page.getByLabel('Código de tu cotización').fill(code.toLowerCase());
+    await page.getByRole('button', { name: 'Cargar cotización' }).click();
+    await expect(page).toHaveURL(/#cotizador\/4-resumen/);
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    const cart = await page.evaluate(() => JSON.parse(sessionStorage.getItem('alcusa-cotizador-cart') ?? '[]') as Array<{ productId: string }>);
+    expect(cart.map((i) => i.productId)).toEqual(['recta']);
+  });
+});
