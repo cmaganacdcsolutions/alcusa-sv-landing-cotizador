@@ -15,6 +15,9 @@
     "test:responsive": "playwright test --config=playwright.responsive.config.ts",
     "build": "astro build",
     "preview": "astro preview",
+    "server:dev": "npm --prefix server run dev",
+    "server:test": "npm --prefix server test",
+    "server:build": "npm --prefix server run build",
     "pretest:e2e": "node scripts/build-e2e-fixtures.mjs"
   },
   "dependencies": {

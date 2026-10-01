@@ -18,6 +18,8 @@ export default tseslint.config(
       'playwright-report/**',
       'playwright-report-responsive/**',
       'test-results/**',
+      // server/ is its own package with its own eslint config (ADR-013).
+      'server/**',
     ],
   },
   js.configs.recommended,

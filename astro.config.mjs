@@ -1,6 +1,15 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 
+// Local API (ADR-013 §2.5): the Fastify server in server/ listens on 127.0.0.1:3001.
+// Both `astro dev` and `astro preview` forward /api (and the admin base path) to it.
+const API_ORIGIN = process.env.API_ORIGIN ?? 'http://127.0.0.1:3001';
+const ADMIN_BASE_PATH = process.env.ADMIN_BASE_PATH ?? '/dev-ops-local'; // placeholder, same default as server/.env.example
+const apiProxy = {
+  '/api': { target: API_ORIGIN, changeOrigin: false },
+  [ADMIN_BASE_PATH]: { target: API_ORIGIN, changeOrigin: false },
+};
+
 // ALCUSA landing + cotizador — static output, React islands only for the
 // cotizador wizard and contact form. See docs/architecture/adr/adr-001.
 export default defineConfig({
@@ -18,6 +27,7 @@ export default defineConfig({
     // Vite re-optimize deps mid-session and the islands crashed again with
     // "_jsxDEV is not a function". Generated output is never source.
     server: {
+      proxy: apiProxy,
       watch: {
         ignored: [
           '**/coverage/**',
