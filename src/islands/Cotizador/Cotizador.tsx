@@ -209,7 +209,7 @@ export default function Cotizador(): ReactElement {
     const initial = stepFromHash(initialHash);
     if (initial) dispatch({ type: 'GOTO_STEP', step: initial });
 
-    // Return from Wompi (real gateway): api/wompi-return.php already verified
+    // Return from Wompi (real gateway): api/wompi-return already verified
     // the redirect hash server-side and encoded the result in the fragment.
     // Restore what the redirect wiped, show the result, then tidy the URL.
     const wompiReturn = parseWompiReturn(initialHash);

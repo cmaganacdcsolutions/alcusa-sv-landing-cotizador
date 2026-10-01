@@ -40,7 +40,7 @@ describe('server adapter', () => {
       const f = vi.fn().mockResolvedValue(res(st, serverBody));
       const out = await createServerFolioProvider({ fetchImpl: f as unknown as typeof fetch }).issue(req);
       expect(out).toEqual({ ...serverBody, source: 'server' });
-      expect(f.mock.calls[0]![0]).toBe('/api/quote-create.php');
+      expect(f.mock.calls[0]![0]).toBe('/api/quote-create');
       const sent = JSON.parse((f.mock.calls[0]![1] as RequestInit).body as string) as Record<string, unknown>;
       expect(sent).toMatchObject({ consent: true, privacyNoticeVersion: '2026-10-v1', hp: '' });
     }

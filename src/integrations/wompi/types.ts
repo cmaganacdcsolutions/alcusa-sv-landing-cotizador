@@ -1,4 +1,4 @@
-// Shared Wompi request/response types (browser <-> our api/*.php only).
+// Shared Wompi request/response types (browser <-> our api/* only).
 // The browser never talks to Wompi and never sees a Wompi credential (ADR-003).
 
 /** PUBLIC_COTIZADOR_MODE. Anything other than 'wompi' resolves to mock. */
@@ -9,7 +9,7 @@ export interface CreateLinkItem {
   subtotal: number;
 }
 
-/** POST /api/wompi-create-link.php. No amount to charge: the server derives it. */
+/** POST /api/wompi-create-link. No amount to charge: the server derives it. */
 export interface CreateLinkRequest {
   pct: 80 | 100;
   total: number;
@@ -22,7 +22,7 @@ export interface CreateLinkResponse {
   amount: number;
 }
 
-/** Stable error envelope of every api/wompi-*.php endpoint. */
+/** Stable error envelope of every api/wompi-* endpoint. */
 export interface ApiErrorEnvelope {
   error: { code: string; message: string };
 }

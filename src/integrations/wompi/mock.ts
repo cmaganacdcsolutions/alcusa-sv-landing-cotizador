@@ -2,7 +2,7 @@
 // PUBLIC_COTIZADOR_MODE=mock (src/env.d.ts, .env.example). Pure, no
 // network/keys: Step6Wompi is the only caller (islands/Cotizador/steps/
 // Step6Wompi.tsx). The real gateway client (WOMPI_* server credentials,
-// api/*.php) is a later slice — see HANDOFF.
+// api/*) is a later slice — see HANDOFF.
 export type WompiMockOutcome = 'approved' | 'declined';
 
 export interface WompiMockResult {

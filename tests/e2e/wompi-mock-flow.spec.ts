@@ -44,7 +44,7 @@ test.describe('wompi mock flow (sf-cot-checkout)', () => {
   });
 });
 
-// Return from the real gateway: api/wompi-return.php verifies the redirect
+// Return from the real gateway: api/wompi-return verifies the redirect
 // hash server-side and lands here with `?pago=`. Mode-independent parsing, so
 // it is testable in mock mode without any Wompi call.
 test.describe('wompi return fragment (s8-wompi-real)', () => {

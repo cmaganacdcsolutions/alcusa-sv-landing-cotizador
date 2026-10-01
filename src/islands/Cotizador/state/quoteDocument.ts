@@ -76,7 +76,7 @@ export function toFolioItem(it: OrderLineItem, config: Readonly<Record<string, u
   const qty = exact ? d.qty : 1;
   const description = [d.name, d.variant, d.measures && `${d.measures} cm`].filter(Boolean).join(SEP);
   const snapshot = { ...config };
-  if (JSON.stringify(snapshot).length > CONFIG_MAX_BYTES) throw new Error(`config of ${it.productId} exceeds ${CONFIG_MAX_BYTES} bytes`);
+  if (new TextEncoder().encode(JSON.stringify(snapshot)).length > CONFIG_MAX_BYTES) throw new Error(`config of ${it.productId} exceeds ${CONFIG_MAX_BYTES} bytes`);
   return {
     productSlug: it.productId,
     description: (exact || d.qty === 1 ? description : `${description} (x${d.qty})`).slice(0, 255),

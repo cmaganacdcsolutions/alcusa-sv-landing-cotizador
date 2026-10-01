@@ -1,5 +1,5 @@
 // Real gateway client (PUBLIC_COTIZADOR_MODE=wompi). Calls OUR
-// api/wompi-create-link.php only, never Wompi directly (ADR-003). Pure enough
+// api/wompi-create-link only, never Wompi directly (ADR-003). Pure enough
 // to unit-test: fetch and storage are injected.
 import type {
   ApiErrorEnvelope,
@@ -10,7 +10,7 @@ import type {
   WompiReturn,
 } from './types';
 
-export const CREATE_LINK_ENDPOINT = '/api/wompi-create-link.php';
+export const CREATE_LINK_ENDPOINT = '/api/wompi-create-link';
 export const PENDING_STORAGE_KEY = 'alcusa-wompi-pending';
 
 export class WompiClientError extends Error {

@@ -36,7 +36,7 @@ describe('createWompiPaymentLink', () => {
     const out = await createWompiPaymentLink(req, f as unknown as typeof fetch);
     expect(out.urlEnlace).toBe('https://lk.wompi.sv/abcd');
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe('/api/wompi-create-link.php');
+    expect(url).toBe('/api/wompi-create-link');
     expect(JSON.parse(init.body as string)).not.toHaveProperty('amount');
   });
 

@@ -8,7 +8,7 @@ import { LOADED_FROM_KEY, QUOTE_CODE_ALPHABET, makeQuoteCode, normalizeQuoteCode
 import { saveMockQuote } from '../../integrations/quotes/mockStore';
 
 export const CROCKFORD = QUOTE_CODE_ALPHABET;
-export const QUOTE_CREATE_PATH = '/api/quote-create.php';
+export const QUOTE_CREATE_PATH = '/api/quote-create';
 export const QUOTE_CREATE_TIMEOUT_MS = 4000;
 /** Contingency marker: 'U' is not in the Crockford alphabet and no normalization rule corrects it (ADR-011 §5). */
 export const CONTINGENCY_MARKER = 'U';
@@ -182,7 +182,7 @@ async function readEnvelope(res: Response): Promise<QuoteFolioApiError> {
   return new QuoteFolioApiError(res.status, code, e?.message ?? `quote-create ${res.status}`, e?.fields, Number.isFinite(ra) && ra > 0 ? ra : undefined);
 }
 
-/** Adapter for POST /api/quote-create.php. Throws QuoteFolioApiError on non-2xx, any other Error on timeout/network/bad body. */
+/** Adapter for POST /api/quote-create. Throws QuoteFolioApiError on non-2xx, any other Error on timeout/network/bad body. */
 export function createServerFolioProvider(deps: ServerFolioDeps = {}): QuoteFolioProvider {
   const doFetch = deps.fetchImpl ?? fetch;
   return {

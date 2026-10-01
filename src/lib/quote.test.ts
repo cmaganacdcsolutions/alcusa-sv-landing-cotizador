@@ -77,7 +77,7 @@ describe('folio providers', () => {
     const ok = vi.fn().mockResolvedValue({ ok: true, status: 201, json: () => Promise.resolve({ code: 'ALC-20260929-K7QM3X90', validUntil: '2026-10-14', total: 0 }) });
     const s = await createServerFolioProvider({ fetchImpl: ok as unknown as typeof fetch }).issue(req);
     expect(s.source).toBe('server');
-    expect(ok.mock.calls[0]![0]).toBe('/api/quote-create.php');
+    expect(ok.mock.calls[0]![0]).toBe('/api/quote-create');
     const bad = createServerFolioProvider({ fetchImpl: vi.fn().mockRejectedValue(new Error('net')) as unknown as typeof fetch });
     const f = await withContingency(bad, createLocalFolioProvider()).issue(req);
     expect(f.source).toBe('local');

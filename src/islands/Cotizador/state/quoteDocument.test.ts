@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { OrderLineItem } from './order';
-import { cartHash, metresToCm, toFolioRequest, toQuoteDocument, toQuoteDocumentItem } from './quoteDocument';
+import { cartHash, metresToCm, toFolioItem, toFolioRequest, toQuoteDocument, toQuoteDocumentItem } from './quoteDocument';
 
 const line = (detail: string, o: Partial<OrderLineItem> = {}): OrderLineItem => ({
   id: 'a', productId: 'recta', name: 'Puerta de baño recta', detail, subtotal: 222, requiresQuote: false, ...o,
@@ -35,6 +35,12 @@ describe('quoteDocument mapper', () => {
     const odd = toFolioRequest({ ...base, items: [line(d, { subtotal: 100 })] }, cust, 'k').items[0]!;
     expect(odd).toMatchObject({ qty: 1, unitPrice: 100, lineTotal: 100 });
     expect(odd.description).toContain('(x3)');
+  });
+  it('measures the config 4 KB guard in bytes (server returns 413 on bytes)', () => {
+    const multi = { note: 'ñ'.repeat(2100) }; // ~2.1k chars but ~4.2k bytes
+    expect(JSON.stringify(multi).length).toBeLessThan(4096);
+    expect(() => toFolioItem(line('1.10 × 1.85 m · Natural'), multi)).toThrow(/exceeds 4096 bytes/);
+    expect(() => toFolioItem(line('1.10 × 1.85 m · Natural'), { note: 'n'.repeat(2100) })).not.toThrow();
   });
   it('builds the document, folio request and a stable hash', () => {
     const base = { items: [line('1.10 × 1.85 m · Natural · Claro 5 mm')], entrega: 'instalacion' as const, zone: 'Soyapango', transport: 40, total: 262 };
