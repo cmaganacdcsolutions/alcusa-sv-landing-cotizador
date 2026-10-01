@@ -57,6 +57,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     },
     trustProxy: config.TRUST_PROXY ? '127.0.0.1' : false,
     bodyLimit: 64 * 1024,
+    // Long :code params reach the handler (-> 422 invalid_code) instead of the router's 414/404.
+    routerOptions: { maxParamLength: 1024 },
     genReqId: (req) => {
       const incoming = req.headers['x-request-id'];
       return typeof incoming === 'string' && SAFE_REQUEST_ID.test(incoming) ? incoming : randomUUID();

@@ -26,3 +26,13 @@ re-runnable statements (`IF NOT EXISTS`). After a migration that adds a table, `
 ## Contracts
 `src/modules/quotes/schemas.ts` holds the zod shapes of `QuoteFolioRequest` / `QuoteLoadResponse`; `test/contract.test-d.ts` fails
 `npm run server:test` if they diverge from the FE types. N1/N2 add the business refinements on top.
+
+## Quotes API (N1/N2)
+| Endpoint | Success | Errors (envelope `{error:{code,message,fields?}}`) |
+|---|---|---|
+| `POST /api/quote-create` (<= 32 KB) | `201 {code,validUntil,total}` new, `200` same `idempotencyKey` + same cart | 400 malformed JSON, 409 `idempotency_conflict`, 413 `payload_too_large` (body > 32 KB or a `config` > 4096 bytes), 422 `invalid_request` / `invalid_customer` / `consent_required` (+ `fields`), 429 `rate_limited` + `Retry-After` (20/h per ip_hash, 5/h per WhatsApp HMAC) |
+| `GET /api/quotes/:code` | `200 QuoteLoadResponse` (no PII, `expired` from the SV date) | 404 `not_found` (uniform: missing / cancelled), 422 `invalid_code` (no `quotes` read), 429 `rate_limited` + `Retry-After` (30 queries/h and 10 failures/h per ip_hash) |
+
+All `/api/*` responses are `Cache-Control: no-store`. Rate limits live in the `rate_limits` table (HMAC with `IP_HASH_PEPPER`). Pricing is trusted from the client
+(`pricing_source='client'`, ADR-011 §5): the server verifies `lineTotal == qty*unitPrice` and `sum(lineTotal)+transportFee == total` in cents, nothing more.
+`npm run smoke:quotes` (server running on :3001) does POST -> replay -> GET with a FE-shaped request.

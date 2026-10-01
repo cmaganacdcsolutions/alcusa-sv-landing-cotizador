@@ -14,7 +14,8 @@
     "db:setup-local": "tsx src/cli/setup-local.ts",
     "db:migrate": "tsx --env-file-if-exists=.env src/cli/migrate.ts",
     "db:grants": "tsx --env-file-if-exists=.env src/cli/grants.ts",
-    "db:seed": "tsx --env-file-if-exists=.env src/cli/seed.ts"
+    "db:seed": "tsx --env-file-if-exists=.env src/cli/seed.ts",
+    "smoke:quotes": "tsx scripts/smoke-quotes.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.2",
