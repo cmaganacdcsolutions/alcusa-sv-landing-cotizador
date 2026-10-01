@@ -1,4 +1,5 @@
 # ADR-011: Panel admin, promociones dinámicas, folio de cotización, webhook y contactos (CR-01)
+> **Amended by ADR-013 (2026-10-01):** all security decisions stand (argon2id, mandatory TOTP, `__Host-` cookie, protected path, 404 uniform, promotions.json contract), but the implementation is Node/Fastify instead of PHP (`app/src`, `bin/*.php`, FPM, sodium become `server/src/**`, `node:crypto`, systemd; Nginx uses `proxy_pass` instead of `fastcgi`). Endpoints drop `.php`. See ADR-013 §2.1, §2.4 and §5 (slice ids N0-N5 map to D1/B1-B5).
 
 Date: 2026-09-29 (enmendado 2026-09-30, ver abajo)
 Status: proposed (pendiente de revisión del cliente; se vuelve accepted al aprobar CR-01)

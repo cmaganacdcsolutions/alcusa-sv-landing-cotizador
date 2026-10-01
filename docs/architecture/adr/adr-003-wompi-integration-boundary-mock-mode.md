@@ -1,4 +1,5 @@
 # ADR-003: Wompi El Salvador integration boundary + mock mode
+> **Amended by ADR-013 (2026-10-01):** the contract, HMAC verification, error envelope and mock mode stand; the PHP implementation (api/wompi-*.php) is superseded by a Node port (ADR-013 §2.4) and endpoints lose the `.php` suffix (`/api/wompi-create-link`, `/api/wompi-webhook`, `/api/wompi-return`).
 
 Date: 2026-09-28
 Status: accepted

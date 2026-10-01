@@ -1,4 +1,5 @@
 # ADR-010: Base de datos y modelo de datos (CR-01: panel admin, promociones, cotizaciones, ventas, contactos)
+> **Amended by ADR-013 (2026-10-01):** MariaDB stays; version becomes 11.4 LTS locally and on the VPS (not 10.11), PDO becomes `mysql2`, and the migration runner `bin/migrate.php` becomes `server/src/cli/migrate.ts` with the same behaviour, files in `server/db/migrations/`. Schema and folio rules unchanged.
 
 Date: 2026-09-29
 Status: proposed (pendiente de revisión del cliente; se vuelve accepted al aprobar CR-01)

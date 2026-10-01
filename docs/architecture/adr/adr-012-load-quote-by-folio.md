@@ -1,4 +1,5 @@
 # ADR-012: Cargar una cotización por folio en el cotizador
+> **Amended by ADR-013 (2026-10-01):** Nginx proxies `/api/quotes/{code}` to the Node service (not fastcgi to quote-load.php); B6 is slice N2 and the `quote-create` path is `/api/quote-create`. Contract and security unchanged. See ADR-013 §2.2 and §7.
 
 - Estado: **proposed**
 - Fecha: 2026-09-30

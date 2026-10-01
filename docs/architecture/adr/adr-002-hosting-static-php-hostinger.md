@@ -1,4 +1,5 @@
 # ADR-002: Hosting on existing Hostinger account — static files + PHP endpoints
+> **Amended by ADR-013 (2026-10-01):** the server-side code is no longer PHP under public_html/api/ but a Node (Fastify) service behind Nginx on the Hostinger KVM VPS 2. Static `dist/` is unchanged. Read this ADR as history for the PHP/shared-hosting parts.
 
 Date: 2026-09-28
 Status: accepted
