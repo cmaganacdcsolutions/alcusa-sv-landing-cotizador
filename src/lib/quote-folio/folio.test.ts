@@ -1,3 +1,6 @@
+import { formatQuoteCode, makeQuoteCode, normalizeQuoteCode } from '../../integrations/quotes/code';
+import { createMockQuoteClient } from '../../integrations/quotes/mockClient';
+import { loadMockQuote, MOCK_QUOTES_KEY, MOCK_QUOTES_MAX, saveMockQuote } from '../../integrations/quotes/mockStore';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createLocalFolioProvider,
@@ -81,7 +84,39 @@ describe('withContingency', () => {
     s = 'server_error';
     expect((await p.issue(req)).source).toBe('local');
     s = 'ok';
-    expect(isContingencyFolio((await p.issue(req)).code)).toBe(true);
+    const ok = await p.issue(req);
+    expect(ok.source).toBe('server');
+    expect(isContingencyFolio(ok.code)).toBe(false);
+  });
+  it('mock ok folio is canonical, loadable by normalizeQuoteCode, and its snapshot is found by the mock client (no PII)', async () => {
+    const mem = new Map<string, string>();
+    vi.stubGlobal('localStorage', { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v) });
+    try {
+      const now = new Date('2026-10-01T15:00:00Z');
+      const p = createMockFolioProvider(() => 'ok', { now: () => now });
+      const item = { productSlug: 'recta', description: 'Puerta recta', qty: 1, unitPrice: 262, lineTotal: 262, config: { productId: 'recta', width: '110' }, configSchemaVersion: 1, promoRef: null };
+      const f = await p.issue({ ...req, items: [item], total: 262 });
+      const n = normalizeQuoteCode(formatQuoteCode(f.code).toLowerCase(), now);
+      expect(n).toEqual({ ok: true, code: f.code, date: '20261001' });
+      const got = await createMockQuoteClient({ now: () => now, latencyMs: 0 }).getQuote(f.code);
+      expect(got).toMatchObject({ code: f.code, expired: false, delivery: { mode: 'delivery', zone: null }, saved: { total: 262 } });
+      expect(got.items[0]).toMatchObject({ productSlug: 'recta', savedUnitPrice: 262, configSchemaVersion: 1, config: { width: '110' } });
+      expect(JSON.stringify([...mem.values()])).not.toMatch(/María|71234567/);
+      await expect(createMockQuoteClient({ now: () => now, latencyMs: 0 }).getQuote('ALC-20261001-K7QM3X90')).rejects.toMatchObject({ code: 'not_found' });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+  it('mock store caps at 20 entries (oldest dropped) and survives broken storage', () => {
+    const mem = new Map<string, string>();
+    vi.stubGlobal('localStorage', { getItem: (k: string) => mem.get(k) ?? null, setItem: (k: string, v: string) => void mem.set(k, v) });
+    const base = { now: new Date('2026-10-01T15:00:00Z'), delivery: { mode: 'pickup' as const }, items: [], transportFee: 0, total: 0 };
+    for (let i = 0; i < 22; i++) saveMockQuote({ ...base, code: makeQuoteCode('20261001', `K7QM3X${i % 10}`) + (i >= 10 ? 'x'.repeat(i - 9) : '') });
+    expect((JSON.parse(mem.get(MOCK_QUOTES_KEY)!) as unknown[]).length).toBe(MOCK_QUOTES_MAX);
+    vi.stubGlobal('localStorage', { getItem: () => { throw new Error('denied'); }, setItem: () => { throw new Error('denied'); } });
+    expect(() => saveMockQuote({ ...base, code: 'ALC-20261001-K7QM3X90' })).not.toThrow();
+    expect(loadMockQuote('ALC-20261001-K7QM3X90')).toBeNull();
+    vi.unstubAllGlobals();
   });
 });
 

@@ -79,7 +79,7 @@ test.describe('quote share — desktop (always download + wa.me tab)', () => {
     const download = page.waitForEvent('download');
     await shareAndSubmit(page);
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^Cotizacion-ALC-\d{8}-U[0-9A-Z]{7}\.pdf$/);
+    expect(file.suggestedFilename()).toMatch(/^Cotizacion-ALC-\d{8}-[0-9A-Z]{8}\.pdf$/);
 
     const toast = page.getByTestId('quote-share-toast');
     await expect(toast).toBeVisible();
@@ -88,7 +88,7 @@ test.describe('quote share — desktop (always download + wa.me tab)', () => {
     expect(href).toMatch(/^https:\/\/wa\.me\/50376802410\?text=/);
     const text = decodeURIComponent(href!.split('?text=')[1]);
     expect(text).toContain('Hola, ALCUSA. Quiero confirmar mi cotización.');
-    expect(text).toMatch(/N\.º ALC-\d{8}-U/);
+    expect(text).toMatch(/N\.º ALC-\d{8}-[0-9A-Z]{8}/);
     expect(text).toContain('Adjunto el PDF de mi cotización.');
 
     const p = await probe(page);
@@ -122,7 +122,7 @@ test.describe('quote share — mobile (Web Share with files)', () => {
     const p = await probe(page);
     expect(p.shareCalls).toHaveLength(1);
     expect(p.shareCalls[0]).toMatchObject({ type: 'application/pdf', hasTitle: true });
-    expect(p.shareCalls[0]!.name).toMatch(/^Cotizacion-ALC-\d{8}-U/);
+    expect(p.shareCalls[0]!.name).toMatch(/^Cotizacion-ALC-\d{8}-[0-9A-Z]{8}/);
     expect(p.opened).toHaveLength(0);
   });
 

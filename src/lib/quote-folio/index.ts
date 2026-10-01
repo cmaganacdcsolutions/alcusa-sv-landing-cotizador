@@ -4,7 +4,8 @@
 //           wrapped with the same contingency rules as http
 //   http -> POST quote-create; timeout/network/5xx fall back to a local U folio, 4xx propagates.
 
-import { LOADED_FROM_KEY, QUOTE_CODE_ALPHABET, normalizeQuoteCode } from '../../integrations/quotes/code';
+import { LOADED_FROM_KEY, QUOTE_CODE_ALPHABET, makeQuoteCode, normalizeQuoteCode } from '../../integrations/quotes/code';
+import { saveMockQuote } from '../../integrations/quotes/mockStore';
 
 export const CROCKFORD = QUOTE_CODE_ALPHABET;
 export const QUOTE_CREATE_PATH = '/api/quote-create.php';
@@ -253,9 +254,14 @@ export function createMockFolioProvider(scenario: () => MockScenario = readMockS
       if (wait) await new Promise((r) => setTimeout(r, wait));
       const s = scenario();
       if (s !== 'ok') throw MOCK_ERRORS[s]();
-      // The local (U) folio: the mock never pretends to be in the DB.
-      const suffix = Array.from(random(7), (b) => CROCKFORD[b % 32]).join('');
-      return { code: `ALC-${svDateStamp(now())}-${CONTINGENCY_MARKER}${suffix}`, total: req.total, source: 'local' };
+      // DEV-ONLY stand-in for B3: a canonical folio (valid check digit) whose snapshot is kept in
+      // localStorage so the mock QuoteClient can load it back. Contingency (U) folios come only from
+      // the withContingency fallback (scenario 'server_error'), never from the 'ok' scenario.
+      const at = now();
+      const body = Array.from(random(7), (b) => CROCKFORD[b % 32]).join('');
+      const code = makeQuoteCode(svDateStamp(at), body);
+      saveMockQuote({ code, now: at, delivery: req.delivery, items: req.items, transportFee: req.transportFee, total: req.total });
+      return { code, validUntil: new Date(at.getTime() + 15 * 86_400_000).toISOString().slice(0, 10), total: req.total, source: 'server' };
     },
   };
 }
