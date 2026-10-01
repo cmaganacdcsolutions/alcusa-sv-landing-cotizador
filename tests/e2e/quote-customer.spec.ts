@@ -182,7 +182,8 @@ test.describe('customer dialog — H4/E4 remembered + success', () => {
     const stored = await page.evaluate((k) => JSON.parse(sessionStorage.getItem(k) ?? 'null') as Record<string, unknown>, STORE);
     expect(stored).toMatchObject({ name: 'María López', whatsapp: '+50371234567', consent: { accepted: true, noticeVersion: '2026-10-v1' } });
     expect(typeof stored.savedAt).toBe('string');
-    expect(await page.evaluate(() => localStorage.length)).toBe(0);
+    // No customer PII in localStorage. The dev-only mock quote store (PII-free snapshot, mockStore.ts) is excluded on purpose.
+    expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k !== 'alcusa.mock.quotes.v1').length)).toBe(0);
     await expect(trigger(page)).toBeFocused();
 
     // a new cart state (remove nothing; reload keeps sessionStorage) -> dialog again with remembered data
@@ -365,7 +366,6 @@ test.describe('generate -> load it back (mock adapter, interim for B3/B6)', () =
     await page.getByRole('button', { name: 'Cargar cotización' }).click();
     await expect(page).toHaveURL(/#cotizador\/4-resumen/);
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
-    const cart = await page.evaluate(() => JSON.parse(sessionStorage.getItem('alcusa-cotizador-cart') ?? '[]') as Array<{ productId: string }>);
-    expect(cart.map((i) => i.productId)).toEqual(['recta']);
+    await expect(page.getByRole('region', { name: 'Resumen de tu cotización' }).getByText('Puerta de baño recta')).toBeVisible();
   });
 });
