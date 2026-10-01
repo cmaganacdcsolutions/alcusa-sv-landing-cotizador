@@ -18,7 +18,8 @@
     "server:dev": "npm --prefix server run dev",
     "server:test": "npm --prefix server test",
     "server:build": "npm --prefix server run build",
-    "pretest:e2e": "node scripts/build-e2e-fixtures.mjs"
+    "pretest:e2e": "node scripts/build-e2e-fixtures.mjs",
+    "test:e2e:http": "node scripts/build-e2e-http.mjs && playwright test --config=playwright.http.config.ts"
   },
   "dependencies": {
     "@astrojs/react": "7.0.0",

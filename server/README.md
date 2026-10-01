@@ -36,3 +36,10 @@ re-runnable statements (`IF NOT EXISTS`). After a migration that adds a table, `
 All `/api/*` responses are `Cache-Control: no-store`. Rate limits live in the `rate_limits` table (HMAC with `IP_HASH_PEPPER`). Pricing is trusted from the client
 (`pricing_source='client'`, ADR-011 §5): the server verifies `lineTotal == qty*unitPrice` and `sum(lineTotal)+transportFee == total` in cents, nothing more.
 `npm run smoke:quotes` (server running on :3001) does POST -> replay -> GET with a FE-shaped request.
+
+## FE http e2e (N2-FE)
+`npm run test:e2e:http` (repo root): builds `dist-e2e/http` with `PUBLIC_QUOTE_API=http`, starts `npm run server:dev` (`NODE_ENV=test`, DB `alcusa_test`)
+and `scripts/serve-static.mjs` (static + `/api` proxy via `API_ORIGIN`) on :4431, then runs `tests/e2e-http` on ios390/android412/desktop1920 (3 workers).
+Credentials come from `server/.env` (loaded by `playwright.http.config.ts`). `server/scripts/e2e-db.ts` truncates `rate_limits` before the run and
+back-dates `valid_until` for the expired case. All requests share one ip_hash (127.0.0.1), so a run uses ~15 of the 20 POST / 30 GET per hour; the run
+starts with the counters at zero, so do not run it twice within seconds of another heavy client.

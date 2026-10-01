@@ -14,3 +14,4 @@ blob-report/
 Thumbs.db
 *.log
 dist-e2e/
+playwright-report-http/
