@@ -85,6 +85,10 @@ describe('folio providers', () => {
   it('PUBLIC_QUOTE_API defaults to mock', () => {
     expect(quoteApiMode(undefined)).toBe('mock');
     expect(quoteApiMode('http')).toBe('http');
+    // Aligned with resolveQuoteApiMode: prod without env must issue real (http) folios.
+    expect(quoteApiMode(undefined, true)).toBe('http');
+    expect(quoteApiMode('mock', true)).toBe('mock');
+    expect(quoteApiMode('otro', true)).toBe('http');
   });
 });
 

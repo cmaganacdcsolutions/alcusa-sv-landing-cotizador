@@ -282,11 +282,16 @@ export function withContingency(primary: QuoteFolioProvider, fallback: QuoteFoli
 
 export type QuoteApiMode = 'mock' | 'http';
 
-export function quoteApiMode(raw: string | undefined): QuoteApiMode {
-  return raw === 'http' ? 'http' : 'mock';
+// Same rule as resolveQuoteApiMode (@integrations/quotes): the env wins, otherwise http in prod and mock in dev/test,
+// so a prod build never issues mock folios that the http loader can't find.
+export function quoteApiMode(raw: string | undefined, isProd = false): QuoteApiMode {
+  if (raw === 'mock' || raw === 'http') return raw;
+  return isProd ? 'http' : 'mock';
 }
 
-export function createQuoteFolioProvider(mode: QuoteApiMode = quoteApiMode(import.meta.env.PUBLIC_QUOTE_API)): QuoteFolioProvider {
+export function createQuoteFolioProvider(
+  mode: QuoteApiMode = quoteApiMode(import.meta.env.PUBLIC_QUOTE_API, import.meta.env.PROD),
+): QuoteFolioProvider {
   const local = createLocalFolioProvider();
   return withContingency(mode === 'http' ? createServerFolioProvider() : createMockFolioProvider(), local);
 }
