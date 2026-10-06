@@ -201,7 +201,7 @@ test.describe('landing5 — desktop follow-ups (e)-(h)', () => {
     const jardinCard = modelos.locator('li', { hasText: 'Puerta de jardín' });
     await expect(jardinCard.locator('img.catalogo__card-img')).toHaveAttribute(
       'src',
-      '/images/catalog-jardin.webp',
+      '/images/catalog/puertas-de-jardin/jardin-3-hojas/jardin-3-hojas-800.webp',
     );
     await expect(jardinCard.getByText('Foto próximamente')).toHaveCount(0);
   });

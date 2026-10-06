@@ -15,6 +15,13 @@ export interface PhotoFrameProps {
   loading?: 'lazy' | 'eager';
   /** Solo para la foto LCP (hero). */
   fetchPriority?: 'high' | 'low' | 'auto';
+  /** Tamaño intrínseco del archivo: reserva espacio y evita saltos de layout. */
+  width?: number;
+  height?: number;
+  /** `cover` recorta con punto focal (fotos altas); por defecto `contain` (foto completa). */
+  fit?: 'contain' | 'cover';
+  /** Punto focal CSS (object-position) para `fit="cover"`. */
+  objectPosition?: string;
   className?: string;
   style?: CSSProperties;
   /** Insignias, figcaption, degradados: van encima (z-index 2). */
@@ -35,6 +42,10 @@ export default function PhotoFrame({
   sizes,
   loading = 'lazy',
   fetchPriority,
+  width,
+  height,
+  fit = 'contain',
+  objectPosition,
   className,
   style,
   children,
@@ -61,6 +72,8 @@ export default function PhotoFrame({
         sizes={sizes}
         alt=""
         aria-hidden="true"
+        width={width}
+        height={height}
         loading={loading}
         decoding="async"
       />
@@ -70,6 +83,9 @@ export default function PhotoFrame({
         srcSet={srcSet}
         sizes={sizes}
         alt={alt}
+        width={width}
+        height={height}
+        style={fit === 'cover' ? { objectFit: 'cover', objectPosition } : undefined}
         loading={loading}
         fetchPriority={fetchPriority}
         decoding="async"

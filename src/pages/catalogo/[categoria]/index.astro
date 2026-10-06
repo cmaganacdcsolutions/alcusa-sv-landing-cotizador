@@ -2,6 +2,7 @@
 // /catalogo/<categoria> (R2, boards r05): product cards + "Más opciones".
 import CatalogShell from '@components/catalog/CatalogShell.astro';
 import CatalogMedia from '@components/catalog/CatalogMedia.astro';
+import CatalogGallery from '@components/catalog/CatalogGallery.astro';
 import Arrow from '@components/catalog/Arrow.astro';
 import WhatsAppIcon from '@components/catalog/WhatsAppIcon.astro';
 import { CATEGORIES, hasVariants, type Category } from '@content/catalog';
@@ -96,4 +97,5 @@ const lead = contentFor(category.slug).description ?? '';
       </section>
     )
   }
+  <CatalogGallery images={contentFor(category.slug).gallery} label="Más fotos de proyectos" />
 </CatalogShell>

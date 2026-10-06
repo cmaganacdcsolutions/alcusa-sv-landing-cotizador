@@ -54,7 +54,7 @@ test.describe('landing — catálogo + galería (S4)', () => {
     const card = page.locator('#modelos li', { hasText: 'Puerta de jardín' });
     await expect(card.getByText('Foto próximamente')).toHaveCount(0);
     const img = card.locator('img.catalogo__card-img');
-    await expect(img).toHaveAttribute('src', '/images/catalog-jardin.webp');
+    await expect(img).toHaveAttribute('src', '/images/catalog/puertas-de-jardin/jardin-3-hojas/jardin-3-hojas-800.webp');
     await expect(img).toHaveAttribute('alt', 'Puerta de jardín corrediza de tres hojas');
   });
 

@@ -60,7 +60,7 @@ assertCatalogForBuild();
         <ul class="cat-gallery__row" tabindex="0" aria-label="Fotos de proyectos">
           {CATALOG_GALLERY.map((g) => (
             <li class="cat-gallery__item">
-              <PhotoFrame src={g.src} alt={g.alt} ratio="1/1" />
+              <PhotoFrame src={g.src} alt={g.alt} width={g.width} height={g.height} ratio="1/1" />
             </li>
           ))}
         </ul>

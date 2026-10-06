@@ -4,6 +4,7 @@
 // (ADR-008 §4). States: A priced, B advisorOnly (no $), C no photo.
 import CatalogShell from '@components/catalog/CatalogShell.astro';
 import CatalogMedia from '@components/catalog/CatalogMedia.astro';
+import CatalogGallery from '@components/catalog/CatalogGallery.astro';
 import Arrow from '@components/catalog/Arrow.astro';
 import WhatsAppIcon from '@components/catalog/WhatsAppIcon.astro';
 import { CATEGORIES, formatFromPrice, hasVariants, type Category, type Subcategory } from '@content/catalog';
@@ -165,6 +166,7 @@ const ctaRel = advisor ? 'noopener noreferrer' : undefined;
       {!advisor && <Arrow />}
     </a>
   </div>
+  <CatalogGallery images={content.gallery} label="Más fotos de proyectos" />
 </CatalogShell>
 
 <script>

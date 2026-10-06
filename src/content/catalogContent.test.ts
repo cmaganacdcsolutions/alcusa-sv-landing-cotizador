@@ -47,8 +47,8 @@ describe('catalog content vs model (build-time validation)', () => {
 
   it('flags contradictions: image + pending:photo, relative src, short alt, orphan', () => {
     const c: Record<string, CatalogContent> = {
-      a: { images: [{ src: '/x.jpg', alt: 'Puerta de prueba' }], pending: ['photo'], description: 'd' },
-      b: { images: [{ src: 'x.jpg', alt: 'ok' }], pending: [], description: 'd' },
+      a: { images: [{ src: '/x.jpg', width: 1, height: 1, alt: 'Puerta de prueba' }], pending: ['photo'], description: 'd' },
+      b: { images: [{ src: 'x.jpg', width: 1, height: 1, alt: 'ok' }], pending: [], description: 'd' },
       zzz: { images: [], pending: ['photo', 'description'] },
     };
     const problems = validateCatalogContent(['a', 'b'], c).map((i) => `${i.slug}:${i.problem}`);
@@ -58,12 +58,15 @@ describe('catalog content vs model (build-time validation)', () => {
     expect(problems.some((p) => p.startsWith('zzz:contenido huérfano'))).toBe(true);
   });
 
-  it('an item without images is a placeholder (primaryImage null, pending:photo)', () => {
-    for (const slug of ['jardin-1-hoja', 'jardin-2-hojas', 'jardin-2-fijas-2-corredizas']) {
-      expect(primaryImage(slug)).toBeNull();
-      expect(contentFor(slug).pending).toContain('photo');
+  it('official items have a photo; jardin-2-fijas-2-corredizas and unknown slugs fall back to the placeholder', () => {
+    for (const slug of ['jardin-1-hoja', 'jardin-2-hojas', 'en-l']) {
+      expect(primaryImage(slug)?.src).toMatch(/^\/images\/catalog\/.+\.webp$/);
+      expect(contentFor(slug).pending).not.toContain('photo');
     }
-    expect(primaryImage('en-l')?.src).toBe('/images/catalog-l.jpeg');
+    expect(primaryImage('jardin-2-fijas-2-corredizas')).toBeNull();
+    expect(contentFor('jardin-2-fijas-2-corredizas').pending).toContain('photo');
+    expect(primaryImage('slug-sin-contenido')).toBeNull();
+    expect(contentFor('slug-sin-contenido').pending).toContain('photo');
   });
 
   it('content keys are unique across categories and items', () => {

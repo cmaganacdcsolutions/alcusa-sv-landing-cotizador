@@ -7,7 +7,8 @@ import type { WindowModel } from '@engine/pricing';
 // travels with the src/srcSet here (composition data, not a design token —
 // see spec §3.4 "SIN TOKEN") instead of living in the CSS file.
 //
-// Both photos are official ALCUSA assets (spec §0): Bilbao is the same
+// Both photos are the OFFICIAL ALCUSA catalog images (06-assets/images/MANIFEST.md);
+// 4:3 center crops of ventanas/ventana-bilbao and ventana-francesa. Formerly: Bilbao was the same
 // source photo as public/images/hero-ventana-bilbao-*.webp
 // (01-discovery/assets/product-ventana-bilbao.jpeg); Francesa is the same
 // source photo as the existing public/img/cotizador/product-ventana.webp
@@ -25,11 +26,11 @@ export const WINDOW_MODEL_IMAGES: Readonly<Record<WindowModel, WindowModelImage>
     src: '/img/cotizador/product-ventana-francesa-800.webp',
     srcSet:
       '/img/cotizador/product-ventana-francesa-400.webp 400w, /img/cotizador/product-ventana-francesa-800.webp 800w',
-    objectPosition: '50% 45%',
+    objectPosition: '50% 50%',
   },
   bilbao: {
     src: '/img/cotizador/product-ventana-bilbao-800.webp',
     srcSet: '/img/cotizador/product-ventana-bilbao-400.webp 400w, /img/cotizador/product-ventana-bilbao-800.webp 800w',
-    objectPosition: '58% 38%',
+    objectPosition: '50% 50%',
   },
 };

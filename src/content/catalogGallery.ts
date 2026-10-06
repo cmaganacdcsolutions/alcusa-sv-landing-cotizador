@@ -4,7 +4,7 @@
 import type { CatalogImage } from './catalogContent';
 
 export const CATALOG_GALLERY: readonly CatalogImage[] = [
-  { src: '/images/galeria-01.jpeg', alt: 'Puerta de baño con vidrio decorado instalada' },
-  { src: '/images/galeria-02.jpeg', alt: 'División de vidrio esmerilado' },
-  { src: '/images/galeria-05.jpeg', alt: 'Fachada con puerta y ventanales de aluminio negro' },
+  { src: '/images/galeria-01.jpeg', width: 934, height: 1280, alt: 'Puerta de baño con vidrio decorado instalada' },
+  { src: '/images/galeria-02.jpeg', width: 1600, height: 1200, alt: 'División de vidrio esmerilado' },
+  { src: '/images/galeria-05.jpeg', width: 1600, height: 1200, alt: 'Fachada con puerta y ventanales de aluminio negro' },
 ];

@@ -9,7 +9,7 @@ import { ITEM_CONTENT, type CatalogContent } from './catalogContent';
 export const FIXTURE_ADVISOR_WITH_PHOTO: Readonly<Record<string, CatalogContent>> = {
   'jardin-2-fijas-2-corredizas': {
     ...ITEM_CONTENT['jardin-2-fijas-2-corredizas'],
-    images: [{ src: '/images/catalog-jardin.webp', alt: 'Puerta de jardín con paneles fijos y corredizos' }],
+    images: [{ src: '/images/catalog/puertas-de-jardin/jardin-3-hojas/jardin-3-hojas-800.webp', width: 800, height: 1422, alt: 'Puerta de jardín corrediza de tres hojas con aluminio negro' }],
     pending: [],
   },
 };
