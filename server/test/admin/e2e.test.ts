@@ -51,7 +51,7 @@ beforeAll(async () => {
 });
 afterAll(async () => app.close());
 
-describe('admin e2e: login -> create -> edit -> delete -> promotions.json', () => {
+describe('admin e2e: login -> create -> edit -> archive/reactivate -> promotions.json', () => {
   it('panel routes redirect to login without a session', async () => {
     const r = await app.inject({ url: `${BASE}/promociones` });
     expect(r.statusCode).toBe(303);
@@ -130,17 +130,42 @@ describe('admin e2e: login -> create -> edit -> delete -> promotions.json', () =
     const rb = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: bad.body, headers: { ...bad.headers, cookie } });
     expect(rb.statusCode).toBe(422);
   });
-  it('unpublish removes it from the file; delete removes the record; file reflects it', async () => {
+  it('unpublish removes it from the file, publish brings it back', async () => {
     const un = await post(`/promociones/${id}/despublicar`, { _csrf: csrf });
     expect(un.statusCode).toBe(303);
     expect(published().promotions.map((x) => x['id'])).not.toContain(id);
     const re = await post(`/promociones/${id}/publicar`, { _csrf: csrf });
     expect(re.statusCode).toBe(303);
     expect(published().promotions.map((x) => x['id'])).toContain(id);
-    const del = await post(`/promociones/${id}/eliminar`, { _csrf: csrf });
-    expect(del.statusCode).toBe(303);
+  });
+  it('archive: leaves promotions.json, hides from Activas, shows under Archivadas; hard delete is gone', async () => {
+    const ar = await post(`/promociones/${id}/archivar`, { _csrf: csrf });
+    expect(ar.statusCode).toBe(303);
     expect(published().promotions.map((x) => x['id'])).not.toContain(id);
-    expect((await app.inject({ url: `${BASE}/promociones/${id}/editar`, headers: { cookie } })).statusCode).toBe(404);
+    const active = await app.inject({ url: `${BASE}/promociones`, headers: { cookie } });
+    expect(active.body).not.toContain(`/promociones/${id}/`);
+    const archived = await app.inject({ url: `${BASE}/promociones?estado=archivadas`, headers: { cookie } });
+    expect(archived.body).toContain(`/promociones/${id}/reactivar`);
+    expect(archived.body).not.toContain('/eliminar');
+    expect((await post(`/promociones/${id}/eliminar`, { _csrf: csrf })).statusCode).toBe(404);
+    // an archived promo cannot be published or edited-and-published without reactivating
+    const pub = await post(`/promociones/${id}/publicar`, { _csrf: csrf });
+    expect(pub.statusCode).toBe(422);
+    expect(pub.body).toContain('archivada');
+    expect(published().promotions.map((x) => x['id'])).not.toContain(id);
+  });
+  it('archive/reactivate need a valid CSRF token', async () => {
+    expect((await post(`/promociones/${id}/reactivar`, { _csrf: 'bad' })).statusCode).toBe(403);
+  });
+  it('reactivate returns it to draft (not in the file); publishing again works under the cap', async () => {
+    const r = await post(`/promociones/${id}/reactivar`, { _csrf: csrf });
+    expect(r.statusCode).toBe(303);
+    expect(published().promotions.map((x) => x['id'])).not.toContain(id);
+    const list = await app.inject({ url: `${BASE}/promociones`, headers: { cookie } });
+    expect(list.body).toContain(`/promociones/${id}/publicar`);
+    expect((await post(`/promociones/${id}/publicar`, { _csrf: csrf })).statusCode).toBe(303);
+    expect(published().promotions.map((x) => x['id'])).toContain(id);
+    expect((await post(`/promociones/${id}/archivar`, { _csrf: csrf })).statusCode).toBe(303);
   });
   it('cap of 3 overlapping published promos', async () => {
     for (const t of ['A uno', 'B dos']) {
@@ -152,6 +177,13 @@ describe('admin e2e: login -> create -> edit -> delete -> promotions.json', () =
     const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, cookie } });
     expect(r.statusCode).toBe(422);
     expect(r.body).toContain('Ya hay 3');
+  });
+  it('reactivating an archived promo is allowed, but publishing it again respects the cap of 3', async () => {
+    expect((await post(`/promociones/${id}/reactivar`, { _csrf: csrf })).statusCode).toBe(303);
+    const r = await post(`/promociones/${id}/publicar`, { _csrf: csrf });
+    expect(r.statusCode).toBe(422);
+    expect(r.body).toContain('Ya hay 3');
+    expect(published().promotions).toHaveLength(3);
   });
   it('logout kills the session', async () => {
     expect((await post('/logout', { _csrf: csrf })).statusCode).toBe(303);

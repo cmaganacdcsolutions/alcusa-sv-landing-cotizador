@@ -67,21 +67,31 @@ ${problems.length ? html`<div class="err" role="alert"><ul>${problems.map((p) =>
 
 const money = (n: number): string => `$${Number.isInteger(n) ? n : n.toFixed(2)}`;
 export function promoStatus(p: StoredPromo, today: string): string {
+  if (p.status === 'archived') return 'Archivada';
   if (p.status === 'draft') return 'Borrador';
   if (p.ends_on < today) return 'Vencida';
   return p.starts_on > today ? 'Programada' : 'Publicada';
 }
 
-export function listView(base: string, csrf: string, promos: StoredPromo[], today: string): Raw {
+export type ListFilter = 'activas' | 'archivadas';
+
+export function listView(base: string, csrf: string, all: StoredPromo[], today: string, filter: ListFilter = 'activas'): Raw {
+  const archivedView = filter === 'archivadas';
+  const promos = all.filter((p) => (p.status === 'archived') === archivedView);
+  const post = (id: string, action: string, label: string, cls = 'sec'): Raw =>
+    html`<form class="inline" method="post" action="${base}/promociones/${id}/${action}"><input type="hidden" name="_csrf" value="${csrf}"><button class="${cls}">${label}</button></form>`;
   return html`<div class="row"><h1 style="flex:1">Promociones</h1><a class="btn" href="${base}/promociones/nueva">Nueva promoción</a></div>
 <p>La landing muestra hasta 3 promociones vigentes a la vez.</p>
-${promos.length === 0 ? html`<div class="card">Aún no hay promociones. Crea la primera.</div>` : ''}
+<nav class="row" aria-label="Filtro"><a class="btn ${archivedView ? 'sec' : ''}" href="${base}/promociones" ${archivedView ? '' : raw('aria-current="page"')}>Activas</a>
+<a class="btn ${archivedView ? '' : 'sec'}" href="${base}/promociones?estado=archivadas" ${archivedView ? raw('aria-current="page"') : ''}>Archivadas</a></nav>
+${promos.length === 0 ? html`<div class="card">${archivedView ? 'No hay promociones archivadas.' : 'Aún no hay promociones. Crea la primera.'}</div>` : ''}
 <div class="grid">${promos.map((p) => html`<article class="card"><img class="thumb" src="${p.image.startsWith('/') ? base + '/media/promos/' + p.image.split('/').pop() : p.image}" alt="${p.image_alt}">
 <h2>${p.title}</h2><p><span class="badge ${p.status === 'published' ? 'pub' : ''}">${promoStatus(p, today)}</span></p>
 <p>${p.price_before === null ? 'Precio especial' : html`Antes ${money(p.price_before)}`} · Ahora <strong>${money(p.price_promo)}</strong></p>
-<p>${p.starts_on} → ${p.ends_on}</p><div class="row"><a class="btn sec" href="${base}/promociones/${p.id}/editar">Editar</a>
-<form class="inline" method="post" action="${base}/promociones/${p.id}/${p.status === 'published' ? 'despublicar' : 'publicar'}"><input type="hidden" name="_csrf" value="${csrf}"><button class="sec">${p.status === 'published' ? 'Despublicar' : 'Publicar'}</button></form>
-<details><summary>Eliminar</summary><form class="inline" method="post" action="${base}/promociones/${p.id}/eliminar"><input type="hidden" name="_csrf" value="${csrf}"><button class="danger">Confirmar eliminación</button></form></details></div></article>`)}</div>`;
+<p>${p.starts_on} → ${p.ends_on}</p><div class="row">${p.status === 'archived'
+  ? html`${post(p.id, 'reactivar', 'Reactivar')}<small>Vuelve como borrador.</small>`
+  : html`<a class="btn sec" href="${base}/promociones/${p.id}/editar">Editar</a>${post(p.id, p.status === 'published' ? 'despublicar' : 'publicar', p.status === 'published' ? 'Despublicar' : 'Publicar')}
+<details><summary>Archivar</summary><small>Sale de la landing. Podrás reactivarla desde Archivadas.</small>${post(p.id, 'archivar', 'Confirmar archivado', 'danger')}</details>`}</div></article>`)}</div>`;
 }
 
 export interface FormValues {

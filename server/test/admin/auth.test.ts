@@ -121,5 +121,9 @@ describe('CSRF / origin helpers', () => {
     expect(sameOrigin({ origin: 'https://evil.example' }, 'localhost:4500')).toBe(false);
     expect(sameOrigin({ origin: 'http://localhost:4500' }, 'localhost:4500')).toBe(true);
     expect(sameOrigin({}, 'localhost:4500')).toBe(true);
+    // browsers send Origin: null under Referrer-Policy: no-referrer; only trusted with Sec-Fetch-Site: same-origin
+    expect(sameOrigin({ origin: 'null', 'sec-fetch-site': 'same-origin' }, 'localhost:4500')).toBe(true);
+    expect(sameOrigin({ origin: 'null' }, 'localhost:4500')).toBe(false);
+    expect(sameOrigin({ origin: 'null', 'sec-fetch-site': 'cross-site' }, 'localhost:4500')).toBe(false);
   });
 });

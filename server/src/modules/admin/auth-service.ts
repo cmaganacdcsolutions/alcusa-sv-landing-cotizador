@@ -69,10 +69,10 @@ export class AuthService {
     }
     if (user.lockedUntil && user.lockedUntil > now) return { kind: 'locked', until: user.lockedUntil };
     if (!(await verifyPassword(password, user.passwordHash))) {
-      const failed = user.failedAttempts + 1;
+      const failed = await this.repo.incrementFailedAttempts(user.id);
       const mins = AuthService.lockMinutes(failed);
       const lockedUntil = mins ? new Date(now.getTime() + mins * 60_000) : null;
-      await this.repo.saveUser({ ...user, failedAttempts: failed, lockedUntil });
+      if (lockedUntil) await this.repo.saveUser({ ...user, failedAttempts: failed, lockedUntil });
       await this.repo.audit({ at: now, actor: user.username, action: lockedUntil ? 'admin.locked' : 'admin.login_failed' });
       return lockedUntil ? { kind: 'locked', until: lockedUntil } : { kind: 'invalid' };
     }
@@ -140,6 +140,9 @@ export function sameOrigin(headers: Record<string, string | string[] | undefined
   if (typeof site === 'string' && site !== 'same-origin' && site !== 'none') return false;
   const origin = headers['origin'];
   if (typeof origin === 'string') {
+    // `Origin: null` is what browsers send on a form POST under `Referrer-Policy: no-referrer` (found in the real-browser
+    // smoke). Accept it only when the browser itself vouches for same-origin via Sec-Fetch-Site; the CSRF token still applies.
+    if (origin === 'null') return site === 'same-origin';
     try {
       return new URL(origin).host === host;
     } catch {

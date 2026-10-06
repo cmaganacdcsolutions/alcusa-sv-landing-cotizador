@@ -20,6 +20,7 @@
     "db:migrate": "tsx --env-file-if-exists=.env src/cli/migrate.ts",
     "db:grants": "tsx --env-file-if-exists=.env src/cli/grants.ts",
     "db:seed": "tsx --env-file-if-exists=.env src/cli/seed.ts",
+    "smoke:admin": "tsx scripts/admin-browser-smoke.ts",
     "smoke:quotes": "tsx scripts/smoke-quotes.ts"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 // Data access for the admin, behind interfaces. Local/tests use MemoryAdminStore (optionally persisted to a
-// JSON file for `npm run admin:dev`). The MariaDB adapter implements the same interfaces and is NOT written
-// in this slice (no MariaDB/Docker on this machine); see the HANDOFF and db/migrations/0002_admin_mfa_seam.sql.
+// JSON file for `npm run admin:dev`). MariaDbAdminStore (mariadb-store.ts, ADMIN_STORE=mariadb) implements the
+// same interfaces; test/admin/repo-contract.ts runs one contract suite against both.
 import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import type { PromoRecord } from '../promotions/schema.ts';
 import type { Stage } from './stage.ts';
@@ -35,7 +35,7 @@ export interface AuditEntry {
   detail?: Record<string, unknown>;
 }
 
-export type PromoStatus = 'draft' | 'published';
+export type PromoStatus = 'draft' | 'published' | 'archived';
 export interface StoredPromo extends PromoRecord {
   status: PromoStatus;
   sort_order: number;
@@ -49,6 +49,8 @@ export interface AdminRepo {
   /** Single account in v1.0 (the CLI refuses a second one unless --rotate). */
   countUsers(): Promise<number>;
   saveUser(user: Omit<AdminUser, 'id'> & { id?: number }): Promise<AdminUser>;
+  /** Atomically adds 1 to failed_attempts (no lost updates under concurrent bad logins) and returns the new count. */
+  incrementFailedAttempts(id: number): Promise<number>;
   createSession(s: SessionRow): Promise<void>;
   findSession(idHash: string): Promise<SessionRow | null>;
   touchSession(idHash: string, lastSeenAt: Date): Promise<void>;
@@ -60,9 +62,13 @@ export interface AdminRepo {
 export interface PromoRepo {
   list(): Promise<StoredPromo[]>;
   get(id: string): Promise<StoredPromo | null>;
+  /** Upsert by id. There is deliberately no hard delete: promos are archived (status 'archived'). */
   save(p: StoredPromo): Promise<void>;
-  remove(id: string): Promise<boolean>;
+  /** Serializes check-then-publish sections (the 3-active cap). MariaDB: GET_LOCK; memory: in-process mutex. */
+  withPublishLock<T>(fn: () => Promise<T>): Promise<T>;
 }
+
+export type AdminStore = AdminRepo & PromoRepo;
 
 interface Persisted {
   users: unknown[];
@@ -122,6 +128,13 @@ export class MemoryAdminStore implements AdminRepo, PromoRepo {
     this.persist();
     return Promise.resolve(saved);
   }
+  incrementFailedAttempts(id: number): Promise<number> {
+    const u = this.users.get(id);
+    if (!u) return Promise.resolve(0);
+    u.failedAttempts += 1;
+    this.persist();
+    return Promise.resolve(u.failedAttempts);
+  }
   createSession(s: SessionRow): Promise<void> {
     this.sessions.set(s.idHash, s);
     return Promise.resolve();
@@ -159,9 +172,10 @@ export class MemoryAdminStore implements AdminRepo, PromoRepo {
     this.persist();
     return Promise.resolve();
   }
-  remove(id: string): Promise<boolean> {
-    const had = this.promos.delete(id);
-    this.persist();
-    return Promise.resolve(had);
+  private lock: Promise<unknown> = Promise.resolve();
+  withPublishLock<T>(fn: () => Promise<T>): Promise<T> {
+    const run = this.lock.then(fn, fn);
+    this.lock = run.catch(() => undefined);
+    return run;
   }
 }

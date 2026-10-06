@@ -43,3 +43,11 @@ and `scripts/serve-static.mjs` (static + `/api` proxy via `API_ORIGIN`) on :4431
 Credentials come from `server/.env` (loaded by `playwright.http.config.ts`). `server/scripts/e2e-db.ts` truncates `rate_limits` before the run and
 back-dates `valid_until` for the expired case. All requests share one ip_hash (127.0.0.1), so a run uses ~15 of the 20 POST / 30 GET per hour; the run
 starts with the counters at zero, so do not run it twice within seconds of another heavy client.
+
+## Local MariaDB 11.4 + admin on MariaDB (ADR-014)
+- Start/stop (user-mode process, no Windows service, bound to 127.0.0.1:3306): `scripts/mariadb-local.sh start|stop|status`.
+  Data dir: `%LOCALAPPDATA%\alcusa-mariadb\data`. Root password: `server/.local/db.env` (gitignored, never printed).
+- First time: `set -a; . .local/db.env; set +a; npm run db:setup-local` (DBs, accounts, migrations 0001-0003, grants; writes `server/.env`).
+- Admin on MariaDB: `ADMIN_STORE=mariadb npm run admin:dev` (NODE_ENV=test would use alcusa_test).
+- Tests: `npm run test:admin` (memory + MariaDB contract + persistence; MariaDB suites skip with a message if the DB env is absent),
+  `npm run smoke:admin` (real Chromium on port 4500 against alcusa_test).

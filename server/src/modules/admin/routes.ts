@@ -120,7 +120,8 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         const info = await guard(req, reply);
         if (!info) return reply;
         const csrf = info.session.csrfToken;
-        return send(reply, 'Promociones', shell(d.base, 'promos', csrf, listView(d.base, csrf, await d.promos.list(), today())));
+        const filter = (req.query as Body)['estado'] === 'archivadas' ? 'archivadas' : 'activas';
+        return send(reply, 'Promociones', shell(d.base, 'promos', csrf, listView(d.base, csrf, await d.promos.list(), today(), filter)));
       });
 
       const blank: FormValues = { title: '', description: '', price_before: '', price_promo: '', product_slug: 'recta', vidrio: '', starts_on: '', ends_on: '', rules: '', image: '', image_alt: '' };
@@ -201,12 +202,15 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
           return reply.redirect(`${d.base}/promociones`, 303);
         });
       }
-      r.post<{ Params: { id: string } }>('/promociones/:id/eliminar', async (req, reply) => {
-        const info = await guardPost(req, reply);
-        if (!info) return reply;
-        await d.promos.remove(info.user.username, req.params.id);
-        return reply.redirect(`${d.base}/promociones`, 303);
-      });
+      for (const action of ['archivar', 'reactivar'] as const) {
+        r.post<{ Params: { id: string } }>(`/promociones/:id/${action}`, async (req, reply) => {
+          const info = await guardPost(req, reply);
+          if (!info) return reply;
+          const res = action === 'archivar' ? await d.promos.archive(info.user.username, req.params.id) : await d.promos.reactivate(info.user.username, req.params.id);
+          if (!res.ok) return send(reply, 'Promociones', shell(d.base, 'promos', info.session.csrfToken, listView(d.base, info.session.csrfToken, await d.promos.list(), today()), res.problems.join(' ')), 422);
+          return reply.redirect(`${d.base}/promociones`, 303);
+        });
+      }
 
       // Preview of uploaded / existing promo images (public images, but only served to a session).
       r.get<{ Params: { file: string } }>('/media/promos/:file', async (req, reply) => {
