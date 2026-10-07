@@ -9,6 +9,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import type { Pool } from 'mysql2/promise';
 import type { Config } from '../config/index.ts';
 import { pingDb } from '../db/pool.ts';
+import { type AdminRouteDeps, registerAdmin } from '../modules/admin/routes.ts';
 import { registerQuoteRoutes } from '../modules/quotes/routes.ts';
 import type { RateLimits } from '../modules/quotes/service.ts';
 import { envelope, installErrorHandling } from './errors.ts';
@@ -43,6 +44,8 @@ export interface AppDeps {
   limits?: Partial<RateLimits>;
   now?: () => Date;
   generateCode?: (now: Date) => string;
+  /** Admin SSR module (ADR-014). Independent of `pool`: local mode runs without a database. */
+  admin?: AdminRouteDeps;
 }
 
 const SAFE_REQUEST_ID = /^[A-Za-z0-9._-]{8,64}$/;
@@ -99,6 +102,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     const pepper = config.IP_HASH_PEPPER ?? 'dev-only-pepper-not-for-production';
     registerQuoteRoutes(app, { pool, pepper, ...(deps.limits ? { limits: deps.limits } : {}), ...(deps.now ? { now: deps.now } : {}), ...(deps.generateCode ? { generateCode: deps.generateCode } : {}) });
   }
+
+  if (deps.admin) registerAdmin(app, deps.admin);
 
   if (serveStatic) {
     await app.register(fastifyStatic, { root: resolve(serveStatic), wildcard: true });

@@ -44,3 +44,19 @@ and `scripts/serve-static.mjs` (static + `/api` proxy via `API_ORIGIN`) on :4431
 Credentials come from `server/.env` (loaded by `playwright.http.config.ts`). `server/scripts/e2e-db.ts` truncates `rate_limits` before the run and
 back-dates `valid_until` for the expired case. All requests share one ip_hash (127.0.0.1), so a run uses ~15 of the 20 POST / 30 GET per hour; the run
 starts with the counters at zero, so do not run it twice within seconds of another heavy client.
+
+## Local MariaDB 11.4 + admin on MariaDB (ADR-014)
+- Start/stop (user-mode process, no Windows service, bound to 127.0.0.1:3306): `scripts/mariadb-local.sh start|stop|status`.
+  Data dir: `%LOCALAPPDATA%\alcusa-mariadb\data`. Root password: `server/.local/db.env` (gitignored, never printed).
+- First time: `set -a; . .local/db.env; set +a; npm run db:setup-local` (DBs, accounts, migrations 0001-0004, grants; writes `server/.env`).
+- Admin on MariaDB: `ADMIN_STORE=mariadb npm run admin:dev` (NODE_ENV=test would use alcusa_test).
+- Load the promos that are live on the site into the admin: `ADMIN_STORE=mariadb npm run promos:import -- <site>/src/content/promotions.json [--dry-run] [--publish] [--site-public-dir <site>/public] [--allow-production]`.
+  Idempotent upsert keyed by the promo `id` (`promotions.public_id`); every promo lands `published`, `sort_order` = position in the file; flyers (`-900` + `-600`
+  webp) are copied byte-for-byte into `PROMO_IMAGES_DIR` and referenced as `PROMO_IMAGE_URL_PREFIX/<file>`. All-or-nothing validation (site rules + admin limits +
+  3-active cap); placeholder promos are skipped; re-running converges edited/archived promos back to the file. `--dry-run` writes nothing. Refuses
+  `NODE_ENV=production` without `--allow-production`. It does not rewrite promotions.json unless `--publish` (the next admin publish regenerates the same set).
+  Promo links preselect `cotizador_params.color` (natural | blanco | bronce) and `.vidrio` and land on Medidas (`/cotizador?producto=<slug>&paso=medidas&color=<c>&vidrio=<v>`).
+  The colour lives in `promotions.cotizador_color` (migration 0004): an existing database needs `npm run db:migrate` before this code runs against it.
+  Read-only check: `ADMIN_STORE=mariadb npm run promos:status`. Round-trip guarantee: `test/admin/promo-roundtrip.test.ts`.
+- Tests: `npm run test:admin` (memory + MariaDB contract + persistence; MariaDB suites skip with a message if the DB env is absent),
+  `npm run smoke:admin` (real Chromium on port 4500 against alcusa_test).

@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24.7.0" },
+  "engines": {
+    "node": ">=24.7.0"
+  },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "start": "node --env-file-if-exists=.env dist/index.js",
@@ -11,19 +13,27 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:admin": "vitest run --config vitest.admin.config.ts",
+    "admin:dev": "tsx --env-file-if-exists=.env src/admin-server.ts",
+    "admin:create": "tsx --env-file-if-exists=.env src/cli/create-admin.ts",
+    "promos:import": "tsx --env-file-if-exists=.env src/cli/import-promos.ts",
+    "promos:status": "tsx --env-file-if-exists=.env src/cli/promos-status.ts",
     "db:setup-local": "tsx src/cli/setup-local.ts",
     "db:migrate": "tsx --env-file-if-exists=.env src/cli/migrate.ts",
     "db:grants": "tsx --env-file-if-exists=.env src/cli/grants.ts",
     "db:seed": "tsx --env-file-if-exists=.env src/cli/seed.ts",
+    "smoke:admin": "tsx scripts/admin-browser-smoke.ts",
     "smoke:quotes": "tsx scripts/smoke-quotes.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.2",
     "@fastify/helmet": "13.1.1",
+    "@fastify/multipart": "10.1.2",
     "@fastify/rate-limit": "11.2.0",
     "@fastify/static": "10.1.5",
     "fastify": "5.12.5",
     "mysql2": "3.24.5",
+    "sharp": "0.35.5",
     "zod": "4.6.5"
   },
   "devDependencies": {
