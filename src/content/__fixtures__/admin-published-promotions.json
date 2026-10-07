@@ -1,0 +1,74 @@
+{
+  "generated_at": "2026-10-07T12:00:00.000Z",
+  "promotions": [
+    {
+      "id": "promo-a1b2c3",
+      "placeholder": false,
+      "title": "Puerta Aquaclara",
+      "description": "Corrediza instalada con vidrio aquaclara.",
+      "image": "/media/promos/9f2c1a7b3d4e-900.webp",
+      "image_alt": "Flyer: Puerta Aquaclara, $222.",
+      "price_before": 280,
+      "price_promo": 222,
+      "product_slug": "recta",
+      "cotizador_params": {
+        "color": "natural",
+        "vidrio": "claro"
+      },
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-31",
+      "rules": [
+        "Instalada",
+        "Entrega en 5 días"
+      ]
+    },
+    {
+      "id": "promo-d4e5f6",
+      "placeholder": false,
+      "title": "Puerta nevada",
+      "description": "Corrediza con vidrio nevado.",
+      "image": "/images/promos/promo-2-900.webp",
+      "image_alt": "Flyer: Puerta nevada, $290.",
+      "price_before": null,
+      "price_promo": 290,
+      "product_slug": "recta",
+      "cotizador_params": {
+        "vidrio": "nevado"
+      },
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-31",
+      "rules": []
+    },
+    {
+      "id": "promo-0a1b2c",
+      "placeholder": false,
+      "title": "Ventana francesa",
+      "description": "Ventana francesa instalada.",
+      "image": "/media/promos/0a1b2c3d4e5f-900.webp",
+      "image_alt": "Flyer: Ventana francesa, $150.",
+      "price_before": 190,
+      "price_promo": 150,
+      "product_slug": "ventana-francesa",
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-31",
+      "rules": []
+    },
+    {
+      "id": "promo-cuarta",
+      "placeholder": false,
+      "title": "Cuarta promo",
+      "description": "Sobra: la landing muestra maximo 3.",
+      "image": "/media/promos/aaaaaaaaaaaa-900.webp",
+      "image_alt": "Flyer: cuarta promo, $99.",
+      "price_before": null,
+      "price_promo": 99,
+      "product_slug": "recta",
+      "cotizador_params": {
+        "color": "bronce"
+      },
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-31",
+      "rules": []
+    }
+  ]
+}
