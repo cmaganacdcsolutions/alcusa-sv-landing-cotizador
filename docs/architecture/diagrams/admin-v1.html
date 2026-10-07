@@ -1,0 +1,99 @@
+<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A4 landscape;margin:12mm}body{font-family:Segoe UI,Arial,sans-serif}section{page-break-after:always}h2{font-size:16px}.mermaid{text-align:center}</style></head><body><section><h2>ADR-014 - C4 Container: Admin v1.0</h2><pre class="mermaid">flowchart LR
+  op(["Operador Alcusa&lt;br/&gt;(admin, navegador)"])
+  vis(["Visitante / cliente&lt;br/&gt;(navegador)"])
+  cdc(["CDC (SSH)&lt;br/&gt;create-admin, deploy"])
+
+  subgraph vps["Hostinger KVM 2 VPS (Ubuntu 24.04) - TLS termina en Nginx"]
+    nginx["Nginx :443&lt;br/&gt;estatico + proxy + limit_req + headers"]
+    static[("dist/ estatico (symlink current)&lt;br/&gt;18+ paginas Astro + React islands")]
+    pjson[("/api/promotions.json&lt;br/&gt;archivo estatico")]
+    media[("/media/ uploads WebP&lt;br/&gt;fuera de docroot")]
+    api["alcusa-api (Fastify 5, 127.0.0.1:3001)&lt;br/&gt;admin SSR + API publica&lt;br/&gt;modulos: admin, promotions, products, quotes"]
+    worker["catalog-build worker (systemd oneshot)&lt;br/&gt;export BD, astro build, validar, swap"]
+    db[("MariaDB 11.4 127.0.0.1&lt;br/&gt;promotions, products, admin_*, audit_log")]
+  end
+
+  wompi["Wompi (externo)"]
+
+  vis --&gt;|HTTPS| nginx
+  op --&gt;|"HTTPS ruta protegida ADMIN_BASE_PATH&lt;br/&gt;cookie __Host-, CSRF"| nginx
+  cdc -.-&gt;|"SSH: create-admin --prompt, rotate"| api
+  nginx --&gt; static
+  nginx --&gt; pjson
+  nginx --&gt; media
+  nginx --&gt;|"proxy_pass /api y ruta admin"| api
+  api --&gt;|"SQL parametrizado"| db
+  api --&gt;|"escribe tmp+rename"| pjson
+  api --&gt;|"sharp: WebP 800/1200"| media
+  api --&gt;|"INSERT publish_jobs"| db
+  worker --&gt;|"lee export (published)"| db
+  worker --&gt;|"rsync + swap atomico"| static
+  api &lt;--&gt;|"create-link / webhook"| wompi
+
+  classDef trust fill:#fff4e0,stroke:#c77700;
+  class nginx,api,worker trust;
+</pre></section><section><h2>Secuencia: operador edita y publica una promocion</h2><pre class="mermaid">sequenceDiagram
+  autonumber
+  actor A as Operador
+  participant N as Nginx
+  participant S as Fastify (admin)
+  participant D as MariaDB
+  participant F as promotions.json
+  actor V as Visitante
+
+  A-&gt;&gt;N: POST login (usuario + contrasena)
+  N-&gt;&gt;S: proxy (limit_req 5/min)
+  S-&gt;&gt;D: verificar argon2id, lockout, crear sesion stage=password_ok
+  Note over S: nextStage(): ADMIN_MFA_MODE=off =&gt; active (v1.1: mfa_pending)
+  S--&gt;&gt;A: Set-Cookie __Host- (HttpOnly, Secure, Strict) + CSRF en HTML
+
+  A-&gt;&gt;N: POST /promociones/12 (formulario + imagen, CSRF)
+  N-&gt;&gt;S: proxy
+  S-&gt;&gt;S: validar sesion active, CSRF, zod, sharp (tipo, 5 MB, WebP sin recorte)
+  S-&gt;&gt;D: UPDATE promotions (draft) + audit_log
+  S--&gt;&gt;A: 302 lista (borrador, NO visible aun)
+
+  A-&gt;&gt;N: POST /promociones/12/publicar
+  N-&gt;&gt;S: proxy
+  S-&gt;&gt;D: GET_LOCK, tope de 3 activas por solape de fechas, status=published
+  S-&gt;&gt;D: SELECT hasta 3 activas
+  S-&gt;&gt;F: escribir tmp + rename (atomico, solo si cambia el hash)
+  S--&gt;&gt;A: 302 "En la landing"
+
+  V-&gt;&gt;N: GET / (HTML estatico, fallback horneado)
+  N--&gt;&gt;V: HTML
+  V-&gt;&gt;N: GET /api/promotions.json
+  alt archivo valido
+    N--&gt;&gt;V: 200 JSON (cache 60 s + SWR)
+    Note over V: filtra por fecha SV y reemplaza tarjetas
+  else falla o invalido
+    Note over V: se conserva el fallback del build
+  end
+  Note over S,F: Timer cada 15 min regenera por vencimientos
+</pre></section><section><h2>Secuencia: publicar catalogo de productos</h2><pre class="mermaid">sequenceDiagram
+  autonumber
+  actor A as Operador
+  participant S as Fastify (admin)
+  participant D as MariaDB
+  participant W as Worker catalog-build
+  participant R as releases/ + symlink current
+  actor V as Visitante
+
+  A-&gt;&gt;S: guardar producto (borrador) + imagen
+  S-&gt;&gt;D: products / product_images (draft), uploads en /media
+  A-&gt;&gt;S: POST Publicar catalogo (CSRF)
+  S-&gt;&gt;D: INSERT publish_jobs queued (GET_LOCK catalog_build)
+  S--&gt;&gt;A: estado "en cola"
+  W-&gt;&gt;D: export catalog.generated.json (solo published)
+  W-&gt;&gt;W: astro build en directorio de trabajo
+  W-&gt;&gt;W: validar: zod, assertCatalogContent, conteo de paginas, product_slug de promos
+  alt todo valido
+    W-&gt;&gt;R: rsync releases/ts + swap atomico del symlink
+    W-&gt;&gt;D: publish_jobs = published
+    V-&gt;&gt;R: GET /catalogo/slug (HTML estatico nuevo)
+  else falla
+    W-&gt;&gt;D: publish_jobs = failed + log_tail
+    Note over R: el sitio queda en la version previa
+  end
+  A-&gt;&gt;S: ver estado del job
+</pre></section><script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script><script>mermaid.initialize({startOnLoad:true});</script></body></html>

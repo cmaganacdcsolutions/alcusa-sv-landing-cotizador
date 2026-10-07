@@ -1,0 +1,38 @@
+sequenceDiagram
+  autonumber
+  actor A as Operador
+  participant N as Nginx
+  participant S as Fastify (admin)
+  participant D as MariaDB
+  participant F as promotions.json
+  actor V as Visitante
+
+  A->>N: POST login (usuario + contrasena)
+  N->>S: proxy (limit_req 5/min)
+  S->>D: verificar argon2id, lockout, crear sesion stage=password_ok
+  Note over S: nextStage(): ADMIN_MFA_MODE=off => active (v1.1: mfa_pending)
+  S-->>A: Set-Cookie __Host- (HttpOnly, Secure, Strict) + CSRF en HTML
+
+  A->>N: POST /promociones/12 (formulario + imagen, CSRF)
+  N->>S: proxy
+  S->>S: validar sesion active, CSRF, zod, sharp (tipo, 5 MB, WebP sin recorte)
+  S->>D: UPDATE promotions (draft) + audit_log
+  S-->>A: 302 lista (borrador, NO visible aun)
+
+  A->>N: POST /promociones/12/publicar
+  N->>S: proxy
+  S->>D: GET_LOCK, tope de 3 activas por solape de fechas, status=published
+  S->>D: SELECT hasta 3 activas
+  S->>F: escribir tmp + rename (atomico, solo si cambia el hash)
+  S-->>A: 302 "En la landing"
+
+  V->>N: GET / (HTML estatico, fallback horneado)
+  N-->>V: HTML
+  V->>N: GET /api/promotions.json
+  alt archivo valido
+    N-->>V: 200 JSON (cache 60 s + SWR)
+    Note over V: filtra por fecha SV y reemplaza tarjetas
+  else falla o invalido
+    Note over V: se conserva el fallback del build
+  end
+  Note over S,F: Timer cada 15 min regenera por vencimientos
