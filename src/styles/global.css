@@ -13,17 +13,23 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  /* Color solido bajo el degradado del body (rebote/overscroll y paginas cortas): el final del recorrido. */
+  /* Color solido bajo el degradado del body (rebote/overscroll y paginas cortas): el navy mas profundo, el mismo del pie. */
   background-color: var(--color-page-bottom);
 }
 
-/* Fondo de TODO el sitio (/, /cotizador, /contacto, /nosotros): un solo degradado azul noche que recorre
-   el documento de arriba (profundo) a abajo (profundo en el footer) pasando por un azul mas vivo hacia la mitad.
-   Es parte del documento (no fixed): cambia al hacer scroll sin JS. Texto base claro sobre noche. */
+/* Fondo de TODO el sitio (/, /cotizador, /contacto, /nosotros): degradado en diagonal azul noche -> celeste profundo
+   (tokens en tokens.css). Dos capas dentro del stacking context del body (isolation: isolate):
+   1) el propio body pinta el degradado anclado al documento (respaldo; nunca se ve mientras la capa 2 existe);
+   2) body::before repite el MISMO degradado anclado al VIEWPORT (position: fixed) para que la diagonal se perciba
+      completa en cada pantalla, sin importar cuanto mida la pagina.
+   No se usa background-attachment: fixed porque iOS Safari lo ignora. La capa fija es un layer propio compuesto
+   (transform: translateZ(0)): el scroll no la repinta, solo la mueve el compositor, y no hay animacion alguna
+   (tampoco bajo prefers-reduced-motion). 100lvh evita que la capa se reescale cuando las barras de iOS se contraen. */
 body {
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
+  isolation: isolate;
   background-color: var(--color-page-bottom);
   background-image: var(--gradient-page-dark);
   background-repeat: no-repeat;
@@ -32,6 +38,23 @@ body {
   font-family: var(--font-family-body);
   font-size: var(--font-size-body-mobile);
   line-height: var(--font-line-height-body);
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 100vh;
+  height: 100lvh;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--color-page-bottom);
+  background-image: var(--gradient-page-dark);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  transform: translateZ(0);
 }
 
 h1,
@@ -118,7 +141,7 @@ h3 {
   }
 }
 
-/* Enlace sin clase = sobre el fondo noche del body: azul claro AA (8.4:1 sobre --color-surface-dark).
+/* Enlace sin clase = sobre el fondo noche del body: azul claro AA (12.6:1 sobre --color-surface-dark; 4.6:1 en el punto mas claro del fondo diagonal).
    Los enlaces dentro de tarjetas claras fijan su propia tinta (--color-ink / --color-primary / --color-accent). */
 a {
   color: var(--color-accent-on-dark);

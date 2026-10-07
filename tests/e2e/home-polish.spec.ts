@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+import { colorToken } from '../support/tokens';
 
 // Pulido del inicio (2026-10-06): dropdowns con icono (combobox select-only APG) en las tarjetas,
 // "Promociones del mes" compactas, y "Antes de comprar" / "Confianza" en tarjetas azul noche.
@@ -320,7 +321,7 @@ test.describe('Antes de comprar y Confianza: tarjetas azul noche', () => {
       const first = section.locator(item).first();
       await expect(first).toHaveCSS('background-color', 'rgb(15, 37, 72)');
       await expect(first).toHaveCSS('border-top-color', 'rgba(255, 255, 255, 0.14)');
-      await expect(section.locator(icon).first()).toHaveCSS('color', 'rgb(143, 180, 255)');
+      await expect(section.locator(icon).first()).toHaveCSS('color', await colorToken(page, '--color-accent-on-dark'));
       await expect(section.locator('h2')).toHaveClass(/title-gradient/);
     }
     const results = await new AxeBuilder({ page }).include('#info').include('#confianza').include('#promociones').withRules(['color-contrast']).analyze();
