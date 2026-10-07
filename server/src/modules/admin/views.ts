@@ -1,6 +1,6 @@
 // SSR views: tagged-template helper with autoescape (ADR-013), no template engine. No business logic here.
 import type { StoredPromo } from './store.ts';
-import { GLASSES, PRODUCT_SLUGS } from '../promotions/schema.ts';
+import { COLORS, GLASSES, PRODUCT_SLUGS } from '../promotions/schema.ts';
 
 class Raw {
   constructor(readonly s: string) {}
@@ -17,41 +17,34 @@ export function html(strings: TemplateStringsArray, ...vals: unknown[]): Raw {
   return new Raw(out);
 }
 
-export const CSS = `*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;background:#f4f6f8;color:#14212b}
-a{color:#0b5cad}.shell{display:flex;min-height:100vh}nav.side{width:220px;background:#10283b;color:#fff;padding:20px 12px;flex:none}
-nav.side a,nav.side span{display:block;color:#fff;padding:10px 12px;border-radius:8px;text-decoration:none}nav.side a.on{background:#1d4468}
-nav.side span.off{opacity:.5}main{flex:1;padding:24px;max-width:1100px}h1{margin-top:0}
-.card{background:#fff;border:1px solid #d9e0e6;border-radius:12px;padding:16px}.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
-.thumb{width:100%;aspect-ratio:1/1;object-fit:contain;background:#eef2f5;border-radius:8px}
-.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:13px;background:#e6edf3}.badge.pub{background:#d8f2e0}
-label{display:block;font-weight:600;margin:12px 0 4px}input,select,textarea{width:100%;padding:10px;border:1px solid #9fb0bd;border-radius:8px;font:inherit}
-button,.btn{display:inline-block;padding:10px 16px;border:0;border-radius:8px;background:#0b5cad;color:#fff;font:inherit;cursor:pointer;text-decoration:none}
-button.sec,.btn.sec{background:#e6edf3;color:#14212b}button.danger{background:#b3261e}.err{background:#fde7e5;border:1px solid #e9a8a3;padding:12px;border-radius:8px;margin:12px 0}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}form.inline{display:inline}.login{max-width:380px;margin:12vh auto;padding:0 16px}
-@media(max-width:720px){.shell{flex-direction:column}nav.side{width:auto;display:flex;gap:4px;flex-wrap:wrap;padding:8px}main{padding:16px}}`;
+export { CSS, JS } from './theme.ts';
 
 export function page(title: string, body: Raw, nonce?: string): string {
   void nonce;
   return html`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>${title} · ALCUSA Admin</title><link rel="stylesheet" href="__BASE__/admin.css"></head><body>${body}</body></html>`.s;
+<meta name="robots" content="noindex,nofollow"><title>${title} · ALCUSA Admin</title><meta name="theme-color" content="#0f1c2b"><link rel="icon" href="__BASE__/admin-assets/mark.webp" type="image/webp"><link rel="stylesheet" href="__BASE__/admin.css"></head><body>${body}<script src="__BASE__/admin.js" defer></script></body></html>`.s;
 }
 
 export function shell(base: string, active: 'promos' | 'cuenta', csrf: string, content: Raw, flash?: string): Raw {
-  return html`<div class="shell"><nav class="side"><strong>ALCUSA · Panel</strong>
+  return html`<div class="shell"><nav class="side"><div class="brand"><img src="${base}/admin-assets/mark.webp" alt="" width="36" height="36"><div>ALCUSA<small>Panel de administración</small></div></div>
 <a href="${base}/promociones" class="${active === 'promos' ? 'on' : ''}">Promociones</a>
 <span class="off" aria-disabled="true">Productos · próximamente</span>
 <a href="${base}/cuenta/clave" class="${active === 'cuenta' ? 'on' : ''}">Mi cuenta</a>
 <form method="post" action="${base}/logout"><input type="hidden" name="_csrf" value="${csrf}"><button class="sec" type="submit">Cerrar sesión</button></form></nav>
-<main>${flash ? html`<div class="card" role="status">${flash}</div>` : ''}${content}</main></div>`;
+<main>${flash ? html`<div class="card toast" role="status">${flash}</div>` : ''}${content}</main></div>`;
 }
 
 export function loginView(base: string, opts: { error?: string; locked?: string; username?: string }): Raw {
-  return html`<div class="login card"><h1>Iniciar sesión</h1><p>Panel de administración · ALCUSA</p>
+  return html`<main class="auth"><div class="auth-box">
+<div class="auth-brand"><img src="${base}/admin-assets/mark.webp" alt="" width="56" height="56"><div><b>ALCUSA</b><span>Disfrutar con calidad</span></div></div>
+<h1>Iniciar sesión</h1><p class="lead">Panel de administración · ALCUSA</p>
+<div class="card">
 ${opts.locked ? html`<div class="err" role="alert"><strong>Demasiados intentos.</strong> Por seguridad, intenta de nuevo en ${opts.locked}.</div>` : ''}
 ${opts.error ? html`<div class="err" role="alert"><strong>Credenciales inválidas.</strong> Revisa tu usuario y contraseña e inténtalo otra vez.</div>` : ''}
-<form method="post" action="${base}/login"><label for="u">Usuario</label><input id="u" name="username" autocomplete="username" required value="${opts.username ?? ''}">
-<label for="p">Contraseña</label><input id="p" name="password" type="password" autocomplete="current-password" required>
-<p><button type="submit">Continuar</button></p></form><p><small>¿Sin acceso o olvidaste tu contraseña? Pide a soporte que la restablezca.</small></p></div>`;
+<form method="post" action="${base}/login" data-login><label for="u">Usuario</label><input id="u" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required value="${opts.username ?? ''}">
+<label for="p">Contraseña</label><div class="pw"><input id="p" name="password" type="password" autocomplete="current-password" required><button type="button" class="sec" data-toggle aria-controls="p" aria-pressed="false" hidden>Mostrar</button></div>
+<button type="submit">Continuar</button></form></div>
+<p class="auth-foot">¿Sin acceso o olvidaste tu contraseña? Pide a soporte que la restablezca.</p></div></main>`;
 }
 
 export function passwordView(base: string, csrf: string, problems: string[], forced: boolean): Raw {
@@ -73,6 +66,9 @@ export function promoStatus(p: StoredPromo, today: string): string {
   return p.starts_on > today ? 'Programada' : 'Publicada';
 }
 
+const badgeClass = (p: StoredPromo, today: string): string =>
+  ({ Archivada: 'arch', Borrador: 'draft', Vencida: 'exp', Programada: 'sched', Publicada: 'pub' })[promoStatus(p, today)] ?? '';
+
 export type ListFilter = 'activas' | 'archivadas';
 
 export function listView(base: string, csrf: string, all: StoredPromo[], today: string, filter: ListFilter = 'activas'): Raw {
@@ -80,13 +76,13 @@ export function listView(base: string, csrf: string, all: StoredPromo[], today: 
   const promos = all.filter((p) => (p.status === 'archived') === archivedView);
   const post = (id: string, action: string, label: string, cls = 'sec'): Raw =>
     html`<form class="inline" method="post" action="${base}/promociones/${id}/${action}"><input type="hidden" name="_csrf" value="${csrf}"><button class="${cls}">${label}</button></form>`;
-  return html`<div class="row"><h1 style="flex:1">Promociones</h1><a class="btn" href="${base}/promociones/nueva">Nueva promoción</a></div>
+  return html`<div class="row head"><h1>Promociones</h1><a class="btn" href="${base}/promociones/nueva">Nueva promoción</a></div>
 <p>La landing muestra hasta 3 promociones vigentes a la vez.</p>
 <nav class="row" aria-label="Filtro"><a class="btn ${archivedView ? 'sec' : ''}" href="${base}/promociones" ${archivedView ? '' : raw('aria-current="page"')}>Activas</a>
 <a class="btn ${archivedView ? '' : 'sec'}" href="${base}/promociones?estado=archivadas" ${archivedView ? raw('aria-current="page"') : ''}>Archivadas</a></nav>
-${promos.length === 0 ? html`<div class="card">${archivedView ? 'No hay promociones archivadas.' : 'Aún no hay promociones. Crea la primera.'}</div>` : ''}
+${promos.length === 0 ? html`<div class="card empty"><strong>${archivedView ? 'No hay promociones archivadas.' : 'Aún no hay promociones.'}</strong>${archivedView ? 'Lo que archives aparecerá aquí.' : 'Crea la primera con el botón «Nueva promoción».'}</div>` : ''}
 <div class="grid">${promos.map((p) => html`<article class="card"><img class="thumb" src="${p.image.startsWith('/') ? base + '/media/promos/' + p.image.split('/').pop() : p.image}" alt="${p.image_alt}">
-<h2>${p.title}</h2><p><span class="badge ${p.status === 'published' ? 'pub' : ''}">${promoStatus(p, today)}</span></p>
+<h2>${p.title}</h2><p><span class="badge ${badgeClass(p, today)}">${promoStatus(p, today)}</span></p>
 <p>${p.price_before === null ? 'Precio especial' : html`Antes ${money(p.price_before)}`} · Ahora <strong>${money(p.price_promo)}</strong></p>
 <p>${p.starts_on} → ${p.ends_on}</p><div class="row">${p.status === 'archived'
   ? html`${post(p.id, 'reactivar', 'Reactivar')}<small>Vuelve como borrador.</small>`
@@ -95,7 +91,7 @@ ${promos.length === 0 ? html`<div class="card">${archivedView ? 'No hay promocio
 }
 
 export interface FormValues {
-  title: string; description: string; price_before: string; price_promo: string; product_slug: string; vidrio: string;
+  title: string; description: string; price_before: string; price_promo: string; product_slug: string; color: string; vidrio: string;
   starts_on: string; ends_on: string; rules: string; image: string; image_alt: string;
 }
 
@@ -107,6 +103,7 @@ ${problems.length ? html`<div class="err" role="alert"><strong>Revisa estos camp
 <label for="t">Título</label><input id="t" name="title" maxlength="80" required value="${v.title}">
 <label for="d">Descripción</label><textarea id="d" name="description" maxlength="300" rows="3" required>${v.description}</textarea>
 <label for="s">Producto vinculado</label><select id="s" name="product_slug">${PRODUCT_SLUGS.map((s) => html`<option value="${s}" ${s === v.product_slug ? raw('selected') : ''}>${s}</option>`)}</select>
+<label for="c">Color de aluminio preseleccionado en el cotizador (opcional)</label><select id="c" name="color"><option value="">Ninguno</option>${COLORS.map((c) => html`<option value="${c}" ${c === v.color ? raw('selected') : ''}>${c}</option>`)}</select>
 <label for="g">Vidrio preseleccionado en el cotizador (opcional)</label><select id="g" name="vidrio"><option value="">Ninguno</option>${GLASSES.map((g) => html`<option value="${g}" ${g === v.vidrio ? raw('selected') : ''}>${g}</option>`)}</select>
 <label for="pb">Precio antes (opcional)</label><input id="pb" name="price_before" inputmode="decimal" value="${v.price_before}">
 <label for="pp">Precio de la promoción</label><input id="pp" name="price_promo" inputmode="decimal" required value="${v.price_promo}">

@@ -12,6 +12,12 @@ export class PublishError extends Error {
   }
 }
 
+/** cotizador_params as published: only the finishes present, always in the order color, vidrio (same order the site builds its link in). */
+function publishedParams(cp: PromoRecord['cotizador_params']): { cotizador_params?: { color?: string; vidrio?: string } } {
+  if (!cp || (!cp.color && !cp.vidrio)) return {};
+  return { cotizador_params: { ...(cp.color ? { color: cp.color } : {}), ...(cp.vidrio ? { vidrio: cp.vidrio } : {}) } };
+}
+
 export function buildDocument(promos: readonly PromoRecord[], now: Date): { generated_at: string; promotions: PromoRecord[] } {
   return {
     generated_at: now.toISOString(),
@@ -25,7 +31,7 @@ export function buildDocument(promos: readonly PromoRecord[], now: Date): { gene
       price_before: p.price_before,
       price_promo: p.price_promo,
       product_slug: p.product_slug,
-      ...(p.cotizador_params ? { cotizador_params: p.cotizador_params } : {}),
+      ...publishedParams(p.cotizador_params),
       starts_on: p.starts_on,
       ends_on: p.ends_on,
       rules: [...p.rules],

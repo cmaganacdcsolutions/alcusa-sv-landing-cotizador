@@ -2,6 +2,12 @@
 // rule for rule, so a file this module writes can never break the site build. Parity is guarded by
 // test/admin/promo-schema.test.ts. Messages are Spanish because they surface in the admin form.
 
+/** Finishes the promo CTA preselects in the cotizador (both optional). Key order in the published file: color, vidrio. */
+export interface CotizadorParams {
+  color?: string;
+  vidrio?: string;
+}
+
 export interface PromoRecord {
   id: string;
   placeholder: boolean;
@@ -12,7 +18,7 @@ export interface PromoRecord {
   price_before: number | null;
   price_promo: number;
   product_slug: string;
-  cotizador_params?: { vidrio: string };
+  cotizador_params?: CotizadorParams;
   starts_on: string;
   ends_on: string;
   rules: string[];
@@ -24,6 +30,9 @@ export const PRODUCT_SLUGS = [
   'puertas-de-jardin', 'jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas', 'jardin-2-fijas-2-corredizas',
   'jardin-1-fijo-3-corredizas', 'ventanas', 'ventana-francesa', 'ventana-bilbao',
 ] as const;
+
+/** Same set as DEEP_LINK_COLORS in src/content/deepLink.ts (aluminium colour of ?color=). */
+export const COLORS = ['natural', 'blanco', 'bronce'] as const;
 
 /** Same set as DEEP_LINK_GLASSES in src/content/deepLink.ts. */
 export const GLASSES = ['claro', 'nevado', 'decorado', 'mallado', 'duplex', 'aquafold'] as const;
@@ -76,8 +85,13 @@ export function validatePromotions(input: unknown, slugExists: (s: string) => bo
     const cp = item['cotizador_params'];
     if (cp !== undefined) {
       if (!isRec(cp)) at('"cotizador_params" debe ser un objeto');
-      else if (cp['vidrio'] !== undefined && (typeof cp['vidrio'] !== 'string' || !(GLASSES as readonly string[]).includes(cp['vidrio']))) {
-        at('"cotizador_params.vidrio" no es un vidrio conocido');
+      else {
+        if (cp['color'] !== undefined && (typeof cp['color'] !== 'string' || !(COLORS as readonly string[]).includes(cp['color']))) {
+          at('"cotizador_params.color" no es un color conocido (natural, blanco o bronce)');
+        }
+        if (cp['vidrio'] !== undefined && (typeof cp['vidrio'] !== 'string' || !(GLASSES as readonly string[]).includes(cp['vidrio']))) {
+          at('"cotizador_params.vidrio" no es un vidrio conocido');
+        }
       }
     }
     const rules = item['rules'] ?? [];

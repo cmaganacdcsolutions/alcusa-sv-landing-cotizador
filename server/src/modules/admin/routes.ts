@@ -7,7 +7,8 @@ import { ImageError, ingestPromoImage, MAX_UPLOAD_BYTES } from '../promotions/im
 import { PublishError } from '../promotions/publish.ts';
 import { type PromoInput, type PromoService } from '../promotions/service.ts';
 import { type AuthService, csrfValid, type SessionInfo, sameOrigin } from './auth-service.ts';
-import { CSS, editorView, type FormValues, listView, loginView, page, passwordView, shell } from './views.ts';
+import { MARK_WEBP, RENDER_WEBP } from './theme-assets.ts';
+import { CSS, editorView, JS, type FormValues, listView, loginView, page, passwordView, shell } from './views.ts';
 
 export const COOKIE = '__Host-alcusa_admin';
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'; base-uri 'none'";
@@ -71,7 +72,12 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         return info;
       }
 
-      r.get('/admin.css', (_req, reply) => reply.type('text/css').header('cache-control', 'public, max-age=300').send(CSS));
+      r.get('/admin.css', (_req, reply) => reply.type('text/css').header('cache-control', 'public, max-age=300').send(CSS.replaceAll('__BASE__', d.base)));
+      r.get('/admin.js', (_req, reply) => reply.type('text/javascript; charset=utf-8').header('cache-control', 'public, max-age=300').send(JS));
+      const asset = (buf: Buffer) => (_req: FastifyRequest, reply: FastifyReply): FastifyReply =>
+        reply.type('image/webp').header('x-content-type-options', 'nosniff').header('cache-control', 'public, max-age=86400').send(buf);
+      r.get('/admin-assets/mark.webp', asset(MARK_WEBP));
+      r.get('/admin-assets/render.webp', asset(RENDER_WEBP));
       r.get('/', (_req, reply) => reply.redirect(`${d.base}/promociones`, 303));
 
       r.get('/login', (_req, reply) => send(reply, 'Iniciar sesión', loginView(d.base, {})));
@@ -124,7 +130,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         return send(reply, 'Promociones', shell(d.base, 'promos', csrf, listView(d.base, csrf, await d.promos.list(), today(), filter)));
       });
 
-      const blank: FormValues = { title: '', description: '', price_before: '', price_promo: '', product_slug: 'recta', vidrio: '', starts_on: '', ends_on: '', rules: '', image: '', image_alt: '' };
+      const blank: FormValues = { title: '', description: '', price_before: '', price_promo: '', product_slug: 'recta', color: '', vidrio: '', starts_on: '', ends_on: '', rules: '', image: '', image_alt: '' };
       const editor = (reply: FastifyReply, info: SessionInfo, id: string | null, v: FormValues, problems: string[], code = 200): FastifyReply =>
         send(reply, id ? 'Editar promoción' : 'Nueva promoción', shell(d.base, 'promos', info.session.csrfToken, editorView(d.base, info.session.csrfToken, id, v, problems)), code);
 
@@ -139,7 +145,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         if (!p) return notFound(reply);
         return editor(reply, info, p.id, {
           title: p.title, description: p.description, price_before: p.price_before === null ? '' : String(p.price_before), price_promo: String(p.price_promo),
-          product_slug: p.product_slug, vidrio: p.cotizador_params?.vidrio ?? '', starts_on: p.starts_on, ends_on: p.ends_on, rules: p.rules.join('\n'), image: p.image, image_alt: p.image_alt,
+          product_slug: p.product_slug, color: p.cotizador_params?.color ?? '', vidrio: p.cotizador_params?.vidrio ?? '', starts_on: p.starts_on, ends_on: p.ends_on, rules: p.rules.join('\n'), image: p.image, image_alt: p.image_alt,
         }, []);
       });
 
@@ -157,7 +163,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         }
         const values: FormValues = {
           title: str(b, 'title'), description: str(b, 'description'), price_before: str(b, 'price_before'), price_promo: str(b, 'price_promo'),
-          product_slug: str(b, 'product_slug'), vidrio: str(b, 'vidrio'), starts_on: str(b, 'starts_on'), ends_on: str(b, 'ends_on'),
+          product_slug: str(b, 'product_slug'), color: str(b, 'color'), vidrio: str(b, 'vidrio'), starts_on: str(b, 'starts_on'), ends_on: str(b, 'ends_on'),
           rules: str(b, 'rules'), image, image_alt: str(b, 'image_alt'),
         };
         const pb = num(values.price_before);
@@ -167,7 +173,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         const input: PromoInput = {
           title: values.title, description: values.description, image, image_alt: values.image_alt,
           price_before: pb === null || Number.isNaN(pb) ? null : pb, price_promo: pp ?? Number.NaN, product_slug: values.product_slug,
-          vidrio: values.vidrio || null, starts_on: values.starts_on, ends_on: values.ends_on, rules: values.rules.split(/\r?\n/).filter((x) => x.trim()),
+          color: values.color || null, vidrio: values.vidrio || null, starts_on: values.starts_on, ends_on: values.ends_on, rules: values.rules.split(/\r?\n/).filter((x) => x.trim()),
         };
         return { input, values, problems };
       }

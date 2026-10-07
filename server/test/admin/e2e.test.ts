@@ -64,6 +64,15 @@ describe('admin e2e: login -> create -> edit -> archive/reactivate -> promotions
     expect(r.headers['cache-control']).toBe('no-store');
     expect(r.headers['x-robots-tag']).toContain('noindex');
   });
+  it('admin.css is served as a file (CSP) with the gated button hover rules', async () => {
+    const r = await app.inject({ url: `${BASE}/admin.css` });
+    expect(r.statusCode).toBe(200);
+    expect(String(r.headers['content-type'])).toContain('text/css');
+    expect(r.body).toContain('@media(hover:hover) and (pointer:fine){');
+    expect(r.body).toContain('background-color:var(--b-hover)');
+    expect(r.body).not.toContain('__BASE__');
+    expect((await app.inject({ url: `${BASE}/login` })).body).not.toMatch(/<style|style=/);
+  });
   it('bad credentials -> 401 single generic message', async () => {
     const r = await post('/login', { username: 'carlos', password: 'wrong' });
     expect(r.statusCode).toBe(401);

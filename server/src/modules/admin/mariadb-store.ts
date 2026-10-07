@@ -166,7 +166,9 @@ export class MariaDbAdminStore implements AdminRepo, PromoRepo {
         price_before: r['price_before'] === null ? null : Number(r['price_before']),
         price_promo: Number(r['price_promo']),
         product_slug: String(r['product_slug'] ?? ''),
-        ...(r['cotizador_vidrio'] ? { cotizador_params: { vidrio: String(r['cotizador_vidrio']) } } : {}),
+        ...(r['cotizador_color'] || r['cotizador_vidrio']
+          ? { cotizador_params: { ...(r['cotizador_color'] ? { color: String(r['cotizador_color']) } : {}), ...(r['cotizador_vidrio'] ? { vidrio: String(r['cotizador_vidrio']) } : {}) } }
+          : {}),
         starts_on: String(r['starts_on']),
         ends_on: String(r['ends_on']),
         rules: rules.get(Number(r['id'])) ?? [],
@@ -182,24 +184,24 @@ export class MariaDbAdminStore implements AdminRepo, PromoRepo {
   }
 
   async list(): Promise<StoredPromo[]> {
-    const [rows] = await this.pool.execute<Row[]>('SELECT id, public_id, title, description, price_before, price_promo, image_path, image_alt, product_slug, cotizador_vidrio, starts_on, ends_on, status, sort_order, created_at, updated_at FROM promotions WHERE public_id IS NOT NULL ORDER BY sort_order, starts_on, id');
+    const [rows] = await this.pool.execute<Row[]>('SELECT id, public_id, title, description, price_before, price_promo, image_path, image_alt, product_slug, cotizador_color, cotizador_vidrio, starts_on, ends_on, status, sort_order, created_at, updated_at FROM promotions WHERE public_id IS NOT NULL ORDER BY sort_order, starts_on, id');
     return this.hydrate(rows);
   }
   async get(id: string): Promise<StoredPromo | null> {
-    const [rows] = await this.pool.execute<Row[]>('SELECT id, public_id, title, description, price_before, price_promo, image_path, image_alt, product_slug, cotizador_vidrio, starts_on, ends_on, status, sort_order, created_at, updated_at FROM promotions WHERE public_id = ? LIMIT 1', [id]);
+    const [rows] = await this.pool.execute<Row[]>('SELECT id, public_id, title, description, price_before, price_promo, image_path, image_alt, product_slug, cotizador_color, cotizador_vidrio, starts_on, ends_on, status, sort_order, created_at, updated_at FROM promotions WHERE public_id = ? LIMIT 1', [id]);
     return (await this.hydrate(rows))[0] ?? null;
   }
   save(p: StoredPromo): Promise<void> {
     return this.tx(async (c) => {
       const values = [
-        p.title, p.description, p.price_before, p.price_promo, p.image, p.image_alt, p.product_slug, p.cotizador_params?.vidrio ?? null,
+        p.title, p.description, p.price_before, p.price_promo, p.image, p.image_alt, p.product_slug, p.cotizador_params?.color ?? null, p.cotizador_params?.vidrio ?? null,
         p.starts_on, p.ends_on, p.status, p.sort_order, toSql(new Date(p.updated_at)), p.id, toSql(new Date(p.created_at)),
       ];
       await c.execute(
-        `INSERT INTO promotions (title, description, price_before, price_promo, image_path, image_alt, product_slug, cotizador_vidrio, starts_on, ends_on, status, sort_order, updated_at, public_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO promotions (title, description, price_before, price_promo, image_path, image_alt, product_slug, cotizador_color, cotizador_vidrio, starts_on, ends_on, status, sort_order, updated_at, public_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE title = VALUES(title), description = VALUES(description), price_before = VALUES(price_before), price_promo = VALUES(price_promo),
-           image_path = VALUES(image_path), image_alt = VALUES(image_alt), product_slug = VALUES(product_slug), cotizador_vidrio = VALUES(cotizador_vidrio),
+           image_path = VALUES(image_path), image_alt = VALUES(image_alt), product_slug = VALUES(product_slug), cotizador_color = VALUES(cotizador_color), cotizador_vidrio = VALUES(cotizador_vidrio),
            starts_on = VALUES(starts_on), ends_on = VALUES(ends_on), status = VALUES(status), sort_order = VALUES(sort_order), updated_at = VALUES(updated_at)`,
         values,
       );

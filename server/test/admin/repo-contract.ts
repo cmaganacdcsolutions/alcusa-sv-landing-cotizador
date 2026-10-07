@@ -9,7 +9,7 @@ const user = (over: Partial<Omit<AdminUser, 'id'>> = {}): Omit<AdminUser, 'id'> 
 });
 const promo = (id: string, over: Partial<StoredPromo> = {}): StoredPromo => ({
   id, placeholder: false, title: `Promo ${id}`, description: 'Descripcion', image: '/images/promos/promo-abc-900.webp', image_alt: 'alt'.repeat(60),
-  price_before: 300.5, price_promo: 222, product_slug: 'recta', cotizador_params: { vidrio: 'claro' }, starts_on: '2026-10-01', ends_on: '2026-10-31',
+  price_before: 300.5, price_promo: 222, product_slug: 'recta', cotizador_params: { color: 'natural', vidrio: 'claro' }, starts_on: '2026-10-01', ends_on: '2026-10-31',
   rules: ['Instalada', 'Entrega en 5 días ñandú'], status: 'draft', sort_order: 0, created_at: '2026-10-06T12:00:00.000Z', updated_at: '2026-10-06T12:00:00.000Z', ...over,
 });
 
@@ -79,6 +79,21 @@ export function repoContract(name: string, make: () => Promise<{ store: AdminSto
       expect(c?.price_before).toBeNull();
       expect(c?.cotizador_params).toBeUndefined();
       expect(await store.get('nope')).toBeNull();
+    });
+    it('promos: cotizador_params round-trips colour and vidrio independently (both, colour only, vidrio only, none)', async () => {
+      const shapes: Array<[string, StoredPromo['cotizador_params']]> = [
+        ['promo-both', { color: 'bronce', vidrio: 'aquafold' }], ['promo-color', { color: 'blanco' }], ['promo-glass', { vidrio: 'nevado' }], ['promo-none', undefined],
+      ];
+      for (const [id, cp] of shapes) {
+        const p = promo(id);
+        if (cp) p.cotizador_params = cp;
+        else delete p.cotizador_params;
+        await store.save(p);
+      }
+      for (const [id, cp] of shapes) expect((await store.get(id))?.cotizador_params, id).toEqual(cp);
+      // clearing the colour on an existing row (upsert) really clears it
+      await store.save(promo('promo-both', { cotizador_params: { vidrio: 'aquafold' } }));
+      expect((await store.get('promo-both'))?.cotizador_params).toEqual({ vidrio: 'aquafold' });
     });
     it('promos: save again updates in place (rules replaced), keeps created_at; archived status persists', async () => {
       await store.save(promo('promo-a'));

@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-10-06T00:00:00-06:00",
+  "promotions": [
+    {
+      "id": "promo-puerta-aquaclara",
+      "placeholder": false,
+      "title": "Puerta Aquaclara",
+      "description": "Corrediza instalada con vidrio de 5 mm aquaclara y aluminio natural. Entrega express.",
+      "image": "/images/promos/promo-1-900.webp",
+      "image_alt": "Flyer oficial: Puerta Aquaclara, $222.00. Puerta corrediza instalada, vidrio de 5 mm aquaclara, aluminio natural, altura 1.85 m, ancho de pared a pared de 1.00 a 1.20 m, entrega en 5 días (entrega express). Restricciones aplican.",
+      "price_promo": 222,
+      "product_slug": "recta",
+      "cotizador_params": { "color": "natural", "vidrio": "claro" },
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-31",
+      "rules": [
+        "Ancho promocional de pared a pared: desde 1.00 hasta 1.20 m",
+        "Altura estándar: 1.85 m",
+        "Instalada",
+        "Entrega en 5 días",
+        "*Restricciones aplican"
+      ]
+    },
+    {
+      "id": "promo-corrediza-nevado",
+      "placeholder": false,
+      "title": "Puerta corrediza con vidrio nevado",
+      "description": "Corrediza instalada con vidrio nevado y aluminio natural.",
+      "image": "/images/promos/promo-2-900.webp",
+      "image_alt": "Flyer oficial: Puerta corrediza con vidrio nevado, $290.00. Puerta corrediza instalada, vidrio nevado, aluminio natural, altura 1.85 m, ancho de pared a pared de 1.00 a 1.20 m, entrega en 8 días. Restricciones aplican.",
+      "price_promo": 290,
+      "product_slug": "recta",
+      "cotizador_params": { "color": "natural", "vidrio": "nevado" },
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-31",
+      "rules": [
+        "Ancho promocional de pared a pared: desde 1.00 hasta 1.20 m",
+        "Altura estándar: 1.85 m",
+        "Instalada",
+        "Entrega en 8 días",
+        "*Restricciones aplican"
+      ]
+    },
+    {
+      "id": "promo-aquafold",
+      "placeholder": false,
+      "title": "Modelo Aquafold",
+      "description": "Corrediza instalada con vidrio personalizado aquafold y aluminio natural.",
+      "image": "/images/promos/promo-3-900.webp",
+      "image_alt": "Flyer oficial: Modelo Aquafold, $279.99. Puerta corrediza instalada, vidrio personalizado aquafold, aluminio natural, altura 1.85 m, ancho de pared a pared de 1.00 a 1.20 m, entrega en 8 días. Restricciones aplican.",
+      "price_promo": 279.99,
+      "product_slug": "recta",
+      "cotizador_params": { "color": "natural", "vidrio": "aquafold" },
+      "starts_on": "2026-10-01",
+      "ends_on": "2026-10-31",
+      "rules": [
+        "Ancho promocional de pared a pared: desde 1.00 hasta 1.20 m",
+        "Altura estándar: 1.85 m",
+        "Instalada",
+        "Entrega en 8 días",
+        "*Restricciones aplican"
+      ]
+    }
+  ]
+}

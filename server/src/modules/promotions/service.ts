@@ -15,6 +15,8 @@ export interface PromoInput {
   price_promo: number;
   product_slug: string;
   vidrio: string | null;
+  /** Aluminium colour preselected by the promo link. undefined (caller does not know it) keeps the stored one on update; null clears it. */
+  color?: string | null;
   starts_on: string;
   ends_on: string;
   rules: string[];
@@ -51,7 +53,7 @@ export class PromoService {
     return {
       id, placeholder: false, title: i.title.trim(), description: i.description.trim(), image: i.image, image_alt: i.image_alt.trim(),
       price_before: i.price_before, price_promo: i.price_promo, product_slug: i.product_slug,
-      ...(i.vidrio ? { cotizador_params: { vidrio: i.vidrio } } : {}),
+      ...(i.color || i.vidrio ? { cotizador_params: { ...(i.color ? { color: i.color } : {}), ...(i.vidrio ? { vidrio: i.vidrio } : {}) } } : {}),
       starts_on: i.starts_on, ends_on: i.ends_on, rules: i.rules.map((r) => r.trim()).filter(Boolean),
     };
   }
@@ -71,7 +73,8 @@ export class PromoService {
   async update(actor: string, id: string, input: PromoInput, publish?: boolean): Promise<Result<StoredPromo>> {
     const prev = await this.o.repo.get(id);
     if (!prev) return { ok: false, problems: ['La promoción no existe.'] };
-    return this.persist(actor, this.toRecord(id, input), publish ?? prev.status === 'published', prev);
+    const color = input.color === undefined ? (prev.cotizador_params?.color ?? null) : input.color;
+    return this.persist(actor, this.toRecord(id, { ...input, color }), publish ?? prev.status === 'published', prev);
   }
 
   private persist(actor: string, rec: PromoRecord, publish: boolean, prev: StoredPromo | null): Promise<Result<StoredPromo>> {
