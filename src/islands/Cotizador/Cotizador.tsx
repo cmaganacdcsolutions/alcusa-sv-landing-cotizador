@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
@@ -231,7 +232,11 @@ export default function Cotizador(): ReactElement {
   // effect re-run) from ever writing.
   const persistReadyRef = useRef(false);
   const bootStateRef = useRef(state);
-  useEffect(() => {
+  // useLayoutEffect (not useEffect): the write must land synchronously in the
+  // commit that paints the new state. As a passive effect it could still be
+  // pending when a reload happened right after the UI showed the geo check,
+  // losing `address.geo`.
+  useLayoutEffect(() => {
     if (!persistReadyRef.current || state === bootStateRef.current) return;
     persistWizardState(state);
   }, [state]);
