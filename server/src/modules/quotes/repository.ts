@@ -47,9 +47,10 @@ export async function insertQuote(pool: Pool, d: ValidCreate, c: InsertContext):
     await conn.beginTransaction();
     const [res] = await conn.execute<ResultSetHeader>(
       `INSERT INTO quotes (code, idempotency_key, status, supersedes_quote_id, customer_name, customer_whatsapp, customer_email,
-         consent_at, privacy_notice_version, delivery_mode, delivery_zone, delivery_address, subtotal, transport_fee, total,
+         consent_at, privacy_notice_version, delivery_mode, delivery_zone, delivery_address, subtotal, transport_fee,
+         discount_code, discount_amount, shipping_pending, total,
          currency, valid_until, pricing_source, client_cart_hash, source, ip_hash)
-       VALUES (?, ?, 'issued', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'USD', ?, 'client', ?, 'cotizador', ?)`,
+       VALUES (?, ?, 'issued', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'USD', ?, 'client', ?, 'cotizador', ?)`,
       [
         c.code,
         d.idempotencyKey,
@@ -64,6 +65,9 @@ export async function insertQuote(pool: Pool, d: ValidCreate, c: InsertContext):
         d.deliveryAddress,
         centsToDecimal(d.subtotalCents),
         centsToDecimal(d.transportCents),
+        d.discountCode,
+        centsToDecimal(d.discountCents),
+        d.shippingPending ? 1 : 0,
         centsToDecimal(d.totalCents),
         c.validUntil,
         d.cartHash,

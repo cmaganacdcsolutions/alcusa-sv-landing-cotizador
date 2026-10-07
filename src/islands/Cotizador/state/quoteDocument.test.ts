@@ -60,4 +60,22 @@ describe('quoteDocument mapper', () => {
     const pickup = toQuoteDocument({ ...base, entrega: 'retiro', folio: 'x', issuedAt: new Date() });
     expect(pickup.transportLabel).toBeUndefined();
   });
+
+  it('shippingPending / discount: opcionales, solo viajan cuando existen (folio sin descuento por defecto)', () => {
+    const cust = { name: 'Ana', whatsapp: '+50371234567' };
+    const base = { items: [line('1.10 × 1.85 m · Natural · Claro 5 mm')], entrega: 'instalacion' as const, zone: 'otro', transport: 0, total: 222 };
+    const plain = toFolioRequest(base, cust, 'k');
+    expect(plain).not.toHaveProperty('shippingPending');
+    expect(plain).not.toHaveProperty('discount');
+    expect(toQuoteDocument({ ...base, folio: 'x', issuedAt: new Date() })).not.toHaveProperty('discount');
+
+    const pending = { ...base, shippingPending: true };
+    expect(toFolioRequest(pending, cust, 'k')).toMatchObject({ shippingPending: true, transportFee: 0, total: 222 });
+    expect(toQuoteDocument({ ...pending, folio: 'x', issuedAt: new Date() }).shippingPending).toBe(true);
+    expect(cartHash(pending)).not.toBe(cartHash(base));
+
+    const withDiscount = { ...base, total: 199.8, discount: { code: 'online_card_10' as const, amount: 22.2 } };
+    expect(toFolioRequest(withDiscount, cust, 'k')).toMatchObject({ discount: { code: 'online_card_10', amount: 22.2 }, total: 199.8 });
+    expect(toQuoteDocument({ ...withDiscount, folio: 'x', issuedAt: new Date() }).discount).toBe(22.2);
+  });
 });

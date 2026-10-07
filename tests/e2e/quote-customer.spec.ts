@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Locator, Page } from '@playwright/test';
 import { expect, pickProduct, test } from './fixtures';
+import { fillAddress } from '../support/address';
 
 // R07.1 — customer mini form (ios/android-r07 estado H1-H5, desktop-r07 estado E1-E5).
 // The mock folio provider is scripted through sessionStorage (alcusa.mock.quote / -delay).
@@ -33,7 +34,7 @@ async function gotoResumen(page: Page): Promise<void> {
   await pickProduct(page, 'recta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.locator('#municipio').selectOption('Soyapango');
+  await fillAddress(page, 'Soyapango');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
 }
@@ -96,6 +97,8 @@ test.describe('customer dialog — H2/E2 inline errors', () => {
     await gotoResumen(page);
     await trigger(page).click();
     const d = dialog(page);
+    // El telefono viene precargado desde "Entrega y zona"; se vacia para probar los tres errores.
+    await d.getByLabel('WhatsApp').fill('');
     await cta(d).click();
     await expect(d.getByText('Escribe tu nombre.')).toBeVisible();
     await expect(d.getByText('Escribe tu número de WhatsApp.')).toBeVisible();
@@ -186,9 +189,11 @@ test.describe('customer dialog — H4/E4 remembered + success', () => {
     expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k !== 'alcusa.mock.quotes.v1').length)).toBe(0);
     await expect(trigger(page)).toBeFocused();
 
-    // a new cart state (remove nothing; reload keeps sessionStorage) -> dialog again with remembered data
+    // a new cart state (remove nothing; reload keeps sessionStorage) -> dialog again with remembered data.
+    // Since the wizard snapshot (state/persist.ts) a reload at Resumen STAYS at Resumen: no re-walk
+    // through the steps (the heading only exists after the island restored the stored flow).
     await page.reload();
-    await gotoResumen(page);
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
     await trigger(page).click();
     const d2 = dialog(page);
     await expect(d2.getByLabel('Nombre')).toHaveValue('María López');
@@ -219,7 +224,7 @@ test.describe('customer dialog — ADR-011 s5 renew notice (proposal, not on the
     await expect(d).toHaveCount(0);
     await download;
     await page.getByRole('button', { name: 'Cambiar' }).locator('visible=true').first().click();
-    await page.locator('#municipio').selectOption({ index: 2 });
+    await fillAddress(page, 'Apopa');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
     await expect(page.getByTestId('quote-share-renew').locator('visible=true').first()).toHaveText(

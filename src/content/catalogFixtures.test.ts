@@ -17,7 +17,11 @@ describe('r06 state fixtures', () => {
   });
 
   it('Estado B sin foto y Estado C son alcanzables con datos reales', () => {
+    // Official photos (06-assets) now cover every item, so "sin foto" is only
+    // reachable through the fallback for a slug with no content entry.
+    expect(ITEM_CONTENT['slug-sin-contenido']).toBeUndefined();
+    // Ya no hay fotos de Alcusa en el contenido: los renders viven en home-media.ts.
     expect(ITEM_CONTENT['jardin-1-fijo-3-corredizas']?.images).toHaveLength(0);
-    expect(ITEM_CONTENT['jardin-1-hoja']?.images).toHaveLength(0);
+    expect(ITEM_CONTENT['jardin-1-fijo-3-corredizas']?.pending).toContain('photo');
   });
 });

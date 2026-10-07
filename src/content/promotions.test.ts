@@ -9,6 +9,7 @@ import {
   getActivePromotions,
   isActive,
   parsePromotions,
+  promoHref,
   savings,
   todayInSV,
   vigenciaLabel,
@@ -29,9 +30,14 @@ const base = {
 const wrap = (...items: object[]) => ({ promotions: items });
 
 describe('schema', () => {
-  it('el JSON entregado valida y toda promo semilla esta marcada placeholder', () => {
-    expect(PROMOTIONS.length).toBeGreaterThan(0);
-    expect(PROMOTIONS.every((p) => p.placeholder)).toBe(true);
+  it('el JSON entregado valida: 3 flyers oficiales (no placeholder), sin precio anterior', () => {
+    expect(PROMOTIONS.map((p) => [p.title, p.ahora])).toEqual([
+      ['Puerta Aquaclara', 222],
+      ['Puerta corrediza con vidrio nevado', 290],
+      ['Modelo Aquafold', 279.99],
+    ]);
+    expect(PROMOTIONS.every((p) => !p.placeholder && p.antes === null && p.rules.length > 0)).toBe(true);
+    expect(PROMOTIONS.every((p) => p.desde === '2026-10-01' && p.hasta === '2026-10-31')).toBe(true);
   });
   it('mapea snake_case a modelo de UI', () => {
     const [p] = parsePromotions(wrap(base));
@@ -122,5 +128,58 @@ describe('formato y tope', () => {
   it('la landing muestra como maximo 3 promos vigentes (decision 2026-09-30)', () => {
     expect(MAX_PROMOS).toBe(3);
     expect(getActivePromotions(new Date('2026-09-30T18:00:00Z')).length).toBeLessThanOrEqual(3);
+  });
+
+  it('cotizador_params.vidrio: valida y se mapea', () => {
+    const [p] = parsePromotions({ promotions: [{ ...base, cotizador_params: { vidrio: 'nevado' } }] }, () => true);
+    expect(p.cotizadorParams).toEqual({ vidrio: 'nevado' });
+    expect(() => parsePromotions({ promotions: [{ ...base, cotizador_params: { vidrio: 'rosa' } }] }, () => true)).toThrow(/vidrio/);
+  });
+
+  it('cotizador_params.color: valida (natural/blanco/bronce) y se mapea junto al vidrio', () => {
+    for (const color of ['natural', 'blanco', 'bronce']) {
+      const [p] = parsePromotions(wrap({ ...base, cotizador_params: { color, vidrio: 'claro' } }));
+      expect(p.cotizadorParams).toEqual({ color, vidrio: 'claro' });
+    }
+    const [soloColor] = parsePromotions(wrap({ ...base, cotizador_params: { color: 'bronce' } }));
+    expect(soloColor.cotizadorParams).toEqual({ color: 'bronce' });
+  });
+
+  it('cotizador_params.color: rechaza colores desconocidos o que no son texto', () => {
+    for (const color of ['fucsia', '', 'Natural', 7, null]) {
+      const item = { ...base, cotizador_params: { color, vidrio: 'claro' } };
+      expect(() => parsePromotions(wrap(item)), String(color)).toThrow(/cotizador_params.color/);
+    }
+  });
+
+  it('cotizador_params ausente o vacio no genera cotizadorParams', () => {
+    expect(parsePromotions(wrap(base))[0].cotizadorParams).toBeUndefined();
+    expect(parsePromotions(wrap({ ...base, cotizador_params: {} }))[0].cotizadorParams).toBeUndefined();
+  });
+});
+
+describe('promoHref (contrato del inicio: producto -> paso -> color -> vidrio)', () => {
+  it('el seed: las 3 promos caen en Medidas con recta + natural + su vidrio', () => {
+    expect(PROMOTIONS.map((p) => [p.id, promoHref(p)])).toEqual([
+      ['promo-puerta-aquaclara', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro'],
+      ['promo-corrediza-nevado', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado'],
+      ['promo-aquafold', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold'],
+    ]);
+  });
+  it('orden de parametros estable aunque el JSON liste vidrio antes que color', () => {
+    const [p] = parsePromotions(wrap({ ...base, cotizador_params: { vidrio: 'nevado', color: 'bronce' } }));
+    expect(promoHref(p)).toBe('/cotizador?producto=recta&paso=medidas&color=bronce&vidrio=nevado');
+  });
+  it('solo vidrio o solo color: omite el parametro que falta', () => {
+    expect(promoHref({ productSlug: 'recta', cotizadorParams: { vidrio: 'duplex' } })).toBe(
+      '/cotizador?producto=recta&paso=medidas&vidrio=duplex',
+    );
+    expect(promoHref({ productSlug: 'recta', cotizadorParams: { color: 'blanco' } })).toBe(
+      '/cotizador?producto=recta&paso=medidas&color=blanco',
+    );
+  });
+  it('sin parametros conserva el enlace previo (?producto=<slug>)', () => {
+    expect(promoHref({ productSlug: 'recta' })).toBe('/cotizador?producto=recta');
+    expect(promoHref({ productSlug: 'recta', cotizadorParams: {} })).toBe('/cotizador?producto=recta');
   });
 });

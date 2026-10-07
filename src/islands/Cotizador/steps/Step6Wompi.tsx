@@ -8,6 +8,7 @@ import {
 import { getWompiMode } from '@integrations/wompi/config';
 import { mockCreateWompiPayment } from '@integrations/wompi/mock';
 import { buildOrderItems } from '../state/order';
+import { amountToChargeNow } from '../state/payable';
 import type { CotizadorAction, CotizadorState } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
 import { IconSpinner } from '../icons-checkout';
@@ -17,7 +18,11 @@ export interface Step6WompiProps {
   state: CotizadorState;
   quote: QuoteResult;
   zoneFee: number | undefined;
+  /** Already discounted (10% online card) when `onlineDiscount` > 0. */
   total: number | null;
+  onlineDiscount: number;
+  /** Distrito sin tarifa: `total` no incluye envio. */
+  shippingPending: boolean;
   dispatch: Dispatch<CotizadorAction>;
   // Optional — advances to Resultado once the mock payment resolves. Not
   // wired by Cotizador.tsx yet (see HANDOFF to sf-cot-shell).
@@ -38,6 +43,8 @@ export default function Step6Wompi({
   state,
   quote,
   total,
+  onlineDiscount,
+  shippingPending,
   dispatch,
   onNext,
 }: Step6WompiProps): ReactElement {
@@ -45,8 +52,7 @@ export default function Step6Wompi({
   const [error, setError] = useState<string | null>(null);
   const subtotal = quote.amount ?? 0;
   const grandTotal = total ?? subtotal;
-  const anticipo = Math.round(grandTotal * 80) / 100;
-  const amount = state.payAmountPct === 80 ? anticipo : grandTotal;
+  const amount = amountToChargeNow(grandTotal, state.payAmountPct === 80 ? 80 : 100);
 
   useEffect(() => {
     if (started.current) return;
@@ -67,12 +73,20 @@ export default function Step6Wompi({
         name: `${it.name} · ${it.detail}`,
         subtotal: it.subtotal,
       }));
-      void createWompiPaymentLink({ pct, total: grandTotal, items })
+      // total = discounted total; items stay undiscounted so the server can check sum - discount + transport.
+      void createWompiPaymentLink({
+        pct,
+        total: grandTotal,
+        items,
+        ...(onlineDiscount > 0 ? { discount: { code: 'online_card_10' as const, amount: onlineDiscount } } : {}),
+        ...(shippingPending ? { shippingPending: true } : {}),
+      })
         .then((link) => {
           savePendingPayment({
             reference: link.reference,
             pct,
             zone: state.zone,
+            address: state.address,
             entrega: state.entrega,
           });
           window.location.assign(link.urlEnlace);

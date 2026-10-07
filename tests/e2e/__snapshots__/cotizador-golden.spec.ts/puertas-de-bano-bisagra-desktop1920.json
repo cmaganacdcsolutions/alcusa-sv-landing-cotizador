@@ -1,0 +1,113 @@
+{
+  "leaf": "puertas-de-bano/bisagra",
+  "thumb": "/images/renders/bisagra-800.webp",
+  "step2Image": "/images/renders/bisagra-bronce-duplex-800.webp",
+  "step2Alt": "Puerta con bisagra",
+  "rows": [
+    {
+      "color": "natural",
+      "glass": "nevado",
+      "price": "$311.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Nevado 5 mm"
+    },
+    {
+      "color": "natural",
+      "glass": "claro",
+      "price": "$270.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "natural",
+      "glass": "decorado",
+      "price": "$345.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Decorado"
+    },
+    {
+      "color": "natural",
+      "glass": "mallado",
+      "price": "$343.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Mallado"
+    },
+    {
+      "color": "natural",
+      "glass": "duplex",
+      "price": "$339.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Dúplex"
+    },
+    {
+      "color": "blanco",
+      "glass": "nevado",
+      "price": "$336.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Nevado 5 mm"
+    },
+    {
+      "color": "blanco",
+      "glass": "claro",
+      "price": "$291.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "blanco",
+      "glass": "decorado",
+      "price": "$366.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Decorado"
+    },
+    {
+      "color": "blanco",
+      "glass": "mallado",
+      "price": "$395.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Mallado"
+    },
+    {
+      "color": "blanco",
+      "glass": "duplex",
+      "price": "$419.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Dúplex"
+    },
+    {
+      "color": "bronce",
+      "glass": "nevado",
+      "price": "$336.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Nevado 5 mm"
+    },
+    {
+      "color": "bronce",
+      "glass": "claro",
+      "price": "$291.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "bronce",
+      "glass": "decorado",
+      "price": "$366.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Decorado"
+    },
+    {
+      "color": "bronce",
+      "glass": "mallado",
+      "price": "$395.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Mallado"
+    },
+    {
+      "color": "bronce",
+      "glass": "duplex",
+      "price": "$419.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Dúplex"
+    }
+  ]
+}

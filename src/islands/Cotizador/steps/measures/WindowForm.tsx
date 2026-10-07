@@ -1,18 +1,18 @@
 import { useState, type ReactElement } from 'react';
-import type { AluminumColor, WindowGlass, WindowModel } from '@engine/pricing';
+import type { WindowModel } from '@engine/pricing';
 import { COLOR_LABELS, type CotizadorAction, type CotizadorState } from '../../state/cotizadorStore';
 import { WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from '../../state/labels';
 import { computeWindowQuote } from '../../state/quoteWindowGarden';
 import { IconArrowRight, IconCheck, IconWarningTriangle, IconWindow } from '../../icons';
-import { WINDOW_MODEL_IMAGES, type WindowModelImage } from './windowModelImages';
+import { modelImage, type WindowModelImage } from './windowModelImages';
+import { ColorSwatch, WindowGlassSwatch } from './glassSwatches';
+import { WINDOW_FRAMES, WINDOW_GLASSES } from './finishOptions';
 
 const MODELS: WindowModel[] = ['francesa', 'bilbao'];
 // S7 — re-exported so existing `from './measures/WindowForm'` imports keep
 // working; the label map itself now lives in state/labels.ts (see comment there).
 export { WINDOW_MODEL_LABELS };
 
-const FRAMES: AluminumColor[] = ['blanco', 'bronce', 'natural'];
-const GLASSES: WindowGlass[] = ['claro', 'bronce', 'super_gris', 'reflectivo_azul', 'reflectivo_bronce'];
 // Re-exported for existing importers (state/labels.ts is the source of truth
 // now — sf-cot-polish item 5).
 export { WINDOW_GLASS_LABELS };
@@ -44,7 +44,6 @@ function ModelCardImage({ image }: { image: WindowModelImage | undefined }): Rea
       sizes="(min-width: 1024px) 240px, 45vw"
       alt=""
       className="model-card__image"
-      style={{ objectPosition: image.objectPosition }}
       onError={() => setFailed(true)}
     />
   );
@@ -79,6 +78,8 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
         <div className="model-grid" role="group" aria-label="Modelo">
           {MODELS.map((m) => {
             const selected = state.windowModel === m;
+            // Cada tarjeta muestra su modelo con el marco y el vidrio que el cliente tiene elegidos.
+            const model = modelImage(m, { color: state.windowFrame, vidrio: state.windowGlass });
             return (
               <button
                 key={m}
@@ -88,7 +89,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
                 onClick={() => dispatch({ type: 'SET_WINDOW_MODEL', model: m })}
               >
                 <span className="model-card__image-wrap">
-                  <ModelCardImage image={WINDOW_MODEL_IMAGES[m]} />
+                  <ModelCardImage key={model.src} image={model} />
                   {selected && (
                     <span className="model-card__check">
                       <IconCheck size={14} strokeWidth={2.5} />
@@ -166,7 +167,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color del marco</span>
         <div className="chip-row" role="group" aria-label="Color del marco">
-          {FRAMES.map((f) => (
+          {WINDOW_FRAMES.map((f) => (
             <button
               key={f}
               type="button"
@@ -174,6 +175,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
               aria-pressed={state.windowFrame === f}
               onClick={() => dispatch({ type: 'SET_WINDOW_FRAME', frame: f })}
             >
+              <ColorSwatch color={f} />
               {COLOR_LABELS[f]}
               {f === 'natural' && <span className="chip__badge">Cotización personalizada</span>}
             </button>
@@ -184,7 +186,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Tipo de vidrio</span>
         <div className="chip-row" role="group" aria-label="Tipo de vidrio">
-          {GLASSES.map((g) => (
+          {WINDOW_GLASSES.map((g) => (
             <button
               key={g}
               type="button"
@@ -192,6 +194,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
               aria-pressed={state.windowGlass === g}
               onClick={() => dispatch({ type: 'SET_WINDOW_GLASS', glass: g })}
             >
+              <WindowGlassSwatch glass={g} />
               {WINDOW_GLASS_LABELS[g]}
               {g === 'reflectivo_bronce' && <span className="chip__badge">Cotización personalizada</span>}
             </button>

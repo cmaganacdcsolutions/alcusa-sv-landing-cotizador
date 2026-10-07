@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, pickProduct, test } from './fixtures';
+import { fillAddress } from '../support/address';
 
 // R4 — "Enviar por WhatsApp (PDF)". Never opens a real wa.me: window.open is
 // stubbed and only hrefs / call records are asserted (ADR-006).
@@ -49,7 +50,7 @@ async function gotoResumen(page: Page): Promise<void> {
   await pickProduct(page, 'recta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.locator('#municipio').selectOption('Soyapango');
+  await fillAddress(page, 'Soyapango');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
 }

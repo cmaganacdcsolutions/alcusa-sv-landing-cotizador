@@ -9,3 +9,4 @@ export * from './hinged';
 export * from './windows';
 export * from './garden';
 export * from './zoneFee';
+export * from './onlineDiscount';

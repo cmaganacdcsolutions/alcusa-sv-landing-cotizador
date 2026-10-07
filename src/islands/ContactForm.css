@@ -8,7 +8,8 @@
   padding: var(--space-6) var(--space-5);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  box-shadow: 0 8px 20px rgba(16, 33, 61, 0.1);
+  color: var(--color-ink); /* tarjeta clara sobre azul noche: el body hereda texto claro */
+  box-shadow: var(--shadow-md);
 }
 
 .contact-form__intro {
@@ -152,10 +153,6 @@
   color: var(--color-surface);
 }
 
-.contact-form__submit:hover {
-  background: var(--color-whatsapp-strong-hover);
-}
-
 /* ios-08/android-08 ~L87: the disabled state is a plain centered-text
    button with no icon on mobile; desktop-08 ~L132 keeps the icon + pill
    layout (restored at 1024 below). */
@@ -222,7 +219,7 @@
 @media (min-width: 1024px) {
   .contact-form {
     position: sticky;
-    top: var(--space-6);
+    top: calc(var(--nav-h-top-lg) + var(--space-6));
     padding: var(--space-10);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-xl);
@@ -320,5 +317,28 @@
     font-size: 0.9375rem;
     line-height: var(--font-line-height-body);
     padding-top: var(--space-4-5);
+  }
+}
+
+/* Hover como el del navbar: relleno suave, sin elevacion ni sombra; el deshabilitado no reacciona. */
+@media (hover: hover) and (pointer: fine) {
+  .contact-form__submit,
+  .contact-form__quote-note a {
+    transition:
+      background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      border-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+  }
+  .contact-form__submit:hover:not(.contact-form__submit--disabled):not(:disabled) {
+    background: var(--color-whatsapp-strong-hover);
+  }
+  .contact-form__quote-note a:hover {
+    color: var(--color-primary);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-form__submit,
+  .contact-form__quote-note a {
+    transition: none;
   }
 }

@@ -202,7 +202,9 @@ export interface QuoteFolioRequest {
   delivery: { mode: 'pickup' | 'delivery'; zone?: string; address?: string }; // FE: retiro->pickup, instalacion->delivery
   items: QuoteFolioItem[];          // 1..30
   transportFee: Money;
-  total: Money;                     // sum(lineTotal) + transportFee
+  shippingPending?: boolean;        // 2026-10-06: distrito sin tarifa automatica; transportFee = 0, Alcusa confirma el envio por WhatsApp (solo con delivery)
+  discount?: { code: 'online_card_10'; amount: Money }; // 2026-10-06: 10% pagando con tarjeta; el servidor lo RECALCULA (10% de sum(lineTotal), +-0.01)
+  total: Money;                     // sum(lineTotal) - (discount?.amount ?? 0) + transportFee
   consent: true;                    // casilla marcada por el usuario; nunca por defecto
   privacyNoticeVersion: string;     // p. ej. '2026-10-v1'; el servidor la valida contra las vigentes
   hp: string;                       // honeypot, siempre ''
@@ -216,6 +218,7 @@ export interface QuoteFolioResponse {   // 201 nuevo | 200 misma idempotencyKey 
 
 export type QuoteFolioErrorCode =
   | 'invalid_request'       // 422 forma/tipos/sumas
+  | 'invalid_discount'      // 422 (2026-10-06) codigo desconocido o monto distinto al 10% recalculado (fields: discount.code | discount.amount)
   | 'invalid_customer'      // 422 nombre o WhatsApp
   | 'consent_required'      // 422
   | 'idempotency_conflict'  // 409 misma clave, carrito distinto

@@ -3,11 +3,15 @@ import { createPortal } from 'react-dom';
 import { CATALOG_PRODUCTS, type CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
+import { distritoName, formatAddressLine, formatAddressForMessage, isAddressComplete } from '../../../lib/delivery-address';
 import { snapshotCartItem, type CotizadorState } from '../state/cotizadorStore';
 import { buildOrderMessageItems, orderItemsSubtotal, type OrderLineItem } from '../state/order';
+import { depositOf, formatDiscount } from '../state/payable';
+import { ONLINE_DISCOUNT_LABEL, type PayOffer } from '../state/payOffer';
+import OnlineDiscountPreview from './OnlineDiscountPreview';
 import { IconArrowRight, IconPlus, IconWarningTriangle } from '../icons';
 import { IconEdit, IconLocationPin, IconTrash } from '../icons-checkout';
-import { PRODUCT_IMAGES } from './productImages';
+import { estimateImage, type ImageSelection } from './productImages';
 import QuoteChangeNotice from './quote/QuoteChangeNotice';
 import PhotoFrame from '../../../components/PhotoFrame';
 import { useQuoteShare } from '../share/useQuoteShare';
@@ -25,6 +29,12 @@ export interface Step4ResumenProps {
   items: OrderLineItem[];
   zoneFee: number | undefined;
   total: number | null;
+  /** 10% online-card discount already subtracted from `total` (0 until the customer chose card in Step5). */
+  onlineDiscount: number;
+  /** 'preview' = "Pagando con tarjeta en línea: $X (−10%)" while the discount is not applied; null otherwise. */
+  payOffer: PayOffer | null;
+  /** Distrito sin tarifa: el envio no esta sumado en `total`, se confirma por WhatsApp. */
+  shippingPending: boolean;
   onNext: () => void;
   // Renders as a real "Cambiar" link/button either way; a no-op if omitted.
   onEditZone?: () => void;
@@ -68,6 +78,9 @@ export default function Step4Resumen({
   items,
   zoneFee,
   total,
+  onlineDiscount,
+  payOffer,
+  shippingPending,
   onNext,
   onEditZone,
   onAddAnother,
@@ -81,17 +94,33 @@ export default function Step4Resumen({
   const entregaLabel: 'con instalación' | 'retiro en tienda' =
     state.entrega === 'instalacion' ? 'con instalación' : 'retiro en tienda';
   const zona = state.entrega === 'instalacion' ? state.zone : '—';
+  // Miniatura por fila: el item en curso (`id: 'current'`) toma su color/vidrio del estado vivo; los del carrito, de su snapshot.
+  const selectionOf = (item: OrderLineItem): ImageSelection =>
+    (item.id === 'current' ? state : state.cart.find((c) => c.id === item.id)) ?? {};
   const transporte = zoneFee ?? 0;
   const subtotal = orderItemsSubtotal(items);
   const anyRequiresQuote = items.some((i) => i.requiresQuote);
   const grandTotal = total ?? subtotal;
-  const anticipo = Math.round(grandTotal * 80) / 100;
+  const anticipo = depositOf(grandTotal);
   const saldo = grandTotal - anticipo;
+  // WhatsApp / PDF-fallback text is the non-card path: never discounted.
+  const waTotal = Math.round((grandTotal + onlineDiscount) * 100) / 100;
+  const waAnticipo = depositOf(waTotal);
+  const waSaldo = Math.round((waTotal - waAnticipo) * 100) / 100;
   const countText = `${items.length} ${items.length === 1 ? 'producto' : 'productos'}`;
 
+  const direccionMsg = state.entrega === 'instalacion' && isAddressComplete(state.address) ? formatAddressForMessage(state.address) : '';
   const waMsgItems = buildOrderMessageItems(state, CATALOG_PRODUCTS, { zona, entrega: entregaLabel });
   const waHref = buildWaLink(
-    buildQuoteMessage({ items: waMsgItems, transporte, total: grandTotal, anticipo, saldo }),
+    buildQuoteMessage({
+      items: waMsgItems,
+      transporte,
+      total: waTotal,
+      anticipo: waAnticipo,
+      saldo: waSaldo,
+      ...(shippingPending ? { shippingPending: true } : {}),
+      ...(direccionMsg ? { direccion: direccionMsg } : {}),
+    }),
   );
 
   // R4 — PDF + WhatsApp share (ios/android/desktop-r07). `waHref` stays as the
@@ -107,8 +136,12 @@ export default function Step4Resumen({
     configs,
     entrega: state.entrega === 'instalacion' ? 'instalacion' : 'retiro',
     zone: state.zone,
+    ...(direccionMsg ? { address: formatAddressLine(state.address) } : {}),
     transport: transporte,
     total: grandTotal,
+    // Folio WITHOUT the card discount unless the customer already chose card in Step5.
+    ...(shippingPending ? { shippingPending: true } : {}),
+    ...(onlineDiscount > 0 ? { discount: { code: 'online_card_10' as const, amount: onlineDiscount } } : {}),
   });
 
   function handleAddAnother(): void {
@@ -156,17 +189,23 @@ export default function Step4Resumen({
           {entregaLabel === 'con instalación' && (
             <p className="summary-card__zone">
               <IconLocationPin />
-              Zona: {state.zone} · con instalación
+              Zona: {state.zone || distritoName(state.address)} · con instalación
               <button type="button" className="summary-card__zone-change" onClick={onEditZone}>
                 Cambiar
               </button>
+            </p>
+          )}
+          {entregaLabel === 'con instalación' && isAddressComplete(state.address) && (
+            <p className="summary-card__address" data-testid="resumen-address">
+              {formatAddressLine(state.address)} · Tel: {state.address.telefono}
+              {state.address.geo ? ' · Ubicación guardada' : ''}
             </p>
           )}
         </div>
 
         {items.map((item) => (
           <article className="summary-item" key={item.id}>
-            <PhotoFrame src={PRODUCT_IMAGES[item.productId]} alt="" ratio="1/1" loading="eager" className="summary-item__thumb" />
+            <PhotoFrame src={estimateImage(item.productId, selectionOf(item))} alt="" ratio="1/1" loading="eager" className="summary-item__thumb" />
             <div className="summary-item__meta">
               <span className="summary-item__name">{item.name}</span>
               <span className="summary-item__detail">{item.detail}</span>
@@ -230,11 +269,21 @@ export default function Step4Resumen({
             <dd>${subtotal.toFixed(2)}</dd>
           </div>
           <div className="breakdown__row">
-            <dt>Transporte{state.entrega === 'instalacion' ? ` · ${state.zone}` : ''}</dt>
-            <dd>${transporte.toFixed(2)}</dd>
+            <dt>
+              {shippingPending
+                ? 'Envío'
+                : `Transporte${state.entrega === 'instalacion' ? ` · ${state.zone}` : ''}`}
+            </dt>
+            <dd>{shippingPending ? 'Por confirmar' : `$${transporte.toFixed(2)}`}</dd>
           </div>
+          {onlineDiscount > 0 && (
+            <div className="breakdown__row" data-testid="resumen-discount-row">
+              <dt>{ONLINE_DISCOUNT_LABEL}</dt>
+              <dd data-testid="resumen-discount-value">{formatDiscount(onlineDiscount)}</dd>
+            </div>
+          )}
           <div className="breakdown__row breakdown__row--total">
-            <dt>Total</dt>
+            <dt>{shippingPending ? 'Total productos' : 'Total'}</dt>
             <dd data-testid="resumen-total-value">${grandTotal.toFixed(2)}</dd>
           </div>
           <div className="breakdown__row">
@@ -250,11 +299,17 @@ export default function Step4Resumen({
             <dd>8–10 días hábiles</dd>
           </div>
         </dl>
+        <OnlineDiscountPreview offer={payOffer} />
+        {onlineDiscount > 0 && (
+          <p className="online-discount-wa-note" data-testid="resumen-whatsapp-note">
+            {`Por WhatsApp ${shippingPending ? 'el total de productos' : 'el total'} es $${waTotal.toFixed(2)}: el 10% aplica solo pagando con tarjeta en línea.`}
+          </p>
+        )}
       </div>
 
       <QuoteShareNotices share={share} textOnlyHref={waHref} variant="main" />
       <QuoteShareToast share={share} />
-      <CustomerDialog share={share} />
+      <CustomerDialog share={share} prefillWhatsapp={state.entrega === 'instalacion' ? state.address.telefono : undefined} />
       <div className="bottom-bar cotizador__mobile-only-ctas">{ctas}</div>
       {asideCtaTarget && createPortal(ctas, asideCtaTarget)}
     </section>

@@ -1,0 +1,88 @@
+---
+// Seccion de catalogo por categoria (spec home-catalogo-completo §2-§3). Datos: CATEGORIES + contenido.
+import type { Category } from '@content/catalog';
+import { MORE_OPTIONS_GROUP } from '@content/catalogView';
+import { CATEGORY_CONTENT } from '@content/catalogContent';
+import ProductCard from './ProductCard.astro';
+
+interface Props {
+  category: Category;
+  /** Marca la primera tarjeta de la pagina como LCP. */
+  firstOfPage?: boolean;
+}
+const { category, firstOfPage = false } = Astro.props;
+const main = category.subcategories.filter((s) => s.group !== MORE_OPTIONS_GROUP);
+const headingId = `${category.slug}-t`;
+const lead = CATEGORY_CONTENT[category.slug]?.blurb ?? category.blurb;
+---
+
+<section id={category.slug} class="csec" aria-labelledby={headingId}>
+  <header class="csec__head" data-reveal>
+    <h2 id={headingId} class="csec__title" tabindex="-1">{category.name}</h2>
+    {lead && <p class="csec__lead">{lead}</p>}
+  </header>
+  <div class="csec__grid">
+    {main.map((sub, i) => <ProductCard sub={sub} first={firstOfPage && i === 0} />)}
+  </div>
+</section>
+
+<style is:global>
+  .csec {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4) 0;
+    /* Sin content-visibility:auto: una seccion con el render saltado deja geometria vieja a sus tarjetas y axe las toma
+       como fondo de las tarjetas translucidas de Confianza (falso contraste 3.58:1 a 390 px en el a11y de home). */
+  }
+  .csec__head {
+    display: grid;
+    gap: var(--space-1);
+    margin-bottom: var(--space-4);
+  }
+  .csec__title {
+    margin: 0;
+    font-size: 26px;
+    line-height: 32px;
+    font-weight: var(--font-weight-display-bold);
+    color: var(--color-text-on-dark);
+  }
+  .csec__title:focus {
+    outline: none;
+  }
+  .csec__lead {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--color-text-on-dark-muted);
+  }
+  .csec__grid {
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 768px) {
+    .csec {
+      padding: var(--space-10) var(--space-6) 0;
+    }
+    .csec__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+  }
+  @media (min-width: 1024px) {
+    .csec {
+      padding: var(--space-12) var(--space-8) 0;
+    }
+    .csec__title {
+      font-size: 32px;
+      line-height: 40px;
+    }
+    .csec__lead {
+      font-size: 16px;
+      line-height: 24px;
+    }
+    .csec__grid {
+      gap: var(--space-6);
+    }
+  }
+</style>

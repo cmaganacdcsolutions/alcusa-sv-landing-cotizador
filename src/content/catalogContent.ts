@@ -1,18 +1,25 @@
 // Catalog presentation data (R2). The MODEL (slugs, prices, presets) lives in
-// catalog.ts; this file holds everything ALCUSA will send later: photos, alt
-// text, descriptions, specs. Loading real data = editing ONLY this file (and
-// dropping the files in public/). No page or component changes.
-//
-// Every value that is a stand-in is named in `pending`; `validateCatalogContent`
-// fails the build when the data contradicts itself (see catalogContent.test.ts).
+// catalog.ts; this file holds copy (titles, blurbs, descriptions, specs).
+// 2026-10-06: Alcusa-supplied photos are NO LONGER referenced here; every image of the
+// home comes from the professional renders mapped in home-media.ts. `images` stays
+// empty and `pending: [photo]` until/unless a real photo is loaded.
+// Stand-in values are named in `pending`; `validateCatalogContent` fails the build
+// when the data contradicts itself (see catalogContent.test.ts).
 
 export type PendingField = 'photo' | 'description' | 'specs' | 'price';
 
 export interface CatalogImage {
-  /** Absolute public path, e.g. `/images/catalog-l.jpeg`. */
+  /** Absolute public path, e.g. `/images/renders/en-l.webp`. */
   src: string;
   /** Descriptive alt text (required by the a11y rule). */
   alt: string;
+  /** `render` = estudio 4:3 (cover, sin capa blur); `photo` (por defecto) = foto real (contain + ambiente). */
+  kind?: 'render' | 'photo';
+  /** Intrinsic pixel size of `src` (reserves space, avoids layout shift). */
+  width: number;
+  height: number;
+  /** Focal point (CSS object-position) for tall photos shown cropped in galleries. */
+  objectPosition?: string;
 }
 
 export interface SpecRow {
@@ -33,6 +40,8 @@ export interface CatalogContent {
   description?: string;
   /** Empty => the "FOTO PRÓXIMAMENTE" placeholder renders. */
   images: readonly CatalogImage[];
+  /** Extra photos shown in a gallery below the main block (never the primary image). */
+  gallery?: readonly CatalogImage[];
   /** Rendered only when non-empty. */
   specs?: readonly SpecRow[];
   /** Stand-in values awaiting ALCUSA. Drives DATOS A CARGAR and tests. */
@@ -44,21 +53,24 @@ const EMPTY: CatalogContent = { images: [], pending: ['photo', 'description'] };
 export const CATEGORY_CONTENT: Readonly<Record<string, CatalogContent>> = {
   'puertas-de-bano': {
     blurb: 'Vidrio templado, rectas, en L y de bisagra.',
-    description: 'Cuatro modelos fabricados a tu medida. Elige uno para ver el detalle o cotizarlo.',
-    images: [{ src: '/images/catalog-recta.jpg', alt: 'Puerta de baño recta corrediza' }],
-    pending: ['description'],
+    description:
+      'Cuatro modelos fabricados a tu medida. Elige uno para ver el detalle o cotizarlo.',
+    images: [],
+    pending: ['photo', 'description'],
   },
   'puertas-de-jardin': {
-    blurb: 'Corredizas de una, dos y tres hojas, y más opciones.',
-    description: 'Corredizas de una, dos y tres hojas, y combinaciones con paneles fijos.',
-    images: [{ src: '/images/catalog-jardin.webp', alt: 'Puerta de jardín corrediza de tres hojas' }],
-    pending: ['description'],
+    blurb: 'Corredizas de una, dos y tres hojas.',
+    description:
+      'Corredizas de una, dos y tres hojas, y combinaciones con paneles fijos.',
+    images: [],
+    pending: ['photo', 'description'],
   },
   ventanas: {
     blurb: 'Francesa y Bilbao, a tu medida.',
-    description: 'Francesa y Bilbao, fabricadas a tu medida. Elige una para ver el detalle o cotizarla.',
-    images: [{ src: '/images/catalog-ventana.jpeg', alt: 'Ventanas francesas con perfil negro' }],
-    pending: ['description'],
+    description:
+      'Francesa y Bilbao, fabricadas a tu medida. Elige una para ver el detalle o cotizarla.',
+    images: [],
+    pending: ['photo', 'description'],
   },
 };
 
@@ -66,35 +78,51 @@ export const ITEM_CONTENT: Readonly<Record<string, CatalogContent>> = {
   'templada-10mm': {
     cardTitle: 'Templada 10 mm',
     chip: 'Templada 10 mm',
-    description: 'Puerta de vidrio templado de 10 mm, fabricada a tu medida, con alto fijo de 2.00 m.',
-    images: [{ src: '/images/catalog-templado.jpeg', alt: 'Puerta de vidrio templado de 10 mm' }],
-    pending: ['description'],
+    description:
+      'Puerta de vidrio templado de 10 mm, fabricada a tu medida, con alto fijo de 2.00 m.',
+    images: [],
+    pending: ['photo', 'description'],
   },
   recta: {
     cardTitle: 'Rectas',
     chip: 'Rectas',
-    description: 'Puerta de baño recta corrediza, fabricada a tu medida, con perfil de aluminio y el vidrio que elijas.',
-    images: [{ src: '/images/catalog-recta.jpg', alt: 'Puerta de baño recta corrediza' }],
-    pending: ['description'],
+    description:
+      'Puerta de baño recta corrediza, fabricada a tu medida, con perfil de aluminio y el vidrio que elijas.',
+    images: [],
+    pending: ['photo', 'description'],
   },
   'en-l': {
     cardTitle: 'En L',
     detailTitle: 'Puerta en L',
     chip: 'En L',
-    description: 'Cabina en L fabricada a tu medida, con perfil de aluminio y el vidrio que elijas.',
-    images: [{ src: '/images/catalog-l.jpeg', alt: 'Cabina de baño en L con perfil negro' }],
-    pending: ['description'],
+    description:
+      'Cabina en L fabricada a tu medida, con perfil de aluminio y el vidrio que elijas.',
+    images: [],
+    pending: ['photo', 'description'],
   },
   // Finishes of "En L": no own photo yet, the detail keeps the parent's photo.
-  'l-aquaclara': { chip: 'Aquaclara', images: [], pending: ['photo', 'description'] },
-  'l-frosted': { chip: 'Frosted', images: [], pending: ['photo', 'description'] },
-  'l-aquafold': { chip: 'Aquafold', images: [], pending: ['photo', 'description'] },
+  'l-aquaclara': {
+    chip: 'Aquaclara',
+    images: [],
+    pending: ['photo', 'description'],
+  },
+  'l-frosted': {
+    chip: 'Frosted',
+    images: [],
+    pending: ['photo', 'description'],
+  },
+  'l-aquafold': {
+    chip: 'Aquafold',
+    images: [],
+    pending: ['photo', 'description'],
+  },
   bisagra: {
     cardTitle: 'De bisagra',
     chip: 'De bisagra',
-    description: 'Puerta de baño con bisagra, fabricada a tu medida, con alto fijo de 1.85 m.',
-    images: [{ src: '/images/catalog-bisagra.jpeg', alt: 'Puerta de baño con bisagra' }],
-    pending: ['description'],
+    description:
+      'Puerta de baño con bisagra, fabricada a tu medida, con alto fijo de 1.85 m.',
+    images: [],
+    pending: ['photo', 'description'],
   },
   'jardin-1-hoja': {
     chip: '1 hoja',
@@ -111,32 +139,34 @@ export const ITEM_CONTENT: Readonly<Record<string, CatalogContent>> = {
   'jardin-3-hojas': {
     chip: '3 hojas',
     description: 'Puerta corrediza de tres hojas, fabricada a tu medida.',
-    images: [{ src: '/images/catalog-jardin.webp', alt: 'Puerta de jardín corrediza de tres hojas' }],
-    pending: ['description'],
+    images: [],
+    pending: ['photo', 'description'],
   },
   'jardin-2-fijas-2-corredizas': {
     chip: 'Más opciones',
-    description: 'Una combinación a medida para tu jardín. Un asesor te prepara la cotización.',
+    description:
+      'Una combinación a medida para tu jardín. Un asesor te prepara la cotización.',
     images: [],
     pending: ['photo'],
   },
   'jardin-1-fijo-3-corredizas': {
     chip: 'Más opciones',
-    description: 'Una combinación a medida para tu jardín. Un asesor te prepara la cotización.',
+    description:
+      'Una combinación a medida para tu jardín. Un asesor te prepara la cotización.',
     images: [],
     pending: ['photo', 'description'],
   },
   'ventana-francesa': {
     chip: 'Francesa',
     description: 'Ventana francesa de aluminio, fabricada a tu medida.',
-    images: [{ src: '/images/catalog-ventana.jpeg', alt: 'Ventanas francesas con perfil negro' }],
-    pending: ['description'],
+    images: [],
+    pending: ['photo', 'description'],
   },
   'ventana-bilbao': {
     chip: 'Bilbao',
     description: 'Ventana Bilbao de aluminio, fabricada a tu medida.',
-    images: [{ src: '/images/hero-ventana-bilbao-800.webp', alt: 'Ventana Bilbao de aluminio' }],
-    pending: ['description'],
+    images: [],
+    pending: ['photo', 'description'],
   },
 };
 
@@ -156,7 +186,10 @@ export interface ContentIssue {
  */
 export function validateCatalogContent(
   slugs: readonly string[],
-  content: Readonly<Record<string, CatalogContent>> = { ...CATEGORY_CONTENT, ...ITEM_CONTENT },
+  content: Readonly<Record<string, CatalogContent>> = {
+    ...CATEGORY_CONTENT,
+    ...ITEM_CONTENT,
+  },
   exists?: (publicPath: string) => boolean,
 ): ContentIssue[] {
   const issues: ContentIssue[] = [];
@@ -172,10 +205,15 @@ export function validateCatalogContent(
     if (c.images.length > 0 && c.pending.includes('photo')) {
       issues.push({ slug, problem: 'tiene imagen pero sigue marcado pending:photo' });
     }
-    for (const img of c.images) {
-      if (!img.src.startsWith('/')) issues.push({ slug, problem: `src no absoluto: ${img.src}` });
-      if (img.alt.trim().length < 5) issues.push({ slug, problem: `alt vacío o muy corto: ${img.src}` });
-      if (exists && !exists(img.src)) issues.push({ slug, problem: `archivo inexistente: ${img.src}` });
+    for (const img of [...c.images, ...(c.gallery ?? [])]) {
+      if (!img.src.startsWith('/'))
+        issues.push({ slug, problem: `src no absoluto: ${img.src}` });
+      if (img.alt.trim().length < 5)
+        issues.push({ slug, problem: `alt vacío o muy corto: ${img.src}` });
+      if (!(img.width > 0 && img.height > 0))
+        issues.push({ slug, problem: `sin width/height: ${img.src}` });
+      if (exists && !exists(img.src))
+        issues.push({ slug, problem: `archivo inexistente: ${img.src}` });
     }
     if (!c.description && !c.blurb && !c.pending.includes('description')) {
       issues.push({ slug, problem: 'sin descripción y sin marcar pending:description' });
@@ -183,14 +221,23 @@ export function validateCatalogContent(
   }
   const known = new Set(slugs);
   for (const slug of Object.keys(content)) {
-    if (!known.has(slug)) issues.push({ slug, problem: 'contenido huérfano: el slug no existe en el modelo' });
+    if (!known.has(slug))
+      issues.push({
+        slug,
+        problem: 'contenido huérfano: el slug no existe en el modelo',
+      });
   }
   return issues;
 }
 
-export function assertCatalogContent(slugs: readonly string[], exists?: (publicPath: string) => boolean): void {
+export function assertCatalogContent(
+  slugs: readonly string[],
+  exists?: (publicPath: string) => boolean,
+): void {
   const issues = validateCatalogContent(slugs, undefined, exists);
   if (issues.length > 0) {
-    throw new Error(`catalogContent inválido:\n${issues.map((i) => `- ${i.slug}: ${i.problem}`).join('\n')}`);
+    throw new Error(
+      `catalogContent inválido:\n${issues.map((i) => `- ${i.slug}: ${i.problem}`).join('\n')}`,
+    );
   }
 }

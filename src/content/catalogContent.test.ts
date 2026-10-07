@@ -11,7 +11,6 @@ import {
   validateCatalogContent,
   type CatalogContent,
 } from './catalogContent';
-import { CATALOG_GALLERY } from './catalogGallery';
 import {
   allCatalogSlugs,
   cardTitle,
@@ -35,7 +34,6 @@ describe('catalog content vs model (build-time validation)', () => {
 
   it('every referenced image exists under public/ (no 404 <img>)', () => {
     expect(validateCatalogContent(allCatalogSlugs(), undefined, fileExists)).toEqual([]);
-    for (const g of CATALOG_GALLERY) expect(fileExists(g.src), g.src).toBe(true);
   });
 
   it('assertCatalogContent throws with the offending slug', () => {
@@ -47,8 +45,8 @@ describe('catalog content vs model (build-time validation)', () => {
 
   it('flags contradictions: image + pending:photo, relative src, short alt, orphan', () => {
     const c: Record<string, CatalogContent> = {
-      a: { images: [{ src: '/x.jpg', alt: 'Puerta de prueba' }], pending: ['photo'], description: 'd' },
-      b: { images: [{ src: 'x.jpg', alt: 'ok' }], pending: [], description: 'd' },
+      a: { images: [{ src: '/x.jpg', width: 1, height: 1, alt: 'Puerta de prueba' }], pending: ['photo'], description: 'd' },
+      b: { images: [{ src: 'x.jpg', width: 1, height: 1, alt: 'ok' }], pending: [], description: 'd' },
       zzz: { images: [], pending: ['photo', 'description'] },
     };
     const problems = validateCatalogContent(['a', 'b'], c).map((i) => `${i.slug}:${i.problem}`);
@@ -58,12 +56,15 @@ describe('catalog content vs model (build-time validation)', () => {
     expect(problems.some((p) => p.startsWith('zzz:contenido huérfano'))).toBe(true);
   });
 
-  it('an item without images is a placeholder (primaryImage null, pending:photo)', () => {
-    for (const slug of ['jardin-1-hoja', 'jardin-2-hojas', 'jardin-2-fijas-2-corredizas']) {
+  it('no content entry references an Alcusa photo (renders live in home-media.ts); unknown slugs fall back to the placeholder', () => {
+    for (const slug of ['jardin-1-hoja', 'jardin-2-hojas', 'en-l']) {
       expect(primaryImage(slug)).toBeNull();
       expect(contentFor(slug).pending).toContain('photo');
     }
-    expect(primaryImage('en-l')?.src).toBe('/images/catalog-l.jpeg');
+    const all = JSON.stringify({ ...CATEGORY_CONTENT, ...ITEM_CONTENT });
+    expect(all).not.toMatch(new RegExp("images/(catalog|card-|hero-|galeria|finish-)"));
+    expect(primaryImage('slug-sin-contenido')).toBeNull();
+    expect(contentFor('slug-sin-contenido').pending).toContain('photo');
   });
 
   it('content keys are unique across categories and items', () => {

@@ -1,0 +1,49 @@
+---
+// Extra photos of a category/product, rendered with the shared PhotoCarousel.
+// Renders nothing if empty.
+import PhotoCarousel from '@components/catalog/PhotoCarousel.astro';
+import type { CatalogImage } from '@content/catalogContent';
+
+interface Props {
+  images: readonly CatalogImage[] | undefined;
+  label: string;
+}
+const { images, label } = Astro.props;
+---
+
+{
+  images && images.length > 0 && (
+    <section class="cat-gal" aria-label={label} data-testid="catalogo-galeria">
+      <h2 class="cat-gal__title">{label}</h2>
+      <PhotoCarousel images={images} label={label} />
+    </section>
+  )
+}
+
+<style is:global>
+  /* Un solo envoltorio para todas las instancias (indice, categoria, producto). */
+  .cat-gal {
+    margin: var(--space-8) var(--cat-gutter) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  .cat-gal__title {
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-medium);
+    font-size: 24px; /* TODO(token) */
+    line-height: 1.2;
+    text-align: center;
+  }
+  @media (min-width: 900px) {
+    .cat-gal {
+      margin: var(--space-10) 0 0;
+      gap: var(--space-4);
+    }
+    .cat-gal__title {
+      font-size: 32px; /* TODO(token) */
+    }
+  }
+</style>

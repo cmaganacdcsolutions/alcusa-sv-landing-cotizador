@@ -246,6 +246,7 @@
 
 .summary-card__zone-change {
   min-height: 40px;
+  border-radius: var(--radius-sm);
   display: inline-flex;
   align-items: center;
   padding: 0 4px;
@@ -352,10 +353,6 @@
   flex-shrink: 0;
 }
 
-.summary-item__remove:hover {
-  color: var(--color-danger, #b3261e);
-}
-
 .summary-add {
   margin: var(--space-4) 0 var(--space-2);
   min-height: 52px;
@@ -370,10 +367,6 @@
   font-size: 1rem;
   font-weight: var(--font-weight-body-bold);
   cursor: pointer;
-}
-
-.summary-add:hover {
-  background: var(--color-surface-muted, rgba(7, 59, 146, 0.04));
 }
 
 /* S7 — visually-hidden aria-live region for add/remove announcements
@@ -628,7 +621,7 @@
   padding: var(--space-8) var(--space-6);
   border-radius: var(--radius-xl);
   background: var(--color-surface);
-  border: 1px solid #cfe9dd;
+  border: 1px solid var(--cotizador-success-border);
   box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
@@ -636,7 +629,7 @@
 }
 
 .result-card[data-outcome='failure'] {
-  border-color: #f0d9ae;
+  border-color: var(--cotizador-warning-border);
   box-shadow: var(--shadow-md);
 }
 
@@ -652,9 +645,9 @@
   width: 72px;
   height: 72px;
   border-radius: var(--radius-full);
-  background: #e3f5ee;
+  background: var(--cotizador-success-bg);
   color: var(--color-success);
-  box-shadow: 0 0 0 8px rgba(13, 155, 102, 0.07);
+  box-shadow: 0 0 0 8px var(--cotizador-success-glow);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -664,7 +657,7 @@
 .result-card[data-outcome='failure'] .result-icon {
   background: var(--color-warning-bg);
   color: var(--color-warning);
-  box-shadow: 0 0 0 8px rgba(138, 90, 0, 0.06);
+  box-shadow: 0 0 0 8px var(--cotizador-warning-glow);
 }
 
 .result-eyebrow {
@@ -706,7 +699,7 @@
   align-items: stretch;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: var(--color-bg, #f6f3ed);
+  background: var(--color-bg);
   font-size: var(--font-size-body-sm-mobile);
 }
 
@@ -739,7 +732,7 @@
   gap: var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: var(--color-bg, #f6f3ed);
+  background: var(--color-bg);
   font-size: var(--font-size-body-sm-mobile);
   font-weight: var(--font-weight-body-medium);
   color: var(--color-ink);
@@ -765,7 +758,7 @@
   margin: 0;
   padding: 4px var(--space-5);
   border-radius: var(--radius-lg);
-  background: var(--color-bg, #f6f3ed);
+  background: var(--color-bg);
   display: flex;
   flex-direction: column;
   font-size: var(--font-size-body-sm-mobile);
@@ -774,7 +767,7 @@
 
 .result-card[data-outcome='failure'] .result-detail {
   background: var(--color-surface);
-  border: 1px solid #f0d9ae;
+  border: 1px solid var(--cotizador-warning-border);
 }
 
 .result-detail__row {
@@ -930,6 +923,8 @@
 
 .result-home-link {
   min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   font-size: var(--font-size-body-sm-mobile);
@@ -1058,10 +1053,6 @@
     cursor: pointer;
   }
 
-  .summary-item__edit:hover {
-    background: var(--color-surface-tint);
-  }
-
   .summary-item__remove {
     min-height: 40px;
     padding: 0 12px;
@@ -1130,5 +1121,84 @@
 
   .result-title {
     font-size: 2rem;
+  }
+}
+
+/* ---------- Hover de botones (pedido 2026-10-06, 'como el del navbar') ----------
+   Color/relleno/borde solamente, sin elevacion ni sombra; no aplica a deshabilitados ni a la opcion elegida. */
+@media (hover: hover) and (pointer: fine) {
+  .btn-whatsapp,
+  .delivery-option,
+  .select-field,
+  .summary-card__zone-change,
+  .summary-item__edit,
+  .summary-item__remove,
+  .summary-add,
+  .payment-option,
+  .amount-toggle__btn,
+  .result-home-link {
+    transition:
+      background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      border-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+  }
+  .btn-whatsapp:hover:not(:disabled):not([aria-disabled='true']) {
+    background: var(--color-whatsapp-strong-hover);
+  }
+  /* Entrega < 1024: segmento de pildora sobre la pista azul clara. */
+  .delivery-option:hover:not([aria-pressed='true']):not(:disabled) {
+    background: var(--cotizador-hover-seg);
+    color: var(--color-primary);
+  }
+  .select-field:hover:not(:disabled),
+  .amount-toggle__btn:hover:not([aria-pressed='true']):not(:disabled) {
+    border-color: var(--color-accent);
+    background: var(--cotizador-hover-fill);
+  }
+  .payment-option:not([data-checked='true']):has(.payment-option__head:hover:not(:disabled)) {
+    border-color: var(--color-accent);
+    background: var(--cotizador-hover-fill);
+  }
+  .summary-card__zone-change:hover,
+  .summary-add:hover {
+    background: var(--cotizador-hover-tint);
+    color: var(--color-primary-active);
+  }
+  .summary-add:hover {
+    border-color: var(--color-accent);
+  }
+  .summary-item__edit:hover {
+    background: var(--color-surface-tint);
+    color: var(--color-primary-active);
+  }
+  .summary-item__remove:hover {
+    background: var(--color-error-bg);
+    color: var(--color-error-mobile);
+  }
+  .result-home-link:hover {
+    background: var(--cotizador-hover-tint);
+    color: var(--color-ink);
+  }
+}
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+  /* Entrega >= 1024: tarjeta (borde -> acento + relleno claro); la elegida conserva su aro. */
+  .delivery-option:hover:not([aria-pressed='true']):not(:disabled) {
+    border-color: var(--color-accent);
+    background: var(--cotizador-hover-fill);
+    color: var(--color-ink);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-whatsapp,
+  .delivery-option,
+  .select-field,
+  .summary-card__zone-change,
+  .summary-item__edit,
+  .summary-item__remove,
+  .summary-add,
+  .payment-option,
+  .amount-toggle__btn,
+  .result-home-link {
+    transition: none;
   }
 }

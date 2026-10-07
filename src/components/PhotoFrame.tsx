@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 /** Proporciones de marco permitidas por la regla "Foto completa". */
-export type PhotoRatio = '1/1' | '4/5' | '4/3' | '3/2';
+export type PhotoRatio = '1/1' | '4/5' | '4/3' | '9/16' | '3/2';
 
 export interface PhotoFrameProps {
   src: string;
@@ -12,9 +12,14 @@ export interface PhotoFrameProps {
   /** srcset opcional; se reutiliza en la capa ambiental (misma descarga). */
   srcSet?: string;
   sizes?: string;
+  /** `cover` = render de estudio (4:3 exacto, sin capa blur). `contain` (defecto) = foto real. */
+  fit?: 'contain' | 'cover';
   loading?: 'lazy' | 'eager';
   /** Solo para la foto LCP (hero). */
   fetchPriority?: 'high' | 'low' | 'auto';
+  /** Tamaño intrínseco del archivo: reserva espacio y evita saltos de layout. */
+  width?: number;
+  height?: number;
   className?: string;
   style?: CSSProperties;
   /** Insignias, figcaption, degradados: van encima (z-index 2). */
@@ -33,8 +38,11 @@ export default function PhotoFrame({
   ratioLg,
   srcSet,
   sizes,
+  fit = 'contain',
   loading = 'lazy',
   fetchPriority,
+  width,
+  height,
   className,
   style,
   children,
@@ -54,22 +62,28 @@ export default function PhotoFrame({
       data-ratio={ratio}
       data-ratio-lg={ratioLg}
     >
+      {fit === 'contain' && (
+        <img
+          className="photo-frame__ambient"
+          src={src}
+          srcSet={srcSet}
+          sizes={sizes}
+          alt=""
+          aria-hidden="true"
+          width={width}
+          height={height}
+          loading={loading}
+          decoding="async"
+        />
+      )}
       <img
-        className="photo-frame__ambient"
-        src={src}
-        srcSet={srcSet}
-        sizes={sizes}
-        alt=""
-        aria-hidden="true"
-        loading={loading}
-        decoding="async"
-      />
-      <img
-        className="photo-frame__img"
+        className={fit === 'cover' ? 'photo-frame__img photo-frame__img--cover' : 'photo-frame__img'}
         src={src}
         srcSet={srcSet}
         sizes={sizes}
         alt={alt}
+        width={width}
+        height={height}
         loading={loading}
         fetchPriority={fetchPriority}
         decoding="async"

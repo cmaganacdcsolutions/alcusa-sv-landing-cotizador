@@ -46,20 +46,22 @@ const FOCUSABLE = 'input:not([readonly]), button:not([tabindex="-1"]), a[href]:n
 
 export interface CustomerDialogProps {
   share: Pick<UseQuoteShare, 'dialogOpen' | 'platform' | 'submitCustomer' | 'cancelDialog'>;
+  /** Telefono ya capturado en "Entrega y zona" (####-####): se precarga, sigue editable. */
+  prefillWhatsapp?: string;
 }
 
-export function CustomerDialog({ share }: CustomerDialogProps): ReactElement | null {
+export function CustomerDialog({ share, prefillWhatsapp }: CustomerDialogProps): ReactElement | null {
   if (!share.dialogOpen || typeof document === 'undefined') return null;
-  return createPortal(<DialogBody share={share} />, document.body);
+  return createPortal(<DialogBody share={share} prefillWhatsapp={prefillWhatsapp} />, document.body);
 }
 
-function DialogBody({ share }: CustomerDialogProps): ReactElement {
+function DialogBody({ share, prefillWhatsapp }: CustomerDialogProps): ReactElement {
   const uid = useId();
   const id = (s: string): string => `${uid}-${s}`;
   const [initial] = useState(() => loadStoredCustomer());
   const remembered = initial !== null;
   const [name, setName] = useState(initial?.name ?? '');
-  const [wa, setWa] = useState(initial ? formatWhatsappInput(initial.whatsapp) : '');
+  const [wa, setWa] = useState(initial ? formatWhatsappInput(initial.whatsapp) : formatWhatsappInput(prefillWhatsapp ?? ''));
   const [consent, setConsent] = useState(initial ? consentStillValid(initial) : false);
   const [hasStored, setHasStored] = useState(remembered);
   const [errors, setErrors] = useState<Errors>(NO_ERRORS);
@@ -84,27 +86,44 @@ function DialogBody({ share }: CustomerDialogProps): ReactElement {
     };
   }, [remembered, initial]);
 
-  // Keyboard open: the sheet follows the visual viewport so the CTA is never covered.
+  // Keyboard open: the sheet follows the visual viewport so the CTA is never covered. The keyboard is
+  // detected against the tallest viewport seen so far (iOS shrinks only visualViewport; Android Chrome
+  // shrinks innerHeight/dvh too) and flagged with data-kbd so CSS drops the fixed top reserve and the
+  // sheet keeps its content scrollable instead of collapsing.
   useEffect(() => {
     const vv = window.visualViewport;
     const el = wrapRef.current;
     if (!vv || !el) return;
+    let baseline = Math.max(window.innerHeight, vv.height);
     const sync = (): void => {
-      if (window.innerHeight - vv.height > 80) {
-        // on-screen keyboard: follow the visual viewport
+      const open = baseline - vv.height > 80;
+      if (!open) baseline = Math.max(baseline, window.innerHeight, vv.height);
+      if (open) {
+        el.dataset.kbd = '';
         el.style.setProperty('--cf-top', `${vv.offsetTop}px`);
         el.style.setProperty('--cf-h', `${vv.height}px`);
       } else {
+        delete el.dataset.kbd;
         el.style.removeProperty('--cf-top');
         el.style.removeProperty('--cf-h');
       }
     };
+    // Keep the focused field visible inside the sheet's own scroller once the keyboard has settled.
+    const onFocusIn = (e: FocusEvent): void => {
+      const t = e.target;
+      if (!(t instanceof HTMLElement) || !t.matches('input, textarea, select')) return;
+      window.setTimeout(() => t.scrollIntoView({ block: 'nearest', behavior: 'auto' }), 300);
+    };
     sync();
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
+    window.addEventListener('resize', sync);
+    el.addEventListener('focusin', onFocusIn);
     return () => {
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
+      window.removeEventListener('resize', sync);
+      el.removeEventListener('focusin', onFocusIn);
     };
   }, []);
 
@@ -383,8 +402,8 @@ function DialogBody({ share }: CustomerDialogProps): ReactElement {
             {busy ? (
               <>
                 <svg className="cf-spin" {...svgProps} strokeWidth={2.5}>
-                  <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.35)" />
-                  <path d="M12 3a9 9 0 0 1 9 9" stroke="#ffffff" />
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity={0.35} />
+                  <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" />
                 </svg>
                 <span className="cf-rm">Preparando…</span>
               </>

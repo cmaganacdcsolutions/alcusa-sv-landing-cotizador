@@ -13,12 +13,22 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Color solido bajo el degradado del body (rebote/overscroll y paginas cortas): el final del recorrido. */
+  background-color: var(--color-page-bottom);
 }
 
+/* Fondo de TODO el sitio (/, /cotizador, /contacto, /nosotros): un solo degradado azul noche que recorre
+   el documento de arriba (profundo) a abajo (profundo en el footer) pasando por un azul mas vivo hacia la mitad.
+   Es parte del documento (no fixed): cambia al hacer scroll sin JS. Texto base claro sobre noche. */
 body {
   margin: 0;
-  background-color: var(--color-bg);
-  color: var(--color-ink);
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--color-page-bottom);
+  background-image: var(--gradient-page-dark);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  color: var(--color-text-on-dark);
   font-family: var(--font-family-body);
   font-size: var(--font-size-body-mobile);
   line-height: var(--font-line-height-body);
@@ -32,27 +42,89 @@ h3 {
   margin: 0;
 }
 
-a {
-  color: var(--color-accent);
+/* Titulos con degradado (pedido 2026-10-06): blanco -> azul claro (--color-accent-on-dark) con background-clip:text.
+   Clase reutilizable .title-gradient (cualquier h1/h2/h3 sobre noche) + los titulos de seccion del sitio.
+   El color solido de cada componente (var(--color-text-on-dark)) es el respaldo si el recorte de texto no existe. */
+.title-gradient,
+.hintro__title,
+.csec__title,
+.proceso__title,
+.proceso__step-title,
+.promos__title,
+.confianza__title,
+.info__title,
+.visit__title,
+.nos__h1,
+.nos__h2 {
+  background-image: var(--gradient-title);
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--color-text-on-dark);
+  /* El degradado recorre el texto, no todo el ancho del contenedor (un titulo corto no queda solo blanco). */
+  width: fit-content;
+  max-width: 100%;
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+  /* Multilinea: el degradado recorre el bloque, no cada linea. */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
-
-/* Anchored sections (TopBar/Drawer/Footer links land here): keep headings
-   clear of the sticky top bar (64px mobile / 80px desktop, TopBar.astro). */
-#inicio,
-#modelos,
-#proceso,
-#galeria {
-  scroll-margin-top: 64px;
+.title-gradient {
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-display-bold);
 }
-
-@media (min-width: 1024px) {
-  #inicio,
-  #modelos,
-  #proceso,
-  #galeria {
-    scroll-margin-top: 80px;
+/* Seleccion legible: el relleno transparente no se ve sobre el resaltado, asi que se pinta oscuro sobre azul claro. */
+:is(.title-gradient, .hintro__title, .csec__title, .proceso__title, .proceso__step-title, .promos__title, .confianza__title, .info__title, .visit__title, .nos__h1, .nos__h2)::selection {
+  background: var(--color-accent-on-dark);
+  color: var(--color-surface-dark);
+  -webkit-text-fill-color: var(--color-surface-dark);
+}
+/* Sin soporte de background-clip:text: texto solido claro (nunca texto invisible). */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .title-gradient,
+  .hintro__title,
+  .csec__title,
+  .proceso__title,
+  .proceso__step-title,
+  .promos__title,
+  .confianza__title,
+  .info__title,
+  .visit__title,
+  .nos__h1,
+  .nos__h2 {
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--color-text-on-dark);
   }
 }
+/* Alto contraste forzado: el sistema pinta el texto (CanvasText); sin degradado. */
+@media (forced-colors: active) {
+  .title-gradient,
+  .hintro__title,
+  .csec__title,
+  .proceso__title,
+  .proceso__step-title,
+  .promos__title,
+  .confianza__title,
+  .info__title,
+  .visit__title,
+  .nos__h1,
+  .nos__h2 {
+    background-image: none;
+    -webkit-text-fill-color: CanvasText;
+    color: CanvasText;
+  }
+}
+
+/* Enlace sin clase = sobre el fondo noche del body: azul claro AA (8.4:1 sobre --color-surface-dark).
+   Los enlaces dentro de tarjetas claras fijan su propia tinta (--color-ink / --color-primary / --color-accent). */
+a {
+  color: var(--color-accent-on-dark);
+}
+
+/* Anchors: scroll-margin-top comes from Navbar.astro ([id] + --anchor-offset). */
 
 /* Icon SVGs are inline outline glyphs per the boards: stroke-only, no fill,
    round caps/joins. Any icon that needs a filled glyph sets its own
@@ -94,16 +166,35 @@ svg {
   display: block;
 }
 .photo-frame__ambient {
+  /* inset negativo + scale: los bordes difuminados nunca entran al marco (sin costura). */
+  inset: var(--photo-ambient-inset);
+  width: 120%;
+  height: 120%;
+  max-width: none;
   object-fit: cover;
-  filter: blur(var(--photo-ambient-blur)) saturate(var(--photo-ambient-saturate));
+  filter: blur(var(--photo-ambient-blur)) saturate(var(--photo-ambient-saturate)) brightness(var(--photo-ambient-brightness));
   transform: scale(var(--photo-ambient-scale));
   opacity: var(--photo-ambient-opacity);
+}
+/* Velo crema sobre la capa ambiental, bajo la foto. */
+.photo-frame::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(var(--photo-ambient-veil), var(--photo-ambient-veil));
 }
 .photo-frame__img {
   z-index: 1;
   object-fit: contain;
   object-position: 50% 50%;
 }
+.photo-frame__img--cover {
+  object-fit: cover;
+}
+.photo-frame__ambient { z-index: 0; }
+.photo-frame::before { z-index: 0; }
 .photo-frame__overlay {
   position: absolute;
   z-index: 2;
@@ -119,6 +210,7 @@ svg {
 }
 @media (prefers-reduced-transparency: reduce) {
   .photo-frame__ambient { display: none; }
+  .photo-frame::before { display: none; }
 }
 
 .sr-only {

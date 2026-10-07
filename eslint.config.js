@@ -11,6 +11,8 @@ export default tseslint.config(
     ignores: [
       'dist/**',
       'dist-e2e/**',
+      // Ad hoc agent builds (dist-fe-nav, dist-fe-home, ...) are generated output too.
+      'dist-*/**',
       '.astro/**',
       'node_modules/**',
       '.vite-cache/**',

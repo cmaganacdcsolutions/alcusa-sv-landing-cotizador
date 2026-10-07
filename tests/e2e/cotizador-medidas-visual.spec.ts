@@ -19,7 +19,8 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
     await expect(images).toHaveCount(3);
     for (const img of await images.all()) {
       const src = await img.getAttribute('src');
-      expect(src).toMatch(/^\/img\/cotizador\/product-.*\.webp$/);
+      // 2026-10-06: renders del sitio (home-media), no fotos de Alcusa.
+      expect(src).toMatch(/^\/images\/renders\/.*\.webp$/);
       // naturalWidth > 0 => the browser actually decoded the file (not a 404).
       const naturalWidth = await img.evaluate((el) => (el as HTMLImageElement).naturalWidth);
       expect(naturalWidth).toBeGreaterThan(0);
@@ -37,11 +38,10 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
     await expect(glassGroup).toBeVisible();
     const nevadoBtn = page.getByRole('button', { name: 'Nevado 5 mm' });
     await expect(nevadoBtn.locator('.glass-chip__swatch')).toBeVisible();
-    // claro/nevado/decorado are photo swatches — the others are CSS patterns.
-    await expect(nevadoBtn.locator('.glass-chip__swatch-img')).toHaveAttribute(
-      'src',
-      '/img/cotizador/finish-nevado.webp',
-    );
+    // 2026-10-06: every glass swatch is a CSS circle (no <img>): same look as the home's chips.
+    await expect(nevadoBtn.locator('.glass-chip__swatch img')).toHaveCount(0);
+    await expect(nevadoBtn.locator('.glass-chip__swatch')).toHaveAttribute('data-swatch', 'glass:nevado');
+    await expect(nevadoBtn.locator('.glass-chip__swatch')).toHaveCSS('background-image', /radial-gradient/);
 
     await page.getByRole('button', { name: 'Natural' }).click();
     await nevadoBtn.click();
@@ -52,6 +52,6 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
     // Table A, 110cm Natural Nevado — unchanged pricing, only the card's
     // markup/CSS moved to .estimate-card.
     await expect(page.getByTestId('step2-price-value')).toHaveText('$290.00');
-    await expect(page.locator('.estimate-card__image')).toHaveAttribute('src', '/img/cotizador/product-recta.webp');
+    await expect(page.locator('.estimate-card__preview img.photo-frame__img')).toHaveAttribute('src', '/images/renders/recta-natural-nevado-800.webp');
   });
 });

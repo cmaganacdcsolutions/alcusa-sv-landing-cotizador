@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, pickProduct, test, textOnlyWaLink } from './fixtures';
+import { fillAddress } from '../support/address';
 
 test.use({ blockQuotePdf: true });
 
@@ -13,12 +14,12 @@ async function waitForHydration(page: Page): Promise<void> {
 // requiresQuote edge states from prototype-spec.md §2.3. Never opens a real
 // WhatsApp link — fixtures.ts blocks wa.me/wompi routes as a second guard.
 test.describe('cotizador — recta, step 0 to 5', () => {
-  test('drawer "Cotizar" navigates to the standalone /cotizador page at step 0', async ({ page }) => {
+  test('navbar "Cotizar" navigates to the standalone /cotizador page at step 0', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
-    const drawerNav = page.getByRole('navigation', { name: 'Menú principal' });
-    await expect(drawerNav).toBeVisible();
-    await drawerNav.getByRole('link', { name: 'Cotizar', exact: true }).click();
+    const cta = page.locator('header[data-nav] a.nav__cta');
+    await expect(cta).toHaveText('Cotizar');
+    await expect(cta).toHaveAttribute('href', '/cotizador');
+    await cta.click();
     await expect(page).toHaveURL(/\/cotizador$/);
     await waitForHydration(page);
     await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
@@ -43,7 +44,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
-    await page.locator('#municipio').selectOption('Soyapango');
+    await fillAddress(page, 'Soyapango');
     await expect(page.getByTestId('zona-total-value')).toHaveText('$262.00');
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
@@ -63,7 +64,33 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     expect(decoded).toContain('Transporte: $40.00');
     expect(decoded).toContain('Total estimado: $262.00');
     expect(decoded).toContain('Anticipo (80%): $209.60 · Saldo (20% al entregar): $52.40');
-    expect(decoded).toContain('Dirección: [dirección]');
+    expect(decoded).toContain('Dirección: Residencial Las Flores, Pasaje 3, casa 12');
+  });
+
+  for (const [i, glass, label, price] of [
+    [0, 'claro', 'Claro 5 mm', '$222.00'],
+    [1, 'nevado', 'Nevado 5 mm', '$290.00'],
+    [2, 'aquafold', 'Aquafold', '$279.99'],
+  ] as const) {
+    test(`promo CTA #${i + 1} lands on Medidas with ${glass} preselected and prices ${price} at 110 cm`, { tag: '@critical' }, async ({ page }) => {
+      await page.goto('/');
+      await page.locator('[data-promo-cta]').nth(i).click();
+      await waitForHydration(page);
+      // The promo link carries producto + color + vidrio + paso=medidas: it lands on Medidas (no product picker).
+      await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Natural', pressed: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: label, pressed: true })).toBeVisible();
+      await page.getByLabel('Ancho exacto de tu espacio').fill('110');
+      await page.getByRole('button', { name: 'Siguiente' }).click();
+      await expect(page.getByTestId('step2-price-value')).toHaveText(price);
+    });
+  }
+
+  test('unknown ?vidrio= is ignored (keeps default claro)', async ({ page }) => {
+    await page.goto('/cotizador?producto=recta&vidrio=__x');
+    await waitForHydration(page);
+    await pickProduct(page, 'recta');
+    await expect(page.getByRole('button', { name: 'Claro 5 mm', pressed: true })).toBeVisible();
   });
 
   test('retiro en tienda: 110cm Natural Claro → $188.70, sin transporte', async ({ page }) => {
@@ -102,16 +129,19 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
   });
 
-  test('municipio outside the 23-zone list shows the transport empty state', async ({ page }) => {
+  // Behaviour change 2026-10-06 (user-requested): a distrito without an automatic rate no longer blocks
+  // the flow. It shows an informative callout + "Envío: por confirmar" and "Siguiente" stays enabled.
+  test('municipio outside the 23-zone list shows "Envío por confirmar" and does NOT block', async ({ page }) => {
     await page.goto('/cotizador');
     await waitForHydration(page);
     await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
-    await page.locator('#municipio').selectOption('otro');
+    await fillAddress(page, 'Santa Ana');
     await expect(page.getByText('Tu zona aún no tiene tarifa de transporte automática')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await expect(page.getByText('Envío: por confirmar (te lo confirmamos por WhatsApp)')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
   });
 
   test('125cm Blanco Claro prices at $366 (Table C tier 1.3)', async ({ page }) => {
@@ -146,7 +176,7 @@ test.describe('cotizador — corner (Cabina en L)', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$444.00');
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.locator('#municipio').selectOption('Soyapango');
+    await fillAddress(page, 'Soyapango');
     await expect(page.getByTestId('zona-total-value')).toHaveText('$484.00');
   });
 
@@ -159,7 +189,7 @@ test.describe('cotizador — corner (Cabina en L)', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$580.00');
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.locator('#municipio').selectOption('Soyapango');
+    await fillAddress(page, 'Soyapango');
     await expect(page.getByTestId('zona-total-value')).toHaveText('$620.00');
   });
 
@@ -172,7 +202,7 @@ test.describe('cotizador — corner (Cabina en L)', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByTestId('step2-price-value')).toHaveText('$650.00');
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.locator('#municipio').selectOption('Soyapango');
+    await fillAddress(page, 'Soyapango');
     await expect(page.getByTestId('zona-total-value')).toHaveText('$690.00');
   });
 
@@ -203,7 +233,7 @@ test.describe('cotizador — tempered (Templado 10 mm)', () => {
       await page.getByRole('button', { name: 'Siguiente' }).click();
       await expect(page.getByTestId('step2-price-value')).toHaveText(rawText);
       await page.getByRole('button', { name: 'Siguiente' }).click();
-      await page.locator('#municipio').selectOption('Soyapango');
+      await fillAddress(page, 'Soyapango');
       await expect(page.getByTestId('zona-total-value')).toHaveText(totalText);
     });
   }

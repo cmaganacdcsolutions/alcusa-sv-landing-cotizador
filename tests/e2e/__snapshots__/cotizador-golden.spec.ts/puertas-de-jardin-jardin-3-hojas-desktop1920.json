@@ -1,0 +1,113 @@
+{
+  "leaf": "puertas-de-jardin/jardin-3-hojas",
+  "thumb": "/images/renders/jardin-3-hojas-800.webp",
+  "step2Image": "/images/renders/jardin-3-hojas-natural-duplex-800.webp",
+  "step2Alt": "Puerta de jardín",
+  "rows": [
+    {
+      "color": "blanco",
+      "glass": "claro",
+      "price": "$399.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "blanco",
+      "glass": "nevado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Blanco",
+      "glassLabel": "Nevado 5 mm Cotización personalizada"
+    },
+    {
+      "color": "blanco",
+      "glass": "decorado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Blanco",
+      "glassLabel": "Decorado Cotización personalizada"
+    },
+    {
+      "color": "blanco",
+      "glass": "mallado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Blanco",
+      "glassLabel": "Mallado Cotización personalizada"
+    },
+    {
+      "color": "blanco",
+      "glass": "duplex",
+      "price": "Por WhatsApp",
+      "colorLabel": "Blanco",
+      "glassLabel": "Dúplex Cotización personalizada"
+    },
+    {
+      "color": "bronce",
+      "glass": "claro",
+      "price": "Por WhatsApp",
+      "colorLabel": "Bronce Cotización personalizada",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "bronce",
+      "glass": "nevado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Bronce Cotización personalizada",
+      "glassLabel": "Nevado 5 mm Cotización personalizada"
+    },
+    {
+      "color": "bronce",
+      "glass": "decorado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Bronce Cotización personalizada",
+      "glassLabel": "Decorado Cotización personalizada"
+    },
+    {
+      "color": "bronce",
+      "glass": "mallado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Bronce Cotización personalizada",
+      "glassLabel": "Mallado Cotización personalizada"
+    },
+    {
+      "color": "bronce",
+      "glass": "duplex",
+      "price": "Por WhatsApp",
+      "colorLabel": "Bronce Cotización personalizada",
+      "glassLabel": "Dúplex Cotización personalizada"
+    },
+    {
+      "color": "natural",
+      "glass": "claro",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "natural",
+      "glass": "nevado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Nevado 5 mm Cotización personalizada"
+    },
+    {
+      "color": "natural",
+      "glass": "decorado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Decorado Cotización personalizada"
+    },
+    {
+      "color": "natural",
+      "glass": "mallado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Mallado Cotización personalizada"
+    },
+    {
+      "color": "natural",
+      "glass": "duplex",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Dúplex Cotización personalizada"
+    }
+  ]
+}

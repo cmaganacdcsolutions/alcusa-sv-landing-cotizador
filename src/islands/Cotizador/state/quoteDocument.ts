@@ -4,7 +4,13 @@
 //   "0.80 × 0.80 × 1.85 m · Modelo · Color"                (L)
 //   "3 ventanas · Color · Vidrio"                          (ventana: no single size)
 import type { QuoteDocument, QuoteDocumentItem } from '../../../lib/quote-pdf/types';
-import { CONFIG_MAX_BYTES, CONFIG_SCHEMA_VERSION, type QuoteFolioItem, type QuoteFolioRequest } from '../../../lib/quote-folio';
+import {
+  CONFIG_MAX_BYTES,
+  CONFIG_SCHEMA_VERSION,
+  type QuoteDiscount,
+  type QuoteFolioItem,
+  type QuoteFolioRequest,
+} from '../../../lib/quote-folio';
 import { formatWhatsappPrint, PRIVACY_NOTICE_VERSION, type CustomerData } from '../../../lib/quote-customer';
 import type { OrderLineItem } from './order';
 
@@ -44,8 +50,14 @@ export interface QuoteDocumentInput {
   configs?: Readonly<Record<string, Readonly<Record<string, unknown>>>>;
   entrega: 'instalacion' | 'retiro';
   zone: string;
+  /** Direccion de entrega ya formateada (formatAddressLine); solo instalacion. */
+  address?: string;
   transport: number;
   total: number;
+  /** Distrito sin tarifa: `transport` es 0 y se muestra "Por confirmar". */
+  shippingPending?: boolean;
+  /** 10% online-card discount; only present once the customer chose card (the folio is normally issued before). */
+  discount?: QuoteDiscount;
   customer?: CustomerData;
 }
 
@@ -62,6 +74,8 @@ export function toQuoteDocument(i: QuoteDocumentInput): QuoteDocument {
     ...(delivery ? { transportLabel: i.zone } : {}),
     transport: i.transport,
     total: i.total,
+    ...(i.shippingPending ? { shippingPending: true } : {}),
+    ...(i.discount ? { discount: i.discount.amount } : {}),
   };
 }
 
@@ -100,9 +114,11 @@ export function toFolioRequest(
     idempotencyKey,
     ...(supersedesCode ? { supersedesCode } : {}),
     customer: { name: customer.name, whatsapp: customer.whatsapp },
-    delivery: { mode: i.entrega === 'instalacion' ? 'delivery' : 'pickup', ...(i.entrega === 'instalacion' ? { zone: i.zone } : {}) },
+    delivery: { mode: i.entrega === 'instalacion' ? 'delivery' : 'pickup', ...(i.entrega === 'instalacion' ? { zone: i.zone, ...(i.address ? { address: i.address } : {}) } : {}) },
     items: i.items.map((it) => toFolioItem(it, i.configs?.[it.id])),
     transportFee: usd(i.transport),
+    ...(i.shippingPending ? { shippingPending: true } : {}),
+    ...(i.discount ? { discount: { code: i.discount.code, amount: usd(i.discount.amount) } } : {}),
     total: usd(i.total),
     consent: true,
     privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
@@ -111,7 +127,7 @@ export function toFolioRequest(
 
 /** Stable key for the prewarm cache and the idempotency key. */
 export function cartHash(i: Omit<QuoteDocumentInput, 'folio' | 'issuedAt' | 'customer' | 'configs'>): string {
-  const s = JSON.stringify([i.items.map((x) => [x.id, x.productId, x.detail, x.subtotal, x.requiresQuote]), i.entrega, i.zone, i.transport, i.total]);
+  const s = JSON.stringify([i.items.map((x) => [x.id, x.productId, x.detail, x.subtotal, x.requiresQuote]), i.entrega, i.zone, i.address ?? '', i.transport, i.total, ...(i.shippingPending ? ['pending'] : [])]);
   let h = 5381;
   for (let k = 0; k < s.length; k++) h = ((h << 5) + h + s.charCodeAt(k)) | 0;
   return (h >>> 0).toString(36);

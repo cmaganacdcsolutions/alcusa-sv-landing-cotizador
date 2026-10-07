@@ -3,8 +3,8 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { expect, test } from './fixtures';
 
-// sf-landing6: fidelity fixes for Hero (bigger H1 / smaller category cards)
-// and ComoFunciona (bigger "Tu pedido, en cuatro pasos claros" title).
+// sf-landing6: fidelity of ComoFunciona ("Tu pedido…" title). The old Hero checks (H1 size, "Cotizar ahora" box)
+// were retired: the hero was replaced by the compact HomeIntro (no board counterpart).
 // Rather than hardcoding pixel values, each check opens the matching
 // approved board directly (file://) and compares the shipped page against
 // what the board itself renders — the true source of truth.
@@ -18,58 +18,21 @@ const BOARDS_DIR = [
 
 test.skip(!BOARDS_DIR, 'Design boards not available in this checkout');
 
-// Hero: boards r01 (Revision 2026-09-29), que reemplazan al hero de Main/android-01/desktop-01.
+// Boards r01 (Revision 2026-09-29).
 const R01_BY_PROJECT: Record<string, string> = {
   ios390: 'ios-r01-landing-promos.dc.html',
   android412: 'android-r01-landing-promos.dc.html',
   desktop1920: 'desktop-r01-landing-promos.dc.html',
 };
 
-function heroBoardUrl(project: string): string {
+function boardUrl(project: string): string {
   return pathToFileURL(path.join(BOARDS_DIR!, 'revision-2026-09-29', R01_BY_PROJECT[project])).toString();
 }
 
-test.describe('landing6 — hero + cómo funciona fidelity (desktop H1/cards bigger/smaller, proceso title break)', () => {
-  test('hero H1 computed font-size matches the board for this breakpoint', async ({
-    page,
-  }, testInfo) => {
-    const board = await page.context().newPage();
-    await board.goto(heroBoardUrl(testInfo.project.name));
-    const boardH1 =
-      testInfo.project.name === 'desktop1920'
-        ? board.locator('#hero-title')
-        : board.locator('h1').first();
-    const boardFontSize = await boardH1.evaluate((el) => getComputedStyle(el).fontSize);
-    await board.close();
-
-    await page.goto('/');
-    const h1 = page.locator('#hero-title');
-    await expect(h1).toBeVisible();
-    const shippedFontSize = await h1.evaluate((el) => getComputedStyle(el).fontSize);
-
-    expect(shippedFontSize).toBe(boardFontSize);
-  });
-
-  test('hero "Cotizar ahora" button box matches the r01 board within ±2px', async ({ page }, testInfo) => {
-    const board = await page.context().newPage();
-    await board.goto(heroBoardUrl(testInfo.project.name));
-    const boardBtn = board.locator('#inicio a.btn.bp, section a.btn.bp').first();
-    const boardBox = await boardBtn.boundingBox();
-    await board.close();
-    expect(boardBox).not.toBeNull();
-
-    await page.goto('/');
-    const btn = page.locator('[data-hero-cta="cotizar"]');
-    await btn.scrollIntoViewIfNeeded();
-    const shippedBox = await btn.boundingBox();
-    expect(shippedBox).not.toBeNull();
-    expect(Math.abs(shippedBox!.width - boardBox!.width)).toBeLessThanOrEqual(2);
-    expect(Math.abs(shippedBox!.height - boardBox!.height)).toBeLessThanOrEqual(2);
-  });
-
+test.describe('landing6 — cómo funciona fidelity (proceso title vs the r01 board)', () => {
   test('ComoFunciona title size matches the r01 board for this breakpoint', async ({ page }, testInfo) => {
     const board = await page.context().newPage();
-    await board.goto(heroBoardUrl(testInfo.project.name));
+    await board.goto(boardUrl(testInfo.project.name));
     const boardFontSize = await board
       .locator('#proceso h2')
       .evaluate((el) => getComputedStyle(el).fontSize);

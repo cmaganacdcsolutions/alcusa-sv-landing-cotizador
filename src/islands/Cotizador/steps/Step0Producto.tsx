@@ -14,7 +14,7 @@ import {
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import PhotoFrame from '@components/PhotoFrame';
 import { IconArrowRight, IconCheck, IconLock, IconWhatsApp } from '../icons';
-import { PRODUCT_IMAGES } from './productImages';
+import { PRODUCT_IMAGES, typeImage, variantImage } from './productImages';
 import QuoteLoadBlock, { type QuoteLoadBlockProps } from './quote/QuoteLoadBlock';
 import { IconQuoteImage, IconQuoteTriangle } from './quote/QuoteIcons';
 import '@styles/cotizador-medidas.css';
@@ -213,6 +213,13 @@ export default function Step0Producto({ asideTarget, selectedId, current, onSele
                     setVar(null);
                   }}
                 >
+                  {typeImage(s.slug) ? (
+                    <PhotoFrame className="sel-tile__photo" src={typeImage(s.slug) as string} alt={TYPE_LABEL[s.slug] ?? s.name} ratio="1/1" />
+                  ) : (
+                    <span className="sel-tile__photo sel-wa" data-testid="type-thumb-wa" aria-hidden="true">
+                      <IconWhatsApp size={28} />
+                    </span>
+                  )}
                   <span className="sel-tile__tx">
                     <span className="sel-tile__n">{TYPE_LABEL[s.slug] ?? s.name}</span>
                     <span className="sel-tile__s">{s.advisorOnly || price === null ? 'Con un asesor' : `Desde ${formatFromPrice(price)}`}</span>
@@ -238,8 +245,8 @@ export default function Step0Producto({ asideTarget, selectedId, current, onSele
                 onClick={() => setVar(v.slug)}
               >
                 {/* Foto pendiente (board: placeholder punteado). Cuando exista `photo` en el catalogo se usa PhotoFrame. */}
-                {v.photo ? (
-                  <PhotoFrame className="sel-tile__photo" src={v.photo} alt="" ratio="1/1" />
+                {(v.photo ?? variantImage(v.slug)) ? (
+                  <PhotoFrame className="sel-tile__photo" src={(v.photo ?? variantImage(v.slug)) as string} alt={v.name} ratio="1/1" />
                 ) : (
                   <span className="sel-ph"><IconQuoteImage /></span>
                 )}

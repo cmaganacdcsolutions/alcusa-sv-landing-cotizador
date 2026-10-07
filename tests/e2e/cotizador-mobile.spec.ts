@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, pickProduct, test } from './fixtures';
+import { fillAddress } from '../support/address';
+import { waitForScrollSettled } from '../support/settle';
 
 // Slice sf-cot-mobile — mobile/tablet fixed action bar, always-reachable back
 // control, Resumen table overflow/fidelity, and step-transition scroll-to-top.
@@ -24,7 +26,7 @@ async function toZonaEntrega(page: Page): Promise<void> {
 
 async function toResumen(page: Page): Promise<void> {
   await toZonaEntrega(page);
-  await page.locator('#municipio').selectOption('Soyapango');
+  await fillAddress(page, 'Soyapango');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
 }
@@ -46,6 +48,13 @@ test.describe('cotizador mobile — fixed action bar (sf-cot-mobile item 1)', ()
     test.skip(!['ios390', 'android412'].includes(testInfo.project.name), 'mobile/tablet-only (<1024px) — desktop keeps the bare "Siguiente" pill');
     await selectRecta(page);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    // `html { scroll-behavior: smooth }` hace que scrollTo anime: medir antes de que termine compara contra una posicion
+    // intermedia (y el campo todavia cae bajo la barra). Esperar a que la ventana quede quieta y confirmar que llego al fondo.
+    await waitForScrollSettled(page);
+    expect(
+      await page.evaluate(() => Math.ceil(window.scrollY + window.innerHeight) >= document.documentElement.scrollHeight - 1),
+      'la ventana llego al fondo de la pagina',
+    ).toBe(true);
     const bar = page.locator('.bottom-bar');
     const barBox = await bar.boundingBox();
     const lastField = page.locator('.field').last();
@@ -164,7 +173,7 @@ test.describe('cotizador — step transitions scroll the new step to the top (sf
     await expect(step3Heading).toBeInViewport({ ratio: 1 });
     await expect.poll(async () => (await step3Heading.boundingBox())?.y ?? Number.POSITIVE_INFINITY).toBeLessThan(viewportH * 0.75);
 
-    await page.locator('#municipio').selectOption('Soyapango');
+    await fillAddress(page, 'Soyapango');
     await page.evaluate(() => window.scrollTo(0, 900));
     await page.getByRole('button', { name: 'Siguiente' }).click(); // -> resumen
     const pageTitle = page.locator('#cotizador-page-title');

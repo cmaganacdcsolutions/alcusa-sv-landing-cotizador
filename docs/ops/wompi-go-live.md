@@ -79,8 +79,9 @@ Phase 1 (implemented): the browser sends `{pct, total, items[{name, subtotal}]}`
 1. accepts only `pct` 80 or 100 and derives `monto = round(total * pct / 100, 2)`;
 2. bounds `total` (`WOMPI_MIN_TOTAL..MAX_TOTAL`);
 3. requires `sum(items.subtotal) <= total <= sum + WOMPI_MAX_TRANSPORT` (the remainder is transport);
-4. stores the expected `monto` per reference; the return page and the webhook compare Wompi's amount with it (`amountMatches`, status `paid_amount_mismatch`);
-5. rate limits 10 links / 10 min / IP, checks `Origin`, one successful payment per link, 30 min payment window, link valid 24 h.
+4. (2026-10-06) accepts an optional `discount: {code: 'online_card_10', amount}` and `shippingPending: true`. The server recomputes the discount (`round(10% * sum(items.subtotal))`, tolerance 0.01; items already carry the retiro -15%) and rejects any other code (`422 invalid_discount`) or amount (`422 discount_mismatch`). With a valid discount the rule becomes `total = sum - discount.amount + transport` (transport 0..`WOMPI_MAX_TRANSPORT`, exactly 0 when `shippingPending`, else `422 invalid_total`). `monto` is still `round(total * pct / 100, 2)` on that discounted total. The discount and the "envio por confirmar" note are appended to `infoProducto.descripcionProducto` and stored in the order record (`discount`, `shippingPending`). Rules: `api/_lib/wompi-pricing.php`, tests: `php api/_dev/wompi-smoke.php unit`;
+5. stores the expected `monto` per reference; the return page and the webhook compare Wompi's amount with it (`amountMatches`, status `paid_amount_mismatch`);
+6. rate limits 10 links / 10 min / IP, checks `Origin`, one successful payment per link, 30 min payment window, link valid 24 h.
 
 Residual risk: a tampered client can still declare a lower `total` inside those checks. Mitigation today: the human reconciliation (webhook log + WhatsApp) before fulfilment, and refundable payments.
 

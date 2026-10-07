@@ -15,6 +15,21 @@
   --color-border-input: #cfd8e5;
   --color-primary: #073b92;
   --color-accent: #0956d8;
+  --color-primary-active: #052d70;
+
+  /* Navbar fijo (spec navbar-fijo-estructura-inco §9). --nav-offset es runtime. */
+  --nav-h-top-lg: 72px;
+  --nav-h-scrolled-lg: 64px;
+  --nav-h-top-sm: 100px;
+  --nav-h-scrolled-sm: 92px;
+  --nav-h-compact-lg: 64px;
+  --nav-h-compact-sm: 56px;
+  --anchor-offset-lg: 128px;
+  --anchor-offset-sm: 108px;
+  --shadow-nav: 0 6px 16px rgba(16, 33, 61, 0.08);
+  --z-nav: 30;
+  --z-nav-tabs: 29;
+  --z-skip-link: 60;
   --color-whatsapp: #18a96b;
   --color-whatsapp-strong: #087348;
   --color-whatsapp-strong-hover: #06603c;
@@ -215,10 +230,13 @@
    la foto nunca se recorta; relleno ambiental = misma imagen desenfocada. */
 :root {
   --photo-frame-bg: #f6f3ed;
-  --photo-ambient-blur: 24px;
-  --photo-ambient-saturate: 1.1;
-  --photo-ambient-scale: 1.15;
-  --photo-ambient-opacity: 0.55;
+  --photo-ambient-inset: -10%;
+  --photo-ambient-blur: 32px;
+  --photo-ambient-saturate: 0.6;
+  --photo-ambient-brightness: 1.04;
+  --photo-ambient-scale: 1.4;
+  --photo-ambient-opacity: 0.75;
+  --photo-ambient-veil: rgba(246, 243, 237, 0.35);
 }
 
 /* R3 PromoCard intensa (02-design/specs/revision-2026-09-29.md). Espejo de
@@ -247,4 +265,75 @@
   --line-height-hero-h1-desktop-md: 80px;
   --shadow-btn-primary: 0 8px 20px rgba(7, 59, 146, 0.22);
   --gradient-hero-photo: linear-gradient(180deg, transparent 60%, rgba(16, 33, 61, 0.45) 100%);
+}
+
+/* Linea de diseno unica: azul noche + blanco (motion-01 / visual-brutal-art-direction-spec; pedido 2026-10-06).
+   Tokens SEMANTICOS globales: cualquier pagina/seccion oscura los consume (inicio, nosotros, footer, navbar,
+   y el repaso futuro de cotizador/contacto). Contrastes AA verificados sobre --color-surface-dark. */
+:root {
+  --color-surface-dark: #0a1a33; /* fondo de pagina/banda oscura */
+  --color-surface-dark-raised: #0f2548; /* tarjeta o panel sobre oscuro */
+  --color-text-on-dark: #ffffff; /* titulos y texto principal: 17.4:1 */
+  --color-text-on-dark-muted: #b9c6dc; /* texto secundario: 10.1:1 */
+  --color-accent-on-dark: #8fb4ff; /* kickers, enlaces, foco: 8.4:1 */
+  --color-line-on-dark: rgba(255, 255, 255, 0.14); /* hairlines decorativas */
+  --color-ring-on-dark: #ffffff; /* aro de seleccion / foco sobre oscuro */
+  --gradient-surface-dark: radial-gradient(70% 120% at 85% 0%, rgba(9, 86, 216, 0.35) 0%, rgba(9, 86, 216, 0) 60%), var(--color-surface-dark);
+  /* Alias con el nombre del spec 01e. */
+  --color-night: var(--color-surface-dark);
+  --color-night-raised: var(--color-surface-dark-raised);
+  --color-on-night: var(--color-text-on-dark);
+  --color-on-night-muted: var(--color-text-on-dark-muted);
+  --color-on-night-kicker: var(--color-accent-on-dark);
+  --color-night-line: var(--color-line-on-dark);
+  --gradient-night: var(--gradient-surface-dark);
+}
+
+/* Fondo continuo de pagina (pedido 2026-10-06: una sola tonalidad que progresa al hacer scroll).
+   Stops AA con --color-text-on-dark-muted (el mas claro, --color-page-mid, da >= 8:1). */
+:root {
+  --color-page-top: #0a1a33;
+  --color-page-mid: #0f2a55;
+  --color-page-bottom: #071326;
+  /* Pico azul del recorrido: AA con el texto secundario (6.1:1), con --color-accent-on-dark (5.1:1) y con blanco (10.5:1). */
+  --color-page-glow: #143e7c;
+  /* Recorrido por el documento: azul noche profundo arriba -> azul mas vivo hacia el 55% -> profundo en el footer.
+     Se estira sobre toda la altura del body (no es fixed): el fondo cambia perceptiblemente al hacer scroll. */
+  --gradient-page-dark: linear-gradient(
+    180deg,
+    var(--color-page-top) 0%,
+    var(--color-page-mid) 24%,
+    var(--color-page-glow) 55%,
+    var(--color-page-mid) 80%,
+    var(--color-page-bottom) 100%
+  );
+}
+
+/* Cromo de sitio sobre noche (navbar, footer, titulos, CTA de promo). Todos los pares verificados AA. */
+:root {
+  --font-weight-display-bold: 700;
+  --font-weight-display-black: 800;
+  /* Titulos: blanco -> azul claro del acento sobre oscuro (mismo azul claro que el H1 del admin). */
+  --gradient-title: linear-gradient(100deg, var(--color-text-on-dark) 0%, var(--color-text-on-dark) 18%, var(--color-accent-on-dark) 100%);
+  /* Navbar sobre noche: sombra y aro de foco (doble aro: separa el foco del fondo). */
+  --shadow-nav-dark: 0 8px 24px rgba(3, 9, 20, 0.5);
+  --shadow-focus-on-dark: 0 0 0 2px var(--color-surface-dark), 0 0 0 4px var(--color-ring-on-dark);
+  /* CTA "Compra YA!" del navbar: ambar calido (distinto de --color-promo, que es el rojo de las tarjetas); tinta noche encima da 9.5:1 (AAA). */
+  --color-deal: #ffb020;
+  --color-deal-hover: #ffc247;
+  --color-deal-active: #f5a000;
+  --color-on-deal: #0a1a33;
+  /* Pie: texto secundario y lineas sobre el fondo del footer (antes hex sueltos). */
+  --color-footer-text: #c9d3e3;
+  --color-footer-muted: #9fb0c9;
+}
+
+/* Hover de botones (pedido 2026-10-06, 'como el del navbar'): cambio suave de color/relleno sobre forma de pildora.
+   Sin elevacion ni sombra: --hover-lift y los shadow quedan neutros por contrato con el cotizador (lo lee con fallback). */
+:root {
+  --hover-dur: 160ms;
+  --hover-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --hover-lift: 0px;
+  --hover-shadow-on-dark: none;
+  --hover-shadow-on-light: none;
 }

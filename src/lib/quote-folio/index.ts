@@ -35,6 +35,11 @@ export interface QuoteFolioItem {
   promoRef: string | null;
 }
 
+export interface QuoteDiscount {
+  code: 'online_card_10';
+  amount: Money;
+}
+
 export interface QuoteFolioRequest {
   /** UUIDv4; a new key for any change of cart, delivery or customer data. */
   idempotencyKey: string;
@@ -44,6 +49,10 @@ export interface QuoteFolioRequest {
   delivery: { mode: 'pickup' | 'delivery'; zone?: string; address?: string };
   items: QuoteFolioItem[];
   transportFee: Money;
+  /** Distrito sin tarifa: transportFee es 0 y el envio se confirma por WhatsApp (senior-be lo acepta server-side). */
+  shippingPending?: boolean;
+  /** 10% online-card discount; only when the customer already chose card. total = sum(items) - discount.amount + transportFee. */
+  discount?: QuoteDiscount;
   total: Money;
   consent: true;
   privacyNoticeVersion: string;
@@ -74,6 +83,7 @@ export type QuoteFolioErrorCode =
   | 'invalid_request'
   | 'invalid_customer'
   | 'consent_required'
+  | 'invalid_discount'
   | 'idempotency_conflict'
   | 'payload_too_large'
   | 'rate_limited'

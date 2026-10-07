@@ -57,4 +57,15 @@ describe('engine/pricing/straight — priceStraight', () => {
     expect(isStraightWidthInRange(201)).toBe(false);
     expect(isStraightWidthInRange(NaN)).toBe(false);
   });
+
+  it('aquafold promo is 279.99 for 100/110/120 cm natural', () => {
+    for (const widthCm of [100, 110, 120]) {
+      expect(priceStraight({ widthCm, color: 'natural', glass: 'aquafold', pickup: false }).price).toBe(279.99);
+    }
+  });
+
+  it('aquafold outside the promo range mirrors decorado (pendiente de Alcusa)', () => {
+    expect(priceStraight({ widthCm: 130, color: 'natural', glass: 'aquafold', pickup: false }).price).toBe(371);
+    expect(priceStraight({ widthCm: 110, color: 'bronce', glass: 'aquafold', pickup: false }).price).toBe(407);
+  });
 });

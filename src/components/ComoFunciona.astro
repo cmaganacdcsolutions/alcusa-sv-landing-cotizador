@@ -1,145 +1,493 @@
 ---
-// ComoFunciona — 4 pasos. Fuente de verdad: boards r01 (ios/android/desktop,
-// revision-2026-09-29) #proceso. Sin lead, sin conectores ni insignias circulares:
-// cada paso es una tarjeta (.st) con numero Fraunces, titulo y copy.
+// ComoFunciona — guia paso a paso para clientes sin experiencia tecnica (pedido 2026-10-06).
+// Cada paso = UNA accion, con lenguaje de todos los dias y una ilustracion CSS/SVG de lo que van a ver.
+// Los nombres de botones/campos salen de la UI real: tarjeta del catalogo ("Elegir opciones", "Cotizar"),
+// cotizador ("Ancho exacto de tu espacio", "Estimado sin transporte", "Siguiente", "Con instalación",
+// "Retiro en tienda", "Anticipo 80%", "Enviar por WhatsApp para confirmar").
+import { buildWaLink } from '@integrations/whatsapp/waLink';
+
+const waHref = buildWaLink('Hola, necesito ayuda para hacer mi cotización en la página.');
+
 const STEPS = [
-  { n: '01', title: 'Selecciona', copy: 'Elige el producto y el acabado para tu espacio.' },
-  { n: '02', title: 'Cotiza', copy: 'Ingresa tus medidas y ve el precio al instante.' },
-  { n: '03', title: 'Confirma', copy: 'Aparta tu pedido con un anticipo del 80%.' },
-  { n: '04', title: 'Recibe', copy: 'Instalamos y pagas el 20% al entregar.' },
+  {
+    id: 'producto',
+    title: 'Elige tu producto',
+    copy: 'En esta misma página, baja y mira las ventanas, las puertas de jardín y las puertas de baño. Cuando veas la que te gusta, esa es la que vas a cotizar.',
+    next: 'Lo siguiente: escoger su color y su vidrio.',
+  },
+  {
+    id: 'color',
+    title: 'Toca el color y el vidrio',
+    copy: 'En la tarjeta del producto toca «Elegir opciones» (en computadora ya vienen abiertas). Toca el color del aluminio y el tipo de vidrio que prefieres.',
+    next: 'Abajo de la foto verás un resumen con lo que elegiste.',
+  },
+  {
+    id: 'cotizar',
+    title: 'Toca el botón «Cotizar»',
+    copy: 'Es el botón azul de la tarjeta. Al tocarlo te llevamos a una pantalla nueva, con tu producto, tu color y tu vidrio ya escogidos.',
+    next: 'Lo siguiente: escribir las medidas.',
+  },
+  {
+    id: 'medidas',
+    title: 'Escribe las medidas de tu espacio',
+    copy: 'Mide el hueco donde irá tu producto y escribe el ancho (y el alto, si te lo piden) en las casillas. Junto a cada casilla verás si va en cm o en metros.',
+    next: 'Usa la medida exacta de tu espacio. El precio se actualiza solo.',
+  },
+  {
+    id: 'precio',
+    title: 'Mira tu precio estimado',
+    copy: 'Verás el «Estimado sin transporte»: es lo que cuesta tu producto con tus medidas. Si estás de acuerdo, toca «Siguiente».',
+    next: 'El transporte se suma según tu zona, en el paso que sigue.',
+  },
+  {
+    id: 'entrega',
+    title: 'Elige cómo lo quieres recibir',
+    copy: 'Toca «Con instalación» (el transporte depende de tu municipio) o «Retiro en tienda» (sin costo de transporte). Después toca «Siguiente».',
+    next: 'Verás el resumen de tu pedido con el total estimado.',
+  },
+  {
+    id: 'confirmar',
+    title: 'Confirma tu pedido',
+    copy: 'Para apartarlo, paga el anticipo del 80% con tarjeta. Si prefieres, toca «Enviar por WhatsApp para confirmar»: no se cobra nada en ese paso. El 20% restante lo pagas al recibir tu producto.',
+    // TODO Alcusa confirmar: fechas/tiempos de fabricación, visita e instalación (hoy el cotizador solo dice "Acordamos contigo fecha y hora").
+    next: 'Te escribimos por WhatsApp y acordamos contigo fecha y hora.',
+  },
 ] as const;
 ---
 
 <section id="proceso" class="proceso" aria-labelledby="proceso-title">
   <div class="proceso__wrap">
     <p class="proceso__kicker">Cómo funciona</p>
-    <h2 id="proceso-title" class="proceso__title">Tu pedido, en cuatro pasos claros</h2>
+    <h2 id="proceso-title" class="proceso__title">Cotiza paso a paso, sin complicarte</h2>
+    <p class="proceso__lead">Son {STEPS.length} pasos cortos. Solo tienes que tocar lo que te decimos aquí.</p>
+
     <ol class="proceso__list">
       {
-        STEPS.map((step) => (
-          <li class="proceso__step">
-            <span class="proceso__step-number">{step.n}</span>
-            <span class="proceso__step-title">{step.title}</span>
-            <span class="proceso__step-copy">{step.copy}</span>
+        STEPS.map((step, i) => (
+          <li class="proceso__step" data-step={step.id}>
+            <div class="proceso__text">
+              <span class="proceso__num" aria-hidden="true">{i + 1}</span>
+              <h3 class="proceso__step-title">
+                <span class="proceso__sr">Paso {i + 1}: </span>
+                {step.title}
+              </h3>
+              <p class="proceso__copy">{step.copy}</p>
+              <p class="proceso__next">{step.next}</p>
+            </div>
+            <div class="proceso__visual" aria-hidden="true">
+              {step.id === 'producto' && (
+                <div class="mock mock--card">
+                  <svg viewBox="0 0 120 80" class="mock__art" focusable="false">
+                    <rect x="14" y="10" width="92" height="60" rx="3" />
+                    <path d="M60 10v60M14 40h92" />
+                  </svg>
+                  <span class="mock__title">Ventana francesa</span>
+                  <span class="mock__price">Desde $…</span>
+                </div>
+              )}
+              {step.id === 'color' && (
+                <div class="mock">
+                  <span class="mock__label">Color</span>
+                  <div class="mock__row">
+                    <span class="mock__chip mock__chip--on"><i class="sw sw--natural"></i>Natural</span>
+                    <span class="mock__chip"><i class="sw sw--blanco"></i>Blanco</span>
+                    <span class="mock__chip"><i class="sw sw--bronce"></i>Bronce</span>
+                  </div>
+                  <span class="mock__label">Vidrio</span>
+                  <div class="mock__row">
+                    <span class="mock__chip mock__chip--on"><i class="sw sw--claro"></i>Claro</span>
+                    <span class="mock__chip"><i class="sw sw--nevado"></i>Nevado</span>
+                  </div>
+                </div>
+              )}
+              {step.id === 'cotizar' && (
+                <div class="mock mock--center">
+                  <span class="mock__sum">Tu selección: Aluminio Natural · Vidrio Claro</span>
+                  <span class="mock__btn">Cotizar</span>
+                </div>
+              )}
+              {step.id === 'medidas' && (
+                <div class="mock mock--center">
+                  <svg viewBox="0 0 230 150" class="mock__diagram" focusable="false">
+                    <rect x="30" y="20" width="150" height="90" rx="2" class="d-hole" />
+                    <path d="M30 128h150M30 122v12M180 122v12" class="d-dim" />
+                    <path d="M200 20v90M194 20h12M194 110h12" class="d-dim" />
+                    <text x="105" y="146" text-anchor="middle">ancho</text>
+                    <text x="214" y="68" text-anchor="middle" transform="rotate(90 214 68)">alto</text>
+                  </svg>
+                  <span class="mock__field"><b>Ancho exacto de tu espacio</b><em>120 cm</em></span>
+                </div>
+              )}
+              {step.id === 'precio' && (
+                <div class="mock mock--center">
+                  <span class="mock__label">ESTIMADO SIN TRANSPORTE</span>
+                  <span class="mock__amount">$ 000.00</span>
+                  <span class="mock__btn">Siguiente</span>
+                </div>
+              )}
+              {step.id === 'entrega' && (
+                <div class="mock">
+                  <span class="mock__opt mock__opt--on"><b>Con instalación</b><em>Transporte según tu municipio</em></span>
+                  <span class="mock__opt"><b>Retiro en tienda</b><em>Sin costo de transporte</em></span>
+                </div>
+              )}
+              {step.id === 'confirmar' && (
+                <div class="mock">
+                  <span class="mock__opt mock__opt--on"><b>Anticipo 80%</b><em>Pago con tarjeta</em></span>
+                  <span class="mock__opt"><b>Enviar por WhatsApp para confirmar</b><em>No se cobra nada</em></span>
+                </div>
+              )}
+            </div>
           </li>
         ))
       }
     </ol>
+
+    <div class="proceso__help">
+      <p class="proceso__help-text">¿Te trabaste en algún paso?</p>
+      <a class="proceso__help-btn" href={waHref} data-testid="proceso-ayuda-whatsapp">Escríbenos por WhatsApp</a>
+    </div>
   </div>
 </section>
 
 <style>
   .proceso {
-    padding: 0 var(--space-6) 56px;
+    padding: var(--space-12) var(--space-4);
+    color: var(--color-text-on-dark);
   }
   .proceso__wrap {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    max-width: 1100px;
+    margin: 0 auto;
   }
   .proceso__kicker {
     margin: 0;
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 20px;
     font-weight: var(--font-weight-body-bold);
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-primary);
+    color: var(--color-accent-on-dark);
   }
   .proceso__title {
-    margin: 0 0 var(--space-3);
+    margin: 0;
     font-family: var(--font-family-display);
-    font-weight: var(--font-weight-display-medium);
+    font-weight: var(--font-weight-display-bold);
     font-size: 30px;
     line-height: 1.15;
-    color: var(--color-ink);
+    color: var(--color-text-on-dark);
     text-wrap: balance;
+  }
+  .proceso__lead {
+    margin: 0 0 var(--space-3);
+    font-size: 18px;
+    line-height: 28px;
+    color: var(--color-text-on-dark-muted);
   }
   .proceso__list {
     margin: 0;
     padding: 0;
     list-style: none;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-4);
   }
   .proceso__step {
-    padding: var(--space-4);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    background: var(--color-surface);
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-4);
+    background: var(--color-surface-dark-raised);
+    border: 1px solid var(--color-line-on-dark);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xs);
   }
-  .proceso__step-number {
+  .proceso__text {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--space-3);
+    row-gap: var(--space-2);
+    align-items: start;
+  }
+  .proceso__num {
+    grid-row: 1 / span 3;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-text-on-dark);
+    color: var(--color-surface-dark);
     font-family: var(--font-family-display);
-    font-size: 22px;
-    font-weight: var(--font-weight-display-medium);
-    line-height: 1.15;
-    color: var(--color-accent);
+    font-weight: var(--font-weight-display-semibold);
+    font-size: 26px;
+    line-height: 1;
   }
   .proceso__step-title {
-    font-size: 16px;
-    font-weight: var(--font-weight-body-bold);
-    line-height: 1.3;
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-bold);
+    font-size: 24px;
+    line-height: 30px;
+    color: var(--color-text-on-dark);
   }
-  .proceso__step-copy {
-    font-size: 14px;
-    line-height: 1.5;
+  .proceso__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .proceso__copy {
+    margin: 0;
+    font-size: 18px;
+    line-height: 28px;
+    color: var(--color-text-on-dark);
+  }
+  .proceso__next {
+    margin: 0;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--color-text-on-dark-muted);
+  }
+
+  /* Ilustraciones: maquetas simples de lo que van a ver (superficie clara sobre la noche). */
+  .proceso__visual {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+  }
+  .mock {
+    display: grid;
+    gap: var(--space-2);
+    width: 100%;
+    max-width: 360px;
+    padding: var(--space-4);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    border-radius: var(--radius-md);
+    font: 600 15px/20px var(--font-family-body);
+    pointer-events: none;
+    user-select: none;
+  }
+  .mock--center {
+    justify-items: center;
+    text-align: center;
+  }
+  .mock__label {
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: var(--font-weight-body-bold);
     color: var(--color-ink-muted);
   }
-  @media (max-width: 339px) {
-    .proceso {
-      padding-inline: var(--space-4);
+  .mock__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .mock__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+  .mock__chip--on,
+  .mock__opt--on {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+    background: var(--color-surface-tint);
+  }
+  .sw {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-input-strong);
+    box-shadow: inset 0 0 0 2px #fff;
+  }
+  .sw--natural { background: linear-gradient(135deg, #e4e7ec 0%, #aeb4be 55%, #d5d9df 100%); }
+  .sw--blanco { background: #fff; }
+  .sw--bronce { background: linear-gradient(135deg, #9a7550 0%, #6b4c2e 100%); }
+  .sw--claro { background: linear-gradient(135deg, #f3f8fc 0%, #cfe2f0 100%); }
+  .sw--nevado { background: radial-gradient(circle at 30% 30%, #fff 0 12%, transparent 13%), linear-gradient(135deg, #e9eef3, #cdd6df); }
+  .mock--card {
+    justify-items: start;
+  }
+  .mock__art {
+    width: 100%;
+    height: 96px;
+    background: linear-gradient(180deg, var(--color-bg), #dde3ea);
+    border-radius: var(--radius-md);
+    fill: rgba(143, 180, 220, 0.25);
+    stroke: #6b7a90;
+    stroke-width: 2;
+  }
+  .mock__title {
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: var(--font-weight-body-bold);
+  }
+  .mock__price {
+    color: var(--color-ink-muted);
+  }
+  .mock__sum {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-ink-muted);
+  }
+  .mock__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 140px;
+    height: 48px;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-surface);
+    font-weight: var(--font-weight-body-bold);
+    font-size: 16px;
+  }
+  .mock__diagram {
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+    font: 700 12px var(--font-family-body);
+    fill: var(--color-ink);
+  }
+  .mock__diagram .d-hole {
+    fill: #eaf2ff;
+    stroke: var(--color-primary);
+    stroke-width: 3;
+  }
+  .mock__diagram .d-dim {
+    fill: none;
+    stroke: var(--color-promo-strong);
+    stroke-width: 2;
+  }
+  .mock__field {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    font-size: 14px;
+    text-align: left;
+  }
+  .mock__field em {
+    display: block;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border-input-strong);
+    border-radius: var(--radius-md);
+    font-style: normal;
+    font-weight: 500;
+  }
+  .mock__amount {
+    font-family: var(--font-family-display);
+    font-size: 34px;
+    line-height: 40px;
+    font-weight: var(--font-weight-display-semibold);
+  }
+  .mock__opt {
+    display: grid;
+    gap: 2px;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+  .mock__opt em {
+    font-style: normal;
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--color-ink-muted);
+  }
+
+  .proceso__help {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+    padding: var(--space-5) var(--space-4);
+    border: 2px solid var(--color-accent-on-dark);
+    border-radius: var(--radius-lg);
+  }
+  .proceso__help-text {
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-semibold);
+    font-size: 24px;
+    line-height: 30px;
+    color: var(--color-text-on-dark);
+  }
+  .proceso__help-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 52px;
+    padding: 0 var(--space-5);
+    border-radius: var(--radius-md);
+    background: var(--color-whatsapp-strong);
+    color: var(--color-surface);
+    font: var(--font-weight-body-bold) 18px/24px var(--font-family-body);
+    text-decoration: none;
+  }
+  /* Hover como el navbar (.nav__wa): cambio suave de relleno, sin elevacion ni sombra. */
+  @media (hover: hover) and (pointer: fine) {
+    .proceso__help-btn {
+      transition:
+        background-color var(--hover-dur) var(--hover-ease),
+        color var(--hover-dur) var(--hover-ease);
     }
-    .proceso__list {
-      grid-template-columns: minmax(0, 1fr);
+    .proceso__help-btn:hover {
+      background: var(--color-whatsapp-strong-hover);
     }
   }
-  @media (min-width: 768px) {
-    .proceso {
-      padding-inline: 0;
-    }
-    .proceso__wrap {
-      width: min(var(--container-page), 100% - 2 * var(--space-10));
-      margin-inline: auto;
+  @media (prefers-reduced-motion: reduce) {
+    .proceso__help-btn {
+      transition: none;
     }
   }
-  @media (min-width: 1024px) {
+  .proceso__help-btn:focus-visible {
+    outline: 3px solid var(--color-ring-on-dark);
+    outline-offset: 3px;
+  }
+
+  @media (min-width: 900px) {
     .proceso {
-      padding-bottom: var(--space-30);
-    }
-    .proceso__wrap {
-      gap: var(--space-4);
-    }
-    .proceso__kicker {
-      font-size: 14px;
-      line-height: 20px;
+      padding: 96px var(--space-8);
     }
     .proceso__title {
-      margin-bottom: var(--space-6);
       font-size: 44px;
       line-height: 52px;
     }
-    .proceso__list {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: var(--space-8);
+    .proceso__lead {
+      font-size: 20px;
+      line-height: 30px;
     }
     .proceso__step {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      align-items: center;
       padding: var(--space-6);
-      gap: var(--space-2);
+      gap: var(--space-8);
     }
-    .proceso__step-number {
-      font-size: 28px;
+    .proceso__num {
+      width: 64px;
+      height: 64px;
+      font-size: 34px;
     }
     .proceso__step-title {
-      font-size: 20px;
-      line-height: 28px;
+      font-size: 30px;
+      line-height: 38px;
     }
-    .proceso__step-copy {
-      font-size: 16px;
-      line-height: 24px;
+    .proceso__copy {
+      font-size: 20px;
+      line-height: 30px;
+    }
+    .proceso__help {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
     }
   }
 </style>

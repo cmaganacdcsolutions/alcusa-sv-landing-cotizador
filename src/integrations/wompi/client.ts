@@ -26,6 +26,12 @@ export class WompiClientError extends Error {
 const GENERIC_ERROR =
   'No pudimos iniciar el pago. Intente de nuevo o escríbanos por WhatsApp.';
 
+// 422 codes for client/server drift on the 10% online-card discount: never show server internals;
+// the customer goes back to "Forma de pago" (which recalculates) or writes by WhatsApp.
+const DISCOUNT_DRIFT_CODES: ReadonlySet<string> = new Set(['invalid_discount', 'discount_mismatch']);
+const DISCOUNT_DRIFT_ERROR =
+  'No pudimos validar el descuento de su pedido. Vuelva a la forma de pago e inténtelo de nuevo o escríbanos por WhatsApp.';
+
 export async function createWompiPaymentLink(
   req: CreateLinkRequest,
   fetchImpl: typeof fetch = fetch,
@@ -44,9 +50,10 @@ export async function createWompiPaymentLink(
     const data: unknown = await res.json().catch(() => null);
     if (!res.ok) {
       const env = data as Partial<ApiErrorEnvelope> | null;
+      const code = env?.error?.code ?? `http_${res.status}`;
       throw new WompiClientError(
-        env?.error?.code ?? `http_${res.status}`,
-        env?.error?.message ?? GENERIC_ERROR,
+        code,
+        DISCOUNT_DRIFT_CODES.has(code) ? DISCOUNT_DRIFT_ERROR : (env?.error?.message ?? GENERIC_ERROR),
       );
     }
     const ok = data as Partial<CreateLinkResponse> | null;
@@ -105,6 +112,7 @@ export function loadPendingPayment(
       reference: p.reference,
       pct: p.pct,
       zone: typeof p.zone === 'string' ? p.zone : '',
+      address: p.address,
       entrega: p.entrega === 'retiro' ? 'retiro' : 'instalacion',
     };
   } catch {

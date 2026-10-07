@@ -1,11 +1,11 @@
 import type { ReactElement } from 'react';
 import { GARDEN_PROMO_BANDS } from '@content/pricingTables';
-import type { GardenColor, GardenGlass } from '@engine/pricing';
 import { GLASS_LABELS, COLOR_LABELS, type CotizadorAction, type CotizadorState, type GardenHeightOption } from '../../state/cotizadorStore';
 import { GARDEN_HOJAS_LABELS } from '../../state/labels';
 import { computeGardenQuote } from '../../state/quoteWindowGarden';
 import { IconArrowRight, IconWarningTriangle } from '../../icons';
-import { GlassSwatch } from './glassSwatches';
+import { ColorSwatch, GlassSwatch } from './glassSwatches';
+import { GARDEN_COLORS, GARDEN_GLASSES } from './finishOptions';
 
 const HOJAS: (1 | 2 | 3 | 'custom')[] = [1, 2, 3, 'custom'];
 // S7 — re-exported so existing `from './measures/GardenForm'` imports keep
@@ -15,8 +15,6 @@ export { GARDEN_HOJAS_LABELS };
 const HEIGHT_OPTIONS: GardenHeightOption[] = ['2.10', '2.40', 'otra'];
 const HEIGHT_LABELS: Record<GardenHeightOption, string> = { '2.10': '2.10 m', '2.40': '2.40 m', otra: 'Otra' };
 
-const COLORS: GardenColor[] = ['blanco', 'bronce', 'natural'];
-const GLASSES: GardenGlass[] = ['claro', 'nevado', 'decorado', 'mallado', 'duplex'];
 
 function widthRangeHint(hojas: 1 | 2 | 3 | 'custom'): string | null {
   if (hojas === 'custom') return null;
@@ -121,7 +119,7 @@ export default function GardenForm({ state, dispatch, onNext }: GardenFormProps)
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color</span>
         <div className="chip-row" role="group" aria-label="Color">
-          {COLORS.map((c) => (
+          {GARDEN_COLORS.map((c) => (
             <button
               key={c}
               type="button"
@@ -129,6 +127,7 @@ export default function GardenForm({ state, dispatch, onNext }: GardenFormProps)
               aria-pressed={state.gardenColor === c}
               onClick={() => dispatch({ type: 'SET_GARDEN_COLOR', color: c })}
             >
+              <ColorSwatch color={c} />
               {COLOR_LABELS[c]}
               {c !== 'blanco' && <span className="chip__badge">Cotización personalizada</span>}
             </button>
@@ -139,7 +138,7 @@ export default function GardenForm({ state, dispatch, onNext }: GardenFormProps)
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Tipo de vidrio</span>
         <div className="glass-grid" role="group" aria-label="Tipo de vidrio">
-          {GLASSES.map((g) => (
+          {GARDEN_GLASSES.map((g) => (
             <button
               key={g}
               type="button"

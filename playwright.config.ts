@@ -9,9 +9,17 @@ const BASE_URL = `http://localhost:${PORT}`;
 // every later e2e spec: ios390, android412, desktop1920.
 export default defineConfig({
   testDir: './tests/e2e',
+  // Refuses to run against a missing/stale dist-e2e (i.e. when `pretest:e2e` was skipped by calling
+  // `playwright test` directly). Always use `npm run test:e2e`, `verify`, or `verify:area`.
+  globalSetup: './tests/support/e2e-fresh-build.ts',
   fullyParallel: true,
+  // Capped: with the machine shared (dev server, browsers, other agents) 6 workers made touch-emulated
+  // click/screenshot actions time out. Override with E2E_WORKERS.
+  workers: Number(process.env.E2E_WORKERS ?? 3),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  snapshotPathTemplate: '{testDir}/__snapshots__/{testFilePath}/{arg}{-projectName}{ext}',
+  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: 'disabled', caret: 'hide' } },
   reporter: [['html', { open: 'never' }]],
   use: {
     baseURL: BASE_URL,
@@ -24,7 +32,7 @@ export default defineConfig({
     { name: 'one', port: 1 },
     { name: 'states', port: 2 },
   ].map(({ name, port }) => ({
-    command: `node scripts/serve-static.mjs dist-e2e/${name} ${PORT + port}`,
+    command: `node scripts/serve-static.mjs dist-e2e/p${PORT}/${name} ${PORT + port}`,
     url: `http://localhost:${PORT + port}`,
     reuseExistingServer: !process.env.CI,
   })),

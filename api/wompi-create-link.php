@@ -4,18 +4,24 @@ declare(strict_types=1);
 // POST /api/wompi-create-link.php  (ADR-003)
 // Creates a Wompi hosted payment link. Secrets stay server-side.
 //
-// Request  { "pct": 80|100, "total": 1148.00, "items": [{ "name": "...", "subtotal": 123.45 }] }
+// Request  { "pct": 80|100, "total": 1148.00, "items": [{ "name": "...", "subtotal": 123.45 }],
+//            "discount"?: { "code": "online_card_10", "amount": 114.80 },   // 10% online-card discount
+//            "shippingPending"?: true }                                     // no automatic shipping fee: transport 0
 // 201      { "urlEnlace": "https://lk.wompi.sv/xxxx", "reference": "ALC-2026-7F3A9C", "amount": 918.40 }
 // 4xx/5xx  { "error": { "code": "...", "message": "..." } }
+//          422 codes: invalid_request | invalid_total | invalid_items | invalid_discount | discount_mismatch
 //
 // AMOUNT TRUST MODEL (Phase 1, documented in docs/ops/wompi-go-live.md):
 // the browser never sends the amount to charge. It sends the cart total and
 // the 80/100 choice; the server derives the amount, bounds-checks the total,
-// checks that the item subtotals add up (transport = total - sum, bounded),
+// checks that the item subtotals add up (transport = total - sum + discount, bounded;
+// 0 when shippingPending), RECOMPUTES the optional online-card discount (10% of
+// the item subtotals, +-0.01) and rejects any other code or amount,
 // and stores the expected amount per reference so return + webhook can
 // reconcile. A full PHP re-price of the cart (Phase 2) is proposed there.
 
 require_once __DIR__ . '/_lib/wompi-client.php';
+require_once __DIR__ . '/_lib/wompi-pricing.php';
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     wompi_fail(405, 'method_not_allowed', 'Método no permitido.', ['Allow: POST']);
@@ -70,30 +76,23 @@ if ($total < $minTotal || $total > $maxTotal) {
 }
 
 // Business rules (layer 2): item subtotals must add up; the remainder is
-// transport, a bounded non-negative amount.
-$sum = 0.0;
-$names = [];
-foreach ($items as $it) {
-    if (!is_array($it) || !isset($it['name'], $it['subtotal']) || !is_string($it['name']) || !is_numeric($it['subtotal'])) {
-        wompi_fail(422, 'invalid_items', 'Datos del pedido inválidos.');
-    }
-    $sub = (float) $it['subtotal'];
-    if ($sub < 0 || $sub > $maxTotal) {
-        wompi_fail(422, 'invalid_items', 'Datos del pedido inválidos.');
-    }
-    $sum += $sub;
-    $names[] = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $it['name']) ?? ''), 0, 120);
+// transport (bounded, non-negative; 0 when shippingPending). An optional
+// online-card discount is recomputed here, never trusted (wompi-pricing.php).
+$checked = wompi_check_order_amounts($items, $total, $in['discount'] ?? null, $in['shippingPending'] ?? null, $maxTotal, $maxTransport);
+if (!$checked['ok']) {
+    wompi_log('create', $checked['log'], $checked['ctx']);
+    wompi_fail($checked['status'], $checked['code'], $checked['message']);
 }
-$transport = round($total - $sum, 2);
-if ($transport < -0.01 || $transport > $maxTransport) {
-    wompi_log('create', 'total_mismatch', ['total' => $total, 'sum' => round($sum, 2)]);
-    wompi_fail(422, 'invalid_total', 'El monto del pedido no coincide con sus productos.');
-}
+$names = $checked['names'];
+$discount = $checked['discount'];
+$shippingPending = $checked['shippingPending'];
 
 $amount = wompi_amount($total, (int) $pct);
 $reference = wompi_new_reference();
 $webhookUrl = (string) wompi_env('WOMPI_WEBHOOK_URL');
 $now = time();
+
+$description = wompi_product_description($names, $discount, $shippingPending);
 
 $payload = [
     'identificadorEnlaceComercio' => $reference,
@@ -109,7 +108,7 @@ $payload = [
         'permitePagoQuickPay' => false,
     ],
     'infoProducto' => [
-        'descripcionProducto' => mb_substr(implode(' | ', $names), 0, 1500),
+        'descripcionProducto' => $description,
     ],
     'configuracion' => [
         // A payment-link redirect gets ?identificadorEnlaceComercio&idTransaccion&idEnlace&monto&hash
@@ -156,6 +155,8 @@ wompi_order_save($reference, [
     'amount' => $amount,
     'total' => $total,
     'pct' => (int) $pct,
+    'discount' => $discount,
+    'shippingPending' => $shippingPending,
     'idEnlace' => $res['body']['idEnlace'] ?? null,
     'productive' => $res['body']['estaProductivo'] ?? null,
     'status' => 'pending',
@@ -165,6 +166,8 @@ wompi_log('create', 'link_created', [
     'ref' => $reference,
     'amount' => $amount,
     'pct' => (int) $pct,
+    'discount' => $discount['amount'] ?? 0,
+    'shippingPending' => $shippingPending,
     'productive' => $res['body']['estaProductivo'] ?? null,
 ]);
 

@@ -1,35 +1,33 @@
+import { coverFor, type VariantChoice } from '@content/home-media';
 import type { WindowModel } from '@engine/pricing';
 
-// "Modelo" (Francesa/Bilbao) option-card photos — sf-cot-models, replacing
-// the old text-only chip row per 02-design/specs/ventana-modelo-selector.md
-// §2. Same folder/convention as PRODUCT_IMAGES (steps/productImages.ts) and
-// GLASS_SWATCHES (measures/glassSwatches.tsx); the per-model `objectPosition`
-// travels with the src/srcSet here (composition data, not a design token —
-// see spec §3.4 "SIN TOKEN") instead of living in the CSS file.
-//
-// Both photos are official ALCUSA assets (spec §0): Bilbao is the same
-// source photo as public/images/hero-ventana-bilbao-*.webp
-// (01-discovery/assets/product-ventana-bilbao.jpeg); Francesa is the same
-// source photo as the existing public/img/cotizador/product-ventana.webp
-// (alcusasv.com "Ventanas francesas"), re-cropped to the top window only.
-// Two widths (400w/800w) exported per spec §2, same pattern as
-// hero-ventana-bilbao-*.webp's srcset.
+// "Modelo" (Francesa/Bilbao) option-card images. 2026-10-06: son los RENDERS del sitio,
+// resueltos por el unico mapa `@content/home-media` (PRODUCT_MEDIA / coverFor); ya no se usa
+// ninguna foto de Alcusa. Para cambiar un render basta con editar ese mapa.
+// Photos are shown whole (object-fit: contain, centered; image-frame-rule.md).
 export interface WindowModelImage {
   src: string;
   srcSet: string;
-  objectPosition: string;
+}
+
+/** Slug del catalogo (clave de PRODUCT_MEDIA) de cada modelo de ventana. */
+export const WINDOW_MODEL_SLUG: Readonly<Record<WindowModel, string>> = {
+  francesa: 'ventana-francesa',
+  bilbao: 'ventana-bilbao',
+};
+
+/**
+ * Render del modelo. Sin `choice` es la portada; con marco/vidrio elegidos (`{ color, vidrio }`) es la variante
+ * exacta de ese modelo, asi las tarjetas "Modelo" reflejan lo que el cliente va eligiendo.
+ */
+export function modelImage(model: WindowModel, choice?: VariantChoice): WindowModelImage {
+  const slug = WINDOW_MODEL_SLUG[model];
+  const media = coverFor(slug, choice);
+  if (!media) throw new Error(`home-media: falta el render de "${slug}"`);
+  return { src: media.src, srcSet: `${media.src} ${media.width}w` };
 }
 
 export const WINDOW_MODEL_IMAGES: Readonly<Record<WindowModel, WindowModelImage>> = {
-  francesa: {
-    src: '/img/cotizador/product-ventana-francesa-800.webp',
-    srcSet:
-      '/img/cotizador/product-ventana-francesa-400.webp 400w, /img/cotizador/product-ventana-francesa-800.webp 800w',
-    objectPosition: '50% 45%',
-  },
-  bilbao: {
-    src: '/img/cotizador/product-ventana-bilbao-800.webp',
-    srcSet: '/img/cotizador/product-ventana-bilbao-400.webp 400w, /img/cotizador/product-ventana-bilbao-800.webp 800w',
-    objectPosition: '58% 38%',
-  },
+  francesa: modelImage('francesa'),
+  bilbao: modelImage('bilbao'),
 };

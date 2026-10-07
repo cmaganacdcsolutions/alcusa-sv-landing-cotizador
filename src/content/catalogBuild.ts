@@ -5,11 +5,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { assertCatalogContent } from './catalogContent';
 import { allCatalogSlugs } from './catalogView';
-import { CATALOG_GALLERY } from './catalogGallery';
 
 export function assertCatalogForBuild(publicDir: string = join(process.cwd(), 'public')): void {
   const exists = (p: string): boolean => existsSync(join(publicDir, p));
   assertCatalogContent(allCatalogSlugs(), exists);
-  const missing = CATALOG_GALLERY.filter((g) => !exists(g.src));
-  if (missing.length > 0) throw new Error(`catalogGallery: archivos inexistentes: ${missing.map((m) => m.src).join(', ')}`);
 }

@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, pickProduct, test } from './fixtures';
+import { fillAddress } from '../support/address';
 
 async function expectNoSeriousOrCriticalViolations(page: import('@playwright/test').Page): Promise<void> {
   const results = await new AxeBuilder({ page }).analyze();
@@ -9,7 +10,7 @@ async function expectNoSeriousOrCriticalViolations(page: import('@playwright/tes
   expect(seriousOrCritical).toEqual([]);
 }
 
-test.describe('a11y — home, drawer, cotizador (Slice 1)', () => {
+test.describe('a11y — home, navbar, cotizador (Slice 1)', () => {
   test('home loads with a visible h1 and no serious/critical a11y violations', async ({ page }) => {
     await page.goto('/');
     const heading = page.getByRole('heading', { level: 1 });
@@ -17,10 +18,17 @@ test.describe('a11y — home, drawer, cotizador (Slice 1)', () => {
     await expectNoSeriousOrCriticalViolations(page);
   });
 
-  test('drawer open — focus trap target and no serious/critical violations', async ({ page }) => {
+  test('navbar (menú de catálogo abierto en escritorio) — sin violaciones serious/critical', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
-    await expect(page.getByRole('navigation', { name: 'Menú principal' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Principal' })).toBeVisible();
+    // El submenú del catálogo (chevron) solo existe en >= 1024; en móvil la barra de enlaces es la propia navegación.
+    if ((page.viewportSize()?.width ?? 0) >= 1024) {
+      const chev = page.getByRole('button', { name: 'Abrir categorías del catálogo' });
+      await expect(async () => {
+        await chev.click();
+        await expect(chev).toHaveAttribute('aria-expanded', 'true', { timeout: 1500 });
+      }).toPass();
+    }
     await expectNoSeriousOrCriticalViolations(page);
   });
 
@@ -45,7 +53,7 @@ test.describe('a11y — home, drawer, cotizador (Slice 1)', () => {
     await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.locator('#municipio').selectOption('Soyapango');
+    await fillAddress(page, 'Soyapango');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
     await expectNoSeriousOrCriticalViolations(page);

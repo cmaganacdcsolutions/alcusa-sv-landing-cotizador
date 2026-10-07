@@ -24,6 +24,8 @@ export interface QuoteMessageInput {
   saldo: number;
   /** No address field exists yet in this slice — stays a visible placeholder. */
   direccion?: string;
+  /** Distrito sin tarifa automatica: el envio no esta incluido en `total` y se confirma por WhatsApp. */
+  shippingPending?: boolean;
 }
 
 function money(n: number): string {
@@ -47,8 +49,9 @@ export function buildQuoteMessage(input: QuoteMessageInput): string {
   return (
     'Hola ALCUSA, quiero confirmar esta cotización:\n\n' +
     `${lines}\n\n` +
-    `Transporte: ${money(input.transporte)}\n` +
-    `Total estimado: ${money(input.total)}\n` +
+    (input.shippingPending
+      ? 'Transporte: Envío por confirmar\n' + `Total estimado: ${money(input.total)} (más envío por confirmar)\n`
+      : `Transporte: ${money(input.transporte)}\n` + `Total estimado: ${money(input.total)}\n`) +
     `Anticipo (80%): ${money(input.anticipo)} · Saldo (20% al entregar): ${money(input.saldo)}\n` +
     `Dirección: ${input.direccion ?? '[dirección]'}\n\n` +
     'Por favor confirmen medidas, disponibilidad y forma de pago. ¡Gracias!'

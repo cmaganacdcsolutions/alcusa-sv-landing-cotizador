@@ -4,6 +4,7 @@
 // same `fields` map of the ADR-003 envelope.
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
+import { ONLINE_DISCOUNT_CODE, discountMatches } from './discount.ts';
 import { normalizeQuoteCode } from './folio.ts';
 import { isMoney, toCents } from './money.ts';
 import { normalizeEmail, normalizeName, normalizeWhatsapp } from './normalize.ts';
@@ -13,7 +14,7 @@ export const MAX_QTY = 999;
 export const CONFIG_MAX_BYTES = 4096;
 
 export type FieldIssue = 'required' | 'invalid' | 'too_short' | 'too_long';
-export type CreateErrorCode = 'invalid_request' | 'invalid_customer' | 'consent_required' | 'payload_too_large';
+export type CreateErrorCode = 'invalid_request' | 'invalid_discount' | 'invalid_customer' | 'consent_required' | 'payload_too_large';
 
 const Item = z.object({
   productSlug: z.string().regex(/^[a-z0-9-]{1,80}$/u),
@@ -39,6 +40,9 @@ export const QuoteCreateShape = z.object({
   items: z.array(Item).min(1).max(MAX_ITEMS),
   transportFee: z.number(),
   total: z.number(),
+  // Optional (old clients omit them); null is read as absent. Business rules are checked in validateCreate.
+  shippingPending: z.boolean().nullish(),
+  discount: z.object({ code: z.string().max(40), amount: z.number() }).nullish(),
   // Checked after the other rules so the error priority is deterministic (see pickCode).
   consent: z.boolean().optional(),
   privacyNoticeVersion: z.string().regex(/^[A-Za-z0-9._-]{1,20}$/u),
@@ -70,6 +74,11 @@ export interface ValidCreate {
   items: ValidItem[];
   subtotalCents: number;
   transportCents: number;
+  /** Online-card discount (cents, 0 = none) and its code (null = none): total = subtotal - discount + transport. */
+  discountCode: string | null;
+  discountCents: number;
+  /** No automatic shipping fee: transport is 0 and Alcusa confirms shipping by WhatsApp. */
+  shippingPending: boolean;
   totalCents: number;
   privacyNoticeVersion: string;
   honeypot: boolean;
@@ -86,6 +95,7 @@ export interface CreateRejection {
 
 const MESSAGES: Record<CreateErrorCode, string> = {
   invalid_request: 'Revisa los datos de la cotización.',
+  invalid_discount: 'El descuento de la cotización no es válido.',
   invalid_customer: 'Revisa tus datos de contacto.',
   consent_required: 'Falta el consentimiento.',
   payload_too_large: 'Cotización demasiado grande.',
@@ -95,10 +105,12 @@ function reject(code: CreateErrorCode, fields: Record<string, FieldIssue>): Crea
   return { status: code === 'payload_too_large' ? 413 : 422, code, message: MESSAGES[code], fields };
 }
 
-/** invalid_request wins over invalid_customer, which wins over consent_required. */
+/** invalid_request wins over invalid_discount, then invalid_customer, then consent_required. */
 function pickCode(fields: Record<string, FieldIssue>): CreateErrorCode {
   const keys = Object.keys(fields);
-  if (keys.some((k) => k !== 'consent' && !k.startsWith('customer.'))) return 'invalid_request';
+  const isDiscount = (k: string): boolean => k === 'discount' || k.startsWith('discount.');
+  if (keys.some((k) => k !== 'consent' && !k.startsWith('customer.') && !isDiscount(k))) return 'invalid_request';
+  if (keys.some(isDiscount)) return 'invalid_discount';
   if (keys.some((k) => k.startsWith('customer.'))) return 'invalid_customer';
   return 'consent_required';
 }
@@ -198,7 +210,28 @@ export function validateCreate(body: unknown): { ok: true; data: ValidCreate } |
   const transportCents = fields['transportFee'] ? 0 : toCents(b.transportFee);
   const totalCents = fields['total'] ? 0 : toCents(b.total);
   const itemFieldBad = Object.keys(fields).some((k) => k.startsWith('items.'));
-  if (!fields['total'] && !itemFieldBad && subtotal + transportCents !== totalCents) fields['total'] = 'invalid';
+
+  // Online-card discount: only the known code, amount = 10% of the item subtotals (+-1 cent), recomputed here.
+  let discountCode: string | null = null;
+  let discountCents = 0;
+  if (b.discount) {
+    if (b.discount.code !== ONLINE_DISCOUNT_CODE) fields['discount.code'] = 'invalid';
+    if (!isMoney(b.discount.amount)) fields['discount.amount'] = 'invalid';
+    else if (!itemFieldBad && !discountMatches(toCents(b.discount.amount), subtotal)) fields['discount.amount'] = 'invalid';
+    if (!fields['discount.code'] && !fields['discount.amount']) {
+      discountCode = b.discount.code;
+      discountCents = toCents(b.discount.amount);
+    }
+  }
+  // Shipping pending: delivery only, and nothing for transport in the charged total.
+  const shippingPending = b.shippingPending === true;
+  if (shippingPending) {
+    if (b.delivery.mode !== 'delivery') fields['shippingPending'] = 'invalid';
+    if (!fields['transportFee'] && transportCents !== 0) fields['transportFee'] = 'invalid';
+  }
+  if (!fields['total'] && !itemFieldBad && !fields['discount.code'] && !fields['discount.amount'] && subtotal - discountCents + transportCents !== totalCents) {
+    fields['total'] = 'invalid';
+  }
 
   if (Object.keys(fields).length) return { ok: false, error: reject(pickCode(fields), fields) };
   if (oversize) return { ok: false, error: reject('payload_too_large', {}) };
@@ -214,6 +247,9 @@ export function validateCreate(body: unknown): { ok: true; data: ValidCreate } |
         transportCents,
         totalCents,
         privacyNoticeVersion: b.privacyNoticeVersion,
+        // Only when present: the hash of a request without them stays identical to the pre-discount one (idempotent replays).
+        ...(discountCents > 0 ? { discount: [discountCode, discountCents] } : {}),
+        ...(shippingPending ? { shippingPending: true } : {}),
       }),
     )
     .digest('hex');
@@ -231,6 +267,9 @@ export function validateCreate(body: unknown): { ok: true; data: ValidCreate } |
       items,
       subtotalCents: subtotal,
       transportCents,
+      discountCode,
+      discountCents,
+      shippingPending,
       totalCents,
       privacyNoticeVersion: b.privacyNoticeVersion,
       honeypot: (b.hp ?? '') !== '',

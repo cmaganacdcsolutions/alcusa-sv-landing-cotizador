@@ -1,11 +1,14 @@
-import { useState, type Dispatch, type ReactElement } from 'react';
+import { useEffect, useState, type Dispatch, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { CATALOG_PRODUCTS } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
+import { formatAddressForMessage, isAddressComplete } from '../../../lib/delivery-address';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
 import type { CotizadorAction, CotizadorState } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
 import { buildOrderMessageItems } from '../state/order';
+import { computePayable, depositOf, formatDiscount } from '../state/payable';
+import { ONLINE_DISCOUNT_LABEL } from '../state/payOffer';
 import { IconArrowRight, IconWhatsApp } from '../icons';
 import { IconCardRect, IconLock } from '../icons-checkout';
 import '@styles/cotizador-checkout.css';
@@ -15,6 +18,10 @@ export interface Step5FormaPagoProps {
   quote: QuoteResult;
   zoneFee: number | undefined;
   total: number | null;
+  /** Sum of item subtotals (before shipping and before the card discount). */
+  itemsSubtotal: number;
+  /** Distrito sin tarifa: envio "por confirmar" (suma 0, se avisa en pantalla y en el mensaje). */
+  shippingPending: boolean;
   // Optional — Cotizador.tsx doesn't pass this yet (see HANDOFF to
   // sf-cot-shell). method/amountPct always work locally either way (mirrors
   // state.payMethod/payAmountPct's initial values); once wired, the choice
@@ -40,6 +47,8 @@ export default function Step5FormaPago({
   quote,
   zoneFee,
   total,
+  itemsSubtotal,
+  shippingPending,
   dispatch,
   onNext,
   asideCtaTarget,
@@ -54,12 +63,29 @@ export default function Step5FormaPago({
     setLocalAmountPct(pct);
     dispatch?.({ type: 'SET_PAY_AMOUNT_PCT', pct });
   };
+  // Reaching the step counts as choosing the default method: Resumen/aside then agree with it.
+  useEffect(() => {
+    dispatch?.({ type: 'SET_PAY_METHOD', method: state.payMethod });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: persists the initial selection
+  }, []);
   const subtotal = quote.amount ?? 0;
   const transporte = zoneFee ?? 0;
-  const grandTotal = total ?? subtotal;
-  const anticipo = Math.round(grandTotal * 80) / 100;
-  const saldo = grandTotal - anticipo;
+  // 10% online-card discount only for the Wompi option (local `method`); WhatsApp keeps the plain total.
+  const payable = computePayable({
+    itemsSubtotal,
+    shipping: shippingPending ? { kind: 'pending' } : { kind: 'fee', fee: transporte },
+    payMethod: method,
+    pickup: state.entrega === 'retiro',
+  });
+  const discountAmount = payable.discount.applies ? payable.discount.amount : 0;
+  const grandTotal = total === null ? subtotal : payable.total;
+  const anticipo = depositOf(grandTotal);
+  const saldo = Math.round((grandTotal - anticipo) * 100) / 100;
   const amountToPay = amountPct === 80 ? anticipo : grandTotal;
+  // WhatsApp path: never discounted.
+  const waTotal = payable.totalBeforeDiscount;
+  const waAnticipo = depositOf(waTotal);
+  const waSaldo = Math.round((waTotal - waAnticipo) * 100) / 100;
   const entregaLabel: 'con instalación' | 'retiro en tienda' =
     state.entrega === 'instalacion' ? 'con instalación' : 'retiro en tienda';
   const zona = state.entrega === 'instalacion' ? state.zone : '—';
@@ -68,7 +94,17 @@ export default function Step5FormaPago({
   // (ventana items still expand to one line per pane — see state/order.ts).
   const items = buildOrderMessageItems(state, CATALOG_PRODUCTS, { zona, entrega: entregaLabel });
 
-  const waMsg = buildQuoteMessage({ items, transporte, total: grandTotal, anticipo, saldo });
+  const direccion =
+    state.entrega === 'instalacion' && isAddressComplete(state.address) ? formatAddressForMessage(state.address) : '';
+  const waMsg = buildQuoteMessage({
+    items,
+    transporte,
+    total: waTotal,
+    anticipo: waAnticipo,
+    saldo: waSaldo,
+    ...(shippingPending ? { shippingPending: true } : {}),
+    ...(direccion ? { direccion } : {}),
+  });
   const waHref = buildWaLink(waMsg);
   const money = (n: number) => `$${n.toFixed(2)}`;
 
@@ -89,9 +125,34 @@ export default function Step5FormaPago({
   return (
     <section aria-labelledby="cotizador-page-title">
       <p style={{ marginTop: 0, color: 'var(--color-ink-muted)' }}>
-        Total de tu cotización: <strong style={{ color: 'var(--color-ink)' }}>{money(grandTotal)}</strong> · elige
-        cómo quieres confirmar tu pedido.
+        Total de tu cotización:{' '}
+        <strong style={{ color: 'var(--color-ink)' }} data-testid="formapago-total-value">
+          {money(grandTotal)}
+        </strong>{' '}
+        · elige cómo quieres confirmar tu pedido.
       </p>
+      {discountAmount > 0 && (
+        <dl className="breakdown" data-testid="formapago-discount" style={{ marginTop: 0, marginBottom: 16 }}>
+          <div className="breakdown__row">
+            <dt>Productos{transporte > 0 ? ' + transporte' : ''}</dt>
+            <dd>{money(payable.totalBeforeDiscount)}</dd>
+          </div>
+          <div className="breakdown__row">
+            <dt>{ONLINE_DISCOUNT_LABEL}</dt>
+            <dd data-testid="formapago-discount-value">{formatDiscount(discountAmount)}</dd>
+          </div>
+        </dl>
+      )}
+      {method === 'wa' && state.onlineOffer && (
+        <p className="online-discount-wa-note" data-testid="formapago-offer-wa-note">
+          {`El 10% solo aplica pagando con tarjeta en línea. Por WhatsApp el total es ${money(waTotal)}.`}
+        </p>
+      )}
+      {shippingPending && (
+        <p className="field__helper" data-testid="formapago-envio-pendiente" style={{ marginTop: 0 }}>
+          Envío por confirmar: te lo confirmamos por WhatsApp y se suma al saldo.
+        </p>
+      )}
 
       <div role="radiogroup" aria-label="Forma de pago" className="payment-group">
         <div className="payment-option" data-checked={method === 'wa'}>
@@ -140,6 +201,9 @@ export default function Step5FormaPago({
                 Pagar ahora <span className="payment-option__badge">Wompi</span>
               </span>
               <span className="payment-option__desc">Con tarjeta, en la página de pago de Wompi.</span>
+              <span className="payment-option__desc" data-testid="pay-discount-hint">
+                <strong>10% de descuento pagando con tarjeta aquí</strong>
+              </span>
             </span>
             <span className="payment-option__dot" />
           </button>

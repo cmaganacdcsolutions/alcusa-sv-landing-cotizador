@@ -1,0 +1,499 @@
+---
+// Tarjeta de producto del inicio (spec home-catalogo-completo §4-§6, §10; pulido 2026-10-06).
+// Progressive enhancement: <form method="get" action="/cotizador"> con un <select> nativo por opcion
+// (Marco/Color, Vidrio, Acabado). Enviar el formulario ES el deep link; el script (catalogHome.client.ts)
+// solo actualiza el circulo de la eleccion y la foto. Sin isla React.
+import PhotoFrame from '@components/PhotoFrame';
+import type { Subcategory } from '@content/catalog';
+import { cardTitle, priceView } from '@content/catalogView';
+import { COVER_RATIO, coverFor, variantsOf } from '@content/home-media';
+import {
+  buildCotizadorHref,
+  COTIZADOR_PATH,
+  defaultChoices,
+  PRODUCT_CONFIGS,
+  STEP_MEDIDAS,
+  STEP_PARAM,
+} from '@content/catalogHome';
+import OptionSelect from './OptionSelect.astro';
+
+interface Props {
+  sub: Subcategory;
+  /** Primera tarjeta de Ventanas: LCP => eager + fetchpriority high. */
+  first?: boolean;
+}
+const { sub, first = false } = Astro.props;
+const config = PRODUCT_CONFIGS[sub.slug];
+if (!config) throw new Error(`ProductCard: sin configuración para "${sub.slug}"`);
+const title = cardTitle(sub);
+const price = priceView(sub);
+const choices = defaultChoices(config);
+const href = buildCotizadorHref(config.productSlug, choices);
+// `choices` lleva color, vidrio y (en-l) acabado: coverFor resuelve la variante exacta de cada combinacion.
+const img = coverFor(sub.slug, choices);
+const variants = variantsOf(sub.slug);
+// Todo producto con opciones (todos menos templada-10mm) tiene un render por combinacion.
+const hasVariants = Object.keys(variants).length > 0;
+// Ultimo peldano de la escalera de render: la portada (sin color/vidrio) por si una combinacion no tuviera archivo.
+const cover = hasVariants ? coverFor(sub.slug) : null;
+// El orden del DOM es el orden del query string: producto, paso, color, vidrio (contrato del deep link).
+const acabado = config.groups.find((g) => g.name === 'acabado');
+const others = config.groups.filter((g) => g.name !== 'acabado');
+const hasOptions = config.groups.length > 0;
+const altoText = 'altoText' in sub ? sub.altoText : undefined;
+const titleId = `pc-${sub.slug}-t`;
+const idBase = `pc-${sub.slug}`;
+---
+
+<article class="pcard" id={`p-${sub.slug}`} aria-labelledby={titleId} data-card={sub.slug} data-reveal>
+  <div class="pcard__media" data-finish-swap={hasVariants ? "" : undefined}>
+    {
+      img ? (
+        <PhotoFrame
+          src={img.src}
+          alt={img.alt}
+          ratio={COVER_RATIO}
+          fit="cover"
+          width={img.width}
+          height={img.height}
+          loading={first ? 'eager' : 'lazy'}
+          fetchPriority={first ? 'high' : undefined}
+          className="pcard__photo"
+        />
+      ) : (
+        <div class="pcard__nophoto">FOTO PRÓXIMAMENTE</div>
+      )
+    }
+  </div>
+
+  <div class="pcard__body">
+    <h3 id={titleId} class="pcard__title">{title}</h3>
+    {altoText && <p class="pcard__line">{altoText}</p>}
+    <p class="pcard__price">
+      {
+        price.kind === 'from'
+          ? `Desde ${price.text.replace(/^Desde\s*/, '')}`
+          : price.kind === 'advisor'
+            ? 'Cotización por asesor'
+            : 'Cotizar'
+      }
+    </p>
+
+    {
+      hasOptions ? (
+        <form
+          class="pcard__form"
+          method="get"
+          action={COTIZADOR_PATH}
+          role="group"
+          aria-label={`Opciones de ${title}`}
+          data-config={sub.slug}
+          data-product={config.productSlug}
+          data-variants={hasVariants ? JSON.stringify(variants) : undefined}
+          data-cover={cover ? JSON.stringify(cover) : undefined}
+        >
+          {!acabado && <input type="hidden" name="producto" value={config.productSlug} />}
+          {acabado && <OptionSelect group={acabado} idBase={idBase} />}
+          <input type="hidden" name={STEP_PARAM} value={STEP_MEDIDAS} />
+          {others.map((g) => <OptionSelect group={g} idBase={idBase} />)}
+          <button type="submit" class="pcard__go" data-go aria-label={`Continuar al cotizador con ${title}`}>
+            Continuar al cotizador
+          </button>
+        </form>
+      ) : (
+        <div class="pcard__form pcard__form--plain">
+          <p class="pcard__sum">Las medidas las eliges en el cotizador.</p>
+          <a class="pcard__go" href={href} data-go aria-label={`Continuar al cotizador con ${title}`}>
+            Continuar al cotizador
+          </a>
+        </div>
+      )
+    }
+  </div>
+</article>
+
+<style is:global>
+  .pcard {
+    color: var(--color-ink);
+    color-scheme: light;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    min-width: 0;
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-nav);
+    scroll-margin-top: var(--anchor-offset);
+  }
+  .pcard__media {
+    min-width: 0;
+  }
+  .pcard__photo {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .pcard__nophoto {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    background: var(--color-bg);
+    color: var(--color-muted);
+    font: var(--font-weight-body-bold) 12px/16px var(--font-family-body);
+    letter-spacing: 0.06em;
+    border-radius: var(--radius-md);
+  }
+  .pcard__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+  }
+  .pcard__title {
+    margin: 0;
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-semibold);
+    font-size: 20px;
+    line-height: 26px;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+  }
+  .pcard__line {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--color-ink-muted);
+  }
+  .pcard__price {
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-ink);
+  }
+  .pcard__form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+  .pcard__sum {
+    margin: 0;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--color-ink-muted);
+  }
+  .pcard * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Selector compacto: etiqueta | [circulo + select nativo + flecha]. 44px de alto = destino tactil. */
+  .pcard__field {
+    display: grid;
+    grid-template-columns: 60px minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--space-2);
+    row-gap: 2px;
+  }
+  /* La etiqueta (Acabado, Marco, Vidrio...) siempre en UNA linea. */
+  .pcard__label {
+    font: var(--font-weight-body-bold) 13px/18px var(--font-family-body);
+    color: var(--color-ink);
+    white-space: nowrap;
+    overflow-wrap: normal;
+  }
+  .pcard__select {
+    position: relative;
+    display: block;
+  }
+  .pcard__select select {
+    display: block;
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    padding: 0 38px 0 42px;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: 600 14px/20px var(--font-family-body);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .pcard__select select:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-focus);
+  }
+  .pcard__select .pcard__sw {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    margin-top: -12px;
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+  }
+  .pcard__chev {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    margin-top: -8px;
+    pointer-events: none;
+    color: var(--color-ink-muted);
+  }
+  .pcard__control {
+    position: relative;
+    min-width: 0;
+  }
+  /* Con JS manda el combobox (circulo en el boton y en cada opcion); el <select> queda oculto como dato del formulario. */
+  .pcard__combo {
+    display: none;
+  }
+  html[data-js] .pcard__select {
+    display: none;
+  }
+  html[data-js] .pcard__combo {
+    display: block;
+  }
+  .pcard__trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    padding: 0 14px 0 9px;
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: 600 14px/20px var(--font-family-body);
+    text-align: left;
+    cursor: pointer;
+  }
+  .pcard__trigger-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .pcard__trigger .pcard__chev {
+    position: static;
+    margin: 0;
+    flex: none;
+    transition: transform 160ms ease;
+  }
+  .pcard__trigger[aria-expanded='true'] {
+    border-color: var(--color-accent);
+  }
+  .pcard__trigger[aria-expanded='true'] .pcard__chev {
+    transform: rotate(180deg);
+  }
+  .pcard__trigger:focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-focus);
+  }
+  .pcard__list {
+    position: absolute;
+    z-index: 40;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: var(--space-1);
+    list-style: none;
+    max-height: min(288px, 60vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 12px 28px rgba(16, 33, 61, 0.22);
+  }
+  .pcard__list[hidden] {
+    display: none;
+  }
+  .pcard__list[data-placement='top'] {
+    top: auto;
+    bottom: calc(100% + 4px);
+  }
+  .pcard__list:focus {
+    outline: none;
+  }
+  .pcard__opt {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+    font: 600 14px/20px var(--font-family-body);
+    cursor: pointer;
+  }
+  .pcard__opt-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .pcard__badge {
+    font: 500 11px/14px var(--font-family-body);
+    color: var(--color-warning);
+  }
+  .pcard__check {
+    flex: none;
+    color: var(--color-accent);
+    opacity: 0;
+  }
+  .pcard__opt[aria-selected='true'] .pcard__check {
+    opacity: 1;
+  }
+  .pcard__opt[aria-selected='true'] .pcard__sw {
+    border-color: var(--color-accent);
+    box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px var(--color-accent);
+  }
+  /* Opcion activa por teclado (aria-activedescendant): relleno suave + aro. */
+  .pcard__opt[data-active] {
+    background: var(--color-surface-tint);
+    box-shadow: inset 0 0 0 2px var(--color-accent);
+  }
+  /* La tarjeta con la lista abierta sube sobre sus vecinas (la lista no se recorta: el catalogo ya no usa content-visibility). */
+  .pcard:has([aria-expanded='true']) {
+    position: relative;
+    z-index: 30;
+  }
+  .pcard__static {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    margin: 0;
+    font: 600 14px/20px var(--font-family-body);
+    color: var(--color-ink);
+  }
+  .pcard__note {
+    grid-column: 2;
+    margin: 0;
+    font: 500 12px/16px var(--font-family-body);
+    color: var(--color-warning);
+  }
+  .pcard__note[hidden] {
+    display: none;
+  }
+
+  /* Boton: pastilla como la del navbar, en una linea. Sobre tarjeta clara = azul primario. */
+  .pcard__go {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    margin-top: var(--space-1);
+    padding: 0 var(--space-5);
+    white-space: nowrap;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: var(--color-surface);
+    font: var(--font-weight-body-bold) 14px/20px var(--font-family-body);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .pcard__go:active {
+    background: var(--color-primary-active);
+  }
+  .pcard__go:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+  /* Hover = receta del navbar: relleno/color suave, sin elevacion ni sombra. */
+  @media (hover: hover) and (pointer: fine) {
+    .pcard__go,
+    .pcard__select select,
+    .pcard__trigger,
+    .pcard__opt {
+      transition:
+        background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        border-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+    }
+    .pcard__go:hover {
+      background: var(--color-accent);
+    }
+    .pcard__go:active {
+      background: var(--color-primary-active);
+    }
+    .pcard__select select:hover,
+    .pcard__trigger:hover {
+      border-color: var(--color-accent);
+      background: var(--color-surface-tint);
+    }
+    .pcard__opt:hover {
+      background: var(--color-surface-tint);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pcard__go,
+    .pcard__select select,
+    .pcard__trigger,
+    .pcard__trigger .pcard__chev,
+    .pcard__opt {
+      transition: none;
+    }
+  }
+
+  /* Icono de color / vidrio: circulo CSS, sin fotos. */
+  .pcard__sw {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-input-strong);
+    background: #eef3f8;
+    box-shadow: inset 0 0 0 2px #fff;
+  }
+  .pcard__sw[data-sw='color:natural'] { background: linear-gradient(135deg, #e4e7ec 0%, #aeb4be 55%, #d5d9df 100%); }
+  .pcard__sw[data-sw='color:blanco'] { background: #fff; }
+  .pcard__sw[data-sw='color:bronce'] { background: linear-gradient(135deg, #9a7550 0%, #6b4c2e 100%); }
+  .pcard__sw[data-sw='glass:claro'] { background: linear-gradient(135deg, #f3f8fc 0%, #cfe2f0 100%); }
+  .pcard__sw[data-sw='glass:nevado'] { background: radial-gradient(circle at 30% 30%, #ffffff 0 12%, transparent 13%), radial-gradient(circle at 70% 60%, #fff 0 10%, transparent 11%), linear-gradient(135deg, #e9eef3, #cdd6df); }
+  .pcard__sw[data-sw='glass:decorado'] { background: repeating-linear-gradient(90deg, #dfe8f1 0 3px, #f7fafc 3px 6px); }
+  .pcard__sw[data-sw='glass:aquafold'] { background: radial-gradient(circle, #cfe2f0 0 28%, transparent 30%) 0 0 / 10px 10px, #f3f8fc; }
+  .pcard__sw[data-sw='glass:mallado'] { background: repeating-linear-gradient(45deg, #c9d3e3 0 1px, transparent 1px 7px), repeating-linear-gradient(-45deg, #c9d3e3 0 1px, #f4f7fb 1px 7px); }
+  .pcard__sw[data-sw='glass:duplex'] { background: linear-gradient(135deg, #eef3f8 0 50%, #c7d2e0 50% 100%); }
+  .pcard__sw[data-sw='glass:bronce'] { background: linear-gradient(135deg, #c9a77c 0%, #8a6a45 100%); }
+  .pcard__sw[data-sw='glass:super_gris'] { background: linear-gradient(135deg, #8d949c 0%, #4f565e 100%); }
+  .pcard__sw[data-sw='glass:reflectivo_azul'] { background: linear-gradient(135deg, #cfe3f5 0%, #5f8fc4 60%, #2e5f9a 100%); }
+  .pcard__sw[data-sw='glass:reflectivo_bronce'] { background: linear-gradient(135deg, #e6cfae 0%, #a67b4b 60%, #6b4a2a 100%); }
+  .pcard__media .photo-frame__img--cover {
+    transition: opacity 0.18s ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pcard__media .photo-frame__img--cover {
+      transition: none;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .pcard {
+      grid-template-columns: 232px minmax(0, 1fr);
+      gap: var(--space-4);
+      padding: var(--space-4);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 8px 24px rgba(16, 33, 61, 0.08);
+    }
+    .pcard__go {
+      justify-self: start;
+    }
+  }
+</style>

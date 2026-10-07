@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, pickProduct, test, textOnlyWaLink } from './fixtures';
+import { fillAddress } from '../support/address';
 
 test.use({ blockQuotePdf: true });
 
@@ -160,7 +161,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
-    await page.locator('#municipio').selectOption('Soyapango');
+    await fillAddress(page, 'Soyapango');
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();

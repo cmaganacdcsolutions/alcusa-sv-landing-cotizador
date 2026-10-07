@@ -7,8 +7,6 @@ import {
   HINGED_WIDTH_MIN_CM,
   isHingedQtyInRange,
   isHingedWidthInRange,
-  type AluminumColor,
-  type StraightGlass,
 } from '@engine/pricing';
 import {
   COLOR_LABELS,
@@ -19,21 +17,8 @@ import {
 } from '../../state/cotizadorStore';
 import { parseHingedQty, type QuoteResult } from '../../state/quote';
 import { IconArrowRight, IconWarningTriangle } from '../../icons';
-import { GlassSwatch } from './glassSwatches';
-
-const COLORS: { id: AluminumColor; dot: string }[] = [
-  { id: 'natural', dot: '#c9ced6' },
-  { id: 'blanco', dot: '#ffffff' },
-  { id: 'bronce', dot: '#7a5a3a' },
-];
-
-const GLASSES: { id: StraightGlass }[] = [
-  { id: 'nevado' },
-  { id: 'claro' },
-  { id: 'decorado' },
-  { id: 'mallado' },
-  { id: 'duplex' },
-];
+import { ColorSwatch, GlassSwatch } from './glassSwatches';
+import { HINGED_COLORS, HINGED_GLASSES } from './finishOptions';
 
 export interface HingedFormProps {
   product: CatalogProduct;
@@ -109,16 +94,16 @@ export default function HingedForm({ product, state, dispatch, quote, onNext }: 
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color del aluminio</span>
         <div className="chip-row" role="group" aria-label="Color del aluminio">
-          {COLORS.map((c) => (
+          {HINGED_COLORS.map((c) => (
             <button
-              key={c.id}
+              key={c}
               type="button"
               className="chip"
-              aria-pressed={state.color === c.id}
-              onClick={() => dispatch({ type: 'SET_COLOR', color: c.id })}
+              aria-pressed={state.color === c}
+              onClick={() => dispatch({ type: 'SET_COLOR', color: c })}
             >
-              <span className="chip__dot" style={{ background: c.dot }} />
-              {COLOR_LABELS[c.id]}
+              <ColorSwatch color={c} />
+              {COLOR_LABELS[c]}
             </button>
           ))}
         </div>
@@ -127,16 +112,16 @@ export default function HingedForm({ product, state, dispatch, quote, onNext }: 
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Tipo de vidrio</span>
         <div className="glass-grid" role="group" aria-label="Tipo de vidrio">
-          {GLASSES.map((g) => (
+          {HINGED_GLASSES.map((g) => (
             <button
-              key={g.id}
+              key={g}
               type="button"
               className="glass-chip"
-              aria-pressed={state.glass === g.id}
-              onClick={() => dispatch({ type: 'SET_GLASS', glass: g.id })}
+              aria-pressed={state.glass === g}
+              onClick={() => dispatch({ type: 'SET_GLASS', glass: g })}
             >
-              <GlassSwatch glass={g.id} />
-              {GLASS_LABELS[g.id]}
+              <GlassSwatch glass={g} />
+              {GLASS_LABELS[g]}
             </button>
           ))}
         </div>

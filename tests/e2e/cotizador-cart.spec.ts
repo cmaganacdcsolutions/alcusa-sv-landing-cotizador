@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, pickProduct, test, textOnlyWaLink } from './fixtures';
+import { fillAddress } from '../support/address';
 
 test.use({ blockQuotePdf: true });
 
@@ -22,7 +23,7 @@ async function addRectaThenLoop(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
-  await page.locator('#municipio').selectOption('Soyapango');
+  await fillAddress(page, 'Soyapango');
   await expect(page.getByTestId('zona-total-value')).toHaveText('$262.00');
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
@@ -134,14 +135,12 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     await waitForHydration(page);
     await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
 
-    // Only the CART is persisted, not the order-level zone (session-only by
-    // design) — so a fresh session still asks for the zone once more before
-    // Resumen, same as item 1's very first pass.
+    // The cart AND the order-level delivery (address + zone) survive a reload: the wizard snapshot
+    // (state/persist.ts, key alcusa-cotizador-wizard) restores them, so the zone is already decided
+    // and "Siguiente" from Precio goes straight to Resumen without asking for the address again.
     await pickProduct(page, 'l');
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-    await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
-    await page.locator('#municipio').selectOption('Soyapango');
+    await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();

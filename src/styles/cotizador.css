@@ -3,9 +3,30 @@
    (not in the shared tokens.css) needed 1:1 from the boards' inline styles —
    per task instructions these are added here, at :root, not in tokens.css. */
 :root {
-  --cotizador-ring-shadow: 0 0 0 4px rgba(9, 86, 216, 0.12);
-  --cotizador-cta-shadow: 0 8px 20px rgba(7, 59, 146, 0.22);
-  --cotizador-aside-shadow: 0 16px 40px rgba(16, 33, 61, 0.1);
+  --cotizador-ring-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --cotizador-cta-shadow: var(--shadow-btn-primary);
+  --cotizador-aside-shadow: var(--shadow-xl);
+  /* Estados semanticos del cotizador que tokens.css aun no tiene (ambar de aviso, verde de exito,
+     azul apagado del CTA en carga, brillo del hero). Definidos aqui, con alcance del cotizador. */
+  --cotizador-warning-border: #f0d9ae;
+  --cotizador-warning-ink: #5c3d00;
+  --cotizador-warning-glow: color-mix(in srgb, var(--color-warning) 6%, transparent);
+  --cotizador-success-border: #cfe9dd;
+  --cotizador-success-bg: #e3f5ee;
+  --cotizador-success-glow: color-mix(in srgb, var(--color-success) 7%, transparent);
+  --cotizador-cta-loading-bg: #4a6cae;
+  --cotizador-shine: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 50%, transparent 100%);
+  --cotizador-dialog-shadow: 0 -8px 24px color-mix(in srgb, var(--color-ink) 16%, transparent);
+  /* Linea de diseno unica (2026-10-06): azul noche + blanco. La pagina es azul (degradado global del
+     body); el cotizador pone SOBRE el la cabecera/stepper en blanco y los pasos en una hoja/tarjeta clara
+     (como las tarjetas del inicio y del admin). Alcance cotizador: tokens.css no cambia. */
+  --cotizador-dot-border: color-mix(in srgb, var(--color-text-on-dark) 45%, transparent);
+  --cotizador-header-bg: color-mix(in srgb, var(--color-surface-dark) 96%, transparent);
+  --cotizador-hover-tint: color-mix(in srgb, var(--color-primary) 4%, transparent);
+  /* Hover (2026-10-06, 'como el navbar'): relleno SOLIDO para controles blancos (seleccionables / secundarios) y
+     para el segmento del toggle sobre su pista azul clara. Sin sombra ni elevacion. */
+  --cotizador-hover-fill: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+  --cotizador-hover-seg: color-mix(in srgb, var(--color-surface) 55%, var(--color-surface-tint));
   /* sf-cot-mobile item 1 — .bottom-bar's own rendered height below 1024px,
      reserved as scroll room on .cotizador__form-col so the now-`fixed` bar
      never covers the last field/CTA of any step. This 136px is only the
@@ -21,14 +42,14 @@
      literal, not read from TopBar's scope) so .cotizador__header can stick
      directly beneath it without JS. TopBar only changes this at >=1024px,
      where .cotizador__header is no longer sticky (see the desktop rule). */
-  --cotizador-topbar-height-mobile: 64px;
+  --cotizador-topbar-height-mobile: var(--nav-offset);
 }
 
 .cotizador {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-2) var(--space-6) 120px;
+  padding: var(--space-2) var(--space-6) 0;
 }
 
 .cotizador__back {
@@ -38,17 +59,24 @@
   align-items: center;
   gap: 4px;
   margin-left: -6px;
+  padding: 0 12px 0 6px; /* pildora de hover: el texto no se mueve (margen -6 + padding 6) */
+  border-radius: var(--radius-full);
   font-size: var(--font-size-body-sm-mobile);
   font-weight: var(--font-weight-body-bold);
-  color: var(--color-ink-muted);
+  color: var(--color-text-on-dark-muted);
   background: none;
   border: 0;
   cursor: pointer;
   text-decoration: none;
 }
 
+.cotizador__back:focus-visible {
+  outline: 2px solid var(--color-ring-on-dark);
+  outline-offset: 2px;
+}
+
 .cotizador__title {
-  color: var(--color-primary);
+  color: var(--color-text-on-dark);
   font-size: var(--font-size-display-lg-mobile);
 }
 
@@ -73,16 +101,23 @@
 @media (max-width: 1023.98px) {
   .cotizador__header {
     position: sticky;
-    top: var(--cotizador-topbar-height-mobile);
+    top: var(--nav-offset);
     z-index: 20;
-    background: var(--color-bg);
-    padding: var(--space-2) 0;
+    background: var(--cotizador-header-bg);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    /* La barra llega a los bordes de la pantalla; el contenido conserva su margen. */
+    margin-inline: calc(var(--space-6) * -1);
+    padding: var(--space-2) var(--space-6);
   }
 }
 
 .cotizador__page-title {
   margin: 0;
-  color: var(--color-primary);
+  /* Respaldo solido; el degradado blanco -> azul claro lo pone .title-gradient (global.css). */
+  color: var(--color-text-on-dark);
+  /* background-clip:text solo pinta dentro de la caja: holgura para los descendentes (y, p). */
+  padding-block: 0.06em 0.12em;
   font-family: var(--font-family-display);
   font-size: var(--font-size-display-lg-mobile);
   font-weight: var(--font-weight-display-semibold);
@@ -106,8 +141,16 @@
    --cotizador-bottom-bar-height above) so it never overlaps the last field/
    CTA of the step above it. Reset to 0 on desktop (below), where .bottom-bar
    is `position: static` and this extra room isn't needed. */
+/* Movil: hoja clara a todo el ancho sobre el azul (como las tarjetas claras del inicio y del admin).
+   Todo el CSS de los pasos asume fondo claro (tinta sobre blanco), asi que sus estados AA no cambian. */
 .cotizador__form-col {
-  padding-bottom: calc(var(--cotizador-bottom-bar-height) + env(safe-area-inset-bottom, 0px));
+  margin-inline: calc(var(--space-6) * -1);
+  /* + space-4: antes la pagina sumaba 120px de colchon bajo la hoja; el ultimo campo no debe tocar la barra fija. */
+  padding: var(--space-6) var(--space-6) calc(var(--cotizador-bottom-bar-height) + var(--space-4) + env(safe-area-inset-bottom, 0px));
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-lg);
 }
 
 /* sf-cot-polish item 3 — see the desktop override (display:none) below;
@@ -141,7 +184,7 @@
   left: 8%;
   right: 8%;
   height: 1.5px;
-  background: var(--color-border);
+  background: var(--color-line-on-dark);
 }
 
 .step-rail__item {
@@ -160,8 +203,9 @@
   line-height: 1.3;
   font-weight: 600;
   /* var(--color-muted) fails WCAG AA at this size/weight on --color-bg —
-     use the darker ink-muted token instead (axe: color-contrast). */
-  color: var(--color-ink-muted);
+     use the darker ink-muted token instead (axe: color-contrast).
+     2026-10-06: el stepper va sobre azul noche -> texto secundario claro (10:1). */
+  color: var(--color-text-on-dark-muted);
 }
 
 .step-rail__label {
@@ -184,9 +228,9 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full);
-  border: 1.5px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-muted);
+  border: 1.5px solid var(--cotizador-dot-border);
+  background: var(--color-surface-dark-raised);
+  color: var(--color-text-on-dark-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -195,19 +239,19 @@
 }
 
 .step-rail__item[data-state='done'] .step-rail__dot {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-surface);
+  background: var(--color-accent-on-dark);
+  border-color: var(--color-accent-on-dark);
+  color: var(--color-surface-dark);
 }
 
 .step-rail__item[data-state='current'] .step-rail__dot {
-  border: 2px solid var(--color-accent);
-  color: var(--color-accent);
+  border: 2px solid var(--color-ring-on-dark);
+  color: var(--color-text-on-dark);
 }
 
 .step-rail__item[data-state='current'] {
   font-weight: 700;
-  color: var(--color-accent);
+  color: var(--color-text-on-dark);
 }
 
 .field {
@@ -263,7 +307,7 @@
   padding: var(--space-5);
   border-radius: var(--radius-lg);
   background: var(--color-warning-bg);
-  border: 1px solid #f0d9ae;
+  border: 1px solid var(--cotizador-warning-border);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -285,7 +329,7 @@
 
 .callout__body {
   font-size: var(--font-size-body-sm-mobile);
-  color: #5c3d00;
+  color: var(--cotizador-warning-ink);
   margin: 0;
 }
 
@@ -359,7 +403,7 @@
   padding: var(--space-4) var(--space-6) calc(34px + env(safe-area-inset-bottom, 0px));
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
-  box-shadow: 0 -8px 20px rgba(16, 33, 61, 0.06);
+  box-shadow: var(--shadow-bar-top);
   /* sf-cot-mobile item 1 (user-reported: the card "va a tener ese div
      blanco, que sea posición fixed y que abarque todo el ancho") —
      `sticky` never actually engaged in this layout (the bar scrolled 1:1
@@ -459,9 +503,10 @@
     grid-column: 1;
     grid-row: 1 / 3;
     position: sticky;
-    top: var(--space-8);
+    top: calc(var(--nav-h-compact-lg) + var(--space-8));
     padding: 28px 24px 24px;
     background: var(--color-surface);
+    color: var(--color-ink);
     border: 1px solid var(--color-border);
     border-radius: 20px;
     box-shadow: var(--shadow-xs);
@@ -488,8 +533,19 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
-    /* No sticky .bottom-bar to clear at this width — see the mobile rule. */
-    padding-bottom: 0;
+    /* Escritorio: la hoja se vuelve tarjeta clara (4 esquinas). El padding se compensa con margen
+       negativo en las calles de 48px, asi el ancho del contenido de los pasos NO cambia
+       (744px a 1920) y queda una calle de 24px entre las tres tarjetas. */
+    margin-inline: calc(var(--space-6) * -1);
+    padding: var(--space-6);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* El titulo alinea con el borde de la tarjeta, no con su contenido. */
+  .cotizador__header {
+    margin-inline: calc(var(--space-6) * -1);
   }
 
   /* sf-cot-polish item 3 — the mobile-only duplicate of the resumen/
@@ -503,7 +559,7 @@
     grid-column: 3;
     grid-row: 1 / 3;
     position: sticky;
-    top: var(--space-8);
+    top: calc(var(--nav-h-compact-lg) + var(--space-8));
   }
 
   .cotizador-aside {
@@ -566,6 +622,7 @@
   .cotizador__header {
     grid-column: 1 / -1;
     grid-row: 1;
+    margin-inline: 0;
   }
 
   /* Reset the ≥1024px sidebar-card treatment — at this tier the rail is a
@@ -624,7 +681,7 @@
     grid-column: 2;
     grid-row: 3;
     position: sticky;
-    top: var(--space-8);
+    top: calc(var(--nav-h-compact-lg) + var(--space-8));
   }
 
   .cotizador-aside {
@@ -833,6 +890,10 @@
 
 .rail-desktop__dudas-link {
   min-height: 44px;
+  align-self: flex-start;
+  padding-inline: 12px; /* pildora de hover; el margen negativo mantiene el texto en su sitio */
+  margin-inline: -12px;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -854,6 +915,7 @@
      alongside .cotizador__summary-col. */
   width: 100%;
   background: var(--color-surface);
+  color: var(--color-ink);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--cotizador-aside-shadow);
@@ -877,7 +939,7 @@
   bottom: -40%;
   left: 55%;
   width: 22%;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0) 100%);
+  background: var(--cotizador-shine);
   transform: rotate(12deg);
 }
 
@@ -1015,8 +1077,8 @@
 /* sf-cot-polish item 1 — desktop-06's aside while Step6Wompi's mock payment
    is in flight: a static, non-interactive stand-in for the CTA (board's own
    "ANOTACIÓN · ESTADO DE CARGA" callout), same pill shape/size as the real
-   buttons above. #4a6cae is the board's literal muted-primary value for
-   this one loading state, not a design token. */
+   buttons above. --cotizador-cta-loading-bg (en :root arriba) es el azul
+   apagado del tablero para este unico estado de carga. */
 .cotizador-aside__cta--loading {
   min-height: 56px;
   width: 100%;
@@ -1025,7 +1087,7 @@
   justify-content: center;
   gap: var(--space-2);
   border-radius: var(--radius-full);
-  background: #4a6cae;
+  background: var(--cotizador-cta-loading-bg);
   color: var(--color-surface);
   font-size: 0.9375rem;
   font-weight: var(--font-weight-body-bold);
@@ -1096,3 +1158,49 @@
 .cotizador-aside__total-value--sm { font-size: 40px; line-height: 48px; }
 .cotizador-aside--sel .cotizador-aside__total-value { font-size: 56px; line-height: 64px; }
 .cotizador-aside--sel .cotizador-aside__total-value--sm { font-size: 40px; line-height: 48px; }
+
+/* ---------- Hover de botones (pedido 2026-10-06, 'como el del navbar') ----------
+   Relleno/color suave, sin elevacion ni sombra; solo con puntero fino; sin hover en deshabilitados. Los estados
+   seleccionados conservan su aspecto. Los aros de foco no cambian. */
+@media (hover: hover) and (pointer: fine) {
+  .cotizador__back,
+  .btn,
+  .toggle-group__btn,
+  .rail-desktop__dudas-link {
+    transition:
+      background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      border-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+  }
+  /* Fantasma sobre azul noche (como .nav__link). */
+  .cotizador__back:hover {
+    background: var(--color-surface-dark-raised);
+    color: var(--color-text-on-dark);
+  }
+  /* Primario relleno: su tono oscuro. */
+  .btn-primary:hover:not(:disabled):not([aria-disabled='true']) {
+    background: var(--color-primary-active);
+  }
+  /* Secundario WhatsApp sobre tarjeta clara: tinte + tinta mas oscura. */
+  .btn-whatsapp-outline:hover:not(:disabled):not([aria-disabled='true']) {
+    background: var(--color-whatsapp-tint);
+    border-color: var(--color-whatsapp-strong);
+    color: var(--color-whatsapp-strong-hover);
+  }
+  .toggle-group__btn:hover:not([aria-pressed='true']):not(:disabled) {
+    background: var(--cotizador-hover-seg);
+    color: var(--color-primary);
+  }
+  .rail-desktop__dudas-link:hover {
+    background: var(--color-whatsapp-tint);
+    color: var(--color-whatsapp-strong-hover);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cotizador__back,
+  .btn,
+  .toggle-group__btn,
+  .rail-desktop__dudas-link {
+    transition: none;
+  }
+}
