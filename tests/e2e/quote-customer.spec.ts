@@ -223,6 +223,11 @@ test.describe('customer dialog — ADR-011 s5 renew notice (proposal, not on the
     await cta(d).click();
     await expect(d).toHaveCount(0);
     await download;
+    // The persistent share toast ("Cerrar aviso") sits over "Cambiar" on narrow
+    // viewports (390px) now that the banner is gone and the layout shifted 61px.
+    // Dismissing it is the natural user action before editing the cart.
+    await page.getByRole('button', { name: 'Cerrar aviso' }).click();
+    await expect(page.getByTestId('quote-share-toast')).toHaveCount(0);
     await page.getByRole('button', { name: 'Cambiar' }).locator('visible=true').first().click();
     await fillAddress(page, 'Apopa');
     await page.getByRole('button', { name: 'Siguiente' }).click();

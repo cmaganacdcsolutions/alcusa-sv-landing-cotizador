@@ -13,7 +13,11 @@ import { fillAddress } from '../support/address';
 // screen (banner, Precio, Zona, Resumen, Step5, mock Wompi), also after a reload; without the param Precio ->
 // Resumen only PREVIEWS the card price ("Pagando con tarjeta en línea: $X (−10%)") and totals stay golden.
 // Retiro stacks: 222 x 0.85 = $188.70 -> -$18.87 -> $169.83, 80% deposit $135.86.
+// 2026-10-07 (user decision): the banner exists ONLY when the cotizador was entered through the offer link
+// (`?oferta=online10`) and its copy is exactly BANNER_TEXT; without the param there is NO banner and NO offer
+// (not even from a wizard snapshot restored in the same tab, see "oferta no se filtra").
 const OFFER_LABEL = 'Descuento pago con tarjeta en línea (10%)';
+const BANNER_TEXT = 'Verás un 10% de descuento reflejado a la hora de realizar tu pago';
 async function waitForHydration(page: Page): Promise<void> {
   await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
 }
@@ -42,11 +46,11 @@ async function toResumen(page: Page, distrito: string, url = '/cotizador'): Prom
 test.describe('cotizador — 10% descuento pagando con tarjeta en línea', () => {
   test('without the offer: steps 2-4 show the card price as a PREVIEW, not applied; Step5 with card shows the discount line, reduced total and deposit', async ({ page }) => {
     await toPrecio(page);
-    // Step2: golden estimate, informative banner, preview of the card price (no shipping yet), nothing applied.
+    // Step2: golden estimate, NO banner (no offer link), preview of the card price (no shipping yet), nothing applied.
     await expect(page.getByTestId('step2-price-value')).toHaveText('$222.00');
     await expect(page.getByTestId('step2-discount-row')).toHaveCount(0);
     await expect(page.getByTestId('online-discount-preview')).toHaveText('Pagando con tarjeta en línea: $199.80 (−10%)');
-    await expect(page.getByTestId('online-discount-banner')).toHaveAttribute('data-state', 'info');
+    await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
     await expect(page.getByTestId('summary-price-value')).toHaveText('$222.00');
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
@@ -72,6 +76,7 @@ test.describe('cotizador — 10% descuento pagando con tarjeta en línea', () =>
     await expect(page.getByTestId('formapago-total-value')).toHaveText('$239.80');
     await expect(page.getByTestId('summary-price-value')).toHaveText('$239.80');
     await expect(page.getByRole('button', { name: /Pagar \$191\.84 con Wompi/ })).toBeVisible();
+    await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
 
     // WhatsApp path: no discount, plain $262.00 message.
     await page.getByRole('radio', { name: /Enviar por WhatsApp para confirmar/ }).click();
@@ -166,29 +171,109 @@ test.describe('cotizador — distrito sin tarifa: "Envío por confirmar" no bloq
 
 // Navbar "Compra YA! 10% de descuento" -> /cotizador?oferta=online10: the discount is already APPLIED.
 const OFFER = '/cotizador?oferta=online10';
-const PROMO_AND_OFFER = '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&oferta=online10';
+const PROMO_CTA = '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro';
+const PROMO_AND_OFFER = `${PROMO_CTA}&oferta=online10`;
 
 test.describe('cotizador — oferta del navbar (?oferta=online10): el 10% llega ya aplicado', () => {
-  test('clicking the navbar deal link lands on the cotizador with the applied banner', async ({ page }) => {
+  test('clicking the navbar deal link lands on the cotizador with the applied banner (exact new copy)', async ({ page }) => {
     await page.goto('/');
     await page.locator('a[data-nav-deal]').click();
     await page.waitForURL(/\/cotizador/);
     await waitForHydration(page);
     const banner = page.getByTestId('online-discount-banner');
     await expect(banner).toHaveAttribute('data-state', 'applied');
-    await expect(banner).toContainText('¡10% de descuento aplicado!');
+    await expect(banner).toHaveText(BANNER_TEXT);
   });
 
-  test('without the param (or with another value) the banner only informs', async ({ page }) => {
-    for (const url of ['/cotizador', '/cotizador?oferta=otra']) {
+  test('with the param the banner shows EXACTLY the short copy (nothing else), on the first screen and on Medidas', async ({ page }) => {
+    await page.goto(OFFER);
+    await waitForHydration(page);
+    const banner = page.getByTestId('online-discount-banner');
+    await expect(banner).toBeVisible();
+    await expect(banner).toHaveText(BANNER_TEXT);
+    await expect(banner).toHaveAttribute('role', 'status');
+    await expect(banner.locator('svg')).toHaveCount(1); // the card icon is kept
+    for (const old of ['aplicado', 'pagando con tarjeta en línea', 'no al envío']) {
+      await expect(banner).not.toContainText(old);
+    }
+    await pickProduct(page, 'recta');
+    await expect(page.getByTestId('online-discount-banner')).toHaveText(BANNER_TEXT);
+  });
+
+  test('without the param (or with another value) there is NO banner at all', async ({ page }) => {
+    for (const url of ['/cotizador', '/cotizador?oferta=otra', '/cotizador?oferta=ONLINE10', '/cotizador?oferta=']) {
       await page.goto(url);
       await waitForHydration(page);
-      const banner = page.getByTestId('online-discount-banner');
-      await expect(banner).toBeVisible();
-      await expect(banner).toHaveAttribute('data-state', 'info');
-      await expect(banner).toContainText('10% de descuento pagando con tarjeta en línea');
-      await expect(banner).not.toContainText('aplicado');
+      await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
+      await expect(page.getByText(BANNER_TEXT)).toHaveCount(0);
+      await pickProduct(page, 'recta');
+      await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
     }
+  });
+
+  test('oferta no se filtra: 10% button -> home -> "Cotizar" lands WITHOUT banner and WITHOUT the offer (also at Resumen)', async ({ page }) => {
+    // 1. Enter through the 10% button and advance, so a non-pristine wizard snapshot (onlineOffer true) is stored.
+    await page.goto('/');
+    await page.locator('a[data-nav-deal]').click();
+    await page.waitForURL(/\/cotizador\?oferta=online10/);
+    await waitForHydration(page);
+    await expect(page.getByTestId('online-discount-banner')).toHaveText(BANNER_TEXT);
+    await pickProduct(page, 'recta');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByTestId('step2-discount-value')).toHaveText('−$22.20');
+
+    // 2. Leave to the home (compact navbar "Volver al catálogo").
+    await page.getByRole('link', { name: 'Volver al catálogo' }).click();
+    await page.waitForURL((url) => url.pathname === '/');
+
+    // 3. Enter again through a plain "Cotizar" link (no param), same tab, same sessionStorage.
+    await page.locator('a.nav__cta').click();
+    await page.waitForURL((url) => url.pathname === '/cotizador' && url.search === '');
+    await waitForHydration(page);
+    await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
+    await expect(page.getByText(BANNER_TEXT)).toHaveCount(0);
+
+    // The offer is NOT applied: golden totals, preview only, and Resumen carries no discount row.
+    await pickProduct(page, 'recta');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$222.00');
+    await expect(page.getByTestId('step2-discount-row')).toHaveCount(0);
+    await expect(page.getByTestId('online-discount-preview')).toHaveText('Pagando con tarjeta en línea: $199.80 (−10%)');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
+    await fillAddress(page, 'Soyapango');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
+    await expect(page.getByTestId('resumen-discount-row')).toHaveCount(0);
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$262.00');
+    await expect(page.getByTestId('online-discount-preview')).toHaveText('Pagando con tarjeta en línea: $239.80 (−10%)');
+  });
+
+  test('a stored snapshot with the offer never turns it on by itself: restoring through a hash step without the param drops it', async ({ page }) => {
+    await toPrecio(page, OFFER);
+    await expect(page.getByTestId('step2-discount-value')).toHaveText('−$22.20');
+    await expect(page.getByTestId('online-discount-banner')).toHaveText(BANNER_TEXT);
+    // Same tab, same sessionStorage snapshot (product recta, step precio, onlineOffer true), URL without the param.
+    await page.goto('/cotizador#cotizador/2-precio');
+    await waitForHydration(page);
+    await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible(); // the wizard WAS restored
+    await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
+    await expect(page.getByTestId('step2-discount-row')).toHaveCount(0);
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$222.00');
+    await expect(page.getByTestId('online-discount-preview')).toHaveText('Pagando con tarjeta en línea: $199.80 (−10%)');
+  });
+
+  test('promo CTA deep link (no oferta param) lands on Medidas WITHOUT banner and reaches Precio undiscounted', async ({ page }) => {
+    await page.goto(PROMO_CTA);
+    await waitForHydration(page);
+    await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
+    await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
+    await expect(page.getByTestId('online-discount-banner')).toHaveCount(0);
+    await expect(page.getByTestId('step2-discount-row')).toHaveCount(0);
+    await expect(page.getByTestId('online-discount-preview')).toBeVisible();
   });
 
   test('Step2 Precio: $222.00 estimate, discount row −$22.20, card total $199.80 (aside and bar agree), no preview', async ({ page }) => {
@@ -287,6 +372,7 @@ test.describe('cotizador — oferta del navbar (?oferta=online10): el 10% llega 
     await waitForHydration(page);
     await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
     await expect(page.getByTestId('online-discount-banner')).toHaveAttribute('data-state', 'applied');
+    await expect(page.getByTestId('online-discount-banner')).toHaveText(BANNER_TEXT);
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await expect(page.getByTestId('step2-discount-value')).toHaveText('−$22.20');
@@ -300,6 +386,7 @@ test.describe('cotizador — oferta del navbar (?oferta=online10): el 10% llega 
     await waitForHydration(page);
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await expect(page.getByTestId('online-discount-banner')).toHaveAttribute('data-state', 'applied');
+    await expect(page.getByTestId('online-discount-banner')).toHaveText(BANNER_TEXT);
     await expect(page.getByTestId('step2-discount-value')).toHaveText('−$22.20');
     await expect(page.getByTestId('step2-card-total')).toHaveText('$199.80');
   });

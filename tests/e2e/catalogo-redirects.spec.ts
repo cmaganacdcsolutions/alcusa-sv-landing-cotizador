@@ -15,9 +15,9 @@ const CASES: readonly (readonly [from: string, hash: string])[] = [
   ['/catalogo/puertas-de-jardin/jardin-3-hojas', '#p-jardin-3-hojas'],
   ['/catalogo/ventanas/ventana-francesa', '#p-ventana-francesa'],
   ['/catalogo/ventanas/ventana-bilbao', '#p-ventana-bilbao'],
-  // Combos de asesor: sin tarjeta propia, caen en su categoria.
-  ['/catalogo/puertas-de-jardin/jardin-2-fijas-2-corredizas', '#puertas-de-jardin'],
-  ['/catalogo/puertas-de-jardin/jardin-1-fijo-3-corredizas', '#puertas-de-jardin'],
+  // Combos de asesor: tienen tarjeta en "Más opciones para tu jardín".
+  ['/catalogo/puertas-de-jardin/jardin-2-fijas-2-corredizas', '#p-jardin-2-fijas-2-corredizas'],
+  ['/catalogo/puertas-de-jardin/jardin-1-fijo-3-corredizas', '#p-jardin-1-fijo-3-corredizas'],
 ];
 
 test.describe('redirects de las paginas de catalogo eliminadas', () => {

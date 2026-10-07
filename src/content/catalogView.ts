@@ -13,6 +13,8 @@ import { contentFor, type CatalogImage, type PendingField } from './catalogConte
 
 /** Group key of the "Más opciones para tu jardín" panel. */
 export const MORE_OPTIONS_GROUP = 'mas-opciones';
+/** Titulo del sub-bloque "Más opciones" del inicio (solo la categoria de jardin lo usa). */
+export const MORE_OPTIONS_TITLE = 'Más opciones para tu jardín';
 
 /** Every slug the model exposes (categories, subcategories, variants). */
 export function allCatalogSlugs(categories: readonly Category[] = CATEGORIES): string[] {

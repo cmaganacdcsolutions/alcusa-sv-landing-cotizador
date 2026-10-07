@@ -15,6 +15,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const [mode, ...rest] = process.argv.slice(2);
 const map = JSON.parse(readFileSync(join(root, 'tests/areas.json'), 'utf8'));
 const E2E_PORT = process.env.E2E_PORT ?? '4410';
+const SMOKE_PORT = process.env.SMOKE_PORT ?? '4420'; // override to run alongside another verify (never 4400)
 
 function fail(msg) {
   console.error(`\n[verify] ${msg}`);
@@ -67,8 +68,8 @@ if (mode === 'full') {
   steps.push({ name: `dev smoke [${areas.join(',')}]`, cmd: 'npx playwright test --config=playwright.smoke.config.ts', env: { SMOKE_AREAS: areas.join(',') } });
 }
 
-if (steps.some((s) => s.name.includes('smoke')) && (await portBusy(4420))) {
-  fail('el puerto 4420 (dev smoke) esta ocupado: algo viejo sigue corriendo. Cierralo (NO toques el 4400).');
+if (steps.some((s) => s.name.includes('smoke')) && (await portBusy(Number(SMOKE_PORT)))) {
+  fail(`el puerto ${SMOKE_PORT} (dev smoke) esta ocupado: algo viejo sigue corriendo. Cierralo (NO toques el 4400).`);
 }
 
 {

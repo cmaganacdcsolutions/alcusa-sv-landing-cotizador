@@ -4,6 +4,7 @@ import { expect, test } from './fixtures';
 
 // Inicio con renders profesionales (2026-10-06): sin fotos de Alcusa, jardin con 3 productos,
 // iconos de color/vidrio en cada tarjeta, galeria de renders y guia "Como funciona" paso a paso.
+// Jardin: 3 productos + sub-bloque "Más opciones para tu jardín" (2 combinaciones solo asesor, ver jardin-mas-opciones.spec.ts).
 const LEGACY = /\/images\/(catalog|card-|hero-|galeria|finish-)/;
 
 // Dropdowns (combobox) de cada tarjeta: abre la lista del campo y elige la opcion por nombre.
@@ -13,17 +14,19 @@ async function pick(card: Locator, field: string, option: RegExp): Promise<void>
 }
 
 test.describe('home: renders, iconos de acabado y guia', () => {
-  test('puertas de jardin muestra exactamente 3 productos y ningun cuadro "Más opciones"', async ({ page }) => {
+  test('puertas de jardin muestra 3 productos con opciones y 2 de "Más opciones para tu jardín"; ninguna otra categoria las tiene', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#puertas-de-jardin .pcard')).toHaveCount(3);
-    await expect(page.locator('.pcard--more')).toHaveCount(0);
-    await expect(page.getByText('Más opciones')).toHaveCount(0);
+    await expect(page.locator('#puertas-de-jardin .pcard')).toHaveCount(5);
+    await expect(page.locator('#puertas-de-jardin .pcard:not(.pcard--advisor)')).toHaveCount(3);
+    await expect(page.locator('#puertas-de-jardin .csec__more .pcard--advisor')).toHaveCount(2);
+    await expect(page.locator('.pcard--advisor')).toHaveCount(2);
+    await expect(page.getByText('Más opciones')).toHaveCount(1);
   });
 
   test('tarjetas usan /images/renders/ y el HTML no tiene rutas de foto legacy', async ({ page }) => {
     await page.goto('/');
     const srcs = await page.locator('.pcard img.photo-frame__img').evaluateAll((els) => els.map((e) => e.getAttribute('src')));
-    expect(srcs.length).toBe(9);
+    expect(srcs.length).toBe(11);
     for (const s of srcs) expect(s).toMatch(/^\/images\/renders\//);
     expect(await page.content()).not.toMatch(LEGACY);
   });

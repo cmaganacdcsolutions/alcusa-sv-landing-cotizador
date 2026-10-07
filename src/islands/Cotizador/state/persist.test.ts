@@ -85,7 +85,7 @@ describe('state/persist — snapshot round-trip', () => {
     const snap = snapshotFromState(midFlowState({ editingItem: { id: 'x1', index: 1 } }));
     const restored = cotizadorReducer(
       { ...initialCotizadorState, cart: [], payMethodChosen: false },
-      { type: 'RESTORE_WIZARD', fields: restoreFields(snap!, null) },
+      { type: 'RESTORE_WIZARD', fields: restoreFields(snap!, null, false) },
     );
     expect(restored.step).toBe('zonaEntrega');
     expect(restored.productId).toBe('recta');
@@ -104,15 +104,34 @@ describe('state/persist — snapshot round-trip', () => {
     }
   });
 
-  it('onlineOffer hace round-trip y RESTORE_WIZARD lo devuelve sin tocar el metodo de pago', () => {
+  it('onlineOffer hace round-trip y RESTORE_WIZARD lo devuelve (URL con ?oferta=) sin tocar el metodo de pago', () => {
     const snap = snapshotFromState(midFlowState({ onlineOffer: true, payMethod: 'wa', payMethodChosen: true }))!;
     expect(snap.onlineOffer).toBe(true);
     expect(parseWizardSnapshot(JSON.parse(JSON.stringify(snap)))?.onlineOffer).toBe(true);
-    const restored = cotizadorReducer(initialCotizadorState, { type: 'RESTORE_WIZARD', fields: restoreFields(snap, null) });
+    const restored = cotizadorReducer(initialCotizadorState, { type: 'RESTORE_WIZARD', fields: restoreFields(snap, null, true) });
     expect(restored.onlineOffer).toBe(true);
     // payMethod/payMethodChosen siguen FUERA del snapshot: el link `?oferta=` los vuelve a aplicar al montar.
     expect(restored.payMethod).toBe(initialCotizadorState.payMethod);
     expect(restored.payMethodChosen).toBe(false);
+  });
+
+  it('sin ?oferta= en la URL un snapshot con onlineOffer true NUNCA enciende la oferta al restaurar (ni con hash ni con reload)', () => {
+    const snap = snapshotFromState(midFlowState({ onlineOffer: true }))!;
+    expect(snap.onlineOffer).toBe(true);
+    for (const hashStep of [null, 'precio', 'resumen'] as const) {
+      const fields = restoreFields(snap, hashStep, false);
+      expect(fields.onlineOffer).toBe(false);
+      expect(cotizadorReducer(initialCotizadorState, { type: 'RESTORE_WIZARD', fields }).onlineOffer).toBe(false);
+    }
+    // El resto del snapshot se restaura igual: solo la oferta queda fuera.
+    expect(restoreFields(snap, 'precio', false).step).toBe('precio');
+    expect(restoreFields(snap, null, false).productId).toBe('recta');
+  });
+
+  it('un snapshot sin oferta nunca la enciende, tenga o no el parametro (APPLY_ONLINE_OFFER la aplica al montar)', () => {
+    const snap = snapshotFromState(midFlowState({ onlineOffer: false }))!;
+    expect(restoreFields(snap, null, true).onlineOffer).toBe(false);
+    expect(restoreFields(snap, null, false).onlineOffer).toBe(false);
   });
 
   it('sin la oferta el snapshot guarda onlineOffer false', () => {
@@ -337,7 +356,7 @@ describe('state/persist — elegibilidad de la restauracion', () => {
 
   it('restoreFields quita la version y resuelve el paso', () => {
     const snap = snapshotFromState(midFlowState({ step: 'resumen' }))!;
-    const fields = restoreFields(snap, 'precio');
+    const fields = restoreFields(snap, 'precio', false);
     expect(fields).not.toHaveProperty('v');
     expect(fields.step).toBe('precio');
   });

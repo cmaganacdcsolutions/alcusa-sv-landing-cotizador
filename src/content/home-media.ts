@@ -101,6 +101,9 @@ const COVER_ALT: Readonly<Record<string, string>> = {
   'jardin-1-hoja': 'Puerta de jardín corrediza de una hoja, aluminio y vidrio',
   'jardin-2-hojas': 'Puerta de jardín corrediza de dos hojas',
   'jardin-3-hojas': 'Puerta de jardín corrediza de tres hojas, aluminio y vidrio',
+  // "Más opciones para tu jardín" (solo asesor): solo portada, sin variantes ni opciones.
+  'jardin-2-fijas-2-corredizas': 'Puerta de jardín de cuatro hojas: dos fijas y dos corredizas, aluminio y vidrio',
+  'jardin-1-fijo-3-corredizas': 'Puerta de jardín de cuatro hojas: una fija y tres corredizas, aluminio y vidrio',
   'templada-10mm': 'Puerta de baño de vidrio templado de 10 mm',
   recta: 'Puerta de baño recta corrediza',
   'en-l': 'Puerta de baño en L, cabina de ducha de aluminio y vidrio',

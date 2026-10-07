@@ -1,6 +1,8 @@
 ---
 // Promociones del mes (R3). Data-driven: src/content/promotions.json -> promotions.ts.
-// Sin promos vigentes la seccion NO se renderiza (0 px, sin gap doble).
+// La seccion SIEMPRE existe en el DOM: sin promos vigentes en build queda `hidden` (0 px, sin gap doble) y el script
+// de runtime (promotionsRuntime.ts, ADR-014 A5) puede llenarla o ocultarla con lo que publique el admin.
+// Este HTML horneado es el respaldo (SEO, sin JS, falla del fetch).
 // Pulido 2026-10-06: tarjetas compactas a escala de las del catalogo (3 por fila en escritorio, carrusel con
 // snap en movil), mismo contenedor de 1240 px que las secciones del catalogo. El flyer (9:16, con precio y letra
 // chica impresos) se ve COMPLETO en un marco 4:5 (contain): ~265 px de flyer legible en una tarjeta de ~376.
@@ -9,7 +11,11 @@ import {
   discountPct,
   formatUsd,
   getActivePromotions,
+  PROMOS_COPY,
+  PROMO_IMAGE_SIZES,
   promoHref,
+  promoImageSrcSet,
+  promosTitle,
   savings,
   vigenciaLabel,
 } from '@content/promotions';
@@ -17,98 +23,100 @@ import {
 const promos = getActivePromotions();
 const count = promos.length;
 const single = count === 1;
-const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que puedes aprovechar hoy';
+const title = promosTitle(count);
 ---
 
-{
-  count > 0 && (
-    <section id="promociones" class="promos" aria-labelledby="promo-t" data-count={count}>
-      <div class="promos__wrap">
-        <div class="promos__head">
-          <p class="promos__kicker">PROMOCIONES DEL MES</p>
-          <div class="promos__title-row">
-            <h2 id="promo-t" class="promos__title title-gradient">
-              {title}
-            </h2>
-            <p class="promos__sub promos__sub--desktop">Precios especiales por tiempo limitado.</p>
-            {!single && <p class="promos__sub promos__sub--mobile">Precios especiales por tiempo limitado. Desliza para ver más.</p>}
-          </div>
-        </div>
-        <div class="promos__list" role="list">
-          {
-            promos.map((p) => {
-              const pct = discountPct(p);
-              const ahorro = savings(p);
-              return (
-                <article class="promo-card" role="listitem" data-promo-id={p.id}>
-                  {/* Flyer oficial 9:16 (texto y precio incrustados): contain + capa ambiental = foto completa, sin recorte. */}
-                  <PhotoFrame
-                    src={p.image}
-                    srcSet={`${p.image.replace(/-900\.webp$/, '-600.webp')} 600w, ${p.image} 900w`}
-                    sizes="(min-width: 900px) 376px, 360px"
-                    alt={p.imageAlt}
-                    width={900}
-                    height={1600}
-                    ratio="4/5"
-                    className="promo-card__photo"
-                  >
-                    {pct !== null && <span class="promo-card__badge">{`−${pct}%`}</span>}
-                  </PhotoFrame>
-                  <div class="promo-card__band">
-                    <div class="promo-card__band-row">
-                      {p.antes !== null ? (
-                        <span class="promo-card__antes">
-                          <span class="sr-only">Precio anterior </span>
-                          <s>{`Antes ${formatUsd(p.antes)}`}</s>
-                        </span>
-                      ) : (
-                        <span class="promo-card__antes">Precio especial</span>
-                      )}
-                      {ahorro !== null && pct !== null && (
-                        <span class="promo-card__ahorras">{`Ahorras ${formatUsd(ahorro)}`}</span>
-                      )}
-                    </div>
-                    <span class="promo-card__ahora">{`Ahora ${formatUsd(p.ahora)}`}</span>
-                  </div>
-                  <div class="promo-card__body">
-                    <div class="promo-card__text">
-                      <h3 class="promo-card__title" title={p.title}>
-                        {p.title}
-                      </h3>
-                      <p class="promo-card__desc">{p.description}</p>
-                      {p.rules.length > 0 && (
-                        <ul class="promo-card__rules">
-                          {p.rules.map((r) => (
-                            <li>{r}</li>
-                          ))}
-                        </ul>
-                      )}
-                      <span class="promo-card__chip">
-                        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
-                          <rect x="4" y="5.5" width="16" height="14" rx="3" />
-                          <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
-                        </svg>
-                        {vigenciaLabel(p.hasta)}
-                      </span>
-                    </div>
-                    <div class="promo-card__cta-slot">
-                      <a class="promo-card__cta" href={promoHref(p)} data-promo-cta>
-                        Cotizar esta promo
-                        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M5 12h14M13 6l6 6-6 6" />
-                        </svg>
-                      </a>
-                    </div>
-                  </div>
-                </article>
-              );
-            })
-          }
-        </div>
+<section id="promociones" class="promos" aria-labelledby="promo-t" data-count={count} hidden={count === 0}>
+  <div class="promos__wrap">
+    <div class="promos__head">
+      <p class="promos__kicker">{PROMOS_COPY.kicker}</p>
+      <div class="promos__title-row">
+        <h2 id="promo-t" class="promos__title title-gradient">
+          {title}
+        </h2>
+        <p class="promos__sub promos__sub--desktop">{PROMOS_COPY.sub}</p>
+        {!single && <p class="promos__sub promos__sub--mobile">{PROMOS_COPY.subMobileMany}</p>}
       </div>
-    </section>
-  )
-}
+    </div>
+    <div class="promos__list" role="list">
+      {
+        promos.map((p) => {
+          const pct = discountPct(p);
+          const ahorro = savings(p);
+          return (
+            <article class="promo-card" role="listitem" data-promo-id={p.id}>
+              {/* Flyer oficial 9:16 (texto y precio incrustados): contain + capa ambiental = foto completa, sin recorte. */}
+              <PhotoFrame
+                src={p.image}
+                srcSet={promoImageSrcSet(p.image)}
+                sizes={PROMO_IMAGE_SIZES}
+                alt={p.imageAlt}
+                width={900}
+                height={1600}
+                ratio="4/5"
+                className="promo-card__photo"
+              >
+                {pct !== null && <span class="promo-card__badge">{`−${pct}%`}</span>}
+              </PhotoFrame>
+              <div class="promo-card__band">
+                <div class="promo-card__band-row">
+                  {p.antes !== null ? (
+                    <span class="promo-card__antes">
+                      <span class="sr-only">Precio anterior </span>
+                      <s>{`Antes ${formatUsd(p.antes)}`}</s>
+                    </span>
+                  ) : (
+                    <span class="promo-card__antes">Precio especial</span>
+                  )}
+                  {ahorro !== null && pct !== null && (
+                    <span class="promo-card__ahorras">{`Ahorras ${formatUsd(ahorro)}`}</span>
+                  )}
+                </div>
+                <span class="promo-card__ahora">{`Ahora ${formatUsd(p.ahora)}`}</span>
+              </div>
+              <div class="promo-card__body">
+                <div class="promo-card__text">
+                  <h3 class="promo-card__title" title={p.title}>
+                    {p.title}
+                  </h3>
+                  <p class="promo-card__desc">{p.description}</p>
+                  {p.rules.length > 0 && (
+                    <ul class="promo-card__rules">
+                      {p.rules.map((r) => (
+                        <li>{r}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <span class="promo-card__chip">
+                    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="4" y="5.5" width="16" height="14" rx="3" />
+                      <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+                    </svg>
+                    {vigenciaLabel(p.hasta)}
+                  </span>
+                </div>
+                <div class="promo-card__cta-slot">
+                  <a class="promo-card__cta" href={promoHref(p)} data-promo-cta>
+                    Cotizar esta promo
+                    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </article>
+          );
+        })
+      }
+    </div>
+  </div>
+</section>
+
+<script>
+  import { initPromotionsRuntime } from './promotionsRuntime';
+
+  void initPromotionsRuntime();
+</script>
 
 <style is:global>
   /* Mismo contenedor que .csec (catalogo): 1240 px con 16/24/32 px de aire lateral. */

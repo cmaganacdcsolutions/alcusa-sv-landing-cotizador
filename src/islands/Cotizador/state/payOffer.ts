@@ -12,6 +12,9 @@ import { computePayable, payMethodForDiscount, type ShippingState } from './paya
 /** Single source for every "discount row" label (Step2/3/4/5/7, aside). */
 export const ONLINE_DISCOUNT_LABEL = 'Descuento pago con tarjeta en línea (10%)';
 
+/** Banner shown ONLY while the offer is active (entered through `?oferta=online10`); no other copy. */
+export const ONLINE_OFFER_BANNER_TEXT = 'Verás un 10% de descuento reflejado a la hora de realizar tu pago';
+
 /** Steps that can show the preview/applied line before the forma de pago step. */
 const OFFER_STEPS = ['precio', 'zonaEntrega', 'resumen'] as const;
 

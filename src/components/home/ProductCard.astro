@@ -3,6 +3,8 @@
 // Progressive enhancement: <form method="get" action="/cotizador"> con un <select> nativo por opcion
 // (Marco/Color, Vidrio, Acabado). Enviar el formulario ES el deep link; el script (catalogHome.client.ts)
 // solo actualiza el circulo de la eleccion y la foto. Sin isla React.
+// Variante `advisorOnly` ("Mas opciones para tu jardin"): misma tarjeta, solo portada; sin selects ni precio. Su CTA abre
+// WhatsApp con un asesor (no se puede cotizar en el cotizador).
 import PhotoFrame from '@components/PhotoFrame';
 import type { Subcategory } from '@content/catalog';
 import { cardTitle, priceView } from '@content/catalogView';
@@ -15,20 +17,28 @@ import {
   STEP_MEDIDAS,
   STEP_PARAM,
 } from '@content/catalogHome';
+import { buildCatalogAdvisorMessage } from '@integrations/whatsapp/buildMessage';
+import { buildWaLink } from '@integrations/whatsapp/waLink';
 import OptionSelect from './OptionSelect.astro';
 
 interface Props {
   sub: Subcategory;
   /** Primera tarjeta de Ventanas: LCP => eager + fetchpriority high. */
   first?: boolean;
+  /** Nivel del titulo: 3 bajo el h2 de la categoria; 4 bajo el h3 de "Mas opciones". */
+  headingLevel?: 3 | 4;
 }
-const { sub, first = false } = Astro.props;
+const { sub, first = false, headingLevel = 3 } = Astro.props;
+const advisor = sub.advisorOnly === true;
+const Heading: 'h3' | 'h4' = headingLevel === 4 ? 'h4' : 'h3';
 const config = PRODUCT_CONFIGS[sub.slug];
-if (!config) throw new Error(`ProductCard: sin configuración para "${sub.slug}"`);
+if (!advisor && !config) throw new Error(`ProductCard: sin configuración para "${sub.slug}"`);
 const title = cardTitle(sub);
 const price = priceView(sub);
-const choices = defaultChoices(config);
-const href = buildCotizadorHref(config.productSlug, choices);
+const choices = config ? defaultChoices(config) : undefined;
+const href = config && choices ? buildCotizadorHref(config.productSlug, choices) : '';
+// CTA de asesor: mensaje del catalogo ("Hola, quiero cotizar X") con el tipo de producto para dar contexto.
+const advisorHref = advisor ? buildWaLink(buildCatalogAdvisorMessage(`una puerta de jardín ${title}`)) : '';
 // `choices` lleva color, vidrio y (en-l) acabado: coverFor resuelve la variante exacta de cada combinacion.
 const img = coverFor(sub.slug, choices);
 const variants = variantsOf(sub.slug);
@@ -37,15 +47,16 @@ const hasVariants = Object.keys(variants).length > 0;
 // Ultimo peldano de la escalera de render: la portada (sin color/vidrio) por si una combinacion no tuviera archivo.
 const cover = hasVariants ? coverFor(sub.slug) : null;
 // El orden del DOM es el orden del query string: producto, paso, color, vidrio (contrato del deep link).
-const acabado = config.groups.find((g) => g.name === 'acabado');
-const others = config.groups.filter((g) => g.name !== 'acabado');
-const hasOptions = config.groups.length > 0;
+const groups = config?.groups ?? [];
+const acabado = groups.find((g) => g.name === 'acabado');
+const others = groups.filter((g) => g.name !== 'acabado');
+const hasOptions = groups.length > 0;
 const altoText = 'altoText' in sub ? sub.altoText : undefined;
 const titleId = `pc-${sub.slug}-t`;
 const idBase = `pc-${sub.slug}`;
 ---
 
-<article class="pcard" id={`p-${sub.slug}`} aria-labelledby={titleId} data-card={sub.slug} data-reveal>
+<article class:list={['pcard', { 'pcard--advisor': advisor }]} id={`p-${sub.slug}`} aria-labelledby={titleId} data-card={sub.slug} data-reveal>
   <div class="pcard__media" data-finish-swap={hasVariants ? "" : undefined}>
     {
       img ? (
@@ -67,20 +78,34 @@ const idBase = `pc-${sub.slug}`;
   </div>
 
   <div class="pcard__body">
-    <h3 id={titleId} class="pcard__title">{title}</h3>
+    <Heading id={titleId} class="pcard__title">{title}</Heading>
     {altoText && <p class="pcard__line">{altoText}</p>}
     <p class="pcard__price">
       {
         price.kind === 'from'
           ? `Desde ${price.text.replace(/^Desde\s*/, '')}`
           : price.kind === 'advisor'
-            ? 'Cotización por asesor'
+            ? 'Cotización personalizada'
             : 'Cotizar'
       }
     </p>
 
     {
-      hasOptions ? (
+      advisor ? (
+        <div class="pcard__form pcard__form--plain">
+          <p class="pcard__sum">Un asesor te prepara la cotización.</p>
+          <a
+            class="pcard__go"
+            href={advisorHref}
+            target="_blank"
+            rel="noopener"
+            data-advisor-cta
+            aria-label={`Cotizar con un asesor: ${title} (WhatsApp, se abre en una pestaña nueva)`}
+          >
+            Cotizar con un asesor
+          </a>
+        </div>
+      ) : hasOptions && config ? (
         <form
           class="pcard__form"
           method="get"

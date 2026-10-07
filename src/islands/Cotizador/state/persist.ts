@@ -360,9 +360,18 @@ export function restoredStep(hashStep: CotizadorStep | null, snapshot: WizardSna
   return clampStep(hashStep ?? snapshot.step);
 }
 
-/** Campos para `RESTORE_WIZARD`: el snapshot sin `v`, con el paso ya resuelto (`restoredStep`). */
-export function restoreFields(snapshot: WizardSnapshot, hashStep: CotizadorStep | null): WizardFields {
+/**
+ * Campos para `RESTORE_WIZARD`: el snapshot sin `v`, con el paso ya resuelto (`restoredStep`).
+ * La oferta del 10% (`onlineOffer`) solo se restaura si la URL actual la trae (`offerParam`, ver
+ * `hasOnlineOfferParam`): sin `?oferta=online10` el snapshot NUNCA la enciende por si solo (entrar
+ * despues por "Cotizar"/un hash en la misma pestana llega sin oferta ni banner).
+ */
+export function restoreFields(
+  snapshot: WizardSnapshot,
+  hashStep: CotizadorStep | null,
+  offerParam: boolean,
+): WizardFields {
   const { v: version, ...fields } = snapshot;
   void version; // el numero de version no es parte del estado
-  return { ...fields, step: restoredStep(hashStep, snapshot) };
+  return { ...fields, step: restoredStep(hashStep, snapshot), onlineOffer: fields.onlineOffer && offerParam };
 }

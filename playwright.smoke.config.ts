@@ -4,7 +4,8 @@ import { defineConfig, devices } from '@playwright/test';
 // there (e.g. `_jsxDEV is not a function`, dev-only hydration errors). Port 4420 is reserved for this
 // (4400 = the user's live dev server, 4410 = e2e preview). Playwright starts AND stops the server.
 // SMOKE_AREAS=cotizador,home,... limits the pages (verify:area); unset = everything.
-const PORT = 4420;
+// SMOKE_PORT lets a parallel agent run it on its own port (never 4400/4410/4420 when those are taken).
+const PORT = Number(process.env.SMOKE_PORT ?? 4420);
 
 export default defineConfig({
   testDir: './tests/smoke',

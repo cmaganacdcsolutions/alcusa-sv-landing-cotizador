@@ -40,6 +40,9 @@ function watch(page: Page): string[] {
 }
 
 test.beforeEach(async ({ page }) => {
+  // ADR-014 A5: in `astro dev` /api is proxied to 127.0.0.1:3001 (usually not running -> 500). Answer 204 ("nothing
+  // published") so the runtime promos fetch keeps the baked HTML without counting as a failed request.
+  await page.route('**/api/promotions.json', (route) => route.fulfill({ status: 204 }));
   // Never reach the real WhatsApp / Wompi; answer 200 so they do not count as failed requests.
   // External hosts only: in dev the app's own modules live under /src/integrations/wompi/..., which a
   // '**wompi**' glob would swallow (-> 'Failed to fetch dynamically imported module').

@@ -45,7 +45,7 @@ async function fetchAssets(): Promise<QuotePdfAssets> {
 
 /** Warm the lazy chunk when Resumen mounts (no PDF build). */
 export function prefetchQuotePdf(): void {
-  void import('./render');
+  void import('./render').catch(() => undefined);
 }
 
 export async function buildQuotePdf(doc: QuoteDocument, assets?: QuotePdfAssets): Promise<File> {

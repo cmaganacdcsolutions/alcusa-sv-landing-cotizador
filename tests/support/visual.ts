@@ -16,6 +16,9 @@ export async function settleForScreenshot(page: Page): Promise<void> {
     await Promise.all(
       Array.from(document.images).map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))),
     );
+    // 'complete' no es 'pintable': con decoding async el bitmap puede tardar (en Chromium, segundos) en decodificarse y
+    // el recorte saldria con el marco vacio. decode() resuelve cuando la imagen esta lista para pintarse.
+    await Promise.all(Array.from(document.images).map((i) => i.decode().catch(() => undefined)));
   });
   // layout must stop moving (step transitions / focus / entering animations) before we shoot.
   let prev = '';
