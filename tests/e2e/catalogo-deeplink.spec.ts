@@ -25,8 +25,9 @@ test.describe('catalogo -> cotizador deep link', () => {
       .click();
     await expect(page).toHaveURL(/\/#puertas-de-jardin$/);
     await expect(page.locator('#puertas-de-jardin')).toBeInViewport();
-    // 3 modelos de jardin con tarjeta (las 2 combinaciones "solo asesor" no tienen tarjeta)
-    await expect(page.locator('#puertas-de-jardin article.pcard')).toHaveCount(3);
+    // 3 modelos de jardin con opciones + las 2 combinaciones "solo asesor" de "Más opciones para tu jardín"
+    await expect(page.locator('#puertas-de-jardin article.pcard')).toHaveCount(5);
+    await expect(page.locator('#puertas-de-jardin article.pcard:not(.pcard--advisor)')).toHaveCount(3);
   });
 
   test('home card CTA (sin opciones) lands in the cotizador with the product preselected on Medidas', async ({ page }) => {
@@ -80,10 +81,14 @@ test.describe('catalogo -> cotizador deep link', () => {
     expect(errors).toEqual([]);
   });
 
-  test('advisorOnly leaf: no home card/price; cotizador never enters the wizard and offers the WhatsApp advisor', async ({ page }) => {
-    // El inicio no ofrece tarjeta (ni precio, ni entrada al asistente) para las combinaciones "solo asesor".
+  test('advisorOnly leaf: home card without price/form (WhatsApp CTA); cotizador never enters the wizard and offers the WhatsApp advisor', async ({ page }) => {
+    // El inicio SI tiene tarjeta ("Más opciones para tu jardín"), pero sin precio, sin formulario y sin entrada al asistente.
     await page.goto('/');
-    await expect(page.locator('#p-jardin-2-fijas-2-corredizas, #p-jardin-1-fijo-3-corredizas')).toHaveCount(0);
+    const cards = page.locator('#p-jardin-2-fijas-2-corredizas, #p-jardin-1-fijo-3-corredizas');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.locator('form, [data-go]')).toHaveCount(0);
+    await expect(cards.locator('a[href^="https://wa.me/"]')).toHaveCount(2);
+    await expect(cards.getByText(/Desde $/)).toHaveCount(0);
 
     await page.goto('/cotizador?producto=jardin-2-fijas-2-corredizas');
     await waitForHydration(page);

@@ -71,8 +71,8 @@ export const CATEGORIES: readonly Category[] = [
       { slug: 'jardin-1-hoja', name: '1 hoja corrediza', quoterModel: 'jardin', preset: { gardenHojas: 1 }, fromPrice: 410, altoText: 'Alto 2.10 o 2.40 m' },
       { slug: 'jardin-2-hojas', name: '2 hojas corredizas', quoterModel: 'jardin', preset: { gardenHojas: 2 }, fromPrice: 819, altoText: 'Alto 2.10 o 2.40 m' },
       { slug: 'jardin-3-hojas', name: '3 hojas corredizas', quoterModel: 'jardin', preset: { gardenHojas: 3 }, fromPrice: 1229, altoText: 'Alto 2.10 o 2.40 m' },
-      { slug: 'jardin-2-fijas-2-corredizas', name: '2 fijas + 2 corredizas', advisorOnly: true, group: 'mas-opciones' },
-      { slug: 'jardin-1-fijo-3-corredizas', name: '1 fijo + 3 corredizas', advisorOnly: true, group: 'mas-opciones' },
+      { slug: 'jardin-2-fijas-2-corredizas', name: '2 fijas + 2 corredizas', advisorOnly: true, group: 'mas-opciones', altoText: 'Alto 2.10 o 2.40 m' },
+      { slug: 'jardin-1-fijo-3-corredizas', name: '1 fijo + 3 corredizas', advisorOnly: true, group: 'mas-opciones', altoText: 'Alto 2.10 o 2.40 m' },
     ],
   },
   {

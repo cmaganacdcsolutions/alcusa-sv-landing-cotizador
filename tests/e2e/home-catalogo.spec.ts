@@ -42,7 +42,8 @@ test.describe('inicio — catálogo completo', () => {
   test('3 secciones en orden, cada tarjeta con su título y su precio "Desde $X"', async ({ page }) => {
     await page.goto('/');
     for (const section of SECTIONS) {
-      const cards = page.locator(`#${section.id} article.pcard`);
+      // Las 2 tarjetas de asesor ("Más opciones para tu jardín") se cubren en jardin-mas-opciones.spec.ts.
+      const cards = page.locator(`#${section.id} article.pcard:not(.pcard--advisor)`);
       await expect(cards, `${section.id}: tarjetas`).toHaveCount(section.cards.length);
       const ids = await cards.evaluateAll((els) => els.map((e) => e.id));
       expect(ids, `${section.id}: orden`).toEqual(section.cards.map(([slug]) => `p-${slug}`));
@@ -54,7 +55,7 @@ test.describe('inicio — catálogo completo', () => {
   test('cada tarjeta lleva a SU producto del cotizador, directo a Medidas, sin destinos repetidos', async ({ page }) => {
     await page.goto('/');
     // Destino real de cada tarjeta: el href del enlace (sin opciones) o la URL que arma el formulario GET (con opciones).
-    const destinations = await page.locator('#catalogo article.pcard').evaluateAll((cards) =>
+    const destinations = await page.locator('#catalogo article.pcard:not(.pcard--advisor)').evaluateAll((cards) =>
       cards.map((card) => {
         const form = card.querySelector('form');
         if (form) {

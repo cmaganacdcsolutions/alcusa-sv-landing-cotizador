@@ -1,7 +1,7 @@
 ---
 // Seccion de catalogo por categoria (spec home-catalogo-completo §2-§3). Datos: CATEGORIES + contenido.
 import type { Category } from '@content/catalog';
-import { MORE_OPTIONS_GROUP } from '@content/catalogView';
+import { MORE_OPTIONS_TITLE, splitSubcategories } from '@content/catalogView';
 import { CATEGORY_CONTENT } from '@content/catalogContent';
 import ProductCard from './ProductCard.astro';
 
@@ -11,8 +11,9 @@ interface Props {
   firstOfPage?: boolean;
 }
 const { category, firstOfPage = false } = Astro.props;
-const main = category.subcategories.filter((s) => s.group !== MORE_OPTIONS_GROUP);
+const { main, more } = splitSubcategories(category);
 const headingId = `${category.slug}-t`;
+const moreId = `${category.slug}-mas-t`;
 const lead = CATEGORY_CONTENT[category.slug]?.blurb ?? category.blurb;
 ---
 
@@ -24,6 +25,14 @@ const lead = CATEGORY_CONTENT[category.slug]?.blurb ?? category.blurb;
   <div class="csec__grid">
     {main.map((sub, i) => <ProductCard sub={sub} first={firstOfPage && i === 0} />)}
   </div>
+  {
+    more.length > 0 && (
+      <section class="csec__more" aria-labelledby={moreId}>
+        <h3 id={moreId} class="csec__more-title">{MORE_OPTIONS_TITLE}</h3>
+        <div class="csec__grid">{more.map((sub) => <ProductCard sub={sub} headingLevel={4} />)}</div>
+      </section>
+    )
+  }
 </section>
 
 <style is:global>
@@ -60,6 +69,19 @@ const lead = CATEGORY_CONTENT[category.slug]?.blurb ?? category.blurb;
     gap: var(--space-3);
     grid-template-columns: minmax(0, 1fr);
   }
+  /* "Más opciones": sub-bloque tras las tarjetas principales; mismo grid y misma tarjeta. */
+  .csec__more {
+    display: grid;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+  }
+  .csec__more-title {
+    margin: 0;
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: var(--font-weight-display-bold);
+    color: var(--color-text-on-dark);
+  }
   @media (min-width: 768px) {
     .csec {
       padding: var(--space-10) var(--space-6) 0;
@@ -83,6 +105,14 @@ const lead = CATEGORY_CONTENT[category.slug]?.blurb ?? category.blurb;
     }
     .csec__grid {
       gap: var(--space-6);
+    }
+    .csec__more {
+      gap: var(--space-4);
+      margin-top: var(--space-8);
+    }
+    .csec__more-title {
+      font-size: 26px;
+      line-height: 32px;
     }
   }
 </style>
