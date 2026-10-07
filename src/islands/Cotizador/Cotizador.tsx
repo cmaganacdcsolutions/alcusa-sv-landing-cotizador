@@ -42,7 +42,13 @@ import {
   type Payable,
   type ShippingState,
 } from './state/payable';
-import { buildPayOffer, hasOnlineOfferParam, ONLINE_DISCOUNT_LABEL, type PayOffer } from './state/payOffer';
+import {
+  buildPayOffer,
+  hasOnlineOfferParam,
+  ONLINE_DISCOUNT_LABEL,
+  ONLINE_OFFER_BANNER_TEXT,
+  type PayOffer,
+} from './state/payOffer';
 import OnlineDiscountPreview from './steps/OnlineDiscountPreview';
 import {
   IconArrowRight,
@@ -292,6 +298,7 @@ export default function Cotizador(): ReactElement {
     // the hash still named a later step. Restore the stored wizard snapshot when
     // eligible; a fresh deep-link arrival and a Wompi/folio return win instead.
     const storedSnapshot = readWizardSnapshot();
+    const offerParam = hasOnlineOfferParam(window.location.search);
     const restoring =
       storedSnapshot !== null &&
       shouldRestoreWizard({
@@ -302,7 +309,7 @@ export default function Cotizador(): ReactElement {
         navigation: readNavigationType(),
       });
     if (storedSnapshot && restoring) {
-      const fields = restoreFields(storedSnapshot, initial);
+      const fields = restoreFields(storedSnapshot, initial, offerParam);
       dispatch({ type: 'RESTORE_WIZARD', fields });
       window.history.replaceState(
         null,
@@ -317,7 +324,8 @@ export default function Cotizador(): ReactElement {
     // APPLIED from the first screen. Deliberately outside the `!wompiReturn` / `!restoring` block
     // below and AFTER RESTORE_WIZARD, so a reload with the param (the URL keeps it) re-applies the
     // offer on top of the restored wizard, and a priced deep link combined with it keeps both.
-    if (hasOnlineOfferParam(window.location.search)) dispatch({ type: 'APPLY_ONLINE_OFFER' });
+    // The offer (and its banner) exist ONLY with the param: restoreFields never turns it on from a snapshot.
+    if (offerParam) dispatch({ type: 'APPLY_ONLINE_OFFER' });
 
     // Post-Wompi restoration wins: the deep link must not override it. A
     // restored wizard also skips the priced preset (it would reset the product).
@@ -598,7 +606,8 @@ export default function Cotizador(): ReactElement {
   });
   // The offer is "live" (banner copy) while card is the chosen method; picking WhatsApp in Step5 drops it.
   const offerApplied = state.onlineOffer && state.payMethodChosen && state.payMethod === 'pay';
-  const showOfferBanner = state.step !== 'wompi' && state.step !== 'resultado';
+  // Banner only when the offer is active (entered through the navbar "Compra YA!" / `?oferta=online10`).
+  const showOfferBanner = state.onlineOffer && state.step !== 'wompi' && state.step !== 'resultado';
   const onlineDiscount = payable?.discount.applies ? payable.discount.amount : 0;
   const shippingPending = payable?.shippingPending ?? false;
   // Sin direccion completa no se muestra un total con envio: "Por confirmar".
@@ -940,15 +949,9 @@ export default function Cotizador(): ReactElement {
             role="status"
           >
             <IconCardRect size={22} className="online-discount-banner__icon" />
-            {offerApplied ? (
-              <p className="online-discount-banner__text">
-                <strong>¡10% de descuento aplicado!</strong> Pagando con tarjeta en línea, solo en productos.
-              </p>
-            ) : (
-              <p className="online-discount-banner__text">
-                <strong>10% de descuento pagando con tarjeta en línea.</strong> Aplica a tus productos, no al envío.
-              </p>
-            )}
+            <p className="online-discount-banner__text">
+              <strong>{ONLINE_OFFER_BANNER_TEXT}</strong>
+            </p>
           </div>
         )}
         {state.step === 'producto' && (
