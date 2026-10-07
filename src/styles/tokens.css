@@ -274,8 +274,8 @@
   --color-surface-dark: #0a1a33; /* fondo de pagina/banda oscura */
   --color-surface-dark-raised: #0f2548; /* tarjeta o panel sobre oscuro */
   --color-text-on-dark: #ffffff; /* titulos y texto principal: 17.4:1 */
-  --color-text-on-dark-muted: #b9c6dc; /* texto secundario: 10.1:1 */
-  --color-accent-on-dark: #8fb4ff; /* kickers, enlaces, foco: 8.4:1 */
+  --color-text-on-dark-muted: #d4dce9; /* texto secundario: 12.6:1 sobre surface-dark; 4.6:1 en el punto mas claro del fondo diagonal */
+  --color-accent-on-dark: #cbdcff; /* kickers, enlaces, seleccion: 12.6:1 sobre surface-dark; 4.6:1 en el punto mas claro del fondo diagonal */
   --color-line-on-dark: rgba(255, 255, 255, 0.14); /* hairlines decorativas */
   --color-ring-on-dark: #ffffff; /* aro de seleccion / foco sobre oscuro */
   --gradient-surface-dark: radial-gradient(70% 120% at 85% 0%, rgba(9, 86, 216, 0.35) 0%, rgba(9, 86, 216, 0) 60%), var(--color-surface-dark);
@@ -289,23 +289,31 @@
   --gradient-night: var(--gradient-surface-dark);
 }
 
-/* Fondo continuo de pagina (pedido 2026-10-06: una sola tonalidad que progresa al hacer scroll).
-   Stops AA con --color-text-on-dark-muted (el mas claro, --color-page-mid, da >= 8:1). */
+/* Fondo continuo de pagina (pedido 2026-10-07): degradado en DIAGONAL, azul noche (arriba-izquierda) -> celeste profundo
+   (abajo-derecha). Va anclado al VIEWPORT (capa fija body::before en global.css), no estirado sobre todo el documento,
+   para que la diagonal se perciba en cada pantalla. La capa no cambia con el scroll, asi que el punto mas claro es siempre
+   --color-page-diag-end: es el peor caso para todo texto sobre fondo (variante C "celeste mas claro": blanco 6.4:1,
+   secundario 4.6:1, acento 4.6:1; el acento y el secundario exigen L de fondo <= ~0.117 para 4.5:1). Si se aclara mas el
+   celeste hay que aclarar tambien --color-accent-on-dark y --color-text-on-dark-muted (ver 02-design/boards/bg-diagonal-01.html).
+   El pie va sobre navy solido (--color-footer-bg) y las tarjetas sobre --color-surface-dark-raised: no dependen del celeste. */
 :root {
   --color-page-top: #0a1a33;
-  --color-page-mid: #0f2a55;
   --color-page-bottom: #071326;
-  /* Pico azul del recorrido: AA con el texto secundario (6.1:1), con --color-accent-on-dark (5.1:1) y con blanco (10.5:1). */
-  --color-page-glow: #143e7c;
-  /* Recorrido por el documento: azul noche profundo arriba -> azul mas vivo hacia el 55% -> profundo en el footer.
-     Se estira sobre toda la altura del body (no es fixed): el fondo cambia perceptiblemente al hacer scroll. */
+  --page-diagonal-angle: 135deg;
+  --color-page-diag-start: var(--color-page-top);
+  --color-page-diag-end: #1c62a0;
+  /* Paradas intermedias (mezcla lineal start->end, subida mas rapida hacia el centro): evitan bandas y dejan que el celeste
+     ocupe media pantalla sin superar nunca --color-page-diag-end (el tope de luminancia que fija el contraste). */
   --gradient-page-dark: linear-gradient(
-    180deg,
-    var(--color-page-top) 0%,
-    var(--color-page-mid) 24%,
-    var(--color-page-glow) 55%,
-    var(--color-page-mid) 80%,
-    var(--color-page-bottom) 100%
+    var(--page-diagonal-angle),
+    var(--color-page-diag-start) 0%,
+    color-mix(in srgb, var(--color-page-diag-end) 12%, var(--color-page-diag-start)) 12%,
+    color-mix(in srgb, var(--color-page-diag-end) 32%, var(--color-page-diag-start)) 26%,
+    color-mix(in srgb, var(--color-page-diag-end) 54%, var(--color-page-diag-start)) 40%,
+    color-mix(in srgb, var(--color-page-diag-end) 74%, var(--color-page-diag-start)) 54%,
+    color-mix(in srgb, var(--color-page-diag-end) 90%, var(--color-page-diag-start)) 68%,
+    color-mix(in srgb, var(--color-page-diag-end) 98%, var(--color-page-diag-start)) 82%,
+    var(--color-page-diag-end) 100%
   );
 }
 
@@ -324,6 +332,8 @@
   --color-deal-active: #f5a000;
   --color-on-deal: #0a1a33;
   /* Pie: texto secundario y lineas sobre el fondo del footer (antes hex sueltos). */
+  /* Franja del pie: navy solido (como el navbar), para que su texto no dependa del celeste del fondo. */
+  --color-footer-bg: var(--color-page-bottom);
   --color-footer-text: #c9d3e3;
   --color-footer-muted: #9fb0c9;
 }

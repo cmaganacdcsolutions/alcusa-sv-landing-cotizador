@@ -3,6 +3,7 @@
   "areas": ["cotizador", "home", "promos", "catalogo", "contacto", "layout"],
   "specs": {
     "a11y.spec.ts": ["home", "cotizador"],
+    "bg-diagonal.spec.ts": ["home", "contacto", "layout"],
     "catalogo-deeplink.spec.ts": ["catalogo", "cotizador"],
     "catalogo-imagenes.spec.ts": ["catalogo", "layout"],
     "contacto.spec.ts": ["contacto"],

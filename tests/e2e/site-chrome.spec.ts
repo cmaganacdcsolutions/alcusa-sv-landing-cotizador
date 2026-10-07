@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 import type { Page } from '@playwright/test';
+import { colorToken } from '../support/tokens';
 
 // Cromo del sitio (pedido 2026-10-06): fondo azul noche continuo en TODAS las paginas, navbar y footer sobre noche,
 // CTA ambar "Compra YA!" en el navbar, sin telefono en el navbar, titulos con degradado (+ respaldos).
@@ -11,7 +12,7 @@ const NIGHT = 'rgb(10, 26, 51)'; // --color-surface-dark
 const NIGHT_RAISED = 'rgb(15, 37, 72)'; // --color-surface-dark-raised
 const PAGE_BOTTOM = 'rgb(7, 19, 38)'; // --color-page-bottom
 const WHITE = 'rgb(255, 255, 255)';
-const ACCENT_ON_DARK = 'rgb(143, 180, 255)'; // --color-accent-on-dark
+const ACCENT_ON_DARK = '--color-accent-on-dark'; // token: se resuelve a rgb() en cada test (no se fija el hex)
 const WA_HOVER = 'rgb(6, 96, 60)'; // --color-whatsapp-strong-hover
 const HOVER_DUR_S = 0.16; // --hover-dur
 
@@ -164,7 +165,7 @@ test.describe('titulos con degradado', () => {
     expect(cs.clip).toBe('text');
     expect(cs.img).toContain('linear-gradient');
     expect(cs.img).toContain('rgb(255, 255, 255)');
-    expect(cs.img).toContain('rgb(143, 180, 255)');
+    expect(cs.img).toContain(await colorToken(page, ACCENT_ON_DARK));
     expect(cs.fill).toBe('rgba(0, 0, 0, 0)');
     // Respaldo solido claro (si el recorte no existe).
     expect(cs.color).toBe(WHITE);
@@ -230,11 +231,12 @@ test.describe('titulos con degradado', () => {
       const s = getComputedStyle(el, '::selection');
       return { bg: s.backgroundColor, fill: s.getPropertyValue('-webkit-text-fill-color'), color: s.color };
     });
-    expect(sel.bg).toBe('rgb(143, 180, 255)');
+    expect(sel.bg).toBe(await colorToken(page, ACCENT_ON_DARK));
     expect([sel.fill, sel.color]).toContain(NIGHT);
   });
 });
 
+// El recorrido del fondo (diagonal anclada al viewport) se verifica en bg-diagonal.spec.ts.
 test.describe('fondo continuo en todo el sitio', () => {
   for (const path of ['/', '/cotizador', '/contacto', '/nosotros']) {
     test(`${path}: degradado azul noche en el body, texto base claro y sin hueco bajo el contenido`, async ({ page }) => {
@@ -251,41 +253,6 @@ test.describe('fondo continuo en todo el sitio', () => {
       await expect(page.locator('html')).toHaveCSS('background-color', PAGE_BOTTOM);
     });
   }
-
-  test('/: el fondo progresa al hacer scroll (profundo -> mas vivo hacia la mitad -> profundo al final)', async ({ page }) => {
-    await page.goto('/');
-    await page.addStyleTag({ content: '* { animation: none !important; transition: none !important; } html { scroll-behavior: auto !important; }' });
-    const metrics = await page.evaluate(() => ({ h: document.documentElement.scrollHeight, vh: window.innerHeight }));
-    async function blueAt(fraction: number): Promise<number> {
-      // Muestra 1x1 px en el borde izquierdo (solo fondo) a la altura relativa del documento indicada.
-      await page.evaluate(({ f, h, vh }) => window.scrollTo(0, Math.max(0, Math.min(h - vh, f * h - vh / 2))), { f: fraction, h: metrics.h, vh: metrics.vh });
-      await page.waitForTimeout(150);
-      const y = await page.evaluate(({ f, h, vh }) => {
-        const scroll = Math.max(0, Math.min(h - vh, f * h - vh / 2));
-        return Math.round(f * h - scroll);
-      }, { f: fraction, h: metrics.h, vh: metrics.vh });
-      const clipY = Math.max(110, Math.min(metrics.vh - 6, y));
-      const buf = await page.screenshot({ clip: { x: 0, y: clipY, width: 2, height: 2 } });
-      return page.evaluate(async (b64) => {
-        const img = new Image();
-        img.src = `data:image/png;base64,${b64}`;
-        await img.decode();
-        const c = document.createElement('canvas');
-        c.width = 2;
-        c.height = 2;
-        const ctx = c.getContext('2d');
-        if (!ctx) return -1;
-        ctx.drawImage(img, 0, 0);
-        const d = ctx.getImageData(0, 0, 1, 1).data;
-        return d[2] ?? -1; // canal azul: 51 (arriba), ~124 (pico), ~38 (final)
-      }, buf.toString('base64'));
-    }
-    const top = await blueAt(0.12);
-    const mid = await blueAt(0.55);
-    const end = await blueAt(0.985);
-    expect(mid, `pico ${mid} vs arriba ${top}`).toBeGreaterThan(top + 20);
-    expect(mid, `pico ${mid} vs final ${end}`).toBeGreaterThan(end + 40);
-  });
 });
 
 test.describe('/nosotros y Visitanos sobre noche', () => {
@@ -335,7 +302,7 @@ test.describe('/nosotros y Visitanos sobre noche', () => {
     await page.goto('/contacto');
     await expect(page.locator('.visit__inner')).toHaveCSS('background-color', NIGHT_RAISED);
     await expect(page.locator('.visit__title')).toHaveCSS('background-clip', 'text');
-    await expect(page.locator('.visit__kicker')).toHaveCSS('color', 'rgb(143, 180, 255)');
+    await expect(page.locator('.visit__kicker')).toHaveCSS('color', await colorToken(page, ACCENT_ON_DARK));
   });
 
   test('footer sobre noche, texto claro', async ({ page }) => {
@@ -400,6 +367,7 @@ test.describe('hover de botones (como el navbar: color/relleno, sin movimiento)'
     await expect(deal).toHaveCSS('transform', 'none');
   });
 
+  // `hover`: un color rgb() literal o el nombre de un token (`--...`), que se resuelve en el navegador.
   const REST: Array<{ path: string; sel: string; hover: string }> = [
     { path: '/', sel: '.hintro__link', hover: NIGHT_RAISED },
     { path: '/', sel: '.proceso__help-btn', hover: WA_HOVER },
@@ -417,7 +385,7 @@ test.describe('hover de botones (como el navbar: color/relleno, sin movimiento)'
       const before = await el.evaluate((n) => ({ bg: getComputedStyle(n).backgroundColor, shadow: getComputedStyle(n).boxShadow }));
       await el.hover();
       if (fine) {
-        await expect(el).toHaveCSS('background-color', c.hover);
+        await expect(el).toHaveCSS('background-color', c.hover.startsWith('--') ? await colorToken(page, c.hover as `--${string}`) : c.hover);
         expect((await durations(page, c.sel)).every((d) => d === HOVER_DUR_S)).toBe(true);
       } else {
         await expect(el).toHaveCSS('background-color', before.bg);
