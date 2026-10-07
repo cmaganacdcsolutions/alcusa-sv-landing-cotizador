@@ -1,0 +1,113 @@
+{
+  "leaf": "ventanas/ventana-francesa",
+  "thumb": "/images/renders/ventana-francesa-800.webp",
+  "step2Image": "/images/renders/ventana-francesa-natural-reflectivo-bronce-800.webp",
+  "step2Alt": "Ventana Francesa o Bilbao",
+  "rows": [
+    {
+      "color": "blanco",
+      "glass": "claro",
+      "price": "$162.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Claro"
+    },
+    {
+      "color": "blanco",
+      "glass": "bronce",
+      "price": "$178.20",
+      "colorLabel": "Blanco",
+      "glassLabel": "Bronce 5 mm"
+    },
+    {
+      "color": "blanco",
+      "glass": "super_gris",
+      "price": "$178.20",
+      "colorLabel": "Blanco",
+      "glassLabel": "Súper gris"
+    },
+    {
+      "color": "blanco",
+      "glass": "reflectivo_azul",
+      "price": "$178.20",
+      "colorLabel": "Blanco",
+      "glassLabel": "Reflectivo azul"
+    },
+    {
+      "color": "blanco",
+      "glass": "reflectivo_bronce",
+      "price": "Por WhatsApp",
+      "colorLabel": "Blanco",
+      "glassLabel": "Reflectivo bronce Cotización personalizada"
+    },
+    {
+      "color": "bronce",
+      "glass": "claro",
+      "price": "$162.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Claro"
+    },
+    {
+      "color": "bronce",
+      "glass": "bronce",
+      "price": "$178.20",
+      "colorLabel": "Bronce",
+      "glassLabel": "Bronce 5 mm"
+    },
+    {
+      "color": "bronce",
+      "glass": "super_gris",
+      "price": "$178.20",
+      "colorLabel": "Bronce",
+      "glassLabel": "Súper gris"
+    },
+    {
+      "color": "bronce",
+      "glass": "reflectivo_azul",
+      "price": "$178.20",
+      "colorLabel": "Bronce",
+      "glassLabel": "Reflectivo azul"
+    },
+    {
+      "color": "bronce",
+      "glass": "reflectivo_bronce",
+      "price": "Por WhatsApp",
+      "colorLabel": "Bronce",
+      "glassLabel": "Reflectivo bronce Cotización personalizada"
+    },
+    {
+      "color": "natural",
+      "glass": "claro",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Claro"
+    },
+    {
+      "color": "natural",
+      "glass": "bronce",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Bronce 5 mm"
+    },
+    {
+      "color": "natural",
+      "glass": "super_gris",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Súper gris"
+    },
+    {
+      "color": "natural",
+      "glass": "reflectivo_azul",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Reflectivo azul"
+    },
+    {
+      "color": "natural",
+      "glass": "reflectivo_bronce",
+      "price": "Por WhatsApp",
+      "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Reflectivo bronce Cotización personalizada"
+    }
+  ]
+}

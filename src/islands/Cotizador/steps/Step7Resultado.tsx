@@ -4,6 +4,8 @@ import { buildWaLink } from '@integrations/whatsapp/waLink';
 import type { CotizadorState } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
 import { buildOrderItems } from '../state/order';
+import { depositOf, formatDiscount } from '../state/payable';
+import { ONLINE_DISCOUNT_LABEL } from '../state/payOffer';
 import { IconArrowRight, IconCheck, IconWarningTriangle, IconWhatsApp } from '../icons';
 import { IconCardRect, IconShieldCheck, IconTruck } from '../icons-checkout';
 import '@styles/cotizador-checkout.css';
@@ -15,6 +17,10 @@ export interface Step7ResultadoProps {
   quote: QuoteResult;
   zoneFee: number | undefined;
   total: number | null;
+  /** 10% online-card discount already subtracted from `total`. */
+  onlineDiscount: number;
+  /** Distrito sin tarifa: `total` no incluye envio. */
+  shippingPending: boolean;
   // Retries the mock payment (goes back to Step6Wompi). Not wired by
   // Cotizador.tsx yet (see HANDOFF to sf-cot-shell).
   onRetry?: () => void;
@@ -50,6 +56,8 @@ export default function Step7Resultado({
   quote,
   zoneFee,
   total,
+  onlineDiscount,
+  shippingPending,
   onRetry,
 }: Step7ResultadoProps): ReactElement {
   // Mock-only: set by Step6Wompi via SET_WOMPI_RESULT
@@ -66,7 +74,7 @@ export default function Step7Resultado({
   const subtotal = quote.amount ?? 0;
   const transporte = zoneFee ?? 0;
   const grandTotal = total ?? subtotal;
-  const anticipo = Math.round(grandTotal * 80) / 100;
+  const anticipo = depositOf(grandTotal);
   const saldo = grandTotal - anticipo;
   const paidAmount = paidPct === 80 ? anticipo : grandTotal;
   const money = (n: number) => `$${n.toFixed(2)}`;
@@ -119,6 +127,12 @@ export default function Step7Resultado({
                   <dt>Total de tu cotización</dt>
                   <dd>{money(grandTotal)}</dd>
                 </div>
+                {onlineDiscount > 0 && (
+                  <div className="result-detail__row">
+                    <dt>{ONLINE_DISCOUNT_LABEL}</dt>
+                    <dd>{formatDiscount(onlineDiscount)}</dd>
+                  </div>
+                )}
                 <div className="result-detail__row">
                   <dt>Monto que intentaste pagar</dt>
                   <dd>
@@ -132,6 +146,7 @@ export default function Step7Resultado({
                 {transporte > 0 && inst && state.zone
                   ? ` + transporte a ${state.zone}`
                   : ''}
+                {shippingPending ? ' + envío por confirmar' : ''}
                 .
               </p>
             </div>
@@ -236,6 +251,18 @@ export default function Step7Resultado({
                 <div className="result-detail__row">
                   <dt>Transporte{inst && state.zone ? ` · ${state.zone}` : ''}</dt>
                   <dd>{money(transporte)}</dd>
+                </div>
+              )}
+              {shippingPending && (
+                <div className="result-detail__row" data-testid="resultado-envio-pendiente">
+                  <dt>Envío</dt>
+                  <dd>Por confirmar</dd>
+                </div>
+              )}
+              {onlineDiscount > 0 && (
+                <div className="result-detail__row" data-testid="resultado-discount-row">
+                  <dt>{ONLINE_DISCOUNT_LABEL}</dt>
+                  <dd>{formatDiscount(onlineDiscount)}</dd>
                 </div>
               )}
               <div className="result-detail__row result-detail__row--total">

@@ -1,4 +1,6 @@
-// R1 tracer: /catalogo -> /cotizador?producto=<slug> (ADR-008 §3/§4).
+// R1 tracer: catalogo (ahora en el inicio, /#catalogo) -> /cotizador?producto=<slug> (ADR-008 §3/§4).
+// Las paginas /catalogo/** ya son redirects a anclas del inicio (ver catalogo-redirects.spec.ts):
+// los casos del catalogo se reescribieron contra las tarjetas del inicio (#p-<slug>).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
@@ -9,22 +11,47 @@ async function waitForHydration(page: Page): Promise<void> {
 const MEDIDAS = 'Medidas y acabado';
 
 test.describe('catalogo -> cotizador deep link', () => {
-  test('/catalogo shows the 3 categories, each linking to its page', async ({ page }) => {
-    await page.goto('/catalogo');
+  test('home shows the 3 categories in order; each tab scrolls to its section with its cards', async ({ page }) => {
+    await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-    const cards = page.getByTestId('catalogo-categories').getByRole('heading', { level: 2 });
-    await expect(cards).toHaveText(['Puertas de baño', 'Puertas de jardín', 'Ventanas']);
-    await page.getByRole('link', { name: 'Ver Puertas de jardín' }).click();
-    await expect(page).toHaveURL(/\/catalogo\/puertas-de-jardin\/?$/);
-    await expect(page.getByTestId('catalogo-subcategories').getByRole('heading', { level: 2 })).toHaveCount(3);
+    const titles = page.locator('#catalogo .csec .csec__title');
+    await expect(titles).toHaveText(['Ventanas', 'Puertas de jardín', 'Puertas de baño']);
+    const ids = await page.locator('#catalogo .csec').evaluateAll((els) => els.map((e) => e.id));
+    expect(ids).toEqual(['ventanas', 'puertas-de-jardin', 'puertas-de-bano']);
+
+    await page
+      .getByRole('navigation', { name: 'Categorías' })
+      .getByRole('link', { name: 'Puertas de jardín', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/#puertas-de-jardin$/);
+    await expect(page.locator('#puertas-de-jardin')).toBeInViewport();
+    // 3 modelos de jardin con tarjeta (las 2 combinaciones "solo asesor" no tienen tarjeta)
+    await expect(page.locator('#puertas-de-jardin article.pcard')).toHaveCount(3);
   });
 
-  test('detail CTA lands in the cotizador with the product preselected on Medidas', async ({ page }) => {
-    await page.goto('/catalogo/puertas-de-bano/templada-10mm');
-    const cta = page.locator('[data-cta]:visible');
-    await expect(cta).toHaveText('Cotizar este producto');
-    await expect(cta).toHaveAttribute('href', '/cotizador?producto=templada-10mm');
+  test('home card CTA (sin opciones) lands in the cotizador with the product preselected on Medidas', async ({ page }) => {
+    await page.goto('/');
+    const cta = page.locator('#p-templada-10mm [data-go]');
+    await expect(cta).toHaveText('Continuar al cotizador');
+    await expect(cta).toHaveAttribute('href', '/cotizador?producto=templada-10mm&paso=medidas');
     await cta.click();
+    await waitForHydration(page);
+    await expect(page.getByRole('heading', { name: MEDIDAS })).toBeVisible();
+  });
+
+  test('home card form (con opciones) submits the deep link with the chosen color + vidrio and lands on Medidas', async ({ page }) => {
+    await page.goto('/');
+    // la tarjeta se mejora con JS (catalogHome.client): esperar a que termine antes de pulsar
+    await page.waitForSelector('html[data-js]');
+    const card = page.locator('#p-recta');
+    await card.scrollIntoViewIfNeeded();
+    await card.getByRole('button', { name: /Continuar al cotizador/ }).click();
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname.replace(/\/$/, '') === '/cotizador' &&
+        url.searchParams.get('producto') === 'recta' &&
+        url.searchParams.get('paso') === 'medidas',
+    );
     await waitForHydration(page);
     await expect(page.getByRole('heading', { name: MEDIDAS })).toBeVisible();
   });
@@ -53,14 +80,10 @@ test.describe('catalogo -> cotizador deep link', () => {
     expect(errors).toEqual([]);
   });
 
-  test('advisorOnly leaf: catalog CTA is a WhatsApp link without price; cotizador never enters the wizard', async ({ page }) => {
-    await page.goto('/catalogo/puertas-de-jardin/jardin-2-fijas-2-corredizas');
-    const cta = page.getByTestId('catalogo-cta');
-    const href = (await cta.getAttribute('href')) ?? '';
-    expect(href).toContain('https://wa.me/');
-    expect(decodeURIComponent(href)).toContain('2 fijas + 2 corredizas');
-    expect(decodeURIComponent(href)).not.toContain('$');
-    await expect(page.locator('main')).not.toContainText('Desde $');
+  test('advisorOnly leaf: no home card/price; cotizador never enters the wizard and offers the WhatsApp advisor', async ({ page }) => {
+    // El inicio no ofrece tarjeta (ni precio, ni entrada al asistente) para las combinaciones "solo asesor".
+    await page.goto('/');
+    await expect(page.locator('#p-jardin-2-fijas-2-corredizas, #p-jardin-1-fijo-3-corredizas')).toHaveCount(0);
 
     await page.goto('/cotizador?producto=jardin-2-fijas-2-corredizas');
     await waitForHydration(page);

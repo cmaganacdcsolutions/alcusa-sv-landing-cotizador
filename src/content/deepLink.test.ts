@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cotizadorHref, parseDeepLink } from './deepLink';
+import { cotizadorHref, parseDeepLink, parseGlassParam, toColorParam } from './deepLink';
 
 describe('content/deepLink', () => {
   it('resolves a leaf slug to model + preset', () => {
@@ -46,5 +46,17 @@ describe('content/deepLink', () => {
 
   it('cotizadorHref builds the deep link', () => {
     expect(cotizadorHref('en-l')).toBe('/cotizador?producto=en-l');
+  });
+
+  it('vidrio param: href + parse, unknown values ignored', () => {
+    expect(cotizadorHref('recta', { vidrio: 'nevado' })).toBe('/cotizador?producto=recta&vidrio=nevado');
+    expect(parseGlassParam('?producto=recta&vidrio=aquafold')).toBe('aquafold');
+    expect(parseGlassParam('?vidrio=__x')).toBeNull();
+    expect(parseGlassParam('')).toBeNull();
+  });
+
+  it('color param: colores de aluminio validos, desconocidos se ignoran', () => {
+    for (const c of ['natural', 'blanco', 'bronce']) expect(toColorParam(c)).toBe(c);
+    for (const c of ['fucsia', '', 'Natural', null, undefined]) expect(toColorParam(c), String(c)).toBeNull();
   });
 });

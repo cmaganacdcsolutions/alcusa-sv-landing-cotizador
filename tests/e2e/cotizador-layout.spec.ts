@@ -1,4 +1,5 @@
 import { expect, pickProduct, test } from './fixtures';
+import { waitForScrollSettled } from '../support/settle';
 
 // Desktop grid regression: the "TU COTIZACIÓN" aside lost its grid placement
 // in the shell rewrite, auto-placed into row 1 and stretched it to its own
@@ -12,6 +13,15 @@ test.describe('cotizador — desktop layout', () => {
     await page.waitForFunction(() => !document.querySelector('astro-island[ssr]'));
     await pickProduct(page, 'recta');
 
+    // Medir con la ventana quieta y arriba del todo. Cotizador.tsx desplaza (suave) la ventana al encabezado
+    // del paso al avanzar, y el aside es `position: sticky`: con la ventana en movimiento (o ya desplazada) el
+    // aside se pega bajo la barra y su `y` deja de ser el de su fila del grid. Eso mediria la animacion de
+    // scroll, no la colocacion en el grid. Con scrollY=0 el aside esta en su posicion natural (misma fila que
+    // el titulo).
+    await waitForScrollSettled(page);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await waitForScrollSettled(page);
+
     const header = await page.locator('.cotizador__header').boundingBox();
     const form = await page.locator('.cotizador__form-col').boundingBox();
     const aside = await page.locator('.cotizador-aside').boundingBox();
@@ -19,15 +29,5 @@ test.describe('cotizador — desktop layout', () => {
     expect(form!.y - (header!.y + header!.height)).toBeLessThanOrEqual(48);
     expect(aside!.x).toBeGreaterThanOrEqual(form!.x + form!.width);
     expect(Math.abs(aside!.y - header!.y)).toBeLessThanOrEqual(2);
-  });
-});
-
-test.describe('drawer — closed state', () => {
-  test('the closed drawer and its shadow sit fully off-screen', async ({ page }) => {
-    await page.goto('/');
-    const box = await page.locator('#drawer-panel').boundingBox();
-    expect(box).not.toBeNull();
-    // Box-shadow blur is 60px on desktop; keep the panel past it.
-    expect(box!.x + box!.width).toBeLessThanOrEqual(-60);
   });
 });

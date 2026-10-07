@@ -1,8 +1,8 @@
 import { test, expect } from './fixtures';
 
-// R3 — Landing: Promociones del mes + CTA catalogo + drawer.
+// R3 — Landing: Promociones del mes + navbar (sin drawer, sin CTA de catalogo).
 // Fidelidad contra 02-design/boards/revision-2026-09-29/{ios,android,desktop}-r01/r02/r00.
-// El seed vence el 31-oct-2026: el e2e corre contra dist-e2e/* (hoy congelado al 2026-09-30,
+// El seed vence el 31-oct-2026: el e2e corre contra dist-e2e/* (hoy congelado al 2026-10-15,
 // scripts/build-e2e-fixtures.mjs), asi que no depende de la fecha real.
 
 const VIEWPORTS = [
@@ -17,47 +17,63 @@ const VIEWPORTS = [
 const PROMO = 'rgb(211, 58, 11)';
 
 test.describe('landing R3 — estructura', () => {
-  test('sin grid de catalogo ni galeria; promos + CTA catalogo en el orden del redline', async ({ page }) => {
+  test('sin galeria ni caja CTA de catalogo; orden: inicio, catalogo, promociones, proceso', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#modelos')).toHaveCount(0);
     await expect(page.locator('#galeria')).toHaveCount(0);
-    const ids = await page.locator('main > section, main > div > section').evaluateAll((els) => els.map((e) => e.id));
-    const order = ['inicio', 'promociones', 'catalogo-cta', 'proceso'];
-    const idx = order.map((id) => ids.indexOf(id));
-    expect(idx.every((i) => i >= 0)).toBe(true);
-    expect([...idx].sort((a, b) => a - b)).toEqual(idx);
-    await expect(page.locator('a[data-catalogo-cta]')).toHaveAttribute('href', '/catalogo');
+    await expect(page.locator('a[data-catalogo-cta]')).toHaveCount(0);
+    await expect(page.locator('.catcta__box')).toHaveCount(0);
+    for (const id of ['inicio', 'catalogo', 'promociones', 'proceso']) {
+      await expect(page.locator(`#${id}`), `#${id} presente`).toHaveCount(1);
+    }
+    // orden en el documento (compareDocumentPosition: el siguiente debe SEGUIR al anterior)
+    const inOrder = await page.evaluate((ids) => {
+      const els = ids.map((id) => document.getElementById(id));
+      return els.every((el, i) => i === 0 || !!(els[i - 1]!.compareDocumentPosition(el!) & Node.DOCUMENT_POSITION_FOLLOWING));
+    }, ['inicio', 'catalogo', 'promociones', 'proceso']);
+    expect(inOrder).toBe(true);
   });
 
-  for (const hash of ['#catalogo', '#galeria', '#modelos']) {
-    test(`/${hash} redirige a /catalogo`, async ({ page }) => {
-      await page.goto(`/${hash}`);
-      await expect(page).toHaveURL(/\/catalogo\/?$/);
-    });
-  }
+  test('/#modelos (alias viejo) aterriza en /#catalogo', async ({ page }) => {
+    await page.goto('/#modelos');
+    await expect(page).toHaveURL(/\/#catalogo$/);
+  });
+
+  test('/#catalogo se queda en el inicio con #catalogo a la vista', async ({ page }) => {
+    await page.goto('/#catalogo');
+    await expect(page).toHaveURL(/\/#catalogo$/);
+    await expect(page.locator('#catalogo')).toBeInViewport();
+    const top = await page.locator('#catalogo').evaluate((el) => el.getBoundingClientRect().top);
+    expect(top).toBeLessThan(await page.evaluate(() => window.innerHeight));
+  });
 
   test('promos: 3 vigentes, datos y enlaces al cotizador', async ({ page }) => {
     await page.goto('/');
     const cards = page.locator('#promociones .promo-card');
     await expect(cards).toHaveCount(3);
     const first = cards.first();
-    await expect(first.locator('.promo-card__badge')).toHaveText('−15%');
-    await expect(first.locator('.promo-card__antes s')).toHaveText('Antes $260');
-    await expect(first.locator('.promo-card__ahorras')).toHaveText('Ahorras $38');
+    // flyers oficiales: sin precio anterior => sin insignia, sin "Antes", sin "Ahorras"
+    await expect(first.locator('.promo-card__badge')).toHaveCount(0);
+    await expect(first.locator('s')).toHaveCount(0);
+    await expect(first.locator('.promo-card__ahorras')).toHaveCount(0);
+    await expect(first.locator('.promo-card__title')).toHaveText('Puerta Aquaclara');
+    await expect(first.locator('.promo-card__rules li')).toHaveCount(5);
+    await expect(first.locator('.photo-frame__img')).toHaveAttribute('alt', /\$222\.00.*1\.85 m/);
+    expect(await first.locator('.photo-frame__img').evaluate((el) => getComputedStyle(el).objectFit)).toBe('contain');
     await expect(first.locator('.promo-card__ahora')).toHaveText('Ahora $222');
     await expect(first.locator('.promo-card__chip')).toContainText('Vigente hasta el 31 de octubre');
-    await expect(first.locator('[data-promo-cta]')).toHaveAttribute('href', '/cotizador?producto=recta');
+    await expect(first.locator('[data-promo-cta]')).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro');
     await expect(first.locator('[data-promo-cta]')).toHaveText(/Cotizar esta promo/);
     const hrefs = await cards.locator('[data-promo-cta]').evaluateAll((a) => a.map((x) => x.getAttribute('href')));
     expect(hrefs).toEqual([
-      '/cotizador?producto=recta',
-      '/cotizador?producto=ventana-francesa',
-      '/cotizador?producto=jardin-3-hojas',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold',
     ]);
   });
 });
 
-test.describe('landing R3 — fidelidad computada (board vs sitio)', () => {
+test.describe('landing R3 — tarjeta compacta (pulido 2026-10-06)', () => {
   for (const vp of VIEWPORTS) {
     test(`promo card @${vp.w}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.w, height: vp.h });
@@ -68,84 +84,66 @@ test.describe('landing R3 — fidelidad computada (board vs sitio)', () => {
       const css = (loc: ReturnType<typeof page.locator>, prop: string) =>
         loc.evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
 
-      // card
-      expect(await css(card, 'border-top-color')).toBe(PROMO);
-      expect(await css(card, 'border-top-width')).toBe('2px');
-      expect(await css(card, 'border-top-left-radius')).toBe(vp.desktop ? '28px' : '20px');
-      expect(await css(card, 'box-shadow')).toContain(vp.desktop ? '0px 16px 40px' : '0px 10px 28px');
-      // foto completa 1:1, contain, sin cover
-      const frame = card.locator('.photo-frame');
-      const fb = (await frame.boundingBox())!;
-      expect(Math.abs(fb.width - fb.height)).toBeLessThan(1.5);
+      // card: misma familia que .pcard (clara, radio-lg, borde suave de 1px)
+      expect(await css(card, 'border-top-width')).toBe('1px');
+      expect(await css(card, 'border-top-left-radius')).toBe('20px');
+      // flyer 9:16 completo (sin recorte) en marco 4:5, contain
+      const fb = (await card.locator('.photo-frame').boundingBox())!;
+      expect(Math.abs(fb.width / fb.height - 4 / 5)).toBeLessThan(0.01);
       expect(await css(card.locator('.photo-frame__img'), 'object-fit')).toBe('contain');
       expect(await css(card.locator('.photo-frame__img'), 'object-position')).toBe('50% 50%');
-      expect(await css(card.locator('.photo-frame__ambient'), 'opacity')).toBe('0.55');
-      // badge
-      const badge = card.locator('.promo-card__badge');
-      expect(await css(badge, 'background-color')).toBe('rgb(255, 210, 63)');
-      expect(await css(badge, 'font-size')).toBe(vp.desktop ? '40px' : '28px');
-      expect(await css(badge, 'border-top-left-radius')).toBe(vp.desktop ? '16px' : '12px');
-      // banda
+      await expect(card.locator('.promo-card__badge')).toHaveCount(0);
+      // banda de precio delgada en rojo promo
       const band = card.locator('.promo-card__band');
       expect(await css(band, 'background-color')).toBe(PROMO);
-      expect(await css(band, 'padding-left')).toBe(vp.desktop ? '20px' : '16px');
-      expect(await css(card.locator('.promo-card__ahora'), 'font-size')).toBe(vp.desktop ? '44px' : '32px');
-      expect(await css(card.locator('.promo-card__ahorras'), 'color')).toBe('rgb(168, 42, 4)');
-      expect(await css(card.locator('.promo-card__antes'), 'font-size')).toBe(vp.desktop ? '16px' : '14px');
-      // cuerpo
-      expect(await css(card.locator('.promo-card__title'), 'font-size')).toBe(vp.desktop ? '22px' : '17px');
-      expect(await css(card.locator('.promo-card__desc'), 'font-size')).toBe(vp.desktop ? '16px' : '14px');
+      expect(await css(card.locator('.promo-card__ahora'), 'font-size')).toBe('24px');
+      expect(await css(card.locator('.promo-card__antes'), 'font-size')).toBe('13px');
+      // cuerpo compacto
+      expect(await css(card.locator('.promo-card__title'), 'font-size')).toBe('16px');
+      expect(await css(card.locator('.promo-card__desc'), 'font-size')).toBe('13px');
       expect(await css(card.locator('.promo-card__chip'), 'background-color')).toBe('rgb(255, 240, 232)');
-      // CTA
+      // CTA pastilla de 44px
       const cta = card.locator('[data-promo-cta]');
-      const cb = (await cta.boundingBox())!;
-      expect(Math.round(cb.height)).toBe(vp.desktop ? 56 : 52);
+      expect(Math.round((await cta.boundingBox())!.height)).toBe(44);
       expect(await css(cta, 'background-color')).toBe('rgb(7, 59, 146)');
       expect(await css(cta, 'border-top-left-radius')).toBe('9999px');
-
-      // anchos
+      // anchos: >=900 rejilla de 3 (contenedor 1240, aire 32 y hueco 24 desde 1024); <900 carrusel de 88% (tope 360)
       const cbx = (await card.boundingBox())!;
-      if (vp.w === 1920) expect(Math.round(cbx.width)).toBe(512);
-      if (vp.w === 1366) expect(Math.round(cbx.width)).toBe(Math.round((1366 - 80 - 64) / 3));
-      if (vp.w >= 360 && vp.w <= 412) expect(Math.round(cbx.width)).toBe(300);
-      // sin desbordamiento horizontal de pagina
-      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-      expect(overflow).toBeLessThanOrEqual(0);
+      if (vp.w >= 1366) expect(Math.round(cbx.width)).toBe(Math.round((1240 - 64 - 48) / 3));
+      if (vp.w < 900) expect(Math.abs(cbx.width - Math.min(vp.w * 0.88, 360))).toBeLessThan(1.5);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
     });
   }
 
-  test('@390 carrusel: scroll-snap, asoma la siguiente (54pt = 390-24-300-12 gap) y la pagina no desborda', async ({ page }) => {
+  test('@390 carrusel: scroll-snap, la tarjeta ocupa 88% y asoma la siguiente', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
     const list = page.locator('#promociones .promos__list');
     expect(await list.evaluate((el) => getComputedStyle(el).scrollSnapType)).toContain('x mandatory');
     const second = (await page.locator('#promociones .promo-card').nth(1).boundingBox())!;
-    // El redline del board dice 66 (390-24-300) pero omite el gap de 12; el markup del board da 54.
-    expect(Math.round(390 - second.x)).toBe(54);
-  });
-
-  test('@1920 CTA catalogo: caja primary radio 28, boton blanco 60', async ({ page }) => {
-    await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.goto('/');
-    const btn = page.locator('a[data-catalogo-cta]');
-    expect(Math.round((await btn.boundingBox())!.height)).toBe(60);
-    const box = page.locator('.catcta__box');
-    expect(await box.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(7, 59, 146)');
-    expect(await box.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('28px');
-    expect(Math.round((await box.boundingBox())!.width)).toBe(1600);
+    // 390 - (16 de aire + 343 de tarjeta + 12 de hueco) = 19
+    expect(Math.abs(390 - second.x - 19)).toBeLessThan(1.5);
   });
 });
 
-test.describe('drawer R3 (r00)', () => {
-  test('entradas y orden: Inicio, Catalogo, Promociones, Como funciona, Cotizar, Contacto; sin Galeria', async ({ page }) => {
+test.describe('navbar R3 (sin drawer)', () => {
+  test('entradas y orden: Compra YA!, Catalogo, Promociones, Nosotros, Contacto; sin Galeria ni drawer', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
-    await page.locator('#drawer-open-btn').click();
-    const links = page.locator('#drawer-panel .drawer__links a');
-    await expect(links).toHaveText([/Inicio/, /Catálogo/, /Promociones/, /Cómo funciona/, /Cotizar/, /Contacto/]);
-    await expect(links.nth(1)).toHaveAttribute('href', '/catalogo');
+    const links = page.locator('header[data-nav] nav[aria-label="Principal"] a.nav__deal, header[data-nav] nav[aria-label="Principal"] a.nav__link');
+    await expect(links).toHaveText([/Compra YA!/, /Catálogo/, /Promociones/, /Nosotros/, /Contacto/]);
+    await expect(links).toHaveCount(5);
+    await expect(links.nth(0)).toHaveAttribute('href', '/cotizador?oferta=online10');
+    await expect(links.nth(1)).toHaveAttribute('href', '/#catalogo');
     await expect(links.nth(2)).toHaveAttribute('href', '/#promociones');
-    await expect(links.nth(4)).toHaveAttribute('href', '/cotizador');
-    await expect(page.locator('#drawer-panel')).not.toContainText('Proyectos reales');
+    await expect(links.nth(3)).toHaveAttribute('href', '/nosotros');
+    await expect(links.nth(4)).toHaveAttribute('href', '/contacto');
+    await expect(page.locator('header[data-nav] a.nav__cta')).toHaveAttribute('href', '/cotizador');
+    await expect(page.locator('header[data-nav] a.nav__wa')).toHaveAttribute('aria-label', 'Escribir por WhatsApp al 7680-2410');
+    await expect(page.locator('header[data-nav]')).not.toContainText('Galería');
+    await expect(page.locator('header[data-nav]')).not.toContainText('Proyectos reales');
+    // el drawer y el boton "Abrir menu" ya no existen
+    await expect(page.locator('#drawer-open-btn, #drawer-panel')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Abrir menú/i })).toHaveCount(0);
   });
 });

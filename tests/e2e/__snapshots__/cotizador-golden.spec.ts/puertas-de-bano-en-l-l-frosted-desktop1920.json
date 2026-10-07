@@ -1,0 +1,50 @@
+{
+  "leaf": "puertas-de-bano/en-l/l-frosted",
+  "thumb": "/images/renders/en-l-natural-frosted-800.webp",
+  "step2Image": "/images/renders/en-l-bronce-aquafold-800.webp",
+  "step2Alt": "Cabina en L",
+  "rows": [
+    {
+      "color": "natural",
+      "glass": "aquaclara",
+      "price": "$444.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Aquaclara"
+    },
+    {
+      "color": "natural",
+      "glass": "frosted",
+      "price": "$580.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Frosted"
+    },
+    {
+      "color": "natural",
+      "glass": "aquafold",
+      "price": "$650.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Aquafold"
+    },
+    {
+      "color": "bronce",
+      "glass": "aquaclara",
+      "price": "$488.40",
+      "colorLabel": "Bronce",
+      "glassLabel": "Aquaclara"
+    },
+    {
+      "color": "bronce",
+      "glass": "frosted",
+      "price": "$638.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Frosted"
+    },
+    {
+      "color": "bronce",
+      "glass": "aquafold",
+      "price": "$715.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Aquafold"
+    }
+  ]
+}

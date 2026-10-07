@@ -49,9 +49,13 @@
   line-height: 1.4;
   color: var(--color-ink);
 }
+.cf-wrap {
+  overscroll-behavior: contain;
+}
 .cf-scrim {
   position: absolute;
   inset: 0;
+  touch-action: none;
   background: var(--color-scrim-ink);
   animation: cf-fade 200ms ease-out;
 }
@@ -64,9 +68,23 @@
   max-height: min(684px, calc(var(--cf-h, 100dvh) - 160px));
   padding: 12px 24px calc(34px + env(safe-area-inset-bottom, 0px));
   background: var(--color-surface);
+  color: var(--color-ink); /* el body es claro-sobre-noche: el dialogo (portal) fija su propia tinta */
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   box-shadow: var(--shadow-sheet);
   animation: cf-rise 200ms ease-out;
+}
+/* On-screen keyboard open (data-kbd, set by CustomerDialog): the visual viewport is short, so use all
+   of it (no 160px top reserve), tighten the chrome and let .cf-scroll scroll — never collapse. */
+.cf-wrap[data-kbd] .cf-dialog {
+  max-height: calc(var(--cf-h, 100dvh) - 8px);
+  padding-bottom: 12px;
+}
+.cf-wrap[data-kbd] .cf-grabber,
+.cf-wrap[data-kbd] .cf-sub {
+  display: none;
+}
+.cf-field {
+  scroll-margin: 16px 0;
 }
 .cf-dialog svg {
   flex: none;
@@ -261,6 +279,7 @@
 .cf-link {
   min-height: 44px;
   padding: 0 4px;
+  border-radius: var(--radius-md);
   border: 0;
   background: transparent;
   color: var(--color-primary);
@@ -322,7 +341,7 @@
 .cf-cbv svg {
   display: none;
   fill: none;
-  stroke: #ffffff;
+  stroke: var(--color-surface);
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -422,7 +441,6 @@
   text-align: center;
   cursor: pointer;
 }
-.cf-cta:hover,
 .cf-cta:active {
   background: var(--color-whatsapp-strong-hover);
 }
@@ -616,5 +634,35 @@
   }
   .cf-rm {
     display: inline;
+  }
+}
+
+/* ---------- Hover de botones (pedido 2026-10-06, 'como el del navbar') ----------
+   El dialogo es claro: enlaces/cerrar -> tinte + tinta mas oscura; CTA WhatsApp -> su tono fuerte. Sin sombra. */
+@media (hover: hover) and (pointer: fine) {
+  .cf-cta,
+  .cf-link,
+  .cf-x {
+    transition:
+      background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      border-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+  }
+  .cf-cta:hover:not([aria-busy='true']):not([aria-disabled='true']):not(:disabled) {
+    background: var(--color-whatsapp-strong-hover);
+  }
+  .cf-link:hover:not([aria-disabled='true']):not(:disabled) {
+    background: var(--cotizador-hover-tint);
+    color: var(--color-primary-active);
+  }
+  .cf-x:hover:not([aria-disabled='true']):not(:disabled) {
+    background: var(--color-surface-tint);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-cta,
+  .cf-link,
+  .cf-x {
+    transition: none;
   }
 }

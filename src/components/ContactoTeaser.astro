@@ -37,7 +37,9 @@ const waHref = buildWaLink();
   .contacto-teaser__box {
     padding: var(--space-6);
     border-radius: var(--radius-lg);
-    background: var(--color-surface-tint);
+    background: var(--color-surface-dark-raised);
+    border: 1px solid var(--color-line-on-dark);
+    color: var(--color-text-on-dark);
     display: flex;
     flex-direction: column;
     gap: 10px;
@@ -45,14 +47,15 @@ const waHref = buildWaLink();
   .contacto-teaser__title {
     margin: 0;
     font-family: var(--font-family-display);
-    font-weight: var(--font-weight-display-medium);
+    font-weight: var(--font-weight-display-bold);
+    color: var(--color-text-on-dark);
     font-size: 22px;
     line-height: 1.3;
   }
   .contacto-teaser__lead {
     margin: 0 0 var(--space-2);
     font-size: 16px;
-    color: var(--color-ink-muted);
+    color: var(--color-text-on-dark-muted);
   }
   .contacto-teaser__actions {
     display: flex;
@@ -87,9 +90,31 @@ const waHref = buildWaLink();
     background: var(--color-whatsapp-strong);
     color: var(--color-surface);
   }
+  /* Hover como el navbar: relleno suave, sin elevacion ni sombra. Claro -> acento claro; WhatsApp -> su hover. */
+  @media (hover: hover) and (pointer: fine) {
+    .contacto-teaser__btn {
+      transition:
+        background-color var(--hover-dur) var(--hover-ease),
+        color var(--hover-dur) var(--hover-ease);
+    }
+    .contacto-teaser__btn--secondary:hover {
+      background: var(--color-accent-on-dark);
+    }
+    .contacto-teaser__btn--secondary:active {
+      background: var(--color-text-on-dark-muted);
+    }
+    .contacto-teaser__btn--whatsapp:hover {
+      background: var(--color-whatsapp-strong-hover);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .contacto-teaser__btn {
+      transition: none;
+    }
+  }
   .contacto-teaser__btn:focus-visible {
     outline: none;
-    box-shadow: var(--shadow-focus);
+    box-shadow: var(--shadow-focus-on-dark);
   }
   @media (max-width: 339px) {
     .contacto-teaser {

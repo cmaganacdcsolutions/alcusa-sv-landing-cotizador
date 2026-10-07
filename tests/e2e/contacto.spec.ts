@@ -2,16 +2,6 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
 
-// R3 (2026-09-30): el grid de catalogo, la galeria, el banner del cotizador y las anclas
-// /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
-// los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
-// contra el drawer/footer nuevos. Ver HANDOFF R3.
-const R3_MOVED = new Set<string>([]);
-// eslint-disable-next-line no-empty-pattern
-test.beforeEach(({}, info) => {
-  test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
-});
-
 // ContactForm hydrates `client:visible` (async, on intersection) — wait for
 // the marker before driving inputs so the fill isn't lost to a not-yet-
 // mounted controlled component re-rendering back to its empty initial state.
@@ -49,10 +39,26 @@ test.describe('contacto — info block + socials', () => {
     expect(href).toBe('https://wa.me/50376802410');
   });
 
-  test('hours and email show the literal placeholder text', async ({ page }) => {
+  test('hours show the official schedule; email is the official address', async ({ page }) => {
     await page.goto('/contacto');
-    await expect(page.getByText('[HORARIO — confirmar]')).toBeVisible();
-    await expect(page.getByText('[CORREO — confirmar]')).toBeVisible();
+    // /contacto repite el horario en el bloque de info y en la seccion #visitanos: se acota al bloque de info.
+    const info = page.getByTestId('contacto-info-list');
+    await expect(info.getByText('Lunes a viernes: 7:30 a. m. – 5:00 p. m.')).toBeVisible();
+    await expect(info.getByText('Sábados: 7:00 a. m. – 12:00 m.')).toBeVisible();
+    await expect(info.getByText('Domingos: cerrado')).toBeVisible();
+    await expect(page.getByText('[HORARIO — confirmar]')).toHaveCount(0);
+    await expect(page.locator('a[href="tel:+50325637742"]')).toHaveCount(0);
+    await expect(page.getByText('[CORREO — confirmar]')).toHaveCount(0);
+    const mail = page.locator('a[href="mailto:administracion@alcusa.com.sv"]');
+    await expect(mail).toBeVisible();
+    await expect(mail).toHaveText('administracion@alcusa.com.sv');
+    // The address must fit its box at phone width (no horizontal overflow).
+    const fits = await mail.evaluate((a) => {
+      const box = a.closest('li')!.getBoundingClientRect();
+      const r = a.getBoundingClientRect();
+      return r.right <= box.right + 1 && document.documentElement.scrollWidth <= window.innerWidth;
+    });
+    expect(fits).toBe(true);
   });
 
   test('the 4 info boxes (WhatsApp/Teléfonos/Horario/Correo) share one parent, in that order', async ({
@@ -236,33 +242,34 @@ test.describe('contacto — webform lifecycle', () => {
 });
 
 test.describe('footer — quick links + legal', () => {
-  // R3 fidelity: the boards (ios/android/desktop-r01) draw exactly 4 footer links at
-  // every viewport: Inicio, Catálogo, Cotizar, Contacto ("Cómo funciona" is gone).
-  test('quick links: exactly Inicio/Catálogo/Cotizar/Contacto at every viewport', async ({
+  // Footer nuevo (navbar spec 01d §3): dos columnas de enlaces, "Explora" y "Alcusa" (sin "Inicio";
+  // el logo del navbar ya lleva a /). El catalogo vive en /#catalogo.
+  test('quick links: Explora (Catálogo/Promociones/Cotizar/Cómo funciona) + Alcusa (Nosotros/Contacto/Visítanos)', async ({
     page,
   }) => {
     await page.goto('/');
-    const footerNav = page.getByRole('navigation', { name: 'Enlaces del pie' });
-    await expect(footerNav.getByRole('link')).toHaveCount(4);
-    await expect(footerNav.getByRole('link', { name: 'Inicio' })).toHaveAttribute(
-      'href',
-      '/#inicio',
-    );
-    await expect(footerNav.getByRole('link', { name: 'Catálogo' })).toHaveAttribute(
-      'href',
-      '/catalogo',
-    );
-    await expect(footerNav.getByRole('link', { name: 'Cotizar' })).toHaveAttribute(
-      'href',
-      '/cotizador',
-    );
-    await expect(footerNav.getByRole('link', { name: 'Contacto' })).toHaveAttribute(
-      'href',
-      '/contacto',
-    );
-    await expect(footerNav.getByRole('link', { name: 'Cómo funciona' })).toHaveCount(0);
-    await expect(footerNav.getByRole('link', { name: 'Proyectos reales' })).toHaveCount(0);
-    await expect(footerNav.getByRole('link', { name: 'Galería' })).toHaveCount(0);
+    const explora = page.getByRole('navigation', { name: 'Explora', exact: true });
+    const alcusa = page.getByRole('navigation', { name: 'Alcusa', exact: true });
+    await expect(explora.getByRole('link')).toHaveText([
+      'Catálogo',
+      'Promociones',
+      'Cotizar',
+      'Cómo funciona',
+    ]);
+    await expect(explora.getByRole('link', { name: 'Catálogo' })).toHaveAttribute('href', '/#catalogo');
+    await expect(explora.getByRole('link', { name: 'Promociones' })).toHaveAttribute('href', '/#promociones');
+    await expect(explora.getByRole('link', { name: 'Cotizar' })).toHaveAttribute('href', '/cotizador');
+    await expect(explora.getByRole('link', { name: 'Cómo funciona' })).toHaveAttribute('href', '/#proceso');
+
+    await expect(alcusa.getByRole('link')).toHaveText(['Nosotros', 'Contacto', 'Visítanos']);
+    await expect(alcusa.getByRole('link', { name: 'Nosotros' })).toHaveAttribute('href', '/nosotros');
+    await expect(alcusa.getByRole('link', { name: 'Contacto', exact: true })).toHaveAttribute('href', '/contacto');
+    await expect(alcusa.getByRole('link', { name: 'Visítanos' })).toHaveAttribute('href', '/contacto#visitanos');
+
+    const footer = page.getByRole('contentinfo');
+    await expect(footer.getByRole('link', { name: 'Inicio', exact: true })).toHaveCount(0);
+    await expect(footer.getByRole('link', { name: 'Proyectos reales' })).toHaveCount(0);
+    await expect(footer.getByRole('link', { name: 'Galería' })).toHaveCount(0);
   });
 
   test('legal name + WhatsApp CTA repeat (no NIT placeholder — not in any board)', async ({

@@ -2,7 +2,7 @@ import type { Page, Locator } from '@playwright/test';
 import { test, expect } from './fixtures';
 
 // R3 — Estados de Promociones (r02) sobre fixtures de build (scripts/build-e2e-fixtures.mjs):
-//   PORT+0 base   = seed real, 3 promos, "hoy" congelado al 2026-09-30
+//   PORT+0 base   = seed real, 3 promos, "hoy" congelado al 2026-10-15
 //   PORT+1 one    = 1 promo  (estado A, tarjeta horizontal)
 //   PORT+2 states = 2 promos (estado C titulo largo + estado D sin % ni "Antes")
 // Nada depende de la fecha real: el seed vence el 2026-10-31.
@@ -21,75 +21,29 @@ const open = async (page: Page, url: string, w: number, h = 900) => {
   await page.goto(url);
 };
 
-test.describe('promos r02 — estado A: una promo', () => {
-  test('@1920 tarjeta horizontal 1600x380, foto 376 1:1, texto, panel de precio 400', async ({ page }) => {
-    await open(page, ONE, 1920, 1080);
-    const card = page.locator('#promociones .promo-card');
-    await expect(card).toHaveCount(1);
-    const c = await box(card);
-    expect(Math.round(c.width)).toBe(1600);
-    expect(Math.round(c.height)).toBe(380);
-    expect(await css(card, 'border-top-left-radius')).toBe('28px');
-    expect(await css(card, 'border-top-width')).toBe('2px');
-    expect(await css(card, 'box-shadow')).toContain('0px 16px 40px');
-
-    const photo = await box(card.locator('.photo-frame'));
-    expect(Math.round(photo.width)).toBe(376);
-    expect(Math.round(photo.height)).toBe(376);
-    expect(await css(card.locator('.photo-frame__img'), 'object-fit')).toBe('contain');
-    const badge = card.locator('.promo-card__badge');
-    expect(await css(badge, 'font-size')).toBe('40px');
-    const bb = await box(badge);
-    expect(Math.round(bb.x - photo.x)).toBe(24);
-    expect(Math.round(bb.y - photo.y)).toBe(24);
-
-    // texto: padding 48 56, gap 14, centrado vertical
-    const text = card.locator('.promo-card__text');
-    expect(await css(text, 'padding-top')).toBe('48px');
-    expect(await css(text, 'padding-left')).toBe('56px');
-    expect(await css(text, 'row-gap')).toBe('14px');
-    expect(await css(card.locator('.promo-card__title'), 'font-size')).toBe('36px');
-    expect(await css(card.locator('.promo-card__title'), 'line-height')).toBe('44px');
-    expect(await css(card.locator('.promo-card__desc'), 'font-size')).toBe('18px');
-    expect(await css(card.locator('.promo-card__desc'), 'max-width')).toBe('560px');
-    const t = await box(text);
-    expect(Math.round(t.x - (photo.x + photo.width))).toBe(0);
-
-    // panel de precio 400 a la derecha, fondo promo
-    const panelBg = await card.evaluate((el) => getComputedStyle(el, '::after').backgroundColor);
-    expect(panelBg).toBe('rgb(211, 58, 11)');
-    const band = await box(card.locator('.promo-card__band'));
-    expect(Math.round(band.width)).toBe(400);
-    expect(Math.round(c.x + c.width - 2 - (band.x + band.width))).toBe(0);
-    expect(await css(card.locator('.promo-card__ahora'), 'font-size')).toBe('56px');
-    const cta = card.locator('[data-promo-cta]');
-    expect(Math.round((await box(cta)).height)).toBe(56);
-    expect(await css(cta, 'background-color')).toBe('rgb(255, 255, 255)');
-    expect(await css(cta, 'color')).toBe('rgb(168, 42, 4)');
-    expect(await css(cta, 'font-size')).toBe('17px');
-    expect(await css(cta, 'white-space')).toBe('nowrap');
-  });
-
-  test('@1366 sigue horizontal y la foto es cuadrada', async ({ page }) => {
-    await open(page, ONE, 1366, 768);
-    const card = page.locator('#promociones .promo-card');
-    const photo = await box(card.locator('.photo-frame'));
-    expect(Math.abs(photo.width - photo.height)).toBeLessThan(1.5);
-    const t = await box(card.locator('.promo-card__text'));
-    expect(t.x).toBeGreaterThanOrEqual(photo.x + photo.width - 1);
-    expect(Math.round((await box(card)).width)).toBe(1366 - 80);
-  });
-
-  test('@768 foto arriba a ancho completo 1:1 y texto abajo', async ({ page }) => {
-    await open(page, ONE, 768, 1024);
-    const card = page.locator('#promociones .promo-card');
-    const c = await box(card);
-    const photo = await box(card.locator('.photo-frame'));
-    expect(Math.abs(photo.width - photo.height)).toBeLessThan(1.5);
-    expect(Math.round(photo.width)).toBe(Math.round(c.width - 4));
-    const t = await box(card.locator('.promo-card__title'));
-    expect(t.y).toBeGreaterThan(photo.y + photo.height);
-  });
+test.describe('promos r02 — estado A: una promo (tarjeta compacta)', () => {
+  for (const [w, h, width] of [
+    [1920, 1080, 376],
+    [1366, 768, 376],
+    [768, 1024, 360],
+  ] as const) {
+    test(`@${w} una promo: una sola tarjeta de ${width} px, flyer completo 4:5 y panel de precio`, async ({ page }) => {
+      await open(page, ONE, w, h);
+      const card = page.locator('#promociones .promo-card');
+      await expect(card).toHaveCount(1);
+      const c = await box(card);
+      expect(Math.round(c.width)).toBe(width);
+      expect(await css(card, 'border-top-left-radius')).toBe('20px');
+      const photo = await box(card.locator('.photo-frame'));
+      expect(Math.abs(photo.width / photo.height - 4 / 5)).toBeLessThan(0.01);
+      expect(await css(card.locator('.photo-frame__img'), 'object-fit')).toBe('contain');
+      expect(await css(card.locator('.promo-card__ahora'), 'font-size')).toBe('24px');
+      const cta = card.locator('[data-promo-cta]');
+      expect(Math.round((await box(cta)).height)).toBe(44);
+      expect(await css(cta, 'background-color')).toBe('rgb(7, 59, 146)');
+      expect(await css(cta, 'white-space')).toBe('nowrap');
+    });
+  }
 });
 
 test.describe('promos r02 — estados C y D (fixtures)', () => {
@@ -133,52 +87,43 @@ test.describe('promos r02 — estados C y D (fixtures)', () => {
 });
 
 test.describe('promos r02 — columnas por ancho', () => {
-  test('@768 dos promos = 2 columnas del mismo ancho y la misma fila (bajo 1024 no cambia)', async ({ page }) => {
+  test('@768 dos promos: carrusel de tarjetas del mismo ancho en la misma fila', async ({ page }) => {
     await open(page, STATES, 768, 1024);
     const [a, b] = [await box(page.locator('.promo-card').nth(0)), await box(page.locator('.promo-card').nth(1))];
-    expect(Math.round(a.width)).toBe(Math.round((768 - 80 - 32) / 2));
+    expect(Math.round(a.width)).toBe(360);
     expect(Math.abs(a.width - b.width)).toBeLessThan(1);
     expect(Math.abs(a.y - b.y)).toBeLessThan(1);
   });
 
-  // Foreman ruling (sin board de 2 promos en desktop): >=1024 con 2 promos = mosaicos
-  // horizontales apilados (patron 1600x380 del estado A), no rejilla de 2 columnas.
-  for (const [w, h, tile] of [
-    [1920, 1080, 380],
-    [1366, 768, 380],
-    [1024, 768, 304],
-  ] as const) {
-    test(`@${w} dos promos = mosaicos horizontales apilados (alto ${tile}), foto cuadrada`, async ({ page }) => {
-      await open(page, STATES, w, h);
+  for (const w of [1920, 1366, 1024]) {
+    test(`@${w} dos promos = 2 columnas de 376 px, misma fila y mismo ancho`, async ({ page }) => {
+      await open(page, STATES, w, 900);
       const cards = page.locator('.promo-card');
       await expect(cards).toHaveCount(2);
       const [a, b] = [await box(cards.nth(0)), await box(cards.nth(1))];
-      expect(Math.round(a.height)).toBe(tile);
-      expect(Math.round(b.height)).toBe(tile);
+      expect(Math.round(a.width)).toBe(376);
       expect(Math.abs(a.width - b.width)).toBeLessThan(1);
-      expect(Math.abs(a.x - b.x)).toBeLessThan(1);
-      expect(Math.round(b.y - (a.y + a.height))).toBe(32);
-      const photo = await box(cards.nth(0).locator('.promo-card__photo'));
-      expect(Math.abs(photo.width - photo.height)).toBeLessThan(1);
+      expect(Math.abs(a.y - b.y)).toBeLessThan(1);
+      expect(b.x).toBeGreaterThan(a.x + a.width);
     });
   }
 
-  test('@768 tres promos = 2 columnas y la tercera baja a la segunda fila', async ({ page }) => {
+  test('@768 tres promos = carrusel: las tres en una fila', async ({ page }) => {
     await open(page, BASE, 768, 1024);
     const cards = page.locator('.promo-card');
     await expect(cards).toHaveCount(3);
     const [a, b, c] = [await box(cards.nth(0)), await box(cards.nth(1)), await box(cards.nth(2))];
-    expect(Math.round(a.width)).toBe(Math.round((768 - 80 - 32) / 2));
+    expect(Math.round(a.width)).toBe(360);
     expect(Math.abs(a.y - b.y)).toBeLessThan(1);
-    expect(c.y).toBeGreaterThan(a.y + a.height - 1);
-    expect(Math.abs(c.x - a.x)).toBeLessThan(1);
+    expect(Math.abs(a.y - c.y)).toBeLessThan(1);
+    expect(c.x).toBeGreaterThan(b.x);
   });
 
-  test('@1366 tres promos = 3 columnas', async ({ page }) => {
+  test('@1366 tres promos = 3 columnas de 376 px en el contenedor de 1240', async ({ page }) => {
     await open(page, BASE, 1366, 768);
     const cards = page.locator('.promo-card');
     const bs = [await box(cards.nth(0)), await box(cards.nth(1)), await box(cards.nth(2))];
-    for (const b of bs) expect(Math.round(b.width)).toBe(Math.round((1366 - 80 - 64) / 3));
+    for (const b of bs) expect(Math.round(b.width)).toBe(Math.round((1240 - 64 - 48) / 3));
     expect(Math.abs(bs[0].y - bs[2].y)).toBeLessThan(1);
     expect(bs[2].x).toBeGreaterThan(bs[1].x);
   });

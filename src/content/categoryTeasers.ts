@@ -4,12 +4,14 @@
 // #cotizador). Single source so labels/subtitles/images never drift between
 // the two — prices still come from CATALOG_PRODUCTS (@content/catalog).
 import { CATALOG_PRODUCTS, type ProductId } from '@content/catalog';
+import { CATEGORY_MEDIA, type MediaRef } from '@content/home-media';
 
 export interface CategoryTeaser {
   productId: ProductId;
   label: string;
   subtitle: string;
-  imageBase: string;
+  /** Render de estudio (nunca foto de cliente). */
+  image: MediaRef;
 }
 
 export const CATEGORY_TEASERS: readonly CategoryTeaser[] = [
@@ -17,19 +19,19 @@ export const CATEGORY_TEASERS: readonly CategoryTeaser[] = [
     productId: 'recta',
     label: 'Puertas de baño',
     subtitle: 'Rectas, en L y templado',
-    imageBase: 'card-puertas-bano',
+    image: CATEGORY_MEDIA['puertas-de-bano']!,
   },
   {
     productId: 'ventana',
     label: 'Ventanas',
     subtitle: 'Francesas y Bilbao a tu medida',
-    imageBase: 'card-ventanas',
+    image: CATEGORY_MEDIA['ventanas']!,
   },
   {
     productId: 'jardin',
     label: 'Puertas de jardín',
     subtitle: 'Una, dos o tres hojas corredizas',
-    imageBase: 'card-puertas-jardin',
+    image: CATEGORY_MEDIA['puertas-de-jardin']!,
   },
 ] as const;
 

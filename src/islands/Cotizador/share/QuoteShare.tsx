@@ -60,9 +60,9 @@ export function QuoteShareButton({ share }: Pick<QuoteShareProps, 'share'>): Rea
       {busy ? (
         <>
           <svg className="qs-spin" {...svgProps} strokeWidth={2.5}>
-            {/* TODO token: spinner track rgba(255,255,255,.35) */}
-            <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.35)" />
-            <path d="M12 3a9 9 0 0 1 9 9" stroke="#ffffff" />
+            {/* currentColor = el texto del boton (blanco sobre primario); la pista va al 35% */}
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity={0.35} />
+            <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" />
           </svg>
           <span className="qs-rm">Preparando…</span>
         </>

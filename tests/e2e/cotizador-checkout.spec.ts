@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, pickProduct, test } from './fixtures';
+import { fillAddress } from '../support/address';
 
 // Visual/behavioral coverage for the sf-cot-checkout slice (Step3-5).
 // Never opens a real WhatsApp/Wompi link — fixtures.ts blocks those routes.
@@ -18,7 +19,7 @@ async function toZonaEntrega(page: Page): Promise<void> {
 
 async function toFormaPago(page: Page): Promise<void> {
   await toZonaEntrega(page);
-  await page.locator('#municipio').selectOption('Soyapango');
+  await fillAddress(page, 'Soyapango');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
   await page.getByRole('button', { name: 'Pagar ahora' }).click();
@@ -44,13 +45,17 @@ test.describe('cotizador — Step3 entrega y zona option states', () => {
     await expect(inst).toHaveAttribute('aria-pressed', 'true');
   });
 
-  test('no municipio selected shows the "Total por confirmar" placeholder and disables Siguiente', async ({
+  test('no address shows the "Total por confirmar" placeholder; Siguiente validates and focuses the first invalid field', async ({
     page,
   }) => {
     await toZonaEntrega(page);
     await expect(page.getByText('Total por confirmar')).toBeVisible();
-    await expect(page.locator('#zona-ayuda')).toHaveText('Selecciona la zona de instalación.');
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await expect(page.getByText('Completa tu dirección para ver el costo de envío y el total.')).toBeVisible();
+    await expect(page.getByTestId('zona-total-value')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.locator('#addr-departamento')).toBeFocused();
+    await expect(page.locator('#addr-departamento-msg')).toHaveText('Elige tu departamento de la lista.');
+    await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
   });
 });
 
@@ -93,7 +98,9 @@ test.describe('cotizador — Step5 forma de pago', () => {
     await toFormaPago(page);
     await page.getByRole('button', { name: 'Pago total 100%' }).click();
     await expect(page.getByRole('button', { name: 'Pago total 100%' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByTestId('cotizador-root')).toContainText('Pagar $262.00 con Wompi');
+    // $222 + $40 transport = $262.00; the Wompi (card) option applies the 10% online discount on the $222 only
+    // (behaviour change 2026-10-06): $262.00 - $22.20 = $239.80.
+    await expect(page.getByTestId('cotizador-root')).toContainText('Pagar $239.80 con Wompi');
   });
 });
 

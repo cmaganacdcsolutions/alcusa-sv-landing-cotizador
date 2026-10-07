@@ -1,0 +1,118 @@
+---
+// Selector compacto de una opcion de la tarjeta (Marco/Color, Vidrio, Acabado).
+// Dos capas sobre el MISMO dato: el <select> nativo (fuente de verdad del <form method="get">; es lo unico que
+// se ve sin JS) y un combobox select-only (patron WAI-ARIA APG) que con JS lo reemplaza para mostrar el circulo
+// de color/vidrio en el boton Y en cada opcion de la lista (un <option> nativo no puede llevar iconos, menos en
+// iOS Safari). El combobox escribe en el <select> y dispara `change`: foto y deep link siguen igual.
+// Una sola opcion = texto plano con su circulo + campo oculto.
+import type { OptionGroup } from '@content/catalogHome';
+
+interface Props {
+  group: OptionGroup;
+  /** Prefijo unico por tarjeta para los id (label for=). */
+  idBase: string;
+}
+const { group, idBase } = Astro.props;
+
+// Acabados de En L = su vidrio gemelo (icono).
+const ACABADO_GLASS: Record<string, string> = { 'l-aquaclara': 'claro', 'l-frosted': 'nevado', 'l-aquafold': 'aquafold' };
+const swatchOf = (value: string): string =>
+  group.name === 'color' ? `color:${value}` : `glass:${group.name === 'acabado' ? (ACABADO_GLASS[value] ?? value) : value}`;
+
+// El acabado de En L viaja como `producto` (misma forma del enlace al cotizador).
+const fieldName = group.name === 'acabado' ? 'producto' : group.name;
+const id = `${idBase}-${group.name}`;
+const current = group.options.find((o) => o.value === group.defaultValue) ?? group.options[0];
+const single = group.options.length === 1;
+const CUSTOM_TEXT = 'Cotización personalizada';
+---
+
+<div class="pcard__field" data-field={group.name}>
+  {
+    single ? (
+      <>
+        <span class="pcard__label" id={`${id}-l`}>
+          {group.legend}
+        </span>
+        <p class="pcard__static" aria-labelledby={`${id}-l`}>
+          <span class="pcard__sw" data-sw={swatchOf(current.value)} aria-hidden="true" />
+          <span>{current.label}</span>
+        </p>
+        <input type="hidden" name={fieldName} value={current.value} data-group={group.name} />
+      </>
+    ) : (
+      <>
+        <label class="pcard__label" id={`${id}-l`} for={id} data-label>
+          {group.legend}
+        </label>
+        <div class="pcard__control">
+          {/* Sin JS: <select> nativo (el formulario GET ya funciona). Con JS se oculta y manda el combobox. */}
+          <div class="pcard__select">
+            <span class="pcard__sw" data-sw={swatchOf(current.value)} data-sw-chip aria-hidden="true" />
+            <select id={id} name={fieldName} data-group={group.name}>
+              {group.options.map((o) => (
+                <option
+                  value={o.value}
+                  data-sw={swatchOf(o.value)}
+                  data-custom={o.custom ? '' : undefined}
+                  selected={o.value === group.defaultValue}
+                >
+                  {o.custom ? `${o.label} · ${CUSTOM_TEXT}` : o.label}
+                </option>
+              ))}
+            </select>
+            <svg class="pcard__chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width:2.2">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+          {/* Combobox select-only (patron APG): el boton muestra el circulo y el nombre; la lista, un circulo por opcion. */}
+          <div class="pcard__combo" data-combo>
+            <button
+              type="button"
+              class="pcard__trigger"
+              id={`${id}-btn`}
+              role="combobox"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              aria-controls={`${id}-list`}
+              aria-labelledby={`${id}-l`}
+              data-trigger
+            >
+              <span class="pcard__sw" data-sw={swatchOf(current.value)} data-sw-chip aria-hidden="true" />
+              <span class="pcard__trigger-text" data-value-text>{current.label}</span>
+              <svg class="pcard__chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width:2.2">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
+            <ul class="pcard__list" id={`${id}-list`} role="listbox" aria-labelledby={`${id}-l`} tabindex="-1" hidden data-list>
+              {group.options.map((o) => (
+                <li
+                  class="pcard__opt"
+                  id={`${id}-o-${o.value}`}
+                  role="option"
+                  aria-selected={o.value === group.defaultValue ? 'true' : 'false'}
+                  data-value={o.value}
+                  data-text={o.label}
+                  data-sw={swatchOf(o.value)}
+                  data-custom={o.custom ? '' : undefined}
+                >
+                  <span class="pcard__sw" data-sw={swatchOf(o.value)} aria-hidden="true" />
+                  <span class="pcard__opt-text">
+                    {o.label}
+                    {o.custom && <span class="pcard__badge">{CUSTOM_TEXT}</span>}
+                  </span>
+                  <svg class="pcard__check" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width:2.5">
+                    <path d="M5 12l5 5 9-10" />
+                  </svg>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <p class="pcard__note" data-note hidden={!current.custom}>
+          {CUSTOM_TEXT}
+        </p>
+      </>
+    )
+  }
+</div>

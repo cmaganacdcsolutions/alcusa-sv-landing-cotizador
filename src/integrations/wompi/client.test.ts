@@ -48,6 +48,30 @@ describe('createWompiPaymentLink', () => {
     ).rejects.toMatchObject({ code: 'invalid_total' });
   });
 
+  it('discount drift (invalid_discount / discount_mismatch) keeps the code but hides the server message', async () => {
+    for (const code of ['invalid_discount', 'discount_mismatch']) {
+      const f = () => json(422, { error: { code, message: 'esperado 22.20 recibido 20.00' } });
+      const err = await createWompiPaymentLink(req, f as unknown as typeof fetch).catch((e: unknown) => e);
+      expect(err).toMatchObject({ code });
+      expect((err as Error).message).not.toContain('22.20');
+      expect((err as Error).message).toContain('descuento');
+    }
+  });
+
+  it('sends discount and shippingPending only when present, total already discounted', async () => {
+    let body = '';
+    const f = (_u: string, init: RequestInit) => {
+      body = String(init.body);
+      return json(200, { urlEnlace: 'https://checkout.wompi.sv/l/x', reference: 'ALC-2026-7F3A9C', amount: 191.84 });
+    };
+    await createWompiPaymentLink(
+      { pct: 80, total: 239.8, items: [{ name: 'Puerta', subtotal: 222 }], discount: { code: 'online_card_10', amount: 22.2 } },
+      f as unknown as typeof fetch,
+    );
+    expect(JSON.parse(body)).toMatchObject({ total: 239.8, discount: { code: 'online_card_10', amount: 22.2 } });
+    expect(JSON.parse(body)).not.toHaveProperty('shippingPending');
+  });
+
   it('rejects a non-https link and network failures with a generic message', async () => {
     const bad = () =>
       json(201, { urlEnlace: 'http://evil.test', reference: 'ALC-2026-7F3A9C' });

@@ -1,0 +1,229 @@
+---
+// /nosotros (navbar spec 01d §3, §13, §14). Contenido de Alcusa pendiente: placeholders visibles
+// + noindex hasta que el cliente lo complete (no publicar con "[pendiente]").
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Navbar from '@components/Navbar.astro';
+import Confianza from '@components/Confianza.astro';
+import Footer from '@components/Footer.astro';
+
+const PENDING = '[contenido Alcusa — pendiente]';
+const VALUES = [1, 2, 3, 4] as const;
+---
+
+<BaseLayout
+  title="Nosotros | ALCUSA"
+  description="Conoce a ALCUSA: quiénes somos, nuestra misión, visión y valores en aluminio y vidrio a la medida en El Salvador."
+  noindex
+>
+  <Navbar />
+
+  <main id="main" tabindex="-1">
+    <section class="nos nos__hero" aria-labelledby="nos-title">
+      <p class="nos__kicker">ALCUSA</p>
+      <h1 id="nos-title" class="nos__h1">Nosotros</h1>
+      <p class="nos__pending">{PENDING} — línea de presentación</p>
+    </section>
+
+    <section id="historia" class="nos nos__split" aria-labelledby="historia-t">
+      <div>
+        <h2 id="historia-t" class="nos__h2">Nuestra historia</h2>
+        <p class="nos__pending">{PENDING} — historia (2-3 párrafos)</p>
+      </div>
+      <div class="nos__photo" role="img" aria-label="Foto del taller o equipo, pendiente">
+        <span>[contenido Alcusa — pendiente] foto del taller (4:3)</span>
+      </div>
+    </section>
+
+    <section class="nos nos__cards" aria-label="Misión y visión">
+      <article id="mision" class="nos__card" aria-labelledby="mision-t">
+        <h2 id="mision-t" class="nos__h2">Misión</h2>
+        <p class="nos__pending">{PENDING}</p>
+      </article>
+      <article id="vision" class="nos__card" aria-labelledby="vision-t">
+        <h2 id="vision-t" class="nos__h2">Visión</h2>
+        <p class="nos__pending">{PENDING}</p>
+      </article>
+    </section>
+
+    <section id="valores" class="nos" aria-labelledby="valores-t">
+      <h2 id="valores-t" class="nos__h2">Valores</h2>
+      <ul class="nos__values">
+        {
+          VALUES.map((n) => (
+            <li class="nos__card">
+              <p class="nos__vt">Valor {n}</p>
+              <p class="nos__pending">{PENDING}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <div class="nos__trust">
+      <Confianza />
+    </div>
+
+    <section class="nos nos__cta" aria-labelledby="nos-cta-t">
+      <h2 id="nos-cta-t" class="nos__h2">¿Listo para cotizar tu proyecto?</h2>
+      <a class="nos__btn" href="/cotizador">Cotizar ahora</a>
+    </section>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  .nos {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-4) 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+  .nos__hero {
+    padding-top: var(--space-6);
+  }
+  .nos__kicker {
+    margin: 0;
+    font: var(--font-weight-body-bold) 12px/16px var(--font-family-body);
+    letter-spacing: 0.08em;
+    color: var(--color-accent-on-dark);
+  }
+  .nos__h1 {
+    margin: 0;
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: var(--font-weight-display-bold);
+    color: var(--color-text-on-dark);
+  }
+  .nos__h2 {
+    margin: 0;
+    font-size: 26px;
+    line-height: 32px;
+    font-weight: var(--font-weight-display-bold);
+    color: var(--color-text-on-dark);
+  }
+  .nos__pending {
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+    font: 600 14px/20px var(--font-family-body);
+    justify-self: start;
+  }
+  .nos__split,
+  .nos__cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nos__split > div {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+  }
+  .nos__photo {
+    aspect-ratio: 4 / 3;
+    display: grid;
+    place-items: center;
+    padding: var(--space-4);
+    text-align: center;
+    background: var(--color-surface-dark-raised);
+    border: 1px dashed var(--color-line-on-dark);
+    border-radius: var(--radius-lg);
+    color: var(--color-text-on-dark-muted);
+    font-size: 14px;
+  }
+  .nos__card {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+    padding: var(--space-4);
+    background: var(--color-surface-dark-raised);
+    border: 1px solid var(--color-line-on-dark);
+    color: var(--color-text-on-dark);
+    border-radius: var(--radius-lg);
+  }
+  .nos__values {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nos__vt {
+    margin: 0;
+    font-weight: var(--font-weight-body-bold);
+  }
+  /* Confianza no trae aire superior (en el inicio sigue al catalogo): aqui separa de Valores. */
+  .nos__trust {
+    padding-top: var(--space-10);
+  }
+  .nos__cta {
+    justify-items: start;
+    padding-bottom: var(--space-12);
+  }
+  .nos__btn {
+    display: inline-flex;
+    align-items: center;
+    height: 48px;
+    padding: 0 var(--space-6);
+    border-radius: var(--radius-full);
+    background: var(--color-text-on-dark);
+    color: var(--color-surface-dark);
+    font: var(--font-weight-body-bold) 15px/20px var(--font-family-body);
+    text-decoration: none;
+  }
+  /* Hover como .nav__cta: relleno suave (acento claro; activo: gris azulado), sin elevacion ni sombra. */
+  @media (hover: hover) and (pointer: fine) {
+    .nos__btn {
+      transition:
+        background-color var(--hover-dur) var(--hover-ease),
+        color var(--hover-dur) var(--hover-ease);
+    }
+    .nos__btn:hover {
+      background: var(--color-accent-on-dark);
+    }
+    .nos__btn:active {
+      background: var(--color-text-on-dark-muted);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nos__btn {
+      transition: none;
+    }
+  }
+  .nos__btn:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus-on-dark);
+  }
+  @media (min-width: 768px) {
+    .nos__values {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .nos__cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .nos {
+      padding: var(--space-12) var(--space-8) 0;
+    }
+    .nos__split {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-8);
+      align-items: center;
+    }
+    .nos__values {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .nos__h1 {
+      font-size: 44px;
+      line-height: 52px;
+    }
+    .nos__h2 {
+      font-size: 32px;
+      line-height: 40px;
+    }
+  }
+</style>

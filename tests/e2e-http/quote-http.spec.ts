@@ -4,6 +4,7 @@ import { MOCK_QUOTES_KEY } from '../../src/integrations/quotes/mockStore';
 import { formatQuoteCode, makeQuoteCode } from '../../src/integrations/quotes/code';
 import { expect, pickProduct, test } from '../e2e/fixtures';
 import { e2eDb } from './db';
+import { fillAddress } from '../support/address';
 
 // ADR-013 N2-FE. Build with PUBLIC_QUOTE_API=http against the real API (alcusa_test). The point of the suite:
 // a quote created in one browser context loads by code in ANOTHER one (the cross-device bug).
@@ -45,7 +46,7 @@ async function gotoResumen(page: Page): Promise<void> {
   await pickProduct(page, 'recta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.locator('#municipio').selectOption('Soyapango');
+  await fillAddress(page, 'Soyapango');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
 }

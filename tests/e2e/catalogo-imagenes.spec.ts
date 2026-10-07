@@ -1,5 +1,7 @@
-// assets-oficiales: official product images in /catalogo/**. Gallery counts + every <img>
-// loads (naturalWidth>0, no 4xx in network), has a non-empty alt and explicit width/height.
+// Imagenes del catalogo. Las paginas /catalogo/** se eliminaron (ahora redirigen a anclas del inicio, ver
+// catalogo-redirects.spec.ts): el catalogo vive en el inicio, una tarjeta por producto (#p-<slug>) con su render.
+// Aqui: cada tarjeta tiene su render (nunca "Foto proximamente"), y cada <img> del inicio carga (naturalWidth>0,
+// sin 4xx en la red), tiene alt no vacio y width/height explicitos (sin salto de layout).
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
@@ -9,17 +11,9 @@ test.beforeEach(({}, info) => {
   test.skip(info.project.name !== 'desktop1920', 'content check, viewport independent');
 });
 
-const ROUTES = [
-  '/catalogo/',
-  '/catalogo/puertas-de-bano/',
-  '/catalogo/puertas-de-jardin/',
-  '/catalogo/ventanas/',
-  '/catalogo/puertas-de-bano/en-l/',
-  '/catalogo/puertas-de-jardin/jardin-1-hoja/',
-  '/catalogo/puertas-de-jardin/jardin-2-hojas/',
-  '/catalogo/ventanas/ventana-bilbao/',
-  '/catalogo/ventanas/ventana-francesa/',
-] as const;
+// El catalogo completo (3 secciones, 9 tarjetas) esta en el inicio.
+const ROUTES = ['/'] as const;
+const CARD_COUNT = 9;
 
 async function loadAllImages(page: Page): Promise<void> {
   // Lazy images: force eager loading, then wait (bounded) for each to settle.
@@ -35,34 +29,18 @@ async function loadAllImages(page: Page): Promise<void> {
   );
 }
 
-test.describe('catálogo — imágenes oficiales', () => {
+test.describe('catálogo del inicio — imágenes', () => {
   test.describe.configure({ timeout: 30_000 });
 
-  test('puertas de jardín renders 8 gallery images', async ({ page }) => {
-    await page.goto('/catalogo/puertas-de-jardin/');
-    await expect(
-      page.getByTestId('catalogo-galeria').locator('img.photo-frame__img'),
-    ).toHaveCount(8);
-  });
-
-  test('jardín 1 hoja renders 1 gallery image (hoja-b moved to the category gallery)', async ({ page }) => {
-    await page.goto('/catalogo/puertas-de-jardin/jardin-1-hoja/');
-    await expect(
-      page.getByTestId('catalogo-galeria').locator('img.photo-frame__img'),
-    ).toHaveCount(1);
-  });
-
-  test('jardin-2-fijas-2-corredizas has no official photo yet: placeholder, no <img>', async ({ page }) => {
-    await page.goto('/catalogo/puertas-de-jardin/jardin-2-fijas-2-corredizas/');
-    await expect(page.getByTestId('foto-proximamente')).toBeVisible();
-    await expect(page.locator('main img.photo-frame__img')).toHaveCount(0);
-  });
-
-  test('ventana francesa renders 2 gallery images', async ({ page }) => {
-    await page.goto('/catalogo/ventanas/ventana-francesa/');
-    await expect(
-      page.getByTestId('catalogo-galeria').locator('img.photo-frame__img'),
-    ).toHaveCount(2);
+  test('cada tarjeta del catálogo muestra su render: una foto, nunca el cuadro "Foto próximamente"', async ({ page }) => {
+    await page.goto('/');
+    const cards = page.locator('#catalogo article.pcard');
+    await expect(cards).toHaveCount(CARD_COUNT);
+    await expect(page.locator('#catalogo .pcard__nophoto')).toHaveCount(0);
+    await expect(page.locator('#catalogo .pcard img.photo-frame__img')).toHaveCount(CARD_COUNT);
+    for (let i = 0; i < CARD_COUNT; i += 1) {
+      await expect(cards.nth(i).locator('img.photo-frame__img')).toHaveCount(1);
+    }
   });
 
   for (const route of ROUTES) {
@@ -91,7 +69,7 @@ test.describe('catálogo — imágenes oficiales', () => {
             };
           }),
       );
-      expect(report.length).toBeGreaterThan(0);
+      expect(report.length).toBeGreaterThanOrEqual(CARD_COUNT);
       expect(bad, 'image requests with 4xx/5xx').toEqual([]);
       expect(
         report.filter((i) => i.natural === 0).map((i) => i.src),

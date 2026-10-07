@@ -1,8 +1,13 @@
 // straight — pure pricing module for "Puerta de baño recta" (Slice 1 scope).
 // No React/Astro/window/document/fetch imports. Formula + check-values from
 // exploratory-report.md §3.1. S2 adds the other products in this same shape.
-import { STRAIGHT_PROMO, STRAIGHT_TABLE_COLOR, STRAIGHT_TABLE_NATURAL } from '@content/pricingTables';
-import type { StraightPriceInput, StraightPriceResult } from './types';
+import {
+  AQUAFOLD_PROMO_MAX_CM,
+  AQUAFOLD_PROMO_MIN_CM,
+  AQUAFOLD_PROMO_PRICE,
+  STRAIGHT_PROMO, STRAIGHT_TABLE_COLOR, STRAIGHT_TABLE_NATURAL,
+} from '@content/pricingTables';
+import type { BaseGlass, StraightPriceInput, StraightPriceResult } from './types';
 
 export const STRAIGHT_WIDTH_MIN_CM = 80;
 export const STRAIGHT_WIDTH_MAX_CM = 200;
@@ -29,19 +34,32 @@ export function priceStraight(input: StraightPriceInput): StraightPriceResult {
     return { price: null, transportIncluded: false, requiresQuote: true };
   }
 
+  const aquafoldPromo =
+    glass === 'aquafold' &&
+    color === 'natural' &&
+    widthCm >= AQUAFOLD_PROMO_MIN_CM &&
+    widthCm <= AQUAFOLD_PROMO_MAX_CM;
+  // PENDIENTE DE ALCUSA: Aquafold fuera de 1.00-1.20 m (o con aluminio blanco/bronce)
+  // no tiene precio oficial; se cotiza con la tabla/promo de "decorado" hasta que
+  // Alcusa confirme.
+  const tableGlass: BaseGlass = glass === 'aquafold' ? 'decorado' : glass;
+
   const isPromo =
+    !aquafoldPromo &&
     color === 'natural' &&
     widthCm >= 80 &&
     widthCm <= 120 &&
-    (glass === 'claro' || glass === 'nevado' || glass === 'decorado');
+    (tableGlass === 'claro' || tableGlass === 'nevado' || tableGlass === 'decorado');
 
   let base: number;
-  if (isPromo) {
-    base = STRAIGHT_PROMO[glass as 'claro' | 'nevado' | 'decorado'];
+  if (aquafoldPromo) {
+    base = AQUAFOLD_PROMO_PRICE;
+  } else if (isPromo) {
+    base = STRAIGHT_PROMO[tableGlass as 'claro' | 'nevado' | 'decorado'];
   } else {
     const tier = straightTierMeters(widthCm);
     const table = color === 'natural' ? STRAIGHT_TABLE_NATURAL : STRAIGHT_TABLE_COLOR;
-    base = table[tier.toFixed(1)][glass];
+    base = table[tier.toFixed(1)][tableGlass];
   }
 
   const price = pickup ? round2(base * 0.85) : base;

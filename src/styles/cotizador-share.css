@@ -45,7 +45,6 @@
   white-space: normal;
   cursor: pointer;
 }
-.qs-wa:hover,
 .qs-wa:active {
   background: var(--color-whatsapp-strong-hover);
 }
@@ -159,6 +158,7 @@
 }
 .qs-link {
   padding: 0 var(--space-1);
+  border-radius: var(--radius-md);
   border: 0;
   background: transparent;
   font-size: 0.875rem;
@@ -327,4 +327,48 @@
   border: 1.5px solid var(--color-surface);
   background: transparent;
   color: var(--color-surface);
+}
+
+/* ---------- Hover de botones (pedido 2026-10-06, 'como el del navbar') ----------
+   Tarjetas claras: enlace/contorno -> tinte + tinta mas oscura. Toast oscuro: solido -> tinte azul claro,
+   fantasma/cerrar -> velo blanco tenue (--color-line-on-dark). Sin elevacion ni sombra. */
+@media (hover: hover) and (pointer: fine) {
+  .qs-wa,
+  .qs-link,
+  .qs-outline,
+  .qs-toast__btn,
+  .qs-toast__x {
+    transition:
+      background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      border-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+  }
+  .qs-wa:hover:not([aria-busy='true']):not([aria-disabled='true']):not(:disabled) {
+    background: var(--color-whatsapp-strong-hover);
+  }
+  .qs-link:hover:not([aria-disabled='true']):not(:disabled) {
+    background: var(--cotizador-hover-tint);
+    color: var(--color-primary-active);
+  }
+  .qs-outline:hover:not([aria-disabled='true']):not(:disabled) {
+    background: var(--cotizador-hover-fill);
+    border-color: var(--color-accent);
+    color: var(--color-primary-active);
+  }
+  .qs-toast__btn--solid:hover:not([aria-disabled='true']):not(:disabled) {
+    background: var(--color-surface-tint);
+  }
+  .qs-toast__btn--ghost:hover:not([aria-disabled='true']):not(:disabled),
+  .qs-toast__x:hover:not([aria-disabled='true']):not(:disabled) {
+    background: var(--color-line-on-dark);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qs-wa,
+  .qs-link,
+  .qs-outline,
+  .qs-toast__btn,
+  .qs-toast__x {
+    transition: none;
+  }
 }

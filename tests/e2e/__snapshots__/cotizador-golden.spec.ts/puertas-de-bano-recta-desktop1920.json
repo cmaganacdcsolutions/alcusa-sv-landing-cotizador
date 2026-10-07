@@ -1,0 +1,134 @@
+{
+  "leaf": "puertas-de-bano/recta",
+  "thumb": "/images/renders/recta-800.webp",
+  "step2Image": "/images/renders/recta-bronce-duplex-800.webp",
+  "step2Alt": "Puerta de baño recta",
+  "rows": [
+    {
+      "color": "natural",
+      "glass": "claro",
+      "price": "$314.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "natural",
+      "glass": "nevado",
+      "price": "$362.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Nevado 5 mm"
+    },
+    {
+      "color": "natural",
+      "glass": "decorado",
+      "price": "$389.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Decorado"
+    },
+    {
+      "color": "natural",
+      "glass": "aquafold",
+      "price": "$389.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Aquafold"
+    },
+    {
+      "color": "natural",
+      "glass": "mallado",
+      "price": "$400.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Mallado"
+    },
+    {
+      "color": "natural",
+      "glass": "duplex",
+      "price": "$442.00",
+      "colorLabel": "Natural",
+      "glassLabel": "Dúplex"
+    },
+    {
+      "color": "blanco",
+      "glass": "claro",
+      "price": "$384.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "blanco",
+      "glass": "nevado",
+      "price": "$442.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Nevado 5 mm"
+    },
+    {
+      "color": "blanco",
+      "glass": "decorado",
+      "price": "$459.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Decorado"
+    },
+    {
+      "color": "blanco",
+      "glass": "aquafold",
+      "price": "$459.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Aquafold"
+    },
+    {
+      "color": "blanco",
+      "glass": "mallado",
+      "price": "$468.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Mallado"
+    },
+    {
+      "color": "blanco",
+      "glass": "duplex",
+      "price": "$533.00",
+      "colorLabel": "Blanco",
+      "glassLabel": "Dúplex"
+    },
+    {
+      "color": "bronce",
+      "glass": "claro",
+      "price": "$384.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "bronce",
+      "glass": "nevado",
+      "price": "$442.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Nevado 5 mm"
+    },
+    {
+      "color": "bronce",
+      "glass": "decorado",
+      "price": "$459.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Decorado"
+    },
+    {
+      "color": "bronce",
+      "glass": "aquafold",
+      "price": "$459.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Aquafold"
+    },
+    {
+      "color": "bronce",
+      "glass": "mallado",
+      "price": "$468.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Mallado"
+    },
+    {
+      "color": "bronce",
+      "glass": "duplex",
+      "price": "$533.00",
+      "colorLabel": "Bronce",
+      "glassLabel": "Dúplex"
+    }
+  ]
+}

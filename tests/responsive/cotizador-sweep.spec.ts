@@ -2,6 +2,7 @@ import type { Page, TestInfo } from '@playwright/test';
 import path from 'node:path';
 import { expect, test } from '../e2e/fixtures';
 import { runAudit, type Violation } from './audit';
+import { fillAddress } from '../support/address';
 
 // qa-cot-resp — full-flow responsive sweep, every product, every viewport in
 // playwright.responsive.config.ts (15 real device sizes). Producto -> Medidas
@@ -74,7 +75,7 @@ async function audit(page: Page, testInfo: TestInfo, ctx: { product: string; ste
 
 async function selectZonaAndAdvance(page: Page, testInfo: TestInfo, product: string): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
-  await page.locator('#municipio').selectOption('Soyapango');
+  await fillAddress(page, 'Soyapango');
   await audit(page, testInfo, { product, step: '3-zona' });
   await clickSiguiente(page);
 }

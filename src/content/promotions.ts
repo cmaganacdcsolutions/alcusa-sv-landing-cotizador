@@ -5,7 +5,15 @@
 import { readFileSync } from 'node:fs';
 import raw from './promotions.json';
 import { findBySlug } from './catalog';
-import { cotizadorHref } from './deepLink';
+import type { AluminumColor, StraightGlass } from '@engine/pricing';
+import { buildCotizadorHref } from './catalogHome';
+import { cotizadorHref, toColorParam, toGlassParam } from './deepLink';
+
+/** Acabados que la promo deja preseleccionados en el cotizador (ambos opcionales). */
+export interface PromotionCotizadorParams {
+  color?: AluminumColor;
+  vidrio?: StraightGlass;
+}
 
 export interface Promotion {
   id: string;
@@ -19,6 +27,8 @@ export interface Promotion {
   desde: string; // YYYY-MM-DD
   hasta: string; // YYYY-MM-DD
   productSlug: string;
+  /** Acabados preseleccionados en el cotizador (`color` y/o `vidrio`); ausente = solo el producto. */
+  cotizadorParams?: PromotionCotizadorParams;
   rules: readonly string[];
   placeholder: boolean;
 }
@@ -82,6 +92,25 @@ export function parsePromotions(
     if (isStr(item.product_slug) && !slugExists(item.product_slug)) {
       at(`"product_slug" "${item.product_slug}" no existe en el catalogo`);
     }
+    let cotizadorParams: PromotionCotizadorParams | undefined;
+    if (item.cotizador_params !== undefined) {
+      const cp = item.cotizador_params;
+      if (!isRec(cp)) at('"cotizador_params" debe ser un objeto');
+      else {
+        const params: PromotionCotizadorParams = {};
+        if (cp.color !== undefined) {
+          const color = typeof cp.color === 'string' ? toColorParam(cp.color) : null;
+          if (color === null) at('"cotizador_params.color" no es un color conocido (natural, blanco o bronce)');
+          else params.color = color;
+        }
+        if (cp.vidrio !== undefined) {
+          const vidrio = typeof cp.vidrio === 'string' ? toGlassParam(cp.vidrio) : null;
+          if (vidrio === null) at('"cotizador_params.vidrio" no es un vidrio conocido');
+          else params.vidrio = vidrio;
+        }
+        if (params.color || params.vidrio) cotizadorParams = params;
+      }
+    }
     const rules = item.rules ?? [];
     if (!Array.isArray(rules) || !rules.every((r) => typeof r === 'string')) {
       at('"rules" debe ser un arreglo de textos');
@@ -98,6 +127,7 @@ export function parsePromotions(
       desde: item.starts_on as string,
       hasta: item.ends_on as string,
       productSlug: item.product_slug as string,
+      ...(cotizadorParams ? { cotizadorParams } : {}),
       rules: rules as string[],
       placeholder: item.placeholder === true,
     });
@@ -156,9 +186,16 @@ export function formatUsd(n: number): string {
   return `$${Number.isInteger(n) ? n.toLocaleString('en-US') : n.toFixed(2)}`;
 }
 
-/** Enlace del CTA "Cotizar esta promo" al cotizador con el producto preseleccionado. */
-export function promoHref(p: Pick<Promotion, 'productSlug'>): string {
-  return cotizadorHref(p.productSlug);
+/**
+ * Enlace del CTA "Cotizar esta promo". Con acabados (`color`/`vidrio`) usa el mismo contrato que las
+ * tarjetas del inicio (`buildCotizadorHref`): `/cotizador?producto=<slug>&paso=medidas&color=<c>&vidrio=<v>`,
+ * es decir, cae directo en Medidas con producto y acabados elegidos (el cliente solo escribe la medida).
+ * Sin acabados no hay nada que preseleccionar: se conserva `?producto=<slug>` (contrato previo).
+ */
+export function promoHref(p: Pick<Promotion, 'productSlug' | 'cotizadorParams'>): string {
+  const { color, vidrio } = p.cotizadorParams ?? {};
+  if (!color && !vidrio) return cotizadorHref(p.productSlug);
+  return buildCotizadorHref(p.productSlug, { color, vidrio });
 }
 
 /**

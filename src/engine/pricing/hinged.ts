@@ -53,7 +53,8 @@ export function priceHinged(input: HingedPriceInput): HingedPriceResult {
   // the legacy source verbatim even though it looks like a transcription
   // error against 50cm's $355 (client-questions.md #17). Do not "fix" this
   // without a client answer landing in client-questions.md.
-  const base = table[tier][glass];
+  // Aquafold only exists on the recta model; stale state falls back to decorado.
+  const base = table[tier][glass === 'aquafold' ? 'decorado' : glass];
 
   const subtotal = round2((base + fixedPanelCost(fixedPanel)) * qty);
   return { subtotal, requiresQuote: false };

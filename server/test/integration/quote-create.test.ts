@@ -292,3 +292,81 @@ describe('POST /api/quote-create: persistence guarantees', () => {
     expect(codes.size).toBe(4);
   });
 });
+
+// Online-card 10% discount + "shipping pending" (rules of 2026-10-06). Cart: 222 + 216 = 438.00 -> discount 43.80.
+describe('POST /api/quote-create: online-card discount and shippingPending', () => {
+  const DISCOUNT = { code: 'online_card_10', amount: 43.8 };
+  const quoteRow = async (): Promise<RowDataPacket> => {
+    const [rows] = await t.pool.query<RowDataPacket[]>(
+      'SELECT subtotal, transport_fee, discount_code, discount_amount, shipping_pending, total FROM quotes',
+    );
+    return rows[0] as RowDataPacket;
+  };
+
+  it('legacy request (no discount) still 201 and stores discount 0 / not pending', async () => {
+    const res = await post(t, feRequest());
+    expect(res.statusCode).toBe(201);
+    expect(await quoteRow()).toMatchObject({ subtotal: '438.00', transport_fee: '25.00', discount_code: null, discount_amount: '0.00', shipping_pending: 0, total: '463.00' });
+  });
+
+  it('valid discount: 201, total echoed = subtotal - discount + transport, persisted', async () => {
+    const res = await post(t, { ...feRequest({ transportFee: 25, total: 419.2 }), discount: DISCOUNT });
+    expect(res.statusCode).toBe(201);
+    expect(res.json<{ total: number }>().total).toBe(419.2);
+    expect(await quoteRow()).toMatchObject({ subtotal: '438.00', transport_fee: '25.00', discount_code: 'online_card_10', discount_amount: '43.80', shipping_pending: 0, total: '419.20' });
+  });
+
+  it('shippingPending + discount: transport 0, flag persisted', async () => {
+    const res = await post(t, { ...feRequest({ delivery: { mode: 'delivery', zone: 'otro' }, transportFee: 0, total: 394.2 }), discount: DISCOUNT, shippingPending: true });
+    expect(res.statusCode).toBe(201);
+    expect(await quoteRow()).toMatchObject({ transport_fee: '0.00', discount_amount: '43.80', shipping_pending: 1, total: '394.20' });
+  });
+
+  it('unknown code => 422 invalid_discount, nothing persisted, body does not echo the input', async () => {
+    const res = await post(t, { ...feRequest({ transportFee: 25, total: 419.2 }), discount: { code: 'promo_secreta', amount: 43.8 } });
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toMatchObject({ error: { code: 'invalid_discount', fields: { 'discount.code': 'invalid' } } });
+    expect(res.body).not.toMatch(/promo_secreta/);
+    expect(await count('quotes')).toBe(0);
+  });
+
+  it('wrong amount => 422 invalid_discount, nothing persisted', async () => {
+    const res = await post(t, { ...feRequest({ transportFee: 25, total: 363 }), discount: { code: 'online_card_10', amount: 100 } });
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toMatchObject({ error: { code: 'invalid_discount', fields: { 'discount.amount': 'invalid' } } });
+    expect(await count('quotes')).toBe(0);
+  });
+
+  it('shippingPending with a transport fee => 422 invalid_request', async () => {
+    const res = await post(t, { ...feRequest(), shippingPending: true });
+    expect(res.statusCode).toBe(422);
+    expect(res.json()).toMatchObject({ error: { code: 'invalid_request', fields: { transportFee: 'invalid' } } });
+  });
+
+  it('idempotent replay of a discounted quote => 200 same folio; with a different discount => 409', async () => {
+    const body = { ...feRequest({ transportFee: 25, total: 419.2 }), discount: DISCOUNT };
+    const first = await post(t, body);
+    const again = await post(t, body);
+    expect(again.statusCode).toBe(200);
+    expect(again.json<{ code: string }>().code).toBe(first.json<{ code: string }>().code);
+    const conflict = await post(t, { ...body, discount: { code: 'online_card_10', amount: 43.81 }, total: 419.19 });
+    expect(conflict.statusCode).toBe(409);
+    expect(await count('quotes')).toBe(1);
+  });
+
+  it('DB CHECKs back the rule: total must equal subtotal - discount + transport, shipping_pending needs transport 0', async () => {
+    const ok = await post(t, { ...feRequest({ transportFee: 25, total: 419.2 }), discount: DISCOUNT });
+    expect(ok.statusCode).toBe(201);
+    await expect(t.pool.query('UPDATE quotes SET total = 463.00')).rejects.toThrow(/ck_quotes_money|CONSTRAINT/);
+    await expect(t.pool.query('UPDATE quotes SET discount_code = NULL')).rejects.toThrow(/ck_quotes_discount|CONSTRAINT/);
+    await expect(t.pool.query('UPDATE quotes SET shipping_pending = 1')).rejects.toThrow(/ck_quotes_shipping_pending|CONSTRAINT/);
+  });
+
+  it('GET /api/quotes/{code} keeps its shape and exposes the saved discounted total', async () => {
+    const created = await post(t, { ...feRequest({ transportFee: 25, total: 419.2 }), discount: DISCOUNT });
+    const code = created.json<{ code: string }>().code;
+    const res = await t.app.inject({ method: 'GET', url: '/api/quotes/' + encodeURIComponent(code), remoteAddress: '10.9.9.9' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json<{ saved: Record<string, number> }>().saved).toEqual({ subtotal: 438, transportFee: 25, total: 419.2 });
+  });
+});

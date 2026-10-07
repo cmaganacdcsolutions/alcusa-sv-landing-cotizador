@@ -3,7 +3,18 @@
 // (islands are the only layer allowed to touch window/history).
 import type { AluminumColor, CornerModel, GardenColor, GardenGlass, GardenHojas, StraightGlass, WindowGlass, WindowModel } from '@engine/pricing';
 import type { ProductId } from '@content/catalog';
+import { HINGED_WIDTH_MAX_CM, HINGED_WIDTH_MIN_CM } from '@engine/pricing/hinged';
+import { STRAIGHT_WIDTH_MAX_CM, STRAIGHT_WIDTH_MIN_CM } from '@engine/pricing/straight';
+import { TEMPERED_WIDTH_MAX_CM, TEMPERED_WIDTH_MIN_CM } from '@engine/pricing/tempered';
 import type { QuoteLoadNotice } from './loadQuote';
+import {
+  applyAddressField,
+  EMPTY_ADDRESS,
+  zoneForDistrito,
+  type AddressField,
+  type DeliveryAddress,
+  type GeoPoint,
+} from '../../../lib/delivery-address';
 
 export type CotizadorStep =
   | 'producto'
@@ -55,6 +66,7 @@ export const GLASS_LABELS: Readonly<Record<StraightGlass, string>> = {
   claro: 'Claro 5 mm',
   nevado: 'Nevado 5 mm',
   decorado: 'Decorado',
+  aquafold: 'Aquafold',
   mallado: 'Mallado',
   duplex: 'Dúplex',
 };
@@ -86,6 +98,10 @@ export interface CotizadorState {
   glass: StraightGlass;
   entrega: Entrega;
   zone: string;
+  // Direccion completa (solo instalacion). `zone` se deriva del distrito (ver zoneForDistrito).
+  address: DeliveryAddress;
+  // true tras LOAD_QUOTE: el total guardado ya incluye transporte aunque no haya direccion.
+  addressFromQuote: boolean;
   // corner ("l" — Cabina en L, S5 T5.1): fixed 0.80x0.80x1.85m, no width input.
   cornerModel: CornerModel;
   // tempered ("templado", S5 T5.2): reuses `width` (120-200cm); no extra fields.
@@ -112,7 +128,15 @@ export interface CotizadorState {
   gardenQty: string;
   // --- sf-cot-checkout: Step5 forma de pago selection ---
   payMethod: 'wa' | 'pay';
+  // true once the customer picked a method in Step5 (SET_PAY_METHOD); until then payMethod is only
+  // the default and the 10% online-card discount is NOT shown in steps 0-3 (Resumen: chosen && 'pay').
+  payMethodChosen: boolean;
   payAmountPct: 80 | 100;
+  // true cuando el cliente llego por `?oferta=online10` (navbar "Compra YA! 10% de descuento"):
+  // el 10% de pago en linea con tarjeta ya cuenta como APLICADO desde Medidas (APPLY_ONLINE_OFFER
+  // tambien deja payMethod 'pay' + payMethodChosen). Si luego elige WhatsApp en Step5 el descuento
+  // se quita (payMethod 'wa'), pero el flag queda para avisar que solo aplica con tarjeta.
+  onlineOffer: boolean;
   // --- sf-cot-checkout: mock Wompi result (Step6Wompi → Step7Resultado) ---
   // Set by SET_WOMPI_RESULT once src/integrations/wompi/mock.ts "resolves" a
   // mock payment attempt; null until then. No real gateway data lands here
@@ -184,6 +208,8 @@ export const initialCotizadorState: CotizadorState = {
   glass: 'claro',
   entrega: 'instalacion',
   zone: '',
+  address: EMPTY_ADDRESS,
+  addressFromQuote: false,
   cornerModel: 'aquaclara',
   hingedQty: '1',
   hingedFixedPanelEnabled: false,
@@ -205,7 +231,9 @@ export const initialCotizadorState: CotizadorState = {
   gardenGlass: 'claro',
   gardenQty: '1',
   payMethod: 'pay',
+  payMethodChosen: false,
   payAmountPct: 80,
+  onlineOffer: false,
   wompiOutcome: null,
   wompiOrderNumber: null,
   cart: [],
@@ -239,6 +267,24 @@ export function applyCartItem(state: CotizadorState, item: CartItem): CotizadorS
   return { ...state, ...fields };
 }
 
+// --- Persistencia del wizard (state/persist.ts) ---
+// Campos que sobreviven un reload de pagina (sessionStorage): el paso, la
+// decision de entrega/direccion, el item en edicion y la oferta `onlineOffer`
+// (el link del navbar la vuelve a aplicar igual en cada carga). NUNCA payMethod,
+// payMethodChosen, payAmountPct ni campos de Wompi. Para persistir un campo
+// nuevo: agregarlo aqui y su guard en persist.ts (el reducer no cambia).
+export const WIZARD_ORDER_KEYS = [
+  'step',
+  'entrega',
+  'zone',
+  'address',
+  'addressFromQuote',
+  'editingItem',
+  'onlineOffer',
+] as const;
+export type WizardOrderKey = (typeof WIZARD_ORDER_KEYS)[number];
+export type WizardFields = Pick<CotizadorState, WizardOrderKey | ItemFieldKey>;
+
 /** Resets the current item to a blank slate and sends the wizard back to step 0. */
 function resetCurrentItem(state: CotizadorState): CotizadorState {
   return { ...state, ...INITIAL_ITEM_FIELDS, step: 'producto', editingItem: null };
@@ -251,6 +297,11 @@ export type CotizadorAction =
   | { type: 'SET_GLASS'; glass: StraightGlass }
   | { type: 'SET_ENTREGA'; entrega: Entrega }
   | { type: 'SET_ZONE'; zone: string }
+  | { type: 'SET_ADDRESS_FIELD'; field: AddressField; value: string }
+  | { type: 'SET_ADDRESS_GEO'; geo: GeoPoint | null }
+  | { type: 'RESTORE_ADDRESS'; address: DeliveryAddress }
+  // Reload mid-flow: re-applies the (already validated) sessionStorage snapshot.
+  | { type: 'RESTORE_WIZARD'; fields: WizardFields }
   | { type: 'GOTO_STEP'; step: CotizadorStep }
   | { type: 'NEXT' }
   | { type: 'BACK' }
@@ -283,6 +334,8 @@ export type CotizadorAction =
   // --- sf-cot-checkout: Step5 forma de pago + mock Wompi result ---
   | { type: 'SET_PAY_METHOD'; method: 'wa' | 'pay' }
   | { type: 'SET_PAY_AMOUNT_PCT'; pct: 80 | 100 }
+  // `?oferta=online10` (navbar): marca la oferta y deja el pago con tarjeta elegido.
+  | { type: 'APPLY_ONLINE_OFFER' }
   | { type: 'SET_WOMPI_RESULT'; outcome: 'approved' | 'declined' | 'pending'; orderNumber: string }
   // --- S7: multi-item cart ---
   // Commits the current item into `cart` and resets step 0 with a fresh
@@ -312,10 +365,25 @@ export function parseWidthCm(raw: string): number {
   return value < 10 ? Math.round(value * 100) : value;
 }
 
+/** Valid width range (cm) and in-range default per product that takes a single `width`. */
+const WIDTH_SPEC: Partial<Record<ProductId, { min: number; max: number; def: string }>> = {
+  recta: { min: STRAIGHT_WIDTH_MIN_CM, max: STRAIGHT_WIDTH_MAX_CM, def: '110' },
+  bisagra: { min: HINGED_WIDTH_MIN_CM, max: HINGED_WIDTH_MAX_CM, def: '80' },
+  templado: { min: TEMPERED_WIDTH_MIN_CM, max: TEMPERED_WIDTH_MAX_CM, def: '150' },
+};
+
+/** Keeps the typed width when it is valid for the product, else falls back to that product's own default. */
+function widthForProduct(productId: ProductId, current: string): string {
+  const spec = WIDTH_SPEC[productId];
+  if (!spec) return current;
+  const cm = parseWidthCm(current);
+  return Number.isFinite(cm) && cm >= spec.min && cm <= spec.max ? current : spec.def;
+}
+
 export function cotizadorReducer(state: CotizadorState, action: CotizadorAction): CotizadorState {
   switch (action.type) {
     case 'SELECT_PRODUCT':
-      return { ...state, productId: action.productId, step: 'medidas' };
+      return { ...state, productId: action.productId, width: widthForProduct(action.productId, state.width), step: 'medidas' };
     case 'SET_WIDTH':
       return { ...state, width: action.value };
     case 'SET_COLOR':
@@ -326,6 +394,16 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       return { ...state, entrega: action.entrega };
     case 'SET_ZONE':
       return { ...state, zone: action.zone };
+    case 'SET_ADDRESS_FIELD': {
+      const address = applyAddressField(state.address, action.field, action.value);
+      return { ...state, address, zone: zoneForDistrito(address), addressFromQuote: false };
+    }
+    case 'SET_ADDRESS_GEO':
+      return { ...state, address: { ...state.address, geo: action.geo } };
+    case 'RESTORE_ADDRESS':
+      return { ...state, address: action.address, addressFromQuote: false };
+    case 'RESTORE_WIZARD':
+      return { ...state, ...action.fields };
     case 'GOTO_STEP':
       return { ...state, step: action.step };
     case 'NEXT': {
@@ -352,7 +430,7 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
     case 'SET_HINGED_FIXED_PANEL_HEIGHT':
       return { ...state, hingedFixedPanelHeightM: action.value };
     case 'PRESELECT_PRODUCT':
-      return { ...state, productId: action.productId };
+      return { ...state, productId: action.productId, width: widthForProduct(action.productId, state.width) };
     // --- S6: ventana ---
     case 'SET_WINDOW_MODEL':
       return { ...state, windowModel: action.model };
@@ -399,9 +477,11 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       return { ...state, gardenQty: action.value };
     // --- sf-cot-checkout: Step5 forma de pago + mock Wompi result ---
     case 'SET_PAY_METHOD':
-      return { ...state, payMethod: action.method };
+      return { ...state, payMethod: action.method, payMethodChosen: true };
     case 'SET_PAY_AMOUNT_PCT':
       return { ...state, payAmountPct: action.pct };
+    case 'APPLY_ONLINE_OFFER':
+      return { ...state, onlineOffer: true, payMethod: 'pay', payMethodChosen: true };
     case 'SET_WOMPI_RESULT':
       return { ...state, wompiOutcome: action.outcome, wompiOrderNumber: action.orderNumber };
     // --- S7: multi-item cart ---
@@ -466,6 +546,7 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
         cart: action.items.slice(0, -1),
         entrega: action.entrega,
         zone: action.zone,
+        addressFromQuote: true,
         quoteLoad: action.notice,
       };
       return { ...applyCartItem(base, last), step: 'resumen' };

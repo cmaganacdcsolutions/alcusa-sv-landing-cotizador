@@ -19,7 +19,7 @@ const waHref = buildWaLink();
            there. -->
       <div class="contacto__intro">
         <p class="contacto__kicker">CONTACTO</p>
-        <h2 class="contacto__title">Hablemos de tu proyecto</h2>
+        <h2 class="contacto__title title-gradient">Hablemos de tu proyecto</h2>
         <p class="contacto__lead">Escríbenos por WhatsApp o visita nuestro taller en Ciudad Merliot.</p>
       </div>
 
@@ -62,7 +62,6 @@ const waHref = buildWaLink();
             <span class="contacto__item-phones">
               <a href="tel:+50322782460">2278-2460</a>
               <a href="tel:+50322084101">2208-4101</a>
-              <a href="tel:+50325637742">2563-7742</a>
             </span>
           </div>
         </li>
@@ -74,7 +73,11 @@ const waHref = buildWaLink();
           </span>
           <div class="contacto__item-body">
             <span class="contacto__item-label">Horario</span>
-            <span class="contacto__badge">[HORARIO — confirmar]</span>
+            <span class="contacto__item-value contacto__hours">
+              <span>Lunes a viernes: 7:30 a. m. – 5:00 p. m.</span>
+              <span>Sábados: 7:00 a. m. – 12:00 m.</span>
+              <span>Domingos: cerrado</span>
+            </span>
           </div>
         </li>
         <li class="contacto__item contacto__item--last">
@@ -85,7 +88,7 @@ const waHref = buildWaLink();
           </span>
           <div class="contacto__item-body">
             <span class="contacto__item-label">Correo</span>
-            <span class="contacto__badge">[CORREO — confirmar]</span>
+            <a href="mailto:administracion@alcusa.com.sv" class="contacto__item-value contacto__item-value--email">administracion@<wbr />alcusa.com.sv</a>
           </div>
         </li>
       </ul>
@@ -130,9 +133,7 @@ const waHref = buildWaLink();
           <div class="contacto__item-body">
             <span id="taller-title" class="contacto__item-label">Taller</span>
             <span class="contacto__item-value"
-              >Calle El Pedregal, local 29 G, Ciudad Merliot <span class="contacto__badge"
-                >[municipio — confirmar]</span
-              ></span
+              >Calle El Pedregal, local 29 G, Ciudad Merliot</span
             >
           </div>
           <a
@@ -259,7 +260,8 @@ const waHref = buildWaLink();
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.14em;
-    color: var(--color-primary);
+    /* Pagina azul noche (2026-10-06): kicker y titulos claros; las tarjetas de datos siguen claras. */
+    color: var(--color-accent-on-dark);
   }
 
   .contacto__title {
@@ -268,11 +270,15 @@ const waHref = buildWaLink();
     font-weight: 600;
     font-size: 1.875rem;
     line-height: 1.15;
+    /* Respaldo solido; el degradado blanco -> azul claro viene de .title-gradient (global.css). */
+    color: var(--color-text-on-dark);
+    /* background-clip:text solo pinta dentro de la caja: holgura para los descendentes (y, p). */
+    padding-block: 0.06em 0.12em;
   }
 
   .contacto__lead {
     margin: 0;
-    color: var(--color-ink-muted);
+    color: var(--color-text-on-dark-muted);
   }
 
   .contacto__item-value--desktop {
@@ -297,6 +303,7 @@ const waHref = buildWaLink();
     list-style: none;
     border-radius: var(--radius-lg);
     background: var(--color-surface);
+    color: var(--color-ink);
     box-shadow: var(--shadow-xs);
     display: flex;
     flex-direction: column;
@@ -375,6 +382,14 @@ const waHref = buildWaLink();
     font-weight: 700;
   }
 
+  /* The email is the longest value: a notch smaller so it fits one line in
+     the info column, and if it ever has to wrap it breaks after the "@"
+     (the <wbr>), never mid-word. */
+  a.contacto__item-value--email {
+    font-size: 1rem;
+    overflow-wrap: normal;
+  }
+
   .contacto__item-phones {
     display: flex;
     flex-wrap: wrap;
@@ -386,6 +401,11 @@ const waHref = buildWaLink();
   .contacto__item-phones a,
   .contacto__item-value a {
     color: var(--color-ink);
+  }
+
+  .contacto__hours {
+    display: grid;
+    gap: 2px;
   }
 
   .contacto__badge {
@@ -406,6 +426,7 @@ const waHref = buildWaLink();
     display: flex;
     flex-direction: column;
     background: var(--color-surface);
+    color: var(--color-ink);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-xs);
@@ -531,6 +552,7 @@ const waHref = buildWaLink();
     margin: 0;
     font-size: var(--font-size-body-sm-mobile);
     font-weight: 700;
+    color: var(--color-text-on-dark);
   }
 
   .contacto__social-grid {
@@ -604,13 +626,13 @@ const waHref = buildWaLink();
 
   @media (min-width: 1024px) {
     .contacto {
-      max-width: var(--container-page);
+      /* Contenido de 1600px como en el tablero (desktop-08 ~L38: padding 80px 0 120px). Sobre el fondo
+         azul noche (2026-10-06) un viewport < 1600 dejaba tarjetas pegadas al borde: el margen lateral
+         se suma al tope en vez de restarse del contenido. */
+      max-width: calc(var(--container-page) + 2 * var(--space-8));
       margin: 0 auto;
       width: 100%;
-      /* Board's 1600px content div has zero horizontal padding — the
-         1600 cap + margin:auto does the centering (desktop-08 ~L38: padding
-         80px 0 120px). */
-      padding: var(--space-20) 0 var(--space-30);
+      padding: var(--space-20) var(--space-8) var(--space-30);
     }
 
     .contacto__title {
@@ -715,6 +737,10 @@ const waHref = buildWaLink();
       font-size: 1.25rem;
     }
 
+    a.contacto__item-value--email {
+      font-size: 1.0625rem;
+    }
+
     .contacto__map-frame {
       /* desktop-08 ~L56: literal fixed height, not width-relative. */
       aspect-ratio: auto;
@@ -762,7 +788,7 @@ const waHref = buildWaLink();
       font-size: var(--font-size-caption-desktop);
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--color-primary);
+      color: var(--color-accent-on-dark);
     }
 
     .contacto__social-grid {
@@ -794,6 +820,52 @@ const waHref = buildWaLink();
     .contacto__social-card-body,
     .contacto__social-card-arrow {
       display: flex;
+    }
+  }
+
+  /* Hover como el del navbar (pedido 2026-10-06): relleno/color suave, sin elevacion ni sombra. */
+  @media (hover: hover) and (pointer: fine) {
+    .contacto__item-cta,
+    .contacto__map-cta,
+    .contacto__social-card,
+    a.contacto__item-value,
+    .contacto__item-phones a {
+      transition:
+        background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        border-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+    }
+    .contacto__item-cta:hover {
+      background: color-mix(in srgb, var(--color-whatsapp-strong) 16%, var(--color-surface));
+      color: var(--color-whatsapp-strong-hover);
+    }
+    .contacto__map-cta:hover {
+      color: var(--color-primary-active);
+    }
+    .contacto__social-card:hover {
+      border-color: var(--color-accent);
+      background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+    }
+    a.contacto__item-value:hover,
+    .contacto__item-phones a:hover {
+      color: var(--color-accent);
+    }
+  }
+  @media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+    /* Escritorio: el CTA del mapa es una pildora blanca con borde. */
+    .contacto__map-cta:hover {
+      border-color: var(--color-accent);
+      background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
+      color: var(--color-ink);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .contacto__item-cta,
+    .contacto__map-cta,
+    .contacto__social-card,
+    a.contacto__item-value,
+    .contacto__item-phones a {
+      transition: none;
     }
   }
 </style>

@@ -4,8 +4,7 @@
 // reads `?producto=` from the URL to preselect step 0 (S6 territory —
 // import only, do not edit src/islands/Cotizador/**).
 import BaseLayout from '@layouts/BaseLayout.astro';
-import TopBar from '@components/TopBar.astro';
-import Drawer from '@components/Drawer.astro';
+import Navbar from '@components/Navbar.astro';
 import Cotizador from '@islands/Cotizador/Cotizador';
 ---
 
@@ -13,10 +12,9 @@ import Cotizador from '@islands/Cotizador/Cotizador';
   title="Cotizador en línea | ALCUSA"
   description="Cotiza puertas, ventanas y trabajos de aluminio y vidrio a tu medida. Precio al instante, confirma por WhatsApp."
 >
-  <TopBar />
-  <Drawer />
+  <Navbar variant="compact" />
 
-  <main>
+  <main id="main" tabindex="-1">
     <section id="cotizador-app" class="cotizador-page">
       <h1 class="visually-hidden">Cotizador en línea</h1>
       <Cotizador client:load />

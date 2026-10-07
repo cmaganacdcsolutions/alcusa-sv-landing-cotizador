@@ -7,9 +7,11 @@ import {
   type ReactElement,
 } from 'react';
 import '@styles/cotizador.css';
+import '@styles/cotizador-discount.css';
 import { CATALOG_PRODUCTS } from '@content/catalog';
-import { parseDeepLink } from '@content/deepLink';
+import { parseDeepLink, parseDeepLinkOptions, wantsMedidas } from '@content/deepLink';
 import { getZoneFee } from '@engine/pricing';
+import { isAddressComplete, parseStoredAddress } from '../../lib/delivery-address';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildAdvisorMessage } from '@integrations/whatsapp/buildMessage';
 import {
@@ -21,8 +23,27 @@ import {
   type CotizadorState,
   type CotizadorStep,
 } from './state/cotizadorStore';
+import {
+  clearWizardSnapshot,
+  persistWizardState,
+  readNavigationType,
+  readWizardSnapshot,
+  restoreFields,
+  shouldRestoreWizard,
+} from './state/persist';
 import { buildLineItem, computeQuote } from './state/quote';
-import { buildOrderItems, orderTotal as computeOrderTotal } from './state/order';
+import { buildOrderItems, orderItemsSubtotal, orderTotal as computeOrderTotal } from './state/order';
+import {
+  computePayable,
+  depositOf,
+  formatDiscount,
+  payMethodForDiscount,
+  resolveShipping,
+  type Payable,
+  type ShippingState,
+} from './state/payable';
+import { buildPayOffer, hasOnlineOfferParam, ONLINE_DISCOUNT_LABEL, type PayOffer } from './state/payOffer';
+import OnlineDiscountPreview from './steps/OnlineDiscountPreview';
 import {
   IconArrowRight,
   IconCheck,
@@ -30,7 +51,7 @@ import {
   IconLock,
   IconWhatsApp,
 } from './icons';
-import { IconSpinner } from './icons-checkout';
+import { IconCardRect, IconSpinner } from './icons-checkout';
 import Step0Producto from './steps/Step0Producto';
 import Step1Medidas from './steps/Step1Medidas';
 import Step2Precio from './steps/Step2Precio';
@@ -132,6 +153,8 @@ interface AsideView {
   note: string;
   items: AsideItem[];
   showDeposit: boolean;
+  /** 'Pagando con tarjeta en línea: $X (−10%)' line (only rendered in preview mode). */
+  previewOffer?: PayOffer | null;
   /**
    * null on resumen/formaPago: desktop-05/06 draw "Enviar por WhatsApp para
    * confirmar"/"Pagar ahora" (resumen) and the Wompi CTA (formaPago) ONLY in
@@ -153,8 +176,9 @@ interface AsideView {
   ctas: ReactElement | null;
 }
 
-// S7 — sessionStorage persistence for the cart only (not the whole wizard
-// state): a reload mid-checkout shouldn't lose already-committed items.
+// S7 — sessionStorage persistence for the cart under its own key: a reload
+// mid-checkout shouldn't lose already-committed items. The rest of the wizard
+// (step, current item, delivery) is a separate snapshot, see state/persist.ts.
 // Guarded for the Astro build's server-side render pass (no `window` there)
 // and for private-mode/quota errors (try/catch, silently drops the cart).
 const CART_STORAGE_KEY = 'alcusa-cotizador-cart';
@@ -183,8 +207,8 @@ export default function Cotizador(): ReactElement {
   );
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Persists `cart` (only) on every change — zone/entrega/current-item
-  // fields stay session-only, matching the rest of the wizard.
+  // Persists `cart` on every change, under its own key (the wizard snapshot
+  // below deliberately does not duplicate it).
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -193,6 +217,18 @@ export default function Cotizador(): ReactElement {
       // private mode / quota — the cart just won't survive a reload.
     }
   }, [state.cart]);
+  // Wizard snapshot (state/persist.ts): written on every state change AFTER the
+  // mount effect below has decided whether to restore the stored one. Effects of
+  // the first commit run before the dispatches of the mount effect land, so an
+  // ungated write would overwrite the stored snapshot with the empty initial
+  // state. `bootStateRef` also keeps an untouched first state (and a StrictMode
+  // effect re-run) from ever writing.
+  const persistReadyRef = useRef(false);
+  const bootStateRef = useRef(state);
+  useEffect(() => {
+    if (!persistReadyRef.current || state === bootStateRef.current) return;
+    persistWizardState(state);
+  }, [state]);
   // Portal mount for the resumen/formaPago aside CTAs — see the AsideView.ctas
   // comment below and Step4Resumen/Step5FormaPago's `asideCtaTarget` prop.
   const [portalCtaEl, setPortalCtaEl] = useState<HTMLDivElement | null>(null);
@@ -201,6 +237,8 @@ export default function Cotizador(): ReactElement {
   const [selAsideEl, setSelAsideEl] = useState<HTMLElement | null>(null);
   // advisorOnly deep link: name of the product to quote with an advisor.
   const [advisorProduct, setAdvisorProduct] = useState<string | null>(null);
+  // Opciones (color/vidrio) que llegaron preseleccionadas desde los configuradores del inicio.
+  const [homeOptionsNotice, setHomeOptionsNotice] = useState(false);
   // F4 (ADR-012): folio from the `?folio=` deep link (read once, URL cleaned).
   const [folioParam, setFolioParam] = useState<string | null>(null);
 
@@ -217,6 +255,7 @@ export default function Cotizador(): ReactElement {
       const pendingPayment = loadPendingPayment();
       if (pendingPayment) {
         dispatch({ type: 'SET_ZONE', zone: pendingPayment.zone });
+        dispatch({ type: 'RESTORE_ADDRESS', address: parseStoredAddress(pendingPayment.address) });
         dispatch({ type: 'SET_ENTREGA', entrega: pendingPayment.entrega });
         dispatch({ type: 'SET_PAY_AMOUNT_PCT', pct: pendingPayment.pct });
       }
@@ -248,19 +287,85 @@ export default function Cotizador(): ReactElement {
       window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
     }
 
-    // Post-Wompi restoration wins: the deep link must not override it.
+    // A page reload (or a mobile tab reload around the geolocation permission
+    // prompt) used to wipe everything but the cart, then bounce to step 0 because
+    // the hash still named a later step. Restore the stored wizard snapshot when
+    // eligible; a fresh deep-link arrival and a Wompi/folio return win instead.
+    const storedSnapshot = readWizardSnapshot();
+    const restoring =
+      storedSnapshot !== null &&
+      shouldRestoreWizard({
+        wompiReturn: wompiReturn !== null,
+        hasFolio: !!folio,
+        search: window.location.search,
+        hashStep: initial,
+        navigation: readNavigationType(),
+      });
+    if (storedSnapshot && restoring) {
+      const fields = restoreFields(storedSnapshot, initial);
+      dispatch({ type: 'RESTORE_WIZARD', fields });
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}#cotizador/${STEP_SLUGS[fields.step]}`,
+      );
+    } else {
+      clearWizardSnapshot(); // stale or unusable: never leak it into a fresh flow
+    }
+
+    // `?oferta=online10` (navbar "Compra YA! 10% de descuento"): the 10% online-card discount is
+    // APPLIED from the first screen. Deliberately outside the `!wompiReturn` / `!restoring` block
+    // below and AFTER RESTORE_WIZARD, so a reload with the param (the URL keeps it) re-applies the
+    // offer on top of the restored wizard, and a priced deep link combined with it keeps both.
+    if (hasOnlineOfferParam(window.location.search)) dispatch({ type: 'APPLY_ONLINE_OFFER' });
+
+    // Post-Wompi restoration wins: the deep link must not override it. A
+    // restored wizard also skips the priced preset (it would reset the product).
     if (!wompiReturn) {
       // ADR-008 §3: `?producto=<slug>` (leaf, variant or legacy alias). Invalid
       // slugs are ignored; advisorOnly slugs never enter the wizard.
       const deepLink = parseDeepLink(window.location.search);
-      if (deepLink.kind === 'priced') {
+      if (deepLink.kind === 'priced' && !restoring) {
         const { preset, quoterModel } = deepLink;
         if (preset.cornerFinish) dispatch({ type: 'SET_CORNER_MODEL', model: preset.cornerFinish });
         if (preset.gardenHojas) dispatch({ type: 'SET_GARDEN_HOJAS', hojas: preset.gardenHojas });
         if (preset.windowType) dispatch({ type: 'SET_WINDOW_MODEL', model: preset.windowType });
         // Legacy ids and an explicit `#cotizador/<step>` hash only preselect;
         // a canonical slug jumps to Medidas.
-        dispatch({ type: deepLink.advance && !initial ? 'SELECT_PRODUCT' : 'PRESELECT_PRODUCT', productId: quoterModel });
+        // `?paso=medidas` (configuradores del inicio) avanza a Medidas incluso con slugs legacy.
+        const toMedidas = wantsMedidas(window.location.search);
+        dispatch({
+          type: (deepLink.advance || toMedidas) && !initial ? 'SELECT_PRODUCT' : 'PRESELECT_PRODUCT',
+          productId: quoterModel,
+        });
+        // `?color=`/`?vidrio=` (inicio y promos): por modelo; lo invalido se ignora.
+        const opts = parseDeepLinkOptions(window.location.search, quoterModel);
+        let applied = false;
+        switch (opts.model) {
+          case 'recta':
+          case 'bisagra':
+            if (opts.color) dispatch({ type: 'SET_COLOR', color: opts.color });
+            if (opts.glass) dispatch({ type: 'SET_GLASS', glass: opts.glass });
+            applied = !!(opts.color || opts.glass);
+            break;
+          case 'l':
+            if (opts.color) dispatch({ type: 'SET_COLOR', color: opts.color });
+            applied = !!opts.color;
+            break;
+          case 'jardin':
+            if (opts.color) dispatch({ type: 'SET_GARDEN_COLOR', color: opts.color });
+            if (opts.glass) dispatch({ type: 'SET_GARDEN_GLASS', glass: opts.glass });
+            applied = !!(opts.color || opts.glass);
+            break;
+          case 'ventana':
+            if (opts.color) dispatch({ type: 'SET_WINDOW_FRAME', frame: opts.color });
+            if (opts.glass) dispatch({ type: 'SET_WINDOW_GLASS', glass: opts.glass });
+            applied = !!(opts.color || opts.glass);
+            break;
+          default:
+            break;
+        }
+        if (applied && toMedidas) setHomeOptionsNotice(true);
       } else if (deepLink.kind === 'advisor') {
         setAdvisorProduct(deepLink.name);
       }
@@ -284,6 +389,7 @@ export default function Cotizador(): ReactElement {
     // client:load island has actually mounted/hydrated, so e2e specs can
     // wait for it instead of racing the pre-hydration static HTML.
     rootRef.current?.setAttribute('data-hydrated', 'true');
+    persistReadyRef.current = true;
 
     return () => {
       window.removeEventListener('hashchange', syncFromHash);
@@ -377,12 +483,18 @@ export default function Cotizador(): ReactElement {
   // S7 — the zone/entrega step is order-level: once it's actually been
   // decided (a zone picked, or "retiro" chosen), "Siguiente"/back skip it
   // for every later item so the loop goes straight precio <-> resumen.
-  // Deliberately NOT keyed off `cart.length` alone — the cart persists
-  // across a reload (sessionStorage) but zone/entrega don't, so a fresh
-  // session with a leftover cart must still ask for the zone once. The
+  // Deliberately NOT keyed off `cart.length` alone — the cart has its own
+  // sessionStorage key and survives a fresh arrival, while zone/entrega/address
+  // only come back with a restored wizard snapshot (state/persist.ts: reload or
+  // an explicit step hash), so a fresh arrival with a leftover cart must still
+  // ask for the zone once. The
   // zone stays changeable any time via Resumen's "Cambiar" link
   // (onEditZone → goToStep('zonaEntrega')).
-  const zoneDecided = state.zone !== '' || state.entrega === 'retiro';
+  // Con instalacion, el envio solo se da por decidido con la direccion completa
+  // (o una cotizacion cargada por folio, cuyo total guardado ya trae transporte).
+  const addressOk =
+    state.entrega === 'retiro' || state.addressFromQuote || isAddressComplete(state.address);
+  const zoneDecided = state.entrega === 'retiro' || (addressOk && state.zone !== '');
 
   function next(): void {
     const idx = STEP_ORDER.indexOf(state.step);
@@ -432,7 +544,8 @@ export default function Cotizador(): ReactElement {
   }
 
   const quote = useMemo(() => computeQuote(state), [state]);
-  const zoneFee = state.entrega === 'instalacion' ? getZoneFee(state.zone) : 0;
+  const zoneFee =
+    state.entrega === 'instalacion' ? (addressOk ? getZoneFee(state.zone) : undefined) : 0;
   // Single-current-item total — what steps 0-2 show ("Estimado sin
   // transporte" / the live per-item price) before there's an order-level
   // total to speak of. zonaEntrega (step 3) is order-phase (see
@@ -457,7 +570,40 @@ export default function Cotizador(): ReactElement {
     state.step === 'resultado';
   const orderTotalValue =
     orderItems.length > 0 ? computeOrderTotal(orderItems, zoneFee ?? 0) : null;
-  const total = isOrderPhase ? orderTotalValue : singleItemTotal;
+  // Envio de la entrega: retiro = none, zona con tarifa = fee, distrito sin tarifa ('otro') = pending
+  // ("Envío por confirmar": nunca bloquea). Solo se resuelve con la direccion completa.
+  const shipping: ShippingState | null = addressOk ? resolveShipping(state.entrega, state.zone) : null;
+  // Descuento 10% pagando con tarjeta en linea: pasos 0-3 nunca; Resumen solo tras elegir metodo
+  // en el Paso 5; pago/Wompi/resultado usan state.payMethod (ver payMethodForDiscount).
+  const payable: Payable | null =
+    isOrderPhase && shipping && orderItems.length > 0
+      ? computePayable({
+          itemsSubtotal: orderItemsSubtotal(orderItems),
+          shipping,
+          payMethod: payMethodForDiscount(state.step, state.payMethod, state.payMethodChosen, state.onlineOffer),
+          pickup: state.entrega === 'retiro',
+        })
+      : null;
+  // 10% card line for Precio -> Resumen: 'applied' (offer link / card chosen) or 'preview' ("Pagando
+  // con tarjeta en línea: $X (−10%)", golden totals untouched). Precio prices the current item with no
+  // shipping yet (same figure the aside shows there); zona/resumen use the whole order and its shipping.
+  const payOffer = buildPayOffer({
+    step: state.step,
+    offer: state.onlineOffer,
+    payMethod: state.payMethod,
+    chosen: state.payMethodChosen,
+    itemsSubtotal: state.step === 'precio' ? (quote.amount ?? 0) : orderItemsSubtotal(orderItems),
+    shipping: state.step === 'precio' ? null : shipping,
+    pickup: state.entrega === 'retiro',
+  });
+  // The offer is "live" (banner copy) while card is the chosen method; picking WhatsApp in Step5 drops it.
+  const offerApplied = state.onlineOffer && state.payMethodChosen && state.payMethod === 'pay';
+  const showOfferBanner = state.step !== 'wompi' && state.step !== 'resultado';
+  const onlineDiscount = payable?.discount.applies ? payable.discount.amount : 0;
+  const shippingPending = payable?.shippingPending ?? false;
+  // Sin direccion completa no se muestra un total con envio: "Por confirmar".
+  // Sin descuento payable.total === orderTotalValue (mismos productos + envio, mismo redondeo).
+  const total = isOrderPhase ? (addressOk ? (payable?.total ?? orderTotalValue) : null) : singleItemTotal;
 
   // desktop-07-payment-result.dc.html is the only board (03-07) with no
   // "TU COTIZACIÓN" aside at all — the wizard is done, there's nothing left
@@ -498,10 +644,35 @@ export default function Cotizador(): ReactElement {
       : quote.requiresQuote
         ? 'Por WhatsApp'
         : 'Por confirmar';
+  // "Conocida" = retiro, zona con tarifa o distrito sin tarifa con direccion completa ("Envío por confirmar"
+  // ya no bloquea: el flujo sigue y el envio se confirma por WhatsApp).
   const zoneKnown =
     state.entrega === 'retiro' ||
-    (state.zone !== '' && getZoneFee(state.zone) !== undefined);
-  const depositAmount = total !== null ? Math.round(total * 80) / 100 : 0;
+    (addressOk && state.zone !== '' && getZoneFee(state.zone) !== undefined) ||
+    (addressOk && shipping?.kind === 'pending');
+  const shippingPendingNow = state.entrega === 'instalacion' && shipping?.kind === 'pending';
+  const transporteDetail =
+    state.entrega === 'retiro'
+      ? 'Retiro en tienda'
+      : shippingPendingNow
+        ? 'Te lo confirmamos por WhatsApp'
+        : zoneKnown
+          ? state.zone
+          : 'Municipio por confirmar';
+  const transportePrice =
+    state.entrega === 'retiro'
+      ? 'Sin costo'
+      : shippingPendingNow
+        ? 'Por confirmar'
+        : zoneKnown
+          ? `$${(zoneFee ?? 0).toFixed(2)}`
+          : 'Por confirmar';
+  const discountRow = (amount: number): AsideItem[] =>
+    amount > 0
+      ? [{ name: ONLINE_DISCOUNT_LABEL, detail: 'Solo productos, no incluye envío', price: formatDiscount(amount) }]
+      : [];
+  const discountItem = discountRow(onlineDiscount);
+  const depositAmount = total !== null ? depositOf(total) : 0;
   const balanceAmount = total !== null ? total - depositAmount : 0;
   // Same one-liner "Hola ALCUSA, quiero cotizar: <producto> · <medida>." the
   // boards use for the aside's always-on "Cotizar por WhatsApp" (desktop-03
@@ -542,14 +713,17 @@ export default function Cotizador(): ReactElement {
     );
 
     if (state.step === 'medidas' || state.step === 'precio') {
+      // Offer link: Precio already shows the card price (discount row + discounted total).
+      const precioOffer = state.step === 'precio' && payOffer?.mode === 'applied' ? payOffer : null;
       aside = {
         totalLabel: 'Estimado sin transporte',
-        totalValue: amountText,
+        totalValue: precioOffer ? `$${precioOffer.cardTotal.toFixed(2)}` : amountText,
         note: quote.requiresQuote
           ? 'Esta medida se cotiza por WhatsApp.'
           : 'El costo final incluye transporte según tu zona.',
-        items: [baseItem],
+        items: [baseItem, ...discountRow(precioOffer?.discount ?? 0)],
         showDeposit: false,
+        previewOffer: state.step === 'precio' ? payOffer : null,
         ctas: (
           <>
             {siguiente(quote.requiresQuote)}
@@ -558,26 +732,16 @@ export default function Cotizador(): ReactElement {
         ),
       };
     } else if (state.step === 'zonaEntrega') {
-      const transporteDetail =
-        state.entrega === 'retiro'
-          ? 'Retiro en tienda'
-          : zoneKnown
-            ? state.zone
-            : 'Municipio por confirmar';
-      const transportePrice =
-        state.entrega === 'retiro'
-          ? 'Sin costo'
-          : zoneKnown
-            ? `$${(zoneFee ?? 0).toFixed(2)}`
-            : 'Por confirmar';
       const note =
         state.entrega === 'retiro'
           ? 'Retiro en tienda · 15% de descuento aplicado.'
-          : !zoneKnown
-            ? 'Transporte por confirmar según tu municipio.'
-            : (zoneFee ?? 0) === 0
-              ? 'Transporte incluido en tu zona.'
-              : `Incluye transporte a ${state.zone}.`;
+          : shippingPendingNow
+            ? 'Envío por confirmar: te lo confirmamos por WhatsApp.'
+            : !zoneKnown
+              ? 'Transporte por confirmar según tu municipio.'
+              : (zoneFee ?? 0) === 0
+                ? 'Transporte incluido en tu zona.'
+                : `Incluye transporte a ${state.zone}.`;
       aside = {
         totalLabel: 'Total estimado',
         totalValue: totalText,
@@ -585,8 +749,10 @@ export default function Cotizador(): ReactElement {
         items: [
           baseItem,
           { name: 'Transporte', detail: transporteDetail, price: transportePrice },
+          ...discountItem,
         ],
         showDeposit: false,
+        previewOffer: total !== null ? payOffer : null,
         ctas: (
           <>
             {siguiente(!zoneKnown)}
@@ -599,22 +765,12 @@ export default function Cotizador(): ReactElement {
       state.step === 'formaPago' ||
       state.step === 'wompi'
     ) {
-      const transporteDetail =
-        state.entrega === 'retiro'
-          ? 'Retiro en tienda'
-          : zoneKnown
-            ? state.zone
-            : 'Municipio por confirmar';
-      const transportePrice =
-        state.entrega === 'retiro'
-          ? 'Sin costo'
-          : zoneKnown
-            ? `$${(zoneFee ?? 0).toFixed(2)}`
-            : 'Por confirmar';
       aside = {
         totalLabel: 'Total estimado',
         totalValue: totalText,
-        note: 'Incluye transporte, cobrado 1 vez por pedido.',
+        note: shippingPendingNow
+          ? 'Envío por confirmar: te lo confirmamos por WhatsApp.'
+          : 'Incluye transporte, cobrado 1 vez por pedido.',
         // S7 — every cart+current item, one row each, then the single
         // order-level transport row (never one row per item — T7.2).
         items: [
@@ -624,8 +780,10 @@ export default function Cotizador(): ReactElement {
             price: it.requiresQuote ? 'Por WhatsApp' : `$${it.subtotal.toFixed(2)}`,
           })),
           { name: 'Transporte', detail: transporteDetail, price: transportePrice },
+          ...discountItem,
         ],
         showDeposit: total !== null,
+        previewOffer: payOffer,
         ctas:
           state.step === 'wompi' ? (
             <span
@@ -652,6 +810,11 @@ export default function Cotizador(): ReactElement {
           </a>
         </div>
       ) : null}
+      {homeOptionsNotice && state.step !== 'producto' ? (
+        <p className="cotizador__home-notice" role="status" data-testid="home-options-notice">
+          Opciones elegidas en el inicio. Puedes cambiarlas.
+        </p>
+      ) : null}
       <div className="cotizador__header">
         {isFirstStep ? (
           <a href="/#inicio" className="cotizador__back">
@@ -672,7 +835,7 @@ export default function Cotizador(): ReactElement {
             }
           </button>
         )}
-        <h2 id="cotizador-page-title" tabIndex={-1} className="cotizador__page-title">
+        <h2 id="cotizador-page-title" tabIndex={-1} className="cotizador__page-title title-gradient">
           {PAGE_TITLES[state.step]}
         </h2>
       </div>
@@ -769,6 +932,25 @@ export default function Cotizador(): ReactElement {
       </div>
 
       <div className="cotizador__form-col">
+        {showOfferBanner && (
+          <div
+            className="online-discount-banner"
+            data-testid="online-discount-banner"
+            data-state={offerApplied ? 'applied' : 'info'}
+            role="status"
+          >
+            <IconCardRect size={22} className="online-discount-banner__icon" />
+            {offerApplied ? (
+              <p className="online-discount-banner__text">
+                <strong>¡10% de descuento aplicado!</strong> Pagando con tarjeta en línea, solo en productos.
+              </p>
+            ) : (
+              <p className="online-discount-banner__text">
+                <strong>10% de descuento pagando con tarjeta en línea.</strong> Aplica a tus productos, no al envío.
+              </p>
+            )}
+          </div>
+        )}
         {state.step === 'producto' && (
           <Step0Producto
             asideTarget={selAsideEl}
@@ -805,6 +987,7 @@ export default function Cotizador(): ReactElement {
             product={product}
             state={state}
             quote={quote}
+            payOffer={payOffer}
             onNext={next}
             onEditMedidas={() => goToStep('medidas')}
           />
@@ -817,8 +1000,11 @@ export default function Cotizador(): ReactElement {
             items={orderItems}
             zoneFee={zoneFee}
             total={total}
+            payOffer={payOffer}
+            shippingPending={shippingPendingNow}
             onEntregaChange={(entrega) => dispatch({ type: 'SET_ENTREGA', entrega })}
-            onZoneChange={(zone) => dispatch({ type: 'SET_ZONE', zone })}
+            onAddressChange={(field, value) => dispatch({ type: 'SET_ADDRESS_FIELD', field, value })}
+            onGeoChange={(geo) => dispatch({ type: 'SET_ADDRESS_GEO', geo })}
             onNext={next}
           />
         )}
@@ -829,6 +1015,9 @@ export default function Cotizador(): ReactElement {
             items={orderItems}
             zoneFee={zoneFee}
             total={total}
+            onlineDiscount={onlineDiscount}
+            payOffer={payOffer}
+            shippingPending={shippingPending}
             onNext={next}
             onEditZone={() => goToStep('zonaEntrega')}
             onAddAnother={addToCart}
@@ -844,6 +1033,8 @@ export default function Cotizador(): ReactElement {
             quote={quote}
             zoneFee={zoneFee}
             total={total}
+            itemsSubtotal={orderItemsSubtotal(orderItems)}
+            shippingPending={shippingPending}
             dispatch={dispatch}
             onNext={next}
             asideCtaTarget={portalCtaEl}
@@ -855,6 +1046,8 @@ export default function Cotizador(): ReactElement {
             quote={quote}
             zoneFee={zoneFee}
             total={total}
+            onlineDiscount={onlineDiscount}
+            shippingPending={shippingPending}
             dispatch={dispatch}
             onNext={next}
           />
@@ -866,6 +1059,8 @@ export default function Cotizador(): ReactElement {
             quote={quote}
             zoneFee={zoneFee}
             total={total}
+            onlineDiscount={onlineDiscount}
+            shippingPending={shippingPending}
             onRetry={() => goToStep('wompi')}
           />
         )}
@@ -913,6 +1108,7 @@ export default function Cotizador(): ReactElement {
               </li>
             ))}
           </ul>
+          <OnlineDiscountPreview offer={aside.previewOffer ?? null} testId="aside-online-discount-preview" />
           {aside.showDeposit && (
             <div className="cotizador-aside__deposit">
               <div className="cotizador-aside__deposit-row">

@@ -1,0 +1,681 @@
+---
+// Navbar fijo (spec 02-design/specs/navbar-fijo-estructura-inco-spec.md; boards 01d).
+// Sustituye TopBar + Drawer. variant="full": 4 enlaces + Compra YA! + Cotizar + WhatsApp (el telefono vive en el footer y en /contacto).
+// variant="compact" (/cotizador): logo, "Volver al catalogo", WhatsApp.
+// Sin JS queda en estado top, fijo, con todos los enlaces funcionando.
+// Sobre azul noche (tokens on-dark). Incluye el item "Compra YA! 10% de descuento" (CTA ambar) hacia /cotizador?oferta=online10.
+import { buildWaLink } from '@integrations/whatsapp/waLink';
+import { getActivePromotions } from '@content/promotions';
+
+interface Props {
+  variant?: 'full' | 'compact';
+}
+const { variant = 'full' } = Astro.props;
+const waHref = buildWaLink();
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const hasPromos = getActivePromotions().length > 0;
+// "Compra YA!" abre el cotizador con el 10% en linea ya aplicado (el cotizador lee ?oferta=online10).
+const DEAL_HREF = '/cotizador?oferta=online10';
+
+const CATALOG_MENU = [
+  { label: 'Ventanas', href: '/#ventanas' },
+  { label: 'Puertas de jardín', href: '/#puertas-de-jardin' },
+  { label: 'Puertas de baño', href: '/#puertas-de-bano' },
+  { label: 'Ver todo el catálogo', href: '/#catalogo' },
+] as const;
+
+const LINKS = [
+  { id: 'catalogo', label: 'Catálogo', href: '/#catalogo', show: true, menu: true },
+  { id: 'promociones', label: 'Promociones', href: '/#promociones', show: hasPromos, menu: false },
+  { id: 'nosotros', label: 'Nosotros', href: '/nosotros', show: true, menu: false },
+  { id: 'contacto', label: 'Contacto', href: '/contacto', show: true, menu: false },
+].filter((l) => l.show);
+
+const isPage = (href: string) => !href.includes('#') && path === href;
+const WA_PATH = 'M4.5 19.5l1.2-3.6a8 8 0 1 1 2.9 2.6z';
+const WA_PATH2 = 'M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4-2.4l.9-1-1-1.8z';
+---
+
+<a class="skip-link" href="#main">Saltar al contenido</a>
+<div class="nav-sentinel" data-nav-sentinel aria-hidden="true"></div>
+
+<header class={`nav nav--${variant}`} data-nav data-variant={variant} data-scrolled="false" data-kbd="false">
+  <div class="nav__inner">
+    <a href="/" class="nav__logo" aria-label="ALCUSA, inicio">
+      <img src="/images/logo-mark-tienda.webp" alt="" width="30" height="30" class="nav__logo-img" />
+      <span class="nav__brand">Alcusa</span>
+    </a>
+
+    {
+      variant === 'full' ? (
+        <nav class="nav__links" aria-label="Principal" data-nav-links>
+          <ul class="nav__list">
+            <li class="nav__item nav__item--deal" data-nav-item="deal">
+              {/* Nombre accesible = texto completo siempre: lo que se acorta por ancho queda solo-lector (sr-only). */}
+              <a href={DEAL_HREF} class="nav__deal" data-nav-deal>
+                <span class="nav__deal-text">
+                  <span class="nav__deal-hot">Compra YA!</span> 10%<span class="nav__deal-x1"> de descuento</span>
+                  <span class="nav__deal-x2"> al hacer tu compra</span> en línea
+                </span>
+              </a>
+            </li>
+            {LINKS.map((l) => (
+              <li class="nav__item" data-nav-item={l.id}>
+                <a
+                  href={l.href}
+                  class="nav__link"
+                  data-nav-link={l.id}
+                  aria-current={isPage(l.href) ? 'page' : undefined}
+                >
+                  {l.label}
+                </a>
+                {l.menu && (
+                  <>
+                    <button
+                      type="button"
+                      class="nav__chev"
+                      aria-haspopup="true"
+                      aria-expanded="false"
+                      aria-controls="nav-catalog-menu"
+                      aria-label="Abrir categorías del catálogo"
+                      data-nav-chev
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width:2">
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
+                    </button>
+                    <ul class="nav__menu" id="nav-catalog-menu" data-nav-menu hidden>
+                      {CATALOG_MENU.map((m) => (
+                        <li>
+                          <a href={m.href} class="nav__menu-link">
+                            {m.label}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ) : (
+        <a href="/#catalogo" class="nav__back" aria-label="Volver al catálogo">
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          <span class="nav__back-label">Volver al catálogo</span>
+        </a>
+      )
+    }
+
+    <div class="nav__actions">
+      <a href={waHref} class="nav__wa" aria-label="Escribir por WhatsApp al 7680-2410">
+        <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+          <path d={WA_PATH}></path><path d={WA_PATH2}></path>
+        </svg>
+        <span class="nav__wa-label">WhatsApp</span>
+      </a>
+      {variant === 'full' && <a href="/cotizador" class="nav__cta">Cotizar</a>}
+    </div>
+  </div>
+</header>
+
+<script>
+  import './navbar';
+</script>
+
+<style is:global>
+  :root {
+    --nav-h: var(--nav-h-top-sm);
+    --nav-offset: var(--nav-h-top-sm);
+    --nav-spacer: calc(var(--nav-h-top-sm) + env(safe-area-inset-top, 0px));
+    --anchor-offset: var(--anchor-offset-sm);
+  }
+  :root:has(.nav--compact) {
+    --nav-offset: var(--nav-h-compact-sm);
+    --nav-spacer: calc(var(--nav-h-compact-sm) + env(safe-area-inset-top, 0px));
+  }
+  @media (min-width: 1024px) {
+    :root {
+      --nav-offset: var(--nav-h-top-lg);
+      --nav-spacer: calc(var(--nav-h-top-lg) + env(safe-area-inset-top, 0px));
+      --anchor-offset: var(--anchor-offset-lg);
+    }
+    :root:has(.nav--compact) {
+      --nav-offset: var(--nav-h-compact-lg);
+      --nav-spacer: calc(var(--nav-h-compact-lg) + env(safe-area-inset-top, 0px));
+    }
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+  body {
+    padding-top: var(--nav-spacer);
+  }
+  /* Anclas: el encabezado no queda tapado por el navbar (+ tabs en >= 1024). */
+  [id] {
+    scroll-margin-top: var(--anchor-offset);
+  }
+  :root:has(.nav--compact) [id] {
+    scroll-margin-top: var(--nav-offset);
+  }
+  main:focus {
+    outline: none;
+  }
+
+  .skip-link {
+    position: fixed;
+    top: var(--space-2);
+    left: var(--space-2);
+    z-index: var(--z-skip-link);
+    display: inline-flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--color-primary);
+    color: var(--color-surface);
+    font: var(--font-weight-body-bold) 15px/20px var(--font-family-body);
+    text-decoration: none;
+    transform: translateY(-200%);
+  }
+  .skip-link:focus {
+    transform: none;
+    box-shadow: var(--shadow-focus);
+    outline: none;
+  }
+
+  .nav-sentinel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 8px;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .nav {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: var(--z-nav);
+    padding-top: env(safe-area-inset-top, 0px);
+    background: var(--color-surface-dark);
+    color: var(--color-text-on-dark);
+    box-shadow: inset 0 -1px 0 var(--color-line-on-dark);
+    transition:
+      height var(--motion-duration-base) cubic-bezier(0.2, 0, 0, 1),
+      box-shadow var(--motion-duration-base) cubic-bezier(0.2, 0, 0, 1),
+      transform 150ms cubic-bezier(0.2, 0, 0, 1),
+      visibility 0s linear 0s;
+    font-family: var(--font-family-body);
+  }
+  .nav[data-scrolled='true'] {
+    box-shadow:
+      inset 0 -1px 0 var(--color-line-on-dark),
+      var(--shadow-nav-dark);
+  }
+  .nav[data-kbd='true'] {
+    transform: translateY(-100%);
+    visibility: hidden;
+    transition:
+      transform 150ms cubic-bezier(0.2, 0, 0, 1),
+      visibility 0s linear 150ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav {
+      transition: none;
+    }
+  }
+
+  .nav__inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 56px 44px;
+    grid-template-areas: 'logo actions' 'links links';
+    align-items: center;
+    padding: 0 max(var(--space-4), env(safe-area-inset-right, 0px)) 0 max(var(--space-4), env(safe-area-inset-left, 0px));
+    height: var(--nav-h-top-sm);
+    min-width: 0;
+    transition: height var(--motion-duration-base) cubic-bezier(0.2, 0, 0, 1);
+  }
+  .nav[data-scrolled='true'] .nav__inner {
+    height: var(--nav-h-scrolled-sm);
+    grid-template-rows: 48px 44px;
+  }
+  .nav--compact .nav__inner {
+    height: var(--nav-h-compact-sm);
+    grid-template-rows: 56px;
+    grid-template-columns: 44px 1fr auto;
+    grid-template-areas: 'back logo actions';
+  }
+
+  .nav__logo {
+    grid-area: logo;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    color: var(--color-text-on-dark);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+  }
+  .nav__logo-img {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+  }
+  .nav__brand {
+    font-family: var(--font-family-display);
+    font-weight: var(--font-weight-display-semibold);
+    font-size: 24px;
+    line-height: 1;
+    transition: font-size var(--motion-duration-base) cubic-bezier(0.2, 0, 0, 1);
+  }
+  .nav[data-scrolled='true'] .nav__brand {
+    font-size: 22px;
+  }
+
+  .nav__links {
+    grid-area: links;
+    min-width: 0;
+  }
+  .nav__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: var(--space-1);
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-padding-inline: var(--space-4);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 16px), transparent);
+  }
+  .nav__list::-webkit-scrollbar {
+    display: none;
+  }
+  .nav__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: none;
+  }
+  .nav__link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    height: 44px;
+    min-width: 44px;
+    padding: 0 12px;
+    border-radius: var(--radius-full);
+    color: var(--color-text-on-dark);
+    font: var(--font-weight-body-bold) 14px/20px var(--font-family-body);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .nav__link:hover {
+    background: var(--color-surface-dark-raised);
+    color: var(--color-text-on-dark);
+  }
+  .nav__link[aria-current='page'],
+  .nav__link[aria-current='true'] {
+    color: var(--color-text-on-dark);
+  }
+  .nav__link[aria-current='page']::after,
+  .nav__link[aria-current='true']::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 4px;
+    height: 2px;
+    background: var(--color-accent-on-dark);
+    border-radius: 2px;
+  }
+  .nav__chev,
+  .nav__menu {
+    display: none;
+  }
+
+  .nav__actions {
+    grid-area: actions;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .nav__wa {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--color-whatsapp-strong);
+    color: var(--color-surface);
+    text-decoration: none;
+    font: var(--font-weight-body-bold) 15px/20px var(--font-family-body);
+  }
+  .nav__wa:hover {
+    background: var(--color-whatsapp-strong-hover);
+  }
+  .nav__wa-label {
+    display: none;
+  }
+  .nav__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 44px;
+    padding: 0 18px;
+    border-radius: var(--radius-full);
+    background: var(--color-text-on-dark);
+    color: var(--color-surface-dark);
+    font: var(--font-weight-body-bold) 15px/20px var(--font-family-body);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .nav__cta:hover {
+    background: var(--color-accent-on-dark);
+  }
+  .nav__cta:active {
+    background: var(--color-text-on-dark-muted);
+  }
+
+  .nav__back {
+    grid-area: back;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--color-text-on-dark);
+    border-radius: var(--radius-full);
+    text-decoration: none;
+  }
+  .nav__back-label {
+    display: none;
+  }
+  .nav--compact .nav__logo {
+    grid-area: logo;
+    justify-self: start;
+  }
+
+  .nav a:focus-visible,
+  .nav button:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus-on-dark);
+  }
+
+  /* CTA "Compra YA!": pastilla ambar (AAA con tinta noche). El texto largo se recorta por ancho; el nombre accesible
+     siempre es el texto completo. <1024: chip compacto "Compra YA! 10% en línea" (primero de la fila de enlaces). */
+  .nav__item--deal {
+    margin-right: var(--space-1);
+  }
+  .nav__deal {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: var(--radius-full);
+    background: var(--color-deal);
+    color: var(--color-on-deal);
+    font: 800 13px/16px var(--font-family-body);
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.12),
+      0 6px 18px rgba(255, 176, 32, 0.28);
+  }
+  .nav__deal:hover {
+    background: var(--color-deal-hover);
+  }
+  .nav__deal:active {
+    background: var(--color-deal-active);
+  }
+  .nav__deal-hot {
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+  .nav__deal-x1,
+  .nav__deal-x2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  @media (forced-colors: active) {
+    .nav__deal {
+      border: 2px solid ButtonText;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .nav__inner,
+    .nav[data-scrolled='true'] .nav__inner {
+      display: flex;
+      gap: var(--space-8);
+      padding: 0 var(--space-8);
+      height: var(--nav-h-top-lg);
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+    .nav[data-scrolled='true'] .nav__inner {
+      height: var(--nav-h-scrolled-lg);
+    }
+    .nav--compact .nav__inner,
+    .nav--compact[data-scrolled='true'] .nav__inner {
+      height: var(--nav-h-compact-lg);
+    }
+    .nav__brand {
+      font-size: 28px;
+    }
+    .nav[data-scrolled='true'] .nav__brand {
+      font-size: 26px;
+    }
+    .nav__links {
+      flex: 1;
+      display: flex;
+      justify-content: flex-start;
+    }
+    .nav__list {
+      overflow: visible;
+      gap: var(--space-1);
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+    .nav__link {
+      font-size: 15px;
+      padding: 0 14px;
+    }
+    .nav__link[aria-current='page']::after,
+    .nav__link[aria-current='true']::after {
+      left: 14px;
+      right: 14px;
+    }
+    .nav__chev {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      margin-left: -10px;
+      border: 0;
+      border-radius: var(--radius-full);
+      background: transparent;
+      color: var(--color-text-on-dark);
+      cursor: pointer;
+    }
+    .nav__chev:hover {
+      background: var(--color-surface-dark-raised);
+      color: var(--color-text-on-dark);
+    }
+    .nav__chev[aria-expanded='true'] svg {
+      transform: rotate(180deg);
+    }
+    .nav__menu {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 280px;
+      margin: 0;
+      padding: var(--space-2);
+      list-style: none;
+      background: var(--color-surface-dark-raised);
+      border: 1px solid var(--color-line-on-dark);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-nav-dark);
+      z-index: 2;
+    }
+    .nav__menu:not([hidden]) {
+      display: block;
+    }
+    /* puente de 8 px para que el puntero llegue al panel sin cerrarlo */
+    .nav__menu::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: -8px;
+      height: 8px;
+    }
+    .nav__menu-link {
+      display: flex;
+      align-items: center;
+      height: 44px;
+      padding: 0 var(--space-3);
+      border-radius: var(--radius-sm);
+      color: var(--color-text-on-dark);
+      font: 600 15px/20px var(--font-family-body);
+      text-decoration: none;
+    }
+    .nav__menu-link:hover {
+      background: var(--color-line-on-dark);
+      color: var(--color-text-on-dark);
+    }
+    .nav__actions {
+      gap: var(--space-3);
+    }
+    .nav__cta {
+      height: 48px;
+      padding: 0 22px;
+    }
+    .nav[data-scrolled='true'] .nav__cta {
+      height: 44px;
+    }
+    .nav__back {
+      width: auto;
+      gap: var(--space-2);
+      padding: 0 var(--space-3);
+      font: 600 15px/20px var(--font-family-body);
+      margin-right: auto;
+    }
+    .nav__back:hover {
+      background: var(--color-surface-dark-raised);
+      color: var(--color-text-on-dark);
+    }
+    .nav__back-label {
+      display: inline;
+    }
+    .nav--compact .nav__logo {
+      order: -1;
+    }
+  }
+  /* Hover del navbar (receta del sitio): transicion suave de color/relleno; sin movimiento. */
+  @media (hover: hover) and (pointer: fine) {
+    .nav__link,
+    .nav__chev,
+    .nav__cta,
+    .nav__deal,
+    .nav__wa,
+    .nav__back,
+    .nav__menu-link {
+      transition:
+        background-color var(--hover-dur) var(--hover-ease),
+        color var(--hover-dur) var(--hover-ease);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav__link,
+    .nav__chev,
+    .nav__cta,
+    .nav__deal,
+    .nav__wa,
+    .nav__back,
+    .nav__menu-link {
+      transition: none;
+    }
+  }
+  @media (min-width: 1024px) {
+    .nav__item--deal {
+      margin-right: var(--space-3);
+    }
+  }
+  /* 1024-1279: el chip queda corto ("Compra YA! 10% en línea") y la barra se compacta para que nada se solape. */
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    .nav__inner,
+    .nav[data-scrolled='true'] .nav__inner {
+      gap: var(--space-4);
+      padding: 0 var(--space-6);
+    }
+    .nav__link {
+      padding: 0 11px;
+    }
+    .nav__link[aria-current='page']::after,
+    .nav__link[aria-current='true']::after {
+      left: 11px;
+      right: 11px;
+    }
+    .nav__item--deal {
+      margin-right: var(--space-1);
+    }
+  }
+  @media (min-width: 1280px) {
+    .nav__deal-x1 {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+    }
+  }
+  @media (min-width: 1360px) {
+    .nav__deal {
+      white-space: normal;
+      min-height: 44px;
+      font-size: 12px;
+      line-height: 15px;
+    }
+    .nav__deal-text {
+      max-width: 214px;
+      text-wrap: balance;
+    }
+    .nav__deal-x2 {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      clip: auto;
+      white-space: normal;
+    }
+  }
+  @media (min-width: 1200px) {
+    .nav__wa {
+      width: auto;
+      padding: 0 var(--space-4);
+    }
+    .nav__wa-label {
+      display: inline;
+    }
+  }
+</style>

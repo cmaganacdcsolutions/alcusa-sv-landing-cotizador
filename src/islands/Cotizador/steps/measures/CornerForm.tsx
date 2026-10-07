@@ -1,6 +1,5 @@
 import type { Dispatch, ReactElement } from 'react';
 import type { CatalogProduct } from '@content/catalog';
-import type { AluminumColor, CornerModel } from '@engine/pricing';
 import {
   CORNER_MODEL_LABELS,
   COLOR_LABELS,
@@ -9,14 +8,8 @@ import {
 } from '../../state/cotizadorStore';
 import type { QuoteResult } from '../../state/quote';
 import { IconArrowRight, IconWarningTriangle } from '../../icons';
-
-// Corner (only Natural/Bronce — no Blanco option rendered at all, T5.1 AC).
-const COLORS: { id: AluminumColor; dot: string }[] = [
-  { id: 'natural', dot: '#c9ced6' },
-  { id: 'bronce', dot: '#7a5a3a' },
-];
-
-const MODELS: CornerModel[] = ['aquaclara', 'frosted', 'aquafold'];
+import { ColorSwatch, CornerSwatch } from './glassSwatches';
+import { CORNER_COLORS, CORNER_MODELS } from './finishOptions';
 
 export interface CornerFormProps {
   product: CatalogProduct;
@@ -43,7 +36,7 @@ export default function CornerForm({ product, state, dispatch, quote, onNext }: 
       <div className="field">
         <span className="field__label">Modelo</span>
         <div className="chip-row" role="group" aria-label="Modelo">
-          {MODELS.map((m) => (
+          {CORNER_MODELS.map((m) => (
             <button
               key={m}
               type="button"
@@ -51,6 +44,7 @@ export default function CornerForm({ product, state, dispatch, quote, onNext }: 
               aria-pressed={state.cornerModel === m}
               onClick={() => dispatch({ type: 'SET_CORNER_MODEL', model: m })}
             >
+              <CornerSwatch model={m} />
               {CORNER_MODEL_LABELS[m]}
             </button>
           ))}
@@ -60,16 +54,16 @@ export default function CornerForm({ product, state, dispatch, quote, onNext }: 
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color del aluminio</span>
         <div className="chip-row" role="group" aria-label="Color del aluminio">
-          {COLORS.map((c) => (
+          {CORNER_COLORS.map((c) => (
             <button
-              key={c.id}
+              key={c}
               type="button"
               className="chip"
-              aria-pressed={state.color === c.id}
-              onClick={() => dispatch({ type: 'SET_COLOR', color: c.id })}
+              aria-pressed={state.color === c}
+              onClick={() => dispatch({ type: 'SET_COLOR', color: c })}
             >
-              <span className="chip__dot" style={{ background: c.dot }} />
-              {COLOR_LABELS[c.id]}
+              <ColorSwatch color={c} />
+              {COLOR_LABELS[c]}
             </button>
           ))}
         </div>

@@ -9,7 +9,9 @@ export interface Money {
 // STRAIGHT ("Puerta de baño recta") — Slice 1 scope. Other products (corner,
 // tempered, hinged, windows, garden) land in Slice 2 in the same shape.
 export type AluminumColor = 'natural' | 'blanco' | 'bronce';
-export type StraightGlass = 'claro' | 'nevado' | 'decorado' | 'mallado' | 'duplex';
+export type BaseGlass = 'claro' | 'nevado' | 'decorado' | 'mallado' | 'duplex';
+/** Recta adds the promo "Aquafold" glass (flyer oficial, $279.99). */
+export type StraightGlass = BaseGlass | 'aquafold';
 
 export interface StraightPriceInput {
   widthCm: number;

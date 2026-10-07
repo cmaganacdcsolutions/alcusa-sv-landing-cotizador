@@ -1,0 +1,103 @@
+---
+// Tabs de categoria (spec home-catalogo-completo §8 + navbar §2.4): sticky solo >= 1024.
+const TABS = [
+  { id: 'ventanas', label: 'Ventanas' },
+  { id: 'puertas-de-jardin', label: 'Puertas de jardín' },
+  { id: 'puertas-de-bano', label: 'Puertas de baño' },
+] as const;
+---
+
+<nav class="ctabs" aria-label="Categorías" data-ctabs>
+  <ul class="ctabs__list">
+    {
+      TABS.map((t) => (
+        <li>
+          <a class="ctabs__link" href={`#${t.id}`} data-tab={t.id}>
+            {t.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style is:global>
+  .ctabs {
+    background: transparent;
+    border-bottom: 1px solid var(--color-line-on-dark);
+    padding: var(--space-3) var(--space-4);
+  }
+  .ctabs__list {
+    list-style: none;
+    margin: 0 auto;
+    padding: 0 0 0 0;
+    max-width: 1240px;
+    display: flex;
+    justify-content: center;
+    gap: var(--space-2);
+    overflow-x: auto;
+    min-width: 0;
+    scrollbar-width: none;
+  }
+  .ctabs__list::-webkit-scrollbar {
+    display: none;
+  }
+  .ctabs__link {
+    display: inline-flex;
+    align-items: center;
+    height: 44px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: 600 14px/20px var(--font-family-body);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .ctabs__link[aria-current='true'] {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-surface);
+  }
+  /* Hover como .nav__link:hover: relleno noche elevado + texto blanco, sin movimiento. */
+  @media (hover: hover) and (pointer: fine) {
+    .ctabs__link {
+      transition:
+        background-color var(--hover-dur) var(--hover-ease),
+        border-color var(--hover-dur) var(--hover-ease),
+        color var(--hover-dur) var(--hover-ease);
+    }
+    .ctabs__link:not([aria-current='true']):hover {
+      background: var(--color-surface-dark-raised);
+      border-color: var(--color-line-on-dark);
+      color: var(--color-text-on-dark);
+    }
+    .ctabs__link[aria-current='true']:hover {
+      background: color-mix(in srgb, var(--color-primary) 88%, white);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ctabs__link {
+      transition: none;
+    }
+  }
+  .ctabs__link:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus-on-dark);
+  }
+  @media (min-width: 768px) {
+    .ctabs { padding-inline: var(--space-6); }
+  }
+  @media (min-width: 1024px) {
+    .ctabs__list { padding-inline: var(--space-8); }
+    .ctabs {
+      position: sticky;
+      background: var(--color-surface-dark);
+      top: var(--nav-h-scrolled-lg);
+      z-index: var(--z-nav-tabs);
+      padding: 6px 0;
+      height: 56px;
+    }
+  }
+</style>

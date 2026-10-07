@@ -71,7 +71,9 @@
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: 50% 50%;
+  background: var(--color-surface-tint);
   display: block;
   flex-shrink: 0;
 }
@@ -257,23 +259,15 @@
   background: var(--color-surface-tint);
 }
 
-/* Swatch box: background is either a photo (claro/nevado/decorado) or a
-   flat/patterned CSS background (mallado/duplex) set inline by
-   steps/measures/glassSwatches.tsx's <GlassSwatch>, copied from the boards'
-   `g.swatch` value. */
+/* Swatch box: flat/patterned CSS background set inline by
+   steps/measures/glassSwatches.tsx's <GlassSwatch> (same circles as the home's
+   `.pcard__sw`; no photos). */
 .glass-chip__swatch {
   position: relative;
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  display: block;
-}
-
-.glass-chip__swatch-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
   display: block;
 }
 
@@ -334,10 +328,6 @@
     box-shadow var(--motion-duration-fast) var(--motion-ease-ui);
 }
 
-.model-card:hover {
-  border-color: var(--color-accent);
-}
-
 .model-card:active {
   background: var(--color-surface-tint);
 }
@@ -366,10 +356,10 @@
 .model-card__image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: 50% 50%;
   display: block;
-  /* object-position is set inline per model (windowModelImages.ts) — SIN
-     TOKEN, image focus, not a brand value. */
+  /* photos are whole: contain + centered (image-frame-rule.md) */
 }
 
 .model-card__fallback {
@@ -457,15 +447,25 @@
 
 .estimate-card__head {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 12px;
+}
+
+/* Real preview: full card width (3:2 -> ~240px tall at 390), contain + ambient. */
+.estimate-card__preview {
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
 .estimate-card__image {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  object-fit: cover;
+  object-fit: contain;
+  object-position: 50% 50%;
+  background: var(--color-surface-tint);
   display: block;
   flex-shrink: 0;
 }
@@ -493,8 +493,9 @@
 .estimate-card__edit-link {
   align-self: flex-start;
   min-height: 28px;
-  margin-top: 2px;
-  padding: 0;
+  margin: 2px 0 0 -8px;
+  padding: 0 8px; /* pildora de hover; el margen negativo mantiene el texto en su sitio */
+  border-radius: var(--radius-sm);
   border: 0;
   background: none;
   display: flex;
@@ -550,9 +551,14 @@
     min-width: 0;
   }
 
-  .estimate-card__image {
-    width: 72px;
-    height: 72px;
+  .estimate-card__head {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .estimate-card__preview {
+    width: 176px;
+    flex: none;
   }
 
   .estimate-card__name {
@@ -667,5 +673,100 @@
 
   .window-row__index {
     grid-column: 1 / -1;
+  }
+}
+
+/* ---------- Finish swatches: circles for every colour / glass option ------
+   Decorative (aria-hidden). The ring is an ::after overlay so "blanco" and
+   pale glasses keep a visible edge on the white card; the selected option
+   adds an accent ring outside the circle. */
+.swatch {
+  position: relative;
+  display: block;
+  flex: none;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+}
+
+.swatch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--color-border-input);
+  pointer-events: none;
+}
+
+button[aria-pressed='true'] > .swatch {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.chip__swatch {
+  width: 28px;
+  height: 28px;
+}
+
+.glass-chip__swatch {
+  border-radius: var(--radius-full);
+}
+
+.glass-chip {
+  min-height: 44px;
+}
+
+@media (min-width: 1024px) {
+  .chip__swatch {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ---------- Hover de botones (pedido 2026-10-06, 'como el del navbar') ----------
+   Fichas/chips: borde -> acento + relleno claro; la ficha seleccionada conserva su aro y su tinte. Sin sombra. */
+@media (hover: hover) and (pointer: fine) {
+  .product-card,
+  .chip,
+  .glass-chip,
+  .model-card,
+  .estimate-card__edit-link,
+  .window-row__remove,
+  .row-add-btn {
+    transition:
+      background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      border-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+      color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
+  }
+  .product-card:hover:not([aria-pressed='true']):not(:disabled),
+  .chip:hover:not([aria-pressed='true']):not(:disabled),
+  .glass-chip:hover:not([aria-pressed='true']):not(:disabled),
+  .model-card:hover:not([aria-pressed='true']):not(:disabled) {
+    border-color: var(--color-accent);
+    background: var(--cotizador-hover-fill);
+  }
+  .estimate-card__edit-link:hover {
+    background: var(--cotizador-hover-tint);
+    color: var(--color-primary-active);
+  }
+  .window-row__remove:hover:not(:disabled) {
+    background: var(--color-error-bg);
+    border-color: var(--color-error-border);
+    color: var(--color-error-mobile);
+  }
+  .row-add-btn:hover:not(:disabled) {
+    background: var(--cotizador-hover-tint);
+    border-color: var(--color-accent);
+    color: var(--color-primary-active);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-card,
+  .chip,
+  .glass-chip,
+  .model-card,
+  .estimate-card__edit-link,
+  .window-row__remove,
+  .row-add-btn {
+    transition: none;
   }
 }

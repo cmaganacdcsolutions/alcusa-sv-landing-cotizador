@@ -19,7 +19,16 @@
     "server:test": "npm --prefix server test",
     "server:build": "npm --prefix server run build",
     "pretest:e2e": "node scripts/build-e2e-fixtures.mjs",
-    "test:e2e:http": "node scripts/build-e2e-http.mjs && playwright test --config=playwright.http.config.ts"
+    "test:e2e:http": "node scripts/build-e2e-http.mjs && playwright test --config=playwright.http.config.ts",
+    "test:smoke": "playwright test --config=playwright.smoke.config.ts",
+    "test:visual": "npm run test:e2e -- visual- --project=ios390 --project=desktop1920",
+    "test:visual:update": "npm run test:e2e -- visual- --project=ios390 --project=desktop1920 --update-snapshots",
+    "test:golden:update": "npm run test:e2e -- cotizador-golden --project=desktop1920 --update-snapshots",
+    "verify": "node scripts/verify.mjs full",
+    "verify:quick": "node scripts/verify.mjs quick",
+    "verify:area": "node scripts/verify.mjs area",
+    "verify:suggest": "node scripts/suggest-areas.mjs",
+    "hooks:install": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "@astrojs/react": "7.0.0",

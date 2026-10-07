@@ -1,0 +1,5 @@
+#!/bin/sh
+# pre-push: regression gate (lint, typecheck, unit, @critical e2e). Install: npm run hooks:install
+# Needs Node >= 22 on PATH (this project uses Node 24; see CLAUDE.md).
+echo "[pre-push] npm run verify:quick"
+npm run verify:quick || { echo "[pre-push] verify:quick fallo: push cancelado. Arreglalo (no uses --no-verify sin permiso del usuario)."; exit 1; }

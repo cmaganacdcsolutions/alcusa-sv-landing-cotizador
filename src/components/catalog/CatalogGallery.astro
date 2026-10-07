@@ -1,7 +1,7 @@
 ---
-// Extra photos of a category/product. Frames reserve their aspect ratio
-// (PhotoFrame) so lazy loading causes no layout shift. Renders nothing if empty.
-import PhotoFrame from '@components/PhotoFrame';
+// Extra photos of a category/product, rendered with the shared PhotoCarousel.
+// Renders nothing if empty.
+import PhotoCarousel from '@components/catalog/PhotoCarousel.astro';
 import type { CatalogImage } from '@content/catalogContent';
 
 interface Props {
@@ -13,67 +13,37 @@ const { images, label } = Astro.props;
 
 {
   images && images.length > 0 && (
-    <section class="cat-gallery" aria-label={label} data-testid="catalogo-galeria">
-      <h2 class="cat-gallery__title">{label}</h2>
-      <ul class="cat-gallery__list">
-        {images.map((img) => (
-          <li class="cat-gallery__item">
-            <PhotoFrame
-              className="cat-gallery__frame"
-              src={img.src}
-              alt={img.alt}
-              width={img.width}
-              height={img.height}
-              ratio="4/5"
-              fit={img.objectPosition ? 'cover' : 'contain'}
-              objectPosition={img.objectPosition}
-              style={{ maxWidth: `${img.width}px` }}
-              loading="lazy"
-            />
-          </li>
-        ))}
-      </ul>
+    <section class="cat-gal" aria-label={label} data-testid="catalogo-galeria">
+      <h2 class="cat-gal__title">{label}</h2>
+      <PhotoCarousel images={images} label={label} />
     </section>
   )
 }
 
 <style is:global>
-  .cat-gallery {
-    margin: var(--space-6) var(--cat-gutter) 0;
+  /* Un solo envoltorio para todas las instancias (indice, categoria, producto). */
+  .cat-gal {
+    margin: var(--space-8) var(--cat-gutter) 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    min-width: 0;
   }
-  .cat-gallery__title {
+  .cat-gal__title {
     margin: 0;
     font-family: var(--font-family-display);
     font-weight: var(--font-weight-display-medium);
     font-size: 24px; /* TODO(token) */
     line-height: 1.2;
-  }
-  .cat-gallery__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-3);
-  }
-  .cat-gallery__item {
-    margin: 0;
-  }
-  /* Never wider than the file's native width (no upscaling blur); centered in the cell. */
-  .cat-gallery__frame {
-    margin-inline: auto;
-    border-radius: var(--radius-xl);
+    text-align: center;
   }
   @media (min-width: 900px) {
-    .cat-gallery {
+    .cat-gal {
       margin: var(--space-10) 0 0;
-    }
-    .cat-gallery__list {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: var(--space-4);
+    }
+    .cat-gal__title {
+      font-size: 32px; /* TODO(token) */
     }
   }
 </style>

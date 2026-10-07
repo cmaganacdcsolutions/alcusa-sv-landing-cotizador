@@ -1,0 +1,127 @@
+/* Descuento 10% pagando con tarjeta en linea (oferta del navbar `?oferta=online10`).
+   Solo tokens (tokens.css). Banner oscuro (azul noche elevado + acento ambar del "Compra YA!") dentro de la
+   hoja clara del formulario: la rejilla de escritorio solo tiene celdas explicitas, un hijo directo de
+   `.cotizador` caeria en una fila implicita al final. Linea de vista previa / filas de la oferta: tinta sobre
+   superficie clara (los pasos asumen fondo claro). */
+
+/* ---------- Banner (producto -> forma de pago) ---------- */
+.online-discount-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2-5) var(--space-3);
+  border: 1px solid var(--color-line-on-dark);
+  border-left: 4px solid var(--color-deal);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-dark-raised);
+  color: var(--color-text-on-dark);
+  font-size: var(--font-size-body-sm-mobile);
+  line-height: 1.4;
+}
+
+.online-discount-banner__icon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--color-deal);
+}
+
+.online-discount-banner__text {
+  margin: 0;
+  min-width: 0;
+  color: var(--color-text-on-dark-muted);
+}
+
+.online-discount-banner__text strong {
+  color: var(--color-text-on-dark);
+  font-weight: var(--font-weight-body-bold);
+}
+
+/* Aplicada: el titular toma el ambar de la oferta. */
+.online-discount-banner[data-state='applied'] .online-discount-banner__text strong {
+  color: var(--color-deal);
+}
+
+@media (min-width: 1024px) {
+  .online-discount-banner {
+    /* El formulario de escritorio es flex con gap propio: sin margen extra. */
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-3-5);
+  }
+
+  .online-discount-banner__icon {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ---------- Vista previa: "Pagando con tarjeta en linea: $X (-10%)" ---------- */
+.online-discount-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: var(--font-weight-body-bold);
+}
+
+.online-discount-preview__icon {
+  flex: none;
+}
+
+/* En el aside la linea alinea con las filas (padding lateral de la tarjeta). */
+.cotizador-aside .online-discount-preview {
+  margin: var(--space-3) var(--space-8) 0;
+}
+
+/* ---------- Oferta aplicada en Precio (dentro de .estimate-card) ---------- */
+.estimate-card__offer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink);
+}
+
+.estimate-card__offer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.estimate-card__offer-row > span:last-child {
+  font-weight: var(--font-weight-body-bold);
+  white-space: nowrap;
+}
+
+.estimate-card__offer-row--total > span:last-child {
+  font-family: var(--font-family-display);
+  font-size: 1.25rem;
+  color: var(--color-primary);
+}
+
+@media (min-width: 1024px) {
+  /* .estimate-card es una fila con wrap en escritorio: la oferta y la vista previa ocupan su propia linea. */
+  .estimate-card > .estimate-card__offer,
+  .estimate-card > .online-discount-preview {
+    flex-basis: 100%;
+  }
+}
+
+/* ---------- Nota de WhatsApp: el 10% solo aplica con tarjeta ---------- */
+.online-discount-wa-note {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-size-body-sm-mobile);
+  color: var(--color-ink-muted);
+}

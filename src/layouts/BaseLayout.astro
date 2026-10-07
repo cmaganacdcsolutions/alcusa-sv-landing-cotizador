@@ -1,12 +1,17 @@
 ---
 import '@styles/global.css';
+// Unico archivo de la tipografia display que se precarga (latin, eje opsz): evita el salto de swap en el H1 sin
+// sumar peso a la ruta critica. El resto de subconjuntos carga bajo demanda por unicode-range.
+import displayFontLatin from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url';
 
 interface Props {
   title: string;
   description: string;
+  /** Paginas sin valor para buscadores (p. ej. borradores). */
+  noindex?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, noindex = false } = Astro.props;
 const siteUrl = import.meta.env.PUBLIC_SITE_URL ?? 'https://alcusasv.com';
 const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
 ---
@@ -15,9 +20,10 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
 <html lang="es-SV">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    {noindex && <meta name="robots" content="noindex" />}
     <link rel="canonical" href={canonicalUrl} />
-    <meta name="theme-color" content="#10213d" />
+    <meta name="theme-color" content="#0a1a33" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta property="og:type" content="website" />
@@ -26,6 +32,7 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
     <meta property="og:url" content={canonicalUrl} />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href={displayFontLatin} as="font" type="font/woff2" crossorigin />
   </head>
   <body>
     <slot />

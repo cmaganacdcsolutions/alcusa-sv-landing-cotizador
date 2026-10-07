@@ -1,32 +1,37 @@
 ---
-// Confianza — fuente de verdad: boards r01 #confianza (4 items). AÑOS queda como
-// placeholder literal entre corchetes (client-questions #1): nunca un numero inventado.
-// El copy difiere por viewport igual que en los boards: movil "[AÑOS] años / de
-// experiencia en aluminio y vidrio"; desktop "[AÑOS] / años de experiencia".
+// Confianza — fuente de verdad: boards r01 #confianza, con las cifras oficiales
+// que ALCUSA confirmó el 2026-10-06 (38 años, +10,000 clientes, +10,000 puertas).
+// Pulido 2026-10-06: tarjetas azul noche translucidas (mismo lenguaje que el resto del sitio), iconos en azul claro.
 const ITEMS = [
   {
     icon: '<path d="M12 4l2.4 5 5.4.7-4 3.7 1 5.4-4.8-2.6-4.8 2.6 1-5.4-4-3.7 5.4-.7z"/>',
     title: '4.2 en Google',
     detail: '130 reseñas de clientes',
-    placeholder: false,
   },
   {
     icon: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
-    title: '[AÑOS — confirmar 35/39]',
-    detail: '',
-    placeholder: true,
+    title: 'Más de 38 años',
+    detail: 'fabricando e instalando aluminio y vidrio',
+  },
+  {
+    icon: '<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9.5" r="2.5"/><path d="M15.5 14.2c2.5-.3 4.5 1.3 5 4.3"/>',
+    title: '+10,000 clientes',
+    detail: 'satisfechos',
+  },
+  {
+    icon: '<rect x="6" y="3.5" width="12" height="17" rx="1"/><path d="M4 20.5h16"/><circle cx="14.8" cy="12" r=".9"/>',
+    title: '+10,000 puertas',
+    detail: 'instaladas o reemplazadas',
   },
   {
     icon: '<path d="M12 3.5l7 2.5v5.5c0 4.3-3 7.7-7 9-4-1.3-7-4.7-7-9V6z"/><path d="M9 12l2 2 4-4"/>',
     title: '6 meses de garantía',
     detail: 'respaldo ALCUSA',
-    placeholder: false,
   },
   {
     icon: '<path d="M3 6.5h11v9H3zM14 10h4l3 3v2.5h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
     title: 'Entrega en 8–10 días hábiles',
     detail: 'tiempo estimado',
-    placeholder: false,
   },
 ] as const;
 ---
@@ -34,35 +39,17 @@ const ITEMS = [
 <section id="confianza" class="confianza" aria-labelledby="confianza-title">
   <div class="confianza__wrap">
     <p class="confianza__kicker">Confianza</p>
-    <h2 id="confianza-title" class="confianza__title">Lo que nos respalda</h2>
+    <h2 id="confianza-title" class="confianza__title title-gradient">Lo que nos respalda</h2>
     <ul class="confianza__list">
       {
         ITEMS.map((item) => (
           <li class="confianza__item">
             <span class="confianza__icon" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" set:html={item.icon} />
+              <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" set:html={item.icon} />
             </span>
             <span class="confianza__copy">
-              <span class="confianza__value">
-                {item.placeholder ? (
-                  <>
-                    <span class="confianza__placeholder">{item.title}</span>
-                    <span class="confianza__m-only"> años</span>
-                  </>
-                ) : (
-                  item.title
-                )}
-              </span>
-              <span class="confianza__detail">
-                {item.placeholder ? (
-                  <>
-                    <span class="confianza__d-only">años </span>de experiencia
-                    <span class="confianza__m-only"> en aluminio y vidrio</span>
-                  </>
-                ) : (
-                  item.detail
-                )}
-              </span>
+              <span class="confianza__value">{item.title}</span>
+              <span class="confianza__detail">{item.detail}</span>
             </span>
           </li>
         ))
@@ -72,8 +59,11 @@ const ITEMS = [
 </section>
 
 <style>
+  /* Mismo contenedor y ritmo que las secciones del catalogo (.csec): 1240 px, aire lateral 16/24/32. */
   .confianza {
-    padding: 0 var(--space-6) 56px;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 var(--space-4) var(--space-12);
   }
   .confianza__wrap {
     display: flex;
@@ -87,50 +77,53 @@ const ITEMS = [
     font-weight: var(--font-weight-body-bold);
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-primary);
+    color: var(--color-accent-on-dark);
   }
   .confianza__title {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--space-2);
     font-family: var(--font-family-display);
-    font-weight: var(--font-weight-display-medium);
+    font-weight: var(--font-weight-display-bold);
     font-size: 30px;
     line-height: 1.15;
-    color: var(--color-ink);
+    color: var(--color-text-on-dark);
     text-wrap: balance;
   }
   .confianza__list {
     margin: 0;
-    padding: var(--space-2) var(--space-5);
+    padding: 0;
     list-style: none;
-    display: flex;
-    flex-direction: column;
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xs);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: var(--space-3);
   }
+  /* Tarjeta azul noche (raised) sobre el degradado de la pagina, con linea fina clara. */
   .confianza__item {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--color-border);
-  }
-  .confianza__item:last-child {
-    border-bottom: none;
+    gap: var(--space-4);
+    min-width: 0;
+    padding: var(--space-4);
+    color: var(--color-text-on-dark);
+    /* Opaco a proposito: el contraste AA no depende de lo que haya debajo (un fondo translucido sobre el degradado no es verificable). */
+    background: var(--color-surface-dark-raised);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-line-on-dark);
+    border-radius: var(--radius-lg);
   }
   .confianza__icon {
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius-full);
-    background: var(--color-surface-tint);
-    color: var(--color-primary);
+    flex: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    color: var(--color-accent-on-dark);
+    background: color-mix(in srgb, var(--color-accent-on-dark) 14%, transparent);
+    border: 1px solid var(--color-line-on-dark);
   }
   .confianza__icon svg {
-    flex-shrink: 0;
+    flex: none;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.5;
@@ -140,43 +133,29 @@ const ITEMS = [
   .confianza__copy {
     display: flex;
     flex-direction: column;
-    line-height: 1.4;
+    gap: 2px;
     min-width: 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
   }
   .confianza__value {
     font-size: 17px;
     font-weight: var(--font-weight-body-bold);
-  }
-  .confianza__placeholder {
-    background: var(--color-warning-bg);
-    color: var(--color-warning);
-    border-radius: var(--radius-xs);
-    padding: 0 6px;
+    color: var(--color-text-on-dark);
   }
   .confianza__detail {
     font-size: 14px;
-    color: var(--color-ink-muted);
-  }
-  .confianza__d-only {
-    display: none;
-  }
-  @media (max-width: 339px) {
-    .confianza {
-      padding-inline: var(--space-4);
-    }
+    color: var(--color-text-on-dark-muted);
   }
   @media (min-width: 768px) {
     .confianza {
-      padding-inline: 0;
-    }
-    .confianza__wrap {
-      width: min(var(--container-page), 100% - 2 * var(--space-10));
-      margin-inline: auto;
+      padding-inline: var(--space-6);
     }
   }
   @media (min-width: 1024px) {
     .confianza {
-      padding-bottom: var(--space-30);
+      padding-inline: var(--space-8);
+      padding-bottom: var(--space-16);
     }
     .confianza__wrap {
       gap: var(--space-4);
@@ -186,46 +165,26 @@ const ITEMS = [
       line-height: 20px;
     }
     .confianza__title {
-      margin-bottom: var(--space-6);
+      margin-bottom: var(--space-4);
       font-size: 44px;
       line-height: 52px;
     }
     .confianza__list {
-      padding: 0;
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: var(--space-8);
-      background: none;
-      border-radius: 0;
-      box-shadow: none;
+      gap: var(--space-6);
     }
     .confianza__item {
-      padding: var(--space-6);
-      gap: var(--space-4);
-      border-bottom: none;
-      background: var(--color-surface);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-xs);
+      padding: var(--space-5) var(--space-6);
+      border-radius: var(--radius-xl);
     }
     .confianza__icon {
       width: 48px;
       height: 48px;
     }
-    .confianza__icon svg {
-      width: 22px;
-      height: 22px;
-    }
     .confianza__value {
-      font-size: 20px;
+      font-size: 18px;
     }
     .confianza__detail {
       font-size: 15px;
-    }
-    .confianza__d-only {
-      display: inline;
-    }
-    .confianza__m-only {
-      display: none;
     }
   }
 </style>

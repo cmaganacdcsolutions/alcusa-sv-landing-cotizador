@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, pickProduct, test } from './fixtures';
+import { fillAddress } from '../support/address';
 
 // Forces PUBLIC_COTIZADOR_MODE=mock (playwright.config.ts webServer.env),
 // asserts both the success and declined return-screen states. Step6Wompi
@@ -18,7 +19,7 @@ async function toWompi(page: Page, outcomeParam: 'approved' | 'declined'): Promi
   await pickProduct(page, 'recta');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.locator('#municipio').selectOption('Soyapango');
+  await fillAddress(page, 'Soyapango');
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await page.getByRole('button', { name: 'Pagar ahora' }).click();
   await page.getByRole('radio', { name: /Pagar ahora/ }).click();

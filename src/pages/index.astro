@@ -1,31 +1,46 @@
 ---
+// Inicio = catalogo completo seccionado con configurador por producto
+// (spec home-catalogo-completo §2; navbar fijo spec 01d). Sin islas React en el catalogo.
 import BaseLayout from '@layouts/BaseLayout.astro';
-import TopBar from '@components/TopBar.astro';
-import Drawer from '@components/Drawer.astro';
-import Hero from '@components/Hero.astro';
+import Navbar from '@components/Navbar.astro';
+import HomeIntro from '@components/home/HomeIntro.astro';
+import CategoryTabs from '@components/home/CategoryTabs.astro';
+import CatalogSection from '@components/home/CatalogSection.astro';
 import ComoFunciona from '@components/ComoFunciona.astro';
 import Promotions from '@components/Promotions.astro';
-import CatalogoCta from '@components/CatalogoCta.astro';
 import Confianza from '@components/Confianza.astro';
-// ContactoTeaser: seccion propia tras Info (solo movil; r01 desktop no la dibuja).
 import InfoImportante from '@components/InfoImportante.astro';
 import ContactoTeaser from '@components/ContactoTeaser.astro';
 import Footer from '@components/Footer.astro';
+import { CATEGORIES, type CategorySlug } from '@content/catalog';
+import { assertCatalogForBuild } from '@content/catalogBuild';
+
+assertCatalogForBuild();
+
+// Orden fijo del inicio (spec §2): Ventanas, Puertas de jardín, Puertas de baño.
+const ORDER: readonly CategorySlug[] = ['ventanas', 'puertas-de-jardin', 'puertas-de-bano'];
+const sections = ORDER.map((slug) => CATEGORIES.find((c) => c.slug === slug)).filter(
+  (c): c is (typeof CATEGORIES)[number] => !!c,
+);
 ---
 
 <BaseLayout
   title="ALCUSA | Aluminio y vidrio en El Salvador"
-  description="ALCUSA: ventanas, puertas y trabajos de aluminio y vidrio a la medida en El Salvador. Cotiza en línea y confirma por WhatsApp."
+  description="ALCUSA: ventanas, puertas de jardín y puertas de baño de aluminio y vidrio a la medida en El Salvador. Elige tus opciones y cotiza en línea."
 >
-  <TopBar />
-  <Drawer />
+  <Navbar />
 
-  <main>
-    <Hero />
+  <main id="main" tabindex="-1">
+    <div class="home-top">
+      <HomeIntro />
+      <CategoryTabs />
+      <div id="catalogo" class="home-catalogo">
+        {sections.map((c, i) => <CatalogSection category={c} firstOfPage={i === 0} />)}
+      </div>
+    </div>
     <Promotions />
-    <CatalogoCta />
-    <ComoFunciona />
     <Confianza />
+    <ComoFunciona />
     <InfoImportante />
     <ContactoTeaser />
   </main>
@@ -33,9 +48,21 @@ import Footer from '@components/Footer.astro';
   <Footer />
 </BaseLayout>
 
+<script>
+  import '@components/home/catalogHome.client';
+</script>
+
 <script is:inline>
-  // R3: el catalogo y la galeria salieron de la landing; los anclas viejas van a /catalogo.
-  if (/^#(catalogo|galeria|modelos)$/.test(window.location.hash)) {
-    window.location.replace('/catalogo');
+  // Alias viejo: #modelos -> #catalogo (el resto de anclas viven en esta pagina).
+  if (window.location.hash === '#modelos') {
+    window.history.replaceState(null, '', '/#catalogo');
+    document.getElementById('catalogo')?.scrollIntoView();
   }
 </script>
+
+<style is:global>
+  /* El fondo (degradado azul noche continuo) y el texto base claro viven en global.css: son del sitio entero. */
+  .home-top {
+    padding-bottom: var(--space-12);
+  }
+</style>

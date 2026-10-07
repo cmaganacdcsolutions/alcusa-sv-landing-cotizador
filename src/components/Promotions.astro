@@ -1,7 +1,9 @@
 ---
 // Promociones del mes (R3). Data-driven: src/content/promotions.json -> promotions.ts.
 // Sin promos vigentes la seccion NO se renderiza (0 px, sin gap doble).
-// Fidelidad: 02-design/boards/revision-2026-09-29/{ios,android,desktop}-r01 y -r02.
+// Pulido 2026-10-06: tarjetas compactas a escala de las del catalogo (3 por fila en escritorio, carrusel con
+// snap en movil), mismo contenedor de 1240 px que las secciones del catalogo. El flyer (9:16, con precio y letra
+// chica impresos) se ve COMPLETO en un marco 4:5 (contain): ~265 px de flyer legible en una tarjeta de ~376.
 import PhotoFrame from './PhotoFrame';
 import {
   discountPct,
@@ -25,7 +27,7 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
         <div class="promos__head">
           <p class="promos__kicker">PROMOCIONES DEL MES</p>
           <div class="promos__title-row">
-            <h2 id="promo-t" class="promos__title">
+            <h2 id="promo-t" class="promos__title title-gradient">
               {title}
             </h2>
             <p class="promos__sub promos__sub--desktop">Precios especiales por tiempo limitado.</p>
@@ -39,7 +41,17 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
               const ahorro = savings(p);
               return (
                 <article class="promo-card" role="listitem" data-promo-id={p.id}>
-                  <PhotoFrame src={p.image} alt={p.imageAlt} ratio="1/1" className="promo-card__photo">
+                  {/* Flyer oficial 9:16 (texto y precio incrustados): contain + capa ambiental = foto completa, sin recorte. */}
+                  <PhotoFrame
+                    src={p.image}
+                    srcSet={`${p.image.replace(/-900\.webp$/, '-600.webp')} 600w, ${p.image} 900w`}
+                    sizes="(min-width: 900px) 376px, 360px"
+                    alt={p.imageAlt}
+                    width={900}
+                    height={1600}
+                    ratio="4/5"
+                    className="promo-card__photo"
+                  >
                     {pct !== null && <span class="promo-card__badge">{`−${pct}%`}</span>}
                   </PhotoFrame>
                   <div class="promo-card__band">
@@ -64,8 +76,15 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
                         {p.title}
                       </h3>
                       <p class="promo-card__desc">{p.description}</p>
+                      {p.rules.length > 0 && (
+                        <ul class="promo-card__rules">
+                          {p.rules.map((r) => (
+                            <li>{r}</li>
+                          ))}
+                        </ul>
+                      )}
                       <span class="promo-card__chip">
-                        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
                           <rect x="4" y="5.5" width="16" height="14" rx="3" />
                           <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
                         </svg>
@@ -75,7 +94,7 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
                     <div class="promo-card__cta-slot">
                       <a class="promo-card__cta" href={promoHref(p)} data-promo-cta>
                         Cotizar esta promo
-                        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M5 12h14M13 6l6 6-6 6" />
                         </svg>
                       </a>
@@ -92,11 +111,13 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
 }
 
 <style is:global>
+  /* Mismo contenedor que .csec (catalogo): 1240 px con 16/24/32 px de aire lateral. */
   .promos {
-    padding-bottom: var(--space-14);
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 var(--space-4) var(--space-12);
   }
   .promos__head {
-    padding: 0 var(--space-6);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
@@ -107,39 +128,42 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
     line-height: 1.6;
     font-weight: var(--font-weight-body-bold);
     letter-spacing: 0.14em;
-    color: var(--color-primary);
+    color: var(--color-accent-on-dark);
   }
   .promos__title-row {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
   .promos__title {
     margin: 0;
     font-family: var(--font-family-display);
-    font-weight: var(--font-weight-display-medium);
+    font-weight: var(--font-weight-display-bold);
     font-size: 30px;
     line-height: 1.15;
-    color: var(--color-ink);
+    color: var(--color-text-on-dark);
     text-wrap: balance;
   }
   .promos__sub {
-    margin: 0 0 var(--space-2);
+    margin: 0;
     font-size: 14px;
     line-height: 1.5;
-    color: var(--color-ink-muted);
+    color: var(--color-text-on-dark-muted);
   }
   .promos__sub--desktop {
     display: none;
   }
+
+  /* Movil / tablet: carrusel con snap; la tarjeta (88% del ancho, tope 360 px) deja asomar la siguiente. */
   .promos__list {
-    margin-top: var(--space-3);
     display: flex;
+    align-items: stretch;
     gap: var(--space-3);
+    margin: var(--space-4) calc(-1 * var(--space-4)) 0;
+    padding: 0 var(--space-4) var(--space-2);
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    padding: 0 var(--space-6) var(--space-3);
-    scroll-padding: 0 var(--space-6);
+    scroll-padding-inline: var(--space-4);
     scrollbar-width: none;
   }
   .promos__list::-webkit-scrollbar {
@@ -148,132 +172,139 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
   .promos[data-count='1'] .promos__list {
     display: block;
     overflow: visible;
-    margin-top: var(--space-2);
+    margin-inline: 0;
+    padding-inline: 0;
   }
 
+  /* Tarjeta: misma familia que .pcard (clara sobre noche, radio-lg, borde suave). */
   .promo-card {
     position: relative;
-    flex: 0 0 300px;
-    min-width: 0;
-    background: var(--color-surface);
-    border: 2px solid var(--color-promo);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-promo);
-    overflow: hidden;
-    scroll-snap-align: start;
     display: flex;
+    flex: 0 0 min(88vw, 360px);
     flex-direction: column;
-    transition: box-shadow var(--motion-duration-base) var(--motion-ease-ui);
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-ink);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-soft);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-nav);
+    scroll-snap-align: start;
   }
-  .promo-card:hover {
-    box-shadow: var(--shadow-promo-hover);
+  .promos[data-count='1'] .promo-card {
+    max-width: 360px;
+  }
+  .promo-card * {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .promo-card__badge {
     z-index: 2;
     position: absolute;
-    top: var(--space-3);
-    left: var(--space-3);
-    padding: var(--space-1) var(--space-3);
-    border-radius: 12px;
+    top: var(--space-2);
+    left: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
     background: var(--color-promo-badge);
     color: var(--color-ink);
     font-family: var(--font-family-display);
-    font-size: 28px;
+    font-size: 20px;
     font-weight: var(--font-weight-display-semibold);
-    line-height: 1.1;
+    line-height: 1.2;
     box-shadow: var(--shadow-promo-badge);
   }
+
+  /* Banda de precio: delgada, en el rojo promo; antes/ahorras a la izquierda, ahora a la derecha. */
   .promo-card__band {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--space-3) var(--space-4);
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: var(--space-2);
+    row-gap: 2px;
+    padding: var(--space-2) var(--space-3);
     background: var(--color-promo);
-  }
-  .promos[data-count='1'] .promo-card__band {
-    padding-inline: var(--space-5);
   }
   .promo-card__band-row {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    min-width: 0;
+    flex-wrap: wrap;
+    gap: 2px var(--space-2);
   }
   .promo-card__antes {
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.4;
     font-weight: var(--font-weight-body-semibold);
     color: var(--color-surface);
   }
   .promo-card__antes s {
     text-decoration-line: line-through;
-    text-decoration-thickness: 2px;
+    text-decoration-thickness: 1.5px;
   }
   .promo-card__ahorras {
-    padding: 2px var(--space-2-5);
+    padding: 0 var(--space-2);
     border-radius: var(--radius-full);
     background: var(--color-surface);
     color: var(--color-promo-strong);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: var(--font-weight-body-bold);
-    line-height: 1.5;
+    line-height: 1.6;
   }
   .promo-card__ahora {
     font-family: var(--font-family-display);
-    font-size: 32px;
+    font-size: 24px;
     font-weight: var(--font-weight-display-semibold);
-    line-height: 1.1;
+    line-height: 1.15;
     color: var(--color-surface);
   }
+
   .promo-card__body {
-    flex: 1;
-    padding: var(--space-3) var(--space-4);
     display: flex;
+    flex: 1;
     flex-direction: column;
-    gap: var(--space-1-5);
+    gap: var(--space-3);
+    padding: var(--space-3);
   }
   .promo-card__text {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1-5);
-  }
-  /* android (>=400): board cuerpo gap 8 (iOS 6); estado A (1 promo) padding 12 16 16. */
-  @media (min-width: 400px) {
-    .promo-card__body,
-    .promo-card__text {
-      gap: var(--space-2);
-    }
-    .promos[data-count='1'] .promo-card__body {
-      padding-bottom: var(--space-4);
-    }
+    gap: var(--space-2);
   }
   .promo-card__title,
   .promo-card__desc {
     margin: 0;
+  }
+  /* Titulo: maximo 2 lineas (title= lleva el texto completo). La descripcion NO se recorta. */
+  .promo-card__title {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     overflow: hidden;
-  }
-  .promo-card__title {
-    font-family: var(--font-family-body); /* board: Manrope, not the global h3 Fraunces */
-    font-size: 17px;
+    font-family: var(--font-family-body);
+    font-size: 16px;
     line-height: 1.3;
     font-weight: var(--font-weight-body-bold);
     color: var(--color-ink);
   }
   .promo-card__desc {
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--color-ink-muted);
+  }
+  .promo-card__rules {
+    margin: 0;
+    padding-left: var(--space-4);
+    font-size: 12px;
+    line-height: 1.45;
     color: var(--color-ink-muted);
   }
   .promo-card__chip {
     align-self: flex-start;
     display: flex;
     align-items: center;
-    gap: var(--space-1-5);
-    padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
+    gap: var(--space-1);
+    padding: 2px var(--space-3) 2px var(--space-2);
     border-radius: var(--radius-full);
     background: var(--color-promo-tint);
     font-size: 12px;
@@ -282,6 +313,7 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
     color: var(--color-ink);
   }
   .promo-card__chip svg {
+    flex: none;
     color: var(--color-promo-strong);
   }
   .promo-card__cta-slot {
@@ -289,71 +321,109 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
     display: flex;
     flex-direction: column;
   }
-  .promos[data-count='1'] .promo-card__cta-slot {
-    padding-top: var(--space-1);
-  }
+
+  /* CTA: pastilla de 44 px como la del navbar; sobre tarjeta clara = azul primario. */
   .promo-card__cta {
-    min-height: 52px;
-    padding: 0 var(--space-6);
-    border-radius: var(--radius-full);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
+    height: 44px;
+    padding: 0 var(--space-4);
+    white-space: nowrap;
+    border-radius: var(--radius-full);
     background: var(--color-primary);
     color: var(--color-surface);
-    box-shadow: var(--shadow-md);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: var(--font-weight-body-bold);
-    line-height: 1.2;
+    line-height: 20px;
     text-decoration: none;
-    transition:
-      background-color 120ms ease-out,
-      box-shadow 120ms ease-out;
   }
-  .promo-card__cta:hover,
-  .promo-card__cta:active {
-    background: var(--color-primary-pressed);
+  .promo-card__cta svg {
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
   .promo-card__cta:active {
-    box-shadow: none;
+    background: var(--color-primary-active);
   }
   .promo-card__cta:focus-visible {
     outline: none;
     box-shadow: var(--shadow-focus);
   }
-
-  /* 768-1279: rejilla de 2 columnas, sin carrusel. */
-  @media (min-width: 768px) {
-    .promos__wrap {
-      width: min(var(--container-page), 100% - 2 * var(--space-10));
-      margin-inline: auto;
+  /* Hover = receta del navbar: relleno suave, sin elevacion ni sombra. */
+  @media (hover: hover) and (pointer: fine) {
+    .promo-card__cta {
+      transition:
+        background-color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1)),
+        color var(--hover-dur, 160ms) var(--hover-ease, cubic-bezier(0.2, 0.8, 0.2, 1));
     }
-    .promos__head {
-      padding: 0;
+    .promo-card__cta:hover {
+      background: var(--color-accent);
     }
-    .promos__list,
-    .promos[data-count='1'] .promos__list {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-8);
-      overflow: visible;
-      padding: 0;
-      margin-top: var(--space-6);
-      scroll-snap-type: none;
+    .promo-card__cta:active {
+      background: var(--color-primary-active);
     }
-    .promos[data-count='1'] .promos__list {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .promo-card {
-      flex: initial;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .promo-card__cta {
+      transition: none;
     }
   }
 
-  /* Desktop: tipografia y cajas del board desktop-r01/r02. */
+  @media (min-width: 768px) {
+    .promos {
+      padding-inline: var(--space-6);
+    }
+    .promos__list {
+      margin-inline: calc(-1 * var(--space-6));
+      padding-inline: var(--space-6);
+      scroll-padding-inline: var(--space-6);
+    }
+    .promos[data-count='1'] .promos__list {
+      margin-inline: 0;
+      padding-inline: 0;
+    }
+  }
+
+  /* >=900: rejilla de 3 columnas (1 o 2 promos = 1 o 2 columnas de 376 px, alineadas a la izquierda). */
+  @media (min-width: 900px) {
+    .promos__list,
+    .promos[data-count='1'] .promos__list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+      margin-inline: 0;
+      padding: 0;
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+    .promos[data-count='1'] .promos__list {
+      grid-template-columns: minmax(0, 376px);
+    }
+    .promos[data-count='2'] .promos__list {
+      grid-template-columns: repeat(2, minmax(0, 376px));
+    }
+    .promo-card,
+    .promos[data-count='1'] .promo-card {
+      flex: initial;
+      max-width: none;
+    }
+    .promos__sub--desktop {
+      display: block;
+    }
+    .promos__sub--mobile {
+      display: none;
+    }
+  }
+
   @media (min-width: 1024px) {
     .promos {
-      padding-bottom: var(--space-30);
+      padding-inline: var(--space-8);
+      padding-bottom: var(--space-16);
     }
     .promos__head {
       gap: var(--space-4);
@@ -361,10 +431,6 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
     .promos__kicker {
       font-size: 14px;
       line-height: 20px;
-    }
-    .promos__list,
-    .promos[data-count='1'] .promos__list {
-      margin-top: var(--space-10); /* board: gap 16 + margin-top 24 */
     }
     .promos__title-row {
       flex-direction: row;
@@ -378,209 +444,17 @@ const title = single ? 'Una oferta que puedes aprovechar hoy' : 'Ofertas que pue
       max-width: 760px;
     }
     .promos__sub {
-      margin: 0;
-      font-size: 18px;
-      line-height: 28px;
+      font-size: 16px;
+      line-height: 24px;
       max-width: 420px;
     }
-    .promos__sub--desktop {
-      display: block;
-    }
-    .promos__sub--mobile {
-      display: none;
-    }
-    .promo-card {
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-promo-lg);
-    }
-    .promo-card:hover {
-      box-shadow: var(--shadow-promo-hover);
+    .promos__list,
+    .promos[data-count='1'] .promos__list {
+      margin-top: var(--space-6);
+      gap: var(--space-6);
     }
     .promo-card__badge {
-      top: var(--space-4);
-      left: var(--space-4);
-      padding: var(--space-1-5) var(--space-4);
-      border-radius: 16px;
-      font-size: 40px;
-      box-shadow: var(--shadow-promo-badge-lg);
-    }
-    .promo-card__band,
-    .promos[data-count='1'] .promo-card__band {
-      padding: var(--space-3) var(--space-5);
-    }
-    .promo-card__band-row {
-      gap: var(--space-3);
-    }
-    .promo-card__antes {
-      font-size: 16px;
-      line-height: 24px;
-    }
-    .promo-card__ahorras {
-      padding: var(--space-1) var(--space-3-5);
-      font-size: 14px;
-      line-height: 20px;
-    }
-    .promo-card__ahora {
-      font-size: 44px;
-    }
-    .promo-card__body {
-      padding: var(--space-4) var(--space-5) var(--space-5);
-      gap: var(--space-2);
-    }
-    .promo-card__text {
-      gap: var(--space-2);
-    }
-    .promo-card__title {
       font-size: 22px;
-      line-height: 30px;
-    }
-    .promo-card__desc {
-      font-size: 16px;
-      line-height: 24px;
-    }
-    .promo-card__chip {
-      gap: var(--space-2);
-      padding: var(--space-1-5) var(--space-3-5) var(--space-1-5) var(--space-2-5);
-      font-size: 14px;
-      line-height: 20px;
-    }
-    .promo-card__chip svg {
-      width: 18px;
-      height: 18px;
-    }
-    .promo-card__cta {
-      min-height: 56px;
-      white-space: nowrap; /* desktop .btn del board: la etiqueta no se parte */
-      font-size: 17px;
-    }
-  }
-
-  /* >=1280: 3 promos = 3 columnas. */
-  @media (min-width: 1280px) {
-    .promos[data-count='3'] .promos__list,
-    .promos:not([data-count='1']):not([data-count='2']) .promos__list {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  /* >=1024: 1 o 2 promos = mosaicos horizontales apilados (patron 1600x380 del board
-     desktop-r02 estado A). 2 promos no tiene board: decision del Foreman = apilar los
-     mosaicos en vez de una rejilla de 2 columnas de tarjetas altas. Entre 1024 y 1279 el
-     mosaico se compacta (foto 300, panel 320) para que el texto conserve ancho util. */
-  @media (min-width: 1024px) {
-    .promos:is([data-count='1'], [data-count='2']) {
-      --tile-photo: 300px;
-      --tile-band: 320px;
-      --tile-text-x: var(--space-8);
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promos__list {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card {
-      display: grid;
-      grid-template-columns: minmax(0, var(--tile-photo)) minmax(0, 1fr) var(--tile-band);
-      grid-template-rows: 1fr auto auto 1fr;
-      height: calc(var(--tile-photo) + 4px);
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card::after {
-      content: '';
-      grid-column: 3;
-      grid-row: 1 / -1;
-      background: var(--color-promo);
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__photo {
-      grid-column: 1;
-      grid-row: 1 / -1;
-      width: var(--tile-photo);
-      height: var(--tile-photo);
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__badge {
-      top: var(--space-6);
-      left: var(--space-6);
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__body {
-      display: contents;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__text {
-      grid-column: 2;
-      grid-row: 1 / -1;
-      align-self: center;
-      min-width: 0;
-      padding: var(--space-12) var(--tile-text-x);
-      gap: 14px;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__title {
-      font-family: var(--font-family-display);
-      font-weight: var(--font-weight-display-medium);
-      font-size: 28px;
-      line-height: 36px;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__desc {
-      max-width: 560px;
-      font-size: 16px;
-      line-height: 24px;
-      -webkit-line-clamp: 3;
-      line-clamp: 3;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__band {
-      grid-column: 3;
-      grid-row: 2;
-      z-index: 1;
-      padding: 0 var(--space-8);
-      gap: var(--space-2);
-      background: transparent;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__antes {
-      font-size: 16px;
-      line-height: 24px;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__ahora {
-      font-size: 44px;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__cta-slot {
-      grid-column: 3;
-      grid-row: 3;
-      z-index: 1;
-      padding: var(--space-3) var(--space-8) 0;
-      margin: 0;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__cta {
-      background: var(--color-surface);
-      color: var(--color-promo-strong);
-      box-shadow: none;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__cta:hover {
-      background: var(--color-promo-tint);
-    }
-  }
-
-  @media (min-width: 1280px) {
-    .promos:is([data-count='1'], [data-count='2']) {
-      --tile-photo: 376px;
-      --tile-band: 400px;
-      --tile-text-x: 56px;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__title {
-      font-size: 36px;
-      line-height: 44px;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__desc {
-      font-size: 18px;
-      line-height: 28px;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__antes {
-      font-size: 18px;
-      line-height: 28px;
-    }
-    .promos:is([data-count='1'], [data-count='2']) .promo-card__ahora {
-      font-size: 56px;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .promo-card,
-    .promo-card__cta {
-      transition: none;
     }
   }
 </style>

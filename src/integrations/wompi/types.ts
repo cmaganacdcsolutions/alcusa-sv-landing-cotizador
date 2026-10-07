@@ -12,8 +12,20 @@ export interface CreateLinkItem {
 /** POST /api/wompi-create-link. No amount to charge: the server derives it. */
 export interface CreateLinkRequest {
   pct: 80 | 100;
+  /** What the customer pays: sum(items) - discount.amount + transport (already discounted). */
   total: number;
+  /** Undiscounted item subtotals. */
   items: CreateLinkItem[];
+  /** 10% online-card discount; present only when it applies. The server validates the arithmetic. */
+  discount?: CreateLinkDiscount;
+  /** Distrito sin tarifa: envio "por confirmar" (no esta sumado en `total`). */
+  shippingPending?: boolean;
+}
+
+export interface CreateLinkDiscount {
+  code: 'online_card_10';
+  /** Positive amount subtracted from the items sum. */
+  amount: number;
 }
 
 export interface CreateLinkResponse {
@@ -40,5 +52,7 @@ export interface PendingPayment {
   reference: string;
   pct: 80 | 100;
   zone: string;
+  /** Direccion de entrega (solo instalacion); se restaura al volver de Wompi. */
+  address?: unknown;
   entrega: 'instalacion' | 'retiro';
 }

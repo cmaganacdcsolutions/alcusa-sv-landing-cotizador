@@ -120,4 +120,32 @@ describe('integrations/whatsapp buildMessage', () => {
     });
     expect(withQty).toContain('Color: Natural · Vidrio: Nevado 5 mm · Cantidad: 2\n');
   });
+
+  it('shippingPending: "Envío por confirmar" en vez de un transporte de $0.00; sin la bandera el texto no cambia', () => {
+    const base = {
+      items: [
+        {
+          producto: 'Puerta de baño recta',
+          anchoM: 1.1,
+          altoM: 1.85,
+          color: 'Natural',
+          vidrio: 'Claro 5 mm',
+          zona: 'otro',
+          entrega: 'con instalación' as const,
+          subtotal: 222,
+        },
+      ],
+      transporte: 0,
+      total: 222,
+      anticipo: 177.6,
+      saldo: 44.4,
+    };
+    const pending = buildQuoteMessage({ ...base, shippingPending: true });
+    expect(pending).toContain('Transporte: Envío por confirmar\n');
+    expect(pending).toContain('Total estimado: $222.00 (más envío por confirmar)\n');
+    expect(pending).not.toContain('Transporte: $0.00');
+    const plain = buildQuoteMessage(base);
+    expect(plain).toContain('Transporte: $0.00\nTotal estimado: $222.00\n');
+    expect(plain).not.toContain('confirmar\n');
+  });
 });

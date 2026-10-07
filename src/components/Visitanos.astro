@@ -1,0 +1,120 @@
+---
+// Visitanos (#visitanos): direccion, horario, como llegar. Equivale a "Sucursales" de inco.
+// Horario confirmado por Alcusa (igual que en Contacto.astro); mapa propio sigue pendiente (spec navbar 01d §13).
+const DIRECTIONS_URL = 'https://www.google.com/maps/search/?api=1&query=ALCUSA+Calle+El+Pedregal+Ciudad+Merliot';
+---
+
+<section id="visitanos" class="visit" aria-labelledby="visit-title">
+  <div class="visit__inner">
+    <p class="visit__kicker">VISÍTANOS</p>
+    <h2 id="visit-title" class="visit__title" tabindex="-1">Ven a conocer nuestro taller</h2>
+    <dl class="visit__list">
+      <div>
+        <dt>Dirección</dt>
+        <dd>Aluminios Cuzcatlán, S.A. de C.V. · Calle El Pedregal, local 29 G, Ciudad Merliot</dd>
+      </div>
+      <div>
+        <dt>Horario</dt>
+        <dd class="visit__hours">
+          <span>Lunes a viernes: 7:30 a. m. – 5:00 p. m.</span>
+          <span>Sábados: 7:00 a. m. – 12:00 m.</span>
+          <span>Domingos: cerrado</span>
+        </dd>
+      </div>
+      <div>
+        <dt>Cómo llegar</dt>
+        <dd>
+          <a href={DIRECTIONS_URL} rel="noopener" target="_blank">Abrir en Google Maps</a>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<style>
+  .visit {
+    padding: var(--space-8) var(--space-4) var(--space-12);
+  }
+  .visit__inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: var(--space-6);
+    background: var(--color-surface-dark-raised);
+    border: 1px solid var(--color-line-on-dark);
+    color: var(--color-text-on-dark);
+    border-radius: var(--radius-lg);
+    display: grid;
+    gap: var(--space-3);
+  }
+  .visit__kicker {
+    margin: 0;
+    font: var(--font-weight-body-bold) 12px/16px var(--font-family-body);
+    letter-spacing: 0.08em;
+    color: var(--color-accent-on-dark);
+  }
+  .visit__title {
+    margin: 0;
+    font-size: 26px;
+    line-height: 32px;
+    font-weight: var(--font-weight-display-bold);
+    color: var(--color-text-on-dark);
+  }
+  .visit__list {
+    margin: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .visit__list dt {
+    font: var(--font-weight-body-bold) 13px/18px var(--font-family-body);
+    color: var(--color-text-on-dark-muted);
+  }
+  .visit__list dd {
+    margin: 0;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .visit__list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    /* Pildora de hover: el padding se compensa con margen negativo para que el texto no se mueva. */
+    padding-inline: var(--space-4);
+    margin-inline: calc(-1 * var(--space-4));
+    border-radius: var(--radius-full);
+    font-weight: var(--font-weight-body-bold);
+    color: var(--color-accent-on-dark);
+  }
+  /* Hover como .nav__link: pildora noche elevada + texto blanco, sin movimiento. */
+  @media (hover: hover) and (pointer: fine) {
+    .visit__list a {
+      transition:
+        background-color var(--hover-dur) var(--hover-ease),
+        color var(--hover-dur) var(--hover-ease);
+    }
+    .visit__list a:hover {
+      background: var(--color-surface-dark);
+      color: var(--color-text-on-dark);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .visit__list a {
+      transition: none;
+    }
+  }
+  .visit__hours {
+    display: grid;
+    gap: 2px;
+  }
+  @media (min-width: 1024px) {
+    .visit {
+      padding: var(--space-10) var(--space-8) var(--space-16);
+    }
+    .visit__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .visit__title {
+      font-size: 32px;
+      line-height: 40px;
+    }
+  }
+</style>

@@ -1,28 +1,50 @@
 ---
-// InfoImportante — fuente de verdad: boards r01 #info (4 items, sin iconos).
+// InfoImportante — fuente de verdad: boards r01 #info (4 items).
 // Copy unico para 80/20 y exclusion AMEX: el paso de pago del cotizador debe reusar
 // estas mismas cadenas (T3.4) — no bifurcar.
 // La fila "Tasa 0%" (placeholder) NO esta en los boards r01: fuera de la UI hasta que el
 // cliente confirme. El bloque "¿Tienes dudas...?" es una seccion aparte (ContactoTeaser,
 // solo movil en los boards).
+// Pulido 2026-10-06: tarjetas azul noche translucidas con icono en azul claro (sin texto nuevo).
 const ITEMS = [
-  { title: 'Anticipo 80% · saldo 20%', detail: 'Pagas el 20% restante al recibir tu producto.' },
-  { title: 'Pago con tarjeta vía Wompi', detail: 'Crédito y débito, excepto American Express.' },
-  { title: 'Factura o crédito fiscal', detail: 'Indícalo al confirmar tu pedido.' },
-  { title: 'Retiro en tienda −15%', detail: 'Aplica a puertas de baño rectas, sin transporte.' },
+  {
+    icon: '<circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5M12 12l6 6"/>',
+    title: 'Anticipo 80% · saldo 20%',
+    detail: 'Pagas el 20% restante al recibir tu producto.',
+  },
+  {
+    icon: '<rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h4"/>',
+    title: 'Pago con tarjeta vía Wompi',
+    detail: 'Crédito y débito, excepto American Express.',
+  },
+  {
+    icon: '<path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12h6"/>',
+    title: 'Factura o crédito fiscal',
+    detail: 'Indícalo al confirmar tu pedido.',
+  },
+  {
+    icon: '<path d="M4 9l1.5-4.5h13L20 9"/><path d="M5 9.5v10h14v-10"/><path d="M4 9a2.5 2.5 0 005 0 2.5 2.5 0 005 0 2.5 2.5 0 005 0"/>',
+    title: 'Retiro en tienda −15%',
+    detail: 'Aplica a puertas de baño rectas, sin transporte.',
+  },
 ] as const;
 ---
 
 <section id="info" class="info" aria-labelledby="info-title">
   <div class="info__wrap">
     <p class="info__kicker">Antes de comprar</p>
-    <h2 id="info-title" class="info__title">Información importante</h2>
+    <h2 id="info-title" class="info__title title-gradient">Información importante</h2>
     <ul class="info__list">
       {
         ITEMS.map((item) => (
           <li class="info__item">
-            <span class="info__item-title">{item.title}</span>
-            <span class="info__detail">{item.detail}</span>
+            <span class="info__icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" set:html={item.icon} />
+            </span>
+            <span class="info__copy">
+              <span class="info__item-title">{item.title}</span>
+              <span class="info__detail">{item.detail}</span>
+            </span>
           </li>
         ))
       }
@@ -31,8 +53,11 @@ const ITEMS = [
 </section>
 
 <style>
+  /* Mismo contenedor y ritmo que las secciones del catalogo (.csec): 1240 px, aire lateral 16/24/32. */
   .info {
-    padding: 0 var(--space-6) 56px;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 var(--space-4) var(--space-12);
   }
   .info__wrap {
     display: flex;
@@ -46,62 +71,90 @@ const ITEMS = [
     font-weight: var(--font-weight-body-bold);
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--color-primary);
+    color: var(--color-accent-on-dark);
   }
   .info__title {
-    margin: 0 0 var(--space-3);
+    margin: 0 0 var(--space-2);
     font-family: var(--font-family-display);
-    font-weight: var(--font-weight-display-medium);
+    font-weight: var(--font-weight-display-bold);
     font-size: 30px;
     line-height: 1.15;
-    color: var(--color-ink);
+    color: var(--color-text-on-dark);
     text-wrap: balance;
   }
   .info__list {
     margin: 0;
-    padding: var(--space-1) var(--space-5);
+    padding: 0;
     list-style: none;
-    display: flex;
-    flex-direction: column;
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xs);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
   }
+  /* Tarjeta azul noche (raised) sobre el degradado de la pagina, con linea fina clara. */
   .info__item {
     display: flex;
-    flex-direction: column;
-    padding: var(--space-4) 0;
-    border-bottom: 1px solid var(--color-border);
-    line-height: 1.45;
+    align-items: flex-start;
+    gap: var(--space-4);
+    min-width: 0;
+    padding: var(--space-4);
+    color: var(--color-text-on-dark);
+    /* Opaco a proposito: el contraste AA no depende de lo que haya debajo (un fondo translucido sobre el degradado no es verificable). */
+    background: var(--color-surface-dark-raised);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-line-on-dark);
+    border-radius: var(--radius-lg);
   }
-  .info__item:last-child {
-    border-bottom: none;
+  .info__icon {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    color: var(--color-accent-on-dark);
+    background: color-mix(in srgb, var(--color-accent-on-dark) 14%, transparent);
+    border: 1px solid var(--color-line-on-dark);
+  }
+  .info__icon svg {
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .info__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
   }
   .info__item-title {
     font-size: 16px;
     font-weight: var(--font-weight-body-bold);
+    color: var(--color-text-on-dark);
   }
   .info__detail {
     font-size: 14px;
-    color: var(--color-ink-muted);
+    color: var(--color-text-on-dark-muted);
   }
-  @media (max-width: 339px) {
-    .info {
-      padding-inline: var(--space-4);
+  @media (min-width: 640px) {
+    .info__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
   @media (min-width: 768px) {
     .info {
-      padding-inline: 0;
-    }
-    .info__wrap {
-      width: min(var(--container-page), 100% - 2 * var(--space-10));
-      margin-inline: auto;
+      padding-inline: var(--space-6);
     }
   }
   @media (min-width: 1024px) {
     .info {
-      padding-bottom: var(--space-24);
+      padding-inline: var(--space-8);
+      padding-bottom: var(--space-20);
     }
     .info__wrap {
       gap: var(--space-4);
@@ -111,33 +164,27 @@ const ITEMS = [
       line-height: 20px;
     }
     .info__title {
-      margin-bottom: var(--space-6);
+      margin-bottom: var(--space-4);
       font-size: 44px;
       line-height: 52px;
     }
     .info__list {
-      padding: 0;
-      display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-8);
-      background: none;
-      border-radius: 0;
-      box-shadow: none;
+      gap: var(--space-6);
     }
     .info__item {
-      padding: var(--space-6);
-      gap: var(--space-1);
-      line-height: 1.55; /* r01 desktop: 18/27.9 y 16/24.8 */
-      border-bottom: none;
-      background: var(--color-surface);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-xs);
+      padding: var(--space-5) var(--space-6);
+      border-radius: var(--radius-xl);
+    }
+    .info__icon {
+      width: 48px;
+      height: 48px;
     }
     .info__item-title {
       font-size: 18px;
     }
     .info__detail {
-      font-size: 16px;
+      font-size: 15px;
     }
   }
 </style>

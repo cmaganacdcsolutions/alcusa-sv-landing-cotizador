@@ -2,42 +2,33 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 
 
-// R3 (2026-09-30): el grid de catalogo, la galeria, el banner del cotizador y las anclas
-// /#modelos /#galeria salieron de la landing. Estos casos se marcan fixme (NO se borran):
-// los de catalogo/galeria se re-hospedan en /catalogo (slice R2); los de nav se reescriben
-// contra el drawer/footer nuevos. Ver HANDOFF R3.
-const R3_MOVED = new Set<string>(["landing on /#cotizador scrolls the cotizador teaser into view on load"]);
-// eslint-disable-next-line no-empty-pattern
-test.beforeEach(({}, info) => {
-  test.fixme(R3_MOVED.has(info.title), 'R3: seccion fuera de la landing; migrar (ver HANDOFF R3)');
-});
-
 // S3: hero, cómo funciona, confianza, información importante. New spec file
 // (not shared with cotizador.spec.ts / whatsapp-links.spec.ts) to avoid
 // merge conflicts with parallel slices touching the same test directory.
 test.describe('landing — hero, cómo funciona, confianza, info importante (S3)', () => {
-  test('hero (r01): H1 + botones "Cotizar ahora" y "Ver catálogo", sin tarjetas de categoría', async ({ page }) => {
+  test('intro del inicio: H1 + enlace a promociones, sin hero ni tarjetas de categoría', async ({ page }) => {
     await page.goto('/');
-    const hero = page.locator('#inicio');
-    await expect(hero.getByRole('heading', { level: 1 })).toHaveText('¿Qué quieres cambiar en tu casa hoy?');
-    await expect(hero.getByRole('link', { name: /Cotizar ahora/ })).toHaveAttribute('href', '/cotizador');
-    await expect(hero.getByRole('link', { name: 'Ver catálogo' })).toHaveAttribute('href', '/catalogo');
-    await expect(hero.locator('.hero__category-card')).toHaveCount(0);
+    const intro = page.locator('#inicio');
+    await expect(intro.getByRole('heading', { level: 1 })).toHaveText('¿Qué quieres cambiar en tu casa hoy?');
+    await expect(intro.getByRole('link', { name: 'Ver promociones del mes' })).toHaveAttribute('href', '#promociones');
+    // El hero viejo (botones "Cotizar ahora"/"Ver catálogo", foto, tarjetas) ya no existe.
+    await expect(page.locator('.hero__category-card, [data-hero-cta]')).toHaveCount(0);
   });
 
-  test('landing on /#cotizador scrolls the cotizador teaser into view on load', async ({ page }) => {
-    await page.goto('/#cotizador');
-    await expect(page.locator('#cotizador')).toBeInViewport();
+  test('landing on /#promociones scrolls the promos into view on load', async ({ page }) => {
+    await page.goto('/#promociones');
+    await expect(page.locator('#promociones')).toBeInViewport();
   });
 
-  test('cómo funciona renders all 4 steps, visible, no display:none, no horizontal scroll', async ({ page }) => {
+  test('cómo funciona renders all steps, visible, no display:none, no horizontal scroll', async ({ page }) => {
     await page.goto('/');
     const proceso = page.locator('#proceso');
     await proceso.scrollIntoViewIfNeeded();
     await expect(proceso).toBeVisible();
 
-    for (const step of ['Selecciona', 'Cotiza', 'Confirma', 'Recibe']) {
-      const item = proceso.getByText(step, { exact: true });
+    // 2026-10-06: guia detallada de 7 pasos (antes 4: Selecciona/Cotiza/Confirma/Recibe).
+    for (const step of ['Elige tu producto', 'Toca el color y el vidrio', 'Toca el botón «Cotizar»', 'Escribe las medidas de tu espacio', 'Mira tu precio estimado', 'Elige cómo lo quieres recibir', 'Confirma tu pedido']) {
+      const item = proceso.getByRole('heading', { level: 3 }).filter({ hasText: step });
       await expect(item).toBeVisible();
     }
 
@@ -45,28 +36,28 @@ test.describe('landing — hero, cómo funciona, confianza, info importante (S3)
     expect(hasHorizontalScroll).toBe(false);
   });
 
-  test('cómo funciona: r01 no dibuja lead, conectores ni insignia rellena (4 tarjetas planas de texto)', async ({ page }) => {
+  test('cómo funciona: 7 pasos numerados, sin visitas previas inventadas', async ({ page }) => {
     await page.goto('/');
     const proceso = page.locator('#proceso');
     await proceso.scrollIntoViewIfNeeded();
     await expect(proceso.getByText('Sin visitas previas', { exact: false })).toHaveCount(0);
-    await expect(proceso.locator('li')).toHaveCount(4);
-    // El numero es texto Fraunces #0956d8 sin fondo, tambien el 04.
-    await expect(proceso.getByText('04', { exact: true })).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(proceso.locator('ol > li')).toHaveCount(7);
   });
 
-  test('confianza shows the literal bracketed placeholder for años (4 items, as on the board), not a picked number', async ({
+  test('confianza shows the official ALCUSA figures (38 años, +10,000 clientes, +10,000 puertas), no placeholders', async ({
     page,
   }) => {
     await page.goto('/');
     const confianza = page.locator('#confianza');
     await confianza.scrollIntoViewIfNeeded();
-    await expect(confianza.getByText('[AÑOS — confirmar 35/39]')).toBeVisible();
-    // R3 fidelity: the board draws exactly 4 items; the pending clients figure is not in the UI.
-    await expect(confianza.getByText('[+10,000/+15,000 — confirmar]')).toHaveCount(0);
-    await expect(confianza.locator('li')).toHaveCount(4);
+    await expect(confianza.locator('li')).toHaveCount(6);
+    await expect(confianza.getByText('Más de 38 años')).toBeVisible();
+    await expect(confianza.getByText('+10,000 clientes')).toBeVisible();
+    await expect(confianza.getByText('+10,000 puertas')).toBeVisible();
+    await expect(confianza.getByText('instaladas o reemplazadas')).toBeVisible();
     await expect(confianza.getByText('4.2 en Google', { exact: false })).toBeVisible();
     await expect(confianza.getByText('6 meses', { exact: false })).toBeVisible();
+    await expect(confianza.getByText('confirmar', { exact: false })).toHaveCount(0);
   });
 
   test('info importante: AMEX-exclusion and 80/20 copy match the cotizador payment step wording exactly', async ({

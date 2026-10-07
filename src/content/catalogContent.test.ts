@@ -11,7 +11,6 @@ import {
   validateCatalogContent,
   type CatalogContent,
 } from './catalogContent';
-import { CATALOG_GALLERY } from './catalogGallery';
 import {
   allCatalogSlugs,
   cardTitle,
@@ -35,7 +34,6 @@ describe('catalog content vs model (build-time validation)', () => {
 
   it('every referenced image exists under public/ (no 404 <img>)', () => {
     expect(validateCatalogContent(allCatalogSlugs(), undefined, fileExists)).toEqual([]);
-    for (const g of CATALOG_GALLERY) expect(fileExists(g.src), g.src).toBe(true);
   });
 
   it('assertCatalogContent throws with the offending slug', () => {
@@ -58,13 +56,13 @@ describe('catalog content vs model (build-time validation)', () => {
     expect(problems.some((p) => p.startsWith('zzz:contenido huérfano'))).toBe(true);
   });
 
-  it('official items have a photo; jardin-2-fijas-2-corredizas and unknown slugs fall back to the placeholder', () => {
+  it('no content entry references an Alcusa photo (renders live in home-media.ts); unknown slugs fall back to the placeholder', () => {
     for (const slug of ['jardin-1-hoja', 'jardin-2-hojas', 'en-l']) {
-      expect(primaryImage(slug)?.src).toMatch(/^\/images\/catalog\/.+\.webp$/);
-      expect(contentFor(slug).pending).not.toContain('photo');
+      expect(primaryImage(slug)).toBeNull();
+      expect(contentFor(slug).pending).toContain('photo');
     }
-    expect(primaryImage('jardin-2-fijas-2-corredizas')).toBeNull();
-    expect(contentFor('jardin-2-fijas-2-corredizas').pending).toContain('photo');
+    const all = JSON.stringify({ ...CATEGORY_CONTENT, ...ITEM_CONTENT });
+    expect(all).not.toMatch(new RegExp("images/(catalog|card-|hero-|galeria|finish-)"));
     expect(primaryImage('slug-sin-contenido')).toBeNull();
     expect(contentFor('slug-sin-contenido').pending).toContain('photo');
   });
