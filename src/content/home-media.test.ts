@@ -115,9 +115,21 @@ describe('home-media: solo renders profesionales', () => {
     expect(combos).toBeGreaterThan(100);
   });
 
-  it('puertas de jardin: el inicio muestra exactamente 3 productos (sin "Más opciones")', () => {
+  it('puertas de jardin: 3 productos con opciones + "Más opciones para tu jardín" (2 solo asesor, portada sin variantes)', () => {
     const jardin = CATEGORIES.find((c) => c.slug === 'puertas-de-jardin')!;
     const cards = jardin.subcategories.filter((s) => s.slug in PRODUCT_CONFIGS);
     expect(cards.map((s) => s.slug)).toEqual(['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas']);
+    const more = jardin.subcategories.filter((s) => s.group === 'mas-opciones');
+    expect(more.map((s) => s.slug)).toEqual(['jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas']);
+    for (const s of more) {
+      const m = PRODUCT_MEDIA[s.slug];
+      expect(s.slug in PRODUCT_CONFIGS, `${s.slug}: sin opciones de cotizador`).toBe(false);
+      expect(m, s.slug).toBeDefined();
+      expect(m!.variants, `${s.slug}: solo portada`).toBeUndefined();
+      expect(m!.cover.src).toBe(`/images/renders/${s.slug}-800.webp`);
+      expect(m!.cover).toMatchObject({ width: 800, height: 600, kind: 'render' });
+      expect(m!.cover.alt).toMatch(/dos fijas y dos corredizas|una fija y tres corredizas/);
+      expect(exists(m!.cover.src), m!.cover.src).toBe(true);
+    }
   });
 });

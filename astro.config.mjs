@@ -21,18 +21,17 @@ function viteCacheDir() {
 }
 
 // Paginas /catalogo/** eliminadas: el catalogo vive en el home (anclas). Subpaginas por
-// producto -> #p-<slug>; los 2 combos de asesor no tienen tarjeta propia -> su categoria.
+// producto -> #p-<slug> (incluidos los 2 combos de asesor de "Más opciones para tu jardín").
 const CATALOG_REDIRECTS = (() => {
   const tree = {
     'puertas-de-bano': ['templada-10mm', 'recta', 'en-l', 'bisagra'],
     'puertas-de-jardin': ['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas', 'jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas'],
     ventanas: ['ventana-francesa', 'ventana-bilbao'],
   };
-  const advisor = new Set(['jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas']);
   const out = { '/catalogo': '/#catalogo' };
   for (const [cat, subs] of Object.entries(tree)) {
     out[`/catalogo/${cat}`] = `/#${cat}`;
-    for (const sub of subs) out[`/catalogo/${cat}/${sub}`] = advisor.has(sub) ? `/#${cat}` : `/#p-${sub}`;
+    for (const sub of subs) out[`/catalogo/${cat}/${sub}`] = `/#p-${sub}`;
   }
   return out;
 })();
