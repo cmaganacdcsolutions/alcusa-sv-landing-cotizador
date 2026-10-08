@@ -266,9 +266,13 @@ export function isSafePromoImage(url: string): boolean {
   return SAFE_PROMO_IMAGE.test(url) && !url.includes('..');
 }
 
-/** srcset 600w/900w cuando la imagen sigue la convencion `<clave>-900.webp` (la del sitio y la del admin). */
-export function promoImageSrcSet(image: string): string | undefined {
-  return /-900\.webp$/.test(image) ? `${image.replace(/-900\.webp$/, '-600.webp')} 600w, ${image} 900w` : undefined;
+/**
+ * srcset 600w/<ancho real> cuando la imagen sigue la convencion `<clave>-900.webp` (la del sitio y la del admin).
+ * `fullWidth` es el ancho REAL en px del archivo `-900` (default 900); el descriptor nunca declara mas pixeles de
+ * los que tiene la imagen (sin upscale: algunas fuentes solo dan 720 px).
+ */
+export function promoImageSrcSet(image: string, fullWidth = 900): string | undefined {
+  return /-900\.webp$/.test(image) ? `${image.replace(/-900\.webp$/, '-600.webp')} 600w, ${image} ${fullWidth}w` : undefined;
 }
 
 export const PROMO_IMAGE_SIZES = '(min-width: 900px) 376px, 360px';
