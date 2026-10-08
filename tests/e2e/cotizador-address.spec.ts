@@ -23,7 +23,7 @@ async function toEntrega(page: Page): Promise<void> {
 test.describe('cotizador — aviso de envio en Precio', () => {
   test('el precio se muestra antes del envio y el aviso es visible', async ({ page }) => {
     await toPrecio(page);
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$222.00');
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$258.00');
     await expect(page.locator('.estimate-card__label')).toHaveText('ESTIMADO SIN TRANSPORTE');
     await expect(page.getByTestId('shipping-notice')).toBeVisible();
     await expect(page.getByTestId('shipping-notice')).toHaveText(NOTICE);
@@ -51,7 +51,7 @@ test.describe('cotizador — direccion de entrega', () => {
     await expect(page.getByTestId('zona-total-value')).toHaveCount(0);
 
     await page.locator('#addr-telefono').fill(TEST_PHONE);
-    await expect(page.getByTestId('zona-total-value')).toHaveText('$262.00');
+    await expect(page.getByTestId('zona-total-value')).toHaveText('$298.00');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
     await expect(page.getByTestId('resumen-address').locator('visible=true').first()).toContainText('Residencial Las Flores');
@@ -94,8 +94,8 @@ test.describe('cotizador — direccion de entrega', () => {
     await expect(page.getByText('Envío a Planes de Renderos: $30.00, una vez por pedido.')).toBeVisible();
     await expect(page.getByText('Completa tu dirección para ver el total.')).toBeVisible();
     await fillAddress(page, 'Planes de Renderos');
-    // recta 1.10 m promo claro $222 + $30.
-    await expect(page.getByTestId('zona-total-value')).toHaveText('$252.00');
+    // recta 1.10 m regular claro $258 + $30.
+    await expect(page.getByTestId('zona-total-value')).toHaveText('$288.00');
   });
 
   test('"Otra zona" no bloquea: envio por confirmar y el flujo sigue', async ({ page }) => {
@@ -176,6 +176,6 @@ test.describe('cotizador — ubicacion opcional', () => {
     await page.getByRole('button', { name: 'Usar mi ubicación' }).click();
     await expect(page.getByTestId('geo-status')).toContainText('No pudimos usar tu ubicación');
     await fillAddress(page, 'Soyapango');
-    await expect(page.getByTestId('zona-total-value')).toHaveText('$262.00');
+    await expect(page.getByTestId('zona-total-value')).toHaveText('$298.00');
   });
 });

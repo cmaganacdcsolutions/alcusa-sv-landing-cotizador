@@ -44,6 +44,8 @@ export default defineConfig({
   integrations: [react()],
   redirects: CATALOG_REDIRECTS,
   vite: {
+    // Fecha congelada de promos (solo e2e/smoke): el cotizador valida la vigencia de `?promo=` con ella.
+    define: { __PROMOS_TODAY__: JSON.stringify(process.env.ALCUSA_PROMOS_TODAY ?? '') },
     // Per-checkout Vite dep cache. Parallel git worktrees share node_modules
     // through a junction, so the default node_modules/.vite cache was being
     // rewritten by one worktree's server under another's (React islands then

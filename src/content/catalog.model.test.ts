@@ -132,7 +132,7 @@ describe('content/catalog: fromPrice per priced leaf == engine at minimum measur
 
   it('CATALOG_PRODUCTS legacy view: 6 items in the old order, prices derived from the model', () => {
     expect(CATALOG_PRODUCTS.map((p) => [p.id, p.fromPrice])).toEqual([
-      ['recta', 222],
+      ['recta', 242],
       ['l', 444],
       ['templado', 672],
       ['bisagra', 253],

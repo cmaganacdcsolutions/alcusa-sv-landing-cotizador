@@ -133,3 +133,16 @@ describe('validateCreate: shippingPending', () => {
     expect(good(pending({ idempotencyKey: k })).cartHash).not.toBe(off);
   });
 });
+
+describe('validateCreate: promo context (?promo=<id>) has no online-card discount', () => {
+  it('rejects the 10% discount when promoId is present -> 422 discount.code', () => {
+    const e = bad(base({ promoId: 'promo-aquafold', discount: { code: 'online_card_10', amount: 43.8 }, transportFee: 25, total: 419.2 }));
+    expect(e).toMatchObject({ status: 422, fields: { 'discount.code': 'invalid' } });
+  });
+  it('accepts a promo order without discount at full price', () => {
+    expect(good(base({ promoId: 'promo-aquafold' }))).toMatchObject({ discountCode: null, discountCents: 0, subtotalCents: 43800, totalCents: 46300 });
+  });
+  it('promoId null behaves as absent (normal discount still accepted)', () => {
+    expect(good(base({ promoId: null, discount: { code: 'online_card_10', amount: 43.8 }, transportFee: 25, total: 419.2 })).discountCents).toBe(4380);
+  });
+});

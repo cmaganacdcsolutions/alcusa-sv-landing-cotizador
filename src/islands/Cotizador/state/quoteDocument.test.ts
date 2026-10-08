@@ -53,6 +53,11 @@ describe('quoteDocument mapper', () => {
     expect(fr).toMatchObject({ customer: cust, consent: true, privacyNoticeVersion: '2026-10-v1', supersedesCode: 'ALC-20260929-K7QM3X90', transportFee: 40, total: 262 });
     expect(fr.items[0]).toMatchObject({ productSlug: 'recta', qty: 1, unitPrice: 222, lineTotal: 222, config: { productId: 'recta', width: '110' }, configSchemaVersion: 1, promoRef: null });
     expect(toFolioRequest(base, cust, 'k').supersedesCode).toBeUndefined();
+    const pr = toFolioRequest({ ...base, promoId: 'promo-aquafold' }, cust, 'k');
+    expect(pr).toMatchObject({ promoId: 'promo-aquafold' });
+    expect(pr.items[0]?.promoRef).toBe('promo-aquafold');
+    expect(pr.discount).toBeUndefined();
+    expect(toFolioRequest(base, cust, 'k').promoId).toBeUndefined();
     const withCust = toQuoteDocument({ ...base, customer: cust, folio: 'x', issuedAt: new Date() });
     expect(withCust.customer).toEqual({ name: 'María López', whatsapp: '+503 7123-4567', zone: 'Soyapango' });
     expect(cartHash(base)).toBe(cartHash({ ...base }));

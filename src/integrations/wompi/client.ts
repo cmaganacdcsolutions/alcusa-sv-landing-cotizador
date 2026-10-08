@@ -114,6 +114,7 @@ export function loadPendingPayment(
       zone: typeof p.zone === 'string' ? p.zone : '',
       address: p.address,
       entrega: p.entrega === 'retiro' ? 'retiro' : 'instalacion',
+      promoId: typeof p.promoId === 'string' ? p.promoId : null,
     };
   } catch {
     return null;

@@ -4,9 +4,9 @@ import { priceStraight, isStraightWidthInRange, straightTierMeters } from './str
 // Fixture values taken verbatim from exploratory-report.md §3.1 and the
 // acceptance criteria in docs/product/slices/S1-tracer-bullet.md T1.2/T1.3.
 describe('engine/pricing/straight — priceStraight', () => {
-  it('applies the promo band for 110cm Natural Claro (AC: $222)', () => {
+  it('contexto normal: 110cm Natural Claro usa la tabla regular ($258), NO la promo de $222', () => {
     const result = priceStraight({ widthCm: 110, color: 'natural', glass: 'claro', pickup: false });
-    expect(result).toEqual({ price: 222, transportIncluded: false, requiresQuote: false });
+    expect(result).toEqual({ price: 258, transportIncluded: false, requiresQuote: false });
   });
 
   it('applies Table C tier 1.3 for 125cm Blanco Claro (AC: $366)', () => {
@@ -25,14 +25,16 @@ describe('engine/pricing/straight — priceStraight', () => {
     expect(result.price).toBeNull();
   });
 
-  it('applies the 15% pickup discount, no promo band (110cm Natural Claro, retiro): $188.70', () => {
+  it('applies the 15% pickup discount on the regular table (110cm Natural Claro, retiro): $219.30', () => {
     const result = priceStraight({ widthCm: 110, color: 'natural', glass: 'claro', pickup: true });
-    expect(result).toEqual({ price: 188.7, transportIncluded: true, requiresQuote: false });
+    expect(result).toEqual({ price: 219.3, transportIncluded: true, requiresQuote: false });
   });
 
-  it('applies promo for Nevado and Con diseño within 80-120cm Natural', () => {
-    expect(priceStraight({ widthCm: 110, color: 'natural', glass: 'nevado', pickup: false }).price).toBe(290);
-    expect(priceStraight({ widthCm: 110, color: 'natural', glass: 'decorado', pickup: false }).price).toBe(325);
+  it('contexto normal: Nevado y Decorado 80-120cm Natural usan la tabla regular (sin banda promo)', () => {
+    expect(priceStraight({ widthCm: 110, color: 'natural', glass: 'nevado', pickup: false }).price).toBe(297);
+    expect(priceStraight({ widthCm: 110, color: 'natural', glass: 'decorado', pickup: false }).price).toBe(333);
+    expect(priceStraight({ widthCm: 90, color: 'natural', glass: 'nevado', pickup: false }).price).toBe(279);
+    expect(priceStraight({ widthCm: 80, color: 'natural', glass: 'claro', pickup: false }).price).toBe(242);
   });
 
   it('falls back to Table N outside the promo band (110cm Natural Mallado): $321', () => {
@@ -58,14 +60,13 @@ describe('engine/pricing/straight — priceStraight', () => {
     expect(isStraightWidthInRange(NaN)).toBe(false);
   });
 
-  it('aquafold promo is 279.99 for 100/110/120 cm natural', () => {
-    for (const widthCm of [100, 110, 120]) {
-      expect(priceStraight({ widthCm, color: 'natural', glass: 'aquafold', pickup: false }).price).toBe(279.99);
+  it('contexto normal: Aquafold siempre se cotiza con asesor (sin precio regular oficial)', () => {
+    for (const [widthCm, color] of [[100, 'natural'], [110, 'natural'], [120, 'natural'], [130, 'natural'], [110, 'bronce']] as const) {
+      expect(priceStraight({ widthCm, color, glass: 'aquafold', pickup: false })).toEqual({
+        price: null,
+        transportIncluded: false,
+        requiresQuote: true,
+      });
     }
-  });
-
-  it('aquafold outside the promo range mirrors decorado (pendiente de Alcusa)', () => {
-    expect(priceStraight({ widthCm: 130, color: 'natural', glass: 'aquafold', pickup: false }).price).toBe(371);
-    expect(priceStraight({ widthCm: 110, color: 'bronce', glass: 'aquafold', pickup: false }).price).toBe(407);
   });
 });

@@ -9,7 +9,7 @@ import { expect, test } from './fixtures';
 
 // @critical = regression tripwires for what already broke before (see CLAUDE.md). `verify:quick`
 // runs everything tagged @critical on desktop1920 + ios390. Also tagged elsewhere:
-// cotizador.spec.ts (Aquafold $279.99 + the 3 promo prices + CTA preselects glass),
+// cotizador.spec.ts (the 3 promo prices via `?promo=<id>` + CTA locks the promo config),
 // cotizador-combinaciones.spec.ts (WhatsApp "Más opciones" advisor tile).
 
 const PRICE_RE = /^\$[\d,]+\.\d{2}$/;
@@ -78,4 +78,22 @@ test.describe('critical - ninguna imagen rota ni 0x0 en ninguna pagina', { tag: 
       expect(await findBrokenImages(page)).toEqual([]);
     });
   }
+});
+
+// Contexto promo (2026-10-08): `?promo=<id>` cotiza SOLO con el reglaje de la promo (Aquafold $279.99 solo ahi);
+// sin `?promo` Aquafold recta va a asesor. Detalle completo: cotizador-promo-context.spec.ts.
+test.describe('critical - Aquafold $279.99 solo con ?promo; sin promo va a asesor', { tag: '@critical' }, () => {
+  test('?promo=promo-aquafold -> $279.99 a 110 cm', async ({ page }) => {
+    await page.goto('/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold&promo=promo-aquafold');
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    await page.locator('#ancho').fill('110');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$279.99');
+  });
+  test('sin ?promo -> Aquafold recta se cotiza con asesor (sin precio)', async ({ page }) => {
+    await page.goto('/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold');
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    await expect(page.getByText(/Aquafold se cotiza con un asesor/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+  });
 });

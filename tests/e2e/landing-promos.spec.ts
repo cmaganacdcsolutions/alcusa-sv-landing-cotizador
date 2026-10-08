@@ -63,13 +63,13 @@ test.describe('landing R3 — estructura', () => {
     expect(await first.locator('.photo-frame__img').evaluate((el) => getComputedStyle(el).objectFit)).toBe('contain');
     await expect(first.locator('.promo-card__ahora')).toHaveText('Ahora $222');
     await expect(first.locator('.promo-card__chip')).toContainText('Vigente hasta el 31 de octubre');
-    await expect(first.locator('[data-promo-cta]')).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro');
+    await expect(first.locator('[data-promo-cta]')).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&promo=promo-puerta-aquaclara');
     await expect(first.locator('[data-promo-cta]')).toHaveText(/Cotizar esta promo/);
     const hrefs = await cards.locator('[data-promo-cta]').evaluateAll((a) => a.map((x) => x.getAttribute('href')));
     expect(hrefs).toEqual([
-      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro',
-      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado',
-      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&promo=promo-puerta-aquaclara',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado&promo=promo-corrediza-nevado',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold&promo=promo-aquafold',
     ]);
   });
 });

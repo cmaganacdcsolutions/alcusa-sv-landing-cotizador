@@ -1,13 +1,8 @@
 // straight — pure pricing module for "Puerta de baño recta" (Slice 1 scope).
 // No React/Astro/window/document/fetch imports. Formula + check-values from
 // exploratory-report.md §3.1. S2 adds the other products in this same shape.
-import {
-  AQUAFOLD_PROMO_MAX_CM,
-  AQUAFOLD_PROMO_MIN_CM,
-  AQUAFOLD_PROMO_PRICE,
-  STRAIGHT_PROMO, STRAIGHT_TABLE_COLOR, STRAIGHT_TABLE_NATURAL,
-} from '@content/pricingTables';
-import type { BaseGlass, StraightPriceInput, StraightPriceResult } from './types';
+import { STRAIGHT_TABLE_COLOR, STRAIGHT_TABLE_NATURAL } from '@content/pricingTables';
+import type { StraightPriceInput, StraightPriceResult } from './types';
 
 export const STRAIGHT_WIDTH_MIN_CM = 80;
 export const STRAIGHT_WIDTH_MAX_CM = 200;
@@ -34,33 +29,17 @@ export function priceStraight(input: StraightPriceInput): StraightPriceResult {
     return { price: null, transportIncluded: false, requiresQuote: true };
   }
 
-  const aquafoldPromo =
-    glass === 'aquafold' &&
-    color === 'natural' &&
-    widthCm >= AQUAFOLD_PROMO_MIN_CM &&
-    widthCm <= AQUAFOLD_PROMO_MAX_CM;
-  // PENDIENTE DE ALCUSA: Aquafold fuera de 1.00-1.20 m (o con aluminio blanco/bronce)
-  // no tiene precio oficial; se cotiza con la tabla/promo de "decorado" hasta que
-  // Alcusa confirme.
-  const tableGlass: BaseGlass = glass === 'aquafold' ? 'decorado' : glass;
-
-  const isPromo =
-    !aquafoldPromo &&
-    color === 'natural' &&
-    widthCm >= 80 &&
-    widthCm <= 120 &&
-    (tableGlass === 'claro' || tableGlass === 'nevado' || tableGlass === 'decorado');
-
-  let base: number;
-  if (aquafoldPromo) {
-    base = AQUAFOLD_PROMO_PRICE;
-  } else if (isPromo) {
-    base = STRAIGHT_PROMO[tableGlass as 'claro' | 'nevado' | 'decorado'];
-  } else {
-    const tier = straightTierMeters(widthCm);
-    const table = color === 'natural' ? STRAIGHT_TABLE_NATURAL : STRAIGHT_TABLE_COLOR;
-    base = table[tier.toFixed(1)][tableGlass];
+  // Contexto NORMAL (sin `?promo=`): no hay precios promocionales. Las 3 promos viven en
+  // content/promotions.json y se cotizan en state/quote.ts (promoQuote) solo con la entrada por promo.
+  // Aquafold no tiene precio regular oficial todavia: se cotiza con asesor (WhatsApp) en toda medida.
+  if (glass === 'aquafold') {
+    return { price: null, transportIncluded: false, requiresQuote: true };
   }
+  const tier = straightTierMeters(widthCm);
+  const table = color === 'natural' ? STRAIGHT_TABLE_NATURAL : STRAIGHT_TABLE_COLOR;
+  const row = table[tier.toFixed(1)];
+  if (!row) return { price: null, transportIncluded: false, requiresQuote: true };
+  const base = row[glass];
 
   const price = pickup ? round2(base * 0.85) : base;
 

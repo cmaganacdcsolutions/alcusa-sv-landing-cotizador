@@ -12,6 +12,8 @@ import type { QuoteResult } from '../../state/quote';
 import { IconArrowRight, IconWarningTriangle } from '../../icons';
 import { ColorSwatch, GlassSwatch } from './glassSwatches';
 import { STRAIGHT_COLORS, STRAIGHT_GLASSES } from './finishOptions';
+import { promoWidthRuleCopy } from '@content/promoContext';
+import { lookupPromo } from '../../state/promoRegistry';
 
 export interface StraightFormProps {
   product: CatalogProduct;
@@ -26,6 +28,8 @@ export interface StraightFormProps {
 export default function StraightForm({ product, state, dispatch, quote, onNext }: StraightFormProps): ReactElement {
   const widthCm = parseWidthCm(state.width);
   const invalid = quote.requiresQuote;
+  // Contexto promo: producto, color, vidrio y alto fijos; solo el ancho se edita y se valida al rango de la promo.
+  const promo = lookupPromo(state.promoId);
 
   return (
     <section aria-labelledby="step1-heading">
@@ -53,11 +57,30 @@ export default function StraightForm({ product, state, dispatch, quote, onNext }
         </div>
         <span id="ancho-ayuda" className="field__helper" data-invalid={invalid}>
           {invalid
-            ? `Medida fuera de rango: ${Number.isNaN(widthCm) ? '—' : `${widthCm} cm`}`
+            ? promo
+              ? `${promoWidthRuleCopy(promo)}. Medida actual: ${Number.isNaN(widthCm) ? '—' : `${widthCm} cm`}`
+              : `Medida fuera de rango: ${Number.isNaN(widthCm) ? '—' : `${widthCm} cm`}`
             : `Medida reconocida: ${widthCm} cm (${(widthCm / 100).toFixed(2)} m)`}
         </span>
       </div>
 
+      {promo ? (
+        <dl className="breakdown" data-testid="promo-locked" style={{ marginTop: 20 }}>
+          <div className="breakdown__row">
+            <dt>Color del aluminio</dt>
+            <dd>{COLOR_LABELS[promo.color]}</dd>
+          </div>
+          <div className="breakdown__row">
+            <dt>Tipo de vidrio</dt>
+            <dd>{GLASS_LABELS[promo.glass]}</dd>
+          </div>
+          <div className="breakdown__row">
+            <dt>Altura</dt>
+            <dd>{promo.altoM.toFixed(2)} m</dd>
+          </div>
+        </dl>
+      ) : (
+        <>
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color del aluminio</span>
         <div className="chip-row" role="group" aria-label="Color del aluminio">
@@ -99,6 +122,9 @@ export default function StraightForm({ product, state, dispatch, quote, onNext }
         )}
       </div>
 
+        </>
+      )}
+
       {invalid && (
         <div className="callout" role="status" style={{ marginTop: 20 }}>
           <span className="callout__title">
@@ -106,8 +132,11 @@ export default function StraightForm({ product, state, dispatch, quote, onNext }
             Cotización personalizada por WhatsApp
           </span>
           <p className="callout__body">
-            El ancho debe ser de {STRAIGHT_WIDTH_MIN_CM} a {STRAIGHT_WIDTH_MAX_CM} cm y la altura de 1.85 m. Para
-            otras medidas, consulta con ALCUSA.
+            {promo
+              ? `${promoWidthRuleCopy(promo)}. Para otras medidas, usa “Cotizar otro modelo sin promoción”.`
+              : state.glass === 'aquafold'
+                ? 'El vidrio Aquafold se cotiza con un asesor. Escríbenos por WhatsApp para darte el precio.'
+                : `El ancho debe ser de ${STRAIGHT_WIDTH_MIN_CM} a ${STRAIGHT_WIDTH_MAX_CM} cm y la altura de 1.85 m. Para otras medidas, consulta con ALCUSA.`}
           </p>
         </div>
       )}

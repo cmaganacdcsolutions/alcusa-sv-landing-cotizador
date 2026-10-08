@@ -40,6 +40,8 @@ export interface BuildPayOfferInput {
   /** null while the delivery is not known yet (precio): treated as no shipping. */
   shipping: ShippingState | null;
   pickup: boolean;
+  /** Contexto promo: no hay preview ni linea aplicada del 10%. */
+  promo?: boolean;
 }
 
 export function buildPayOffer(i: BuildPayOfferInput): PayOffer | null {
@@ -50,6 +52,7 @@ export function buildPayOffer(i: BuildPayOfferInput): PayOffer | null {
     shipping: i.shipping ?? { kind: 'none' },
     payMethod: 'pay',
     pickup: i.pickup,
+    ...(i.promo ? { promo: true } : {}),
   });
   if (!payable.discount.applies) return null;
   const applied = payMethodForDiscount(i.step, i.payMethod, i.chosen, i.offer) === 'pay';

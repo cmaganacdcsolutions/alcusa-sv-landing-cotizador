@@ -13,7 +13,7 @@ import {
 // <product>.test.ts / zoneFee.test.ts.
 describe('engine/pricing barrel', () => {
   it('re-exports every S1/S2 product pricing function and zoneFee', () => {
-    expect(priceStraight({ widthCm: 110, color: 'natural', glass: 'claro', pickup: false }).price).toBe(222);
+    expect(priceStraight({ widthCm: 110, color: 'natural', glass: 'claro', pickup: false }).price).toBe(258);
     expect(priceCorner({ color: 'natural', model: 'aquaclara' }).price).toBe(444);
     expect(priceTempered({ widthCm: 120 }).price).toBe(672);
     expect(priceHinged({ widthCm: 70, color: 'natural', glass: 'claro', qty: 1 }).subtotal).toBe(270);

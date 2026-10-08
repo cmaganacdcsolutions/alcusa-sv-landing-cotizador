@@ -11,6 +11,7 @@
       "price_promo": 222,
       "product_slug": "recta",
       "cotizador_params": { "color": "natural", "vidrio": "claro" },
+      "quote_rules": { "width_min_cm": 100, "width_max_cm": 120, "alto_m": 1.85 },
       "starts_on": "2026-10-01",
       "ends_on": "2026-10-31",
       "rules": [
@@ -31,6 +32,7 @@
       "price_promo": 260,
       "product_slug": "recta",
       "cotizador_params": { "color": "natural", "vidrio": "nevado" },
+      "quote_rules": { "width_min_cm": 90, "width_max_cm": 120, "alto_m": 1.85 },
       "starts_on": "2026-10-01",
       "ends_on": "2026-10-31",
       "rules": [
@@ -51,6 +53,7 @@
       "price_promo": 279.99,
       "product_slug": "recta",
       "cotizador_params": { "color": "natural", "vidrio": "aquafold" },
+      "quote_rules": { "width_min_cm": 100, "width_max_cm": 120, "alto_m": 1.85 },
       "starts_on": "2026-10-01",
       "ends_on": "2026-10-31",
       "rules": [

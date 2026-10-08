@@ -7,6 +7,7 @@ import { applyLoadedQuote } from './loadQuote';
 import { cotizadorReducer, initialCotizadorState } from './cotizadorStore';
 import { buildOrderItems } from './order';
 import { CATALOG_PRODUCTS } from '@content/catalog';
+import type { PromoContext } from '@content/promoContext';
 
 const NOW = new Date('2026-09-30T12:00:00Z');
 const client = createMockQuoteClient({ now: () => NOW, latencyMs: 0 });
@@ -134,5 +135,36 @@ describe('reducer LOAD_QUOTE', () => {
     const r = applyLoadedQuote(await client.getQuote(codes.found));
     const loaded = cotizadorReducer(initialCotizadorState, { type: 'LOAD_QUOTE', items: r.items, entrega: r.entrega, zone: r.zone, notice: r.notice });
     expect(cotizadorReducer(loaded, { type: 'DISMISS_QUOTE_NOTICE' }).quoteLoad).toBeNull();
+  });
+});
+
+describe('applyLoadedQuote: contexto promo por folio', () => {
+  const aquaclara: PromoContext = {
+    id: 'promo-puerta-aquaclara', title: 'Puerta Aquaclara', price: 222, productId: 'recta', color: 'natural',
+    glass: 'claro', widthMinCm: 100, widthMaxCm: 120, altoM: 1.85,
+  };
+  const withRef = async (ref: string | null) => {
+    const res = await client.getQuote(codes.found);
+    return { ...res, delivery: { mode: 'delivery' as const, zone: 'Soyapango' }, items: res.items.map((it) => ({ ...it, promoRef: ref })) };
+  };
+
+  it('promo vigente: restaura el contexto y cotiza al precio de la promo', async () => {
+    const r = applyLoadedQuote(await withRef(aquaclara.id), { resolvePromo: (id) => (id === aquaclara.id ? aquaclara : null) });
+    expect(r.promoId).toBe(aquaclara.id);
+    expect(r.notice.changes.map((c) => c.kind)).not.toContain('promo_expired');
+    const loaded = cotizadorReducer(initialCotizadorState, { type: 'LOAD_QUOTE', items: r.items, entrega: r.entrega, zone: r.zone, notice: r.notice, promoId: r.promoId });
+    expect(loaded.promoId).toBe(aquaclara.id);
+  });
+  it('promo vencida o inexistente: flujo normal (recalcula, promo_expired, sin contexto)', async () => {
+    const r = applyLoadedQuote(await withRef('promo-vieja'), { resolvePromo: () => null });
+    expect(r.promoId).toBeNull();
+    expect(r.notice.changes.map((c) => c.kind)).toContain('promo_expired');
+  });
+  it('ancho fuera del rango de la promo: flujo normal', async () => {
+    const r = applyLoadedQuote(await withRef(aquaclara.id), { resolvePromo: () => ({ ...aquaclara, widthMinCm: 130, widthMaxCm: 140 }) });
+    expect(r.promoId).toBeNull();
+  });
+  it('sin promoRef: contexto normal', async () => {
+    expect(applyLoadedQuote(await withRef(null), { resolvePromo: () => aquaclara }).promoId).toBeNull();
   });
 });

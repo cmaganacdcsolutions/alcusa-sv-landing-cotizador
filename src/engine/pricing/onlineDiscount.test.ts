@@ -7,7 +7,7 @@ describe('engine/pricing/onlineDiscount', () => {
     expect(ONLINE_CARD_DISCOUNT).toEqual({
       rate: 0.1,
       appliesToShipping: false,
-      appliesToPromoItems: true,
+      appliesToPromoItems: false,
       stacksWithPickupDiscount: true,
     });
     expect(ONLINE_CARD_PAY_METHOD).toBe('pay');

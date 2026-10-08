@@ -10,7 +10,7 @@ async function waitForHydration(page: Page): Promise<void> {
   await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
 }
 
-// recta 110cm/Natural/Claro con instalación a Soyapango ($222 + $40 = $262,
+// recta 110cm/Natural/Claro con instalación a Soyapango ($258 + $40 = $298,
 // same check-values as tests/e2e/cotizador.spec.ts) then "+ Agregar otro
 // producto" commits it and loops back to step 0.
 async function addRectaThenLoop(page: Page): Promise<void> {
@@ -24,7 +24,7 @@ async function addRectaThenLoop(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Siguiente' }).click();
   await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
   await fillAddress(page, 'Soyapango');
-  await expect(page.getByTestId('zona-total-value')).toHaveText('$262.00');
+  await expect(page.getByTestId('zona-total-value')).toHaveText('$298.00');
   await page.getByRole('button', { name: 'Siguiente' }).click();
 
   await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
@@ -55,8 +55,8 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     await expect(page.locator('.summary-item')).toHaveCount(2);
     await expect(page.getByText('Tus productos · 2 productos')).toBeVisible();
     await expect(page.getByText('Transporte · Soyapango')).toBeVisible();
-    // 222 (recta) + 444 (corner) + 40 (Soyapango, ONCE) = 706 — never 40x2.
-    await expect(page.getByTestId('resumen-total-value')).toHaveText('$706.00');
+    // 258 (recta) + 444 (corner) + 40 (Soyapango, ONCE) = 742 — never 40x2.
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$742.00');
 
     const waLink = (await textOnlyWaLink(page));
     const href = await waLink.getAttribute('href');
@@ -64,7 +64,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     expect(decoded).toContain('1. Puerta de baño recta');
     expect(decoded).toContain('2. Cabina en L');
     expect(decoded).toContain('Transporte: $40.00');
-    expect(decoded).toContain('Total estimado: $706.00');
+    expect(decoded).toContain('Total estimado: $742.00');
 
     // Quitar the recta row — only Cabina en L (+ its $40 transport) remains.
     await page.getByRole('button', { name: 'Quitar Puerta de baño recta' }).click();
@@ -115,21 +115,21 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
 
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
     const resumenTotal = await page.getByTestId('resumen-total-value').textContent();
-    expect(resumenTotal).toBe('$706.00');
+    expect(resumenTotal).toBe('$742.00');
 
     await page.getByRole('button', { name: 'Cambiar' }).click();
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
 
     // Breakdown's first row rolls up into "N productos" + the order
-    // subtotal (222 + 444 = 666) instead of just Cabina en L's own price —
+    // subtotal (258 + 444 = 702) instead of just Cabina en L's own price —
     // consistent with Resumen/orderTotal (gap 2).
     await expect(page.getByText('2 productos · con instalación')).toBeVisible();
-    await expect(page.locator('.breakdown__row', { hasText: '2 productos' })).toContainText('$666.00');
+    await expect(page.locator('.breakdown__row', { hasText: '2 productos' })).toContainText('$702.00');
     await expect(page.getByTestId('zona-total-value')).toHaveText(resumenTotal!);
   });
 
   test('the cart survives a reload (sessionStorage) — the committed item is still there', async ({ page }) => {
-    await addRectaThenLoop(page); // cart: [recta $222], back at step 0
+    await addRectaThenLoop(page); // cart: [recta $258], back at step 0
 
     await page.reload();
     await waitForHydration(page);
@@ -150,6 +150,6 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     await expect(summaryCard.locator('.summary-item')).toHaveCount(2);
     await expect(summaryCard.getByText('Puerta de baño recta')).toBeVisible();
     await expect(summaryCard.getByText('Cabina en L')).toBeVisible();
-    await expect(page.getByTestId('resumen-total-value')).toHaveText('$706.00');
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$742.00');
   });
 });

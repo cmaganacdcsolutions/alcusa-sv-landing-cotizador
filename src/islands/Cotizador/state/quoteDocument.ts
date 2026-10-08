@@ -58,6 +58,8 @@ export interface QuoteDocumentInput {
   shippingPending?: boolean;
   /** 10% online-card discount; only present once the customer chose card (the folio is normally issued before). */
   discount?: QuoteDiscount;
+  /** Contexto promo: viaja como `promoId` y como `promoRef` de cada item (carga por folio restaura el contexto). */
+  promoId?: string | null;
   customer?: CustomerData;
 }
 
@@ -82,7 +84,7 @@ export function toQuoteDocument(i: QuoteDocumentInput): QuoteDocument {
 /** USD decimals with at most 2 decimals (never integer cents). */
 export const usd = (n: number): number => Math.round(n * 100) / 100;
 
-export function toFolioItem(it: OrderLineItem, config: Readonly<Record<string, unknown>> = {}): QuoteFolioItem {
+export function toFolioItem(it: OrderLineItem, config: Readonly<Record<string, unknown>> = {}, promoRef: string | null = null): QuoteFolioItem {
   const d = toQuoteDocumentItem(it);
   const cents = Math.round(d.price * 100);
   // lineTotal must equal qty * unitPrice in cents: if the split is not exact, send one line of qty 1.
@@ -99,7 +101,7 @@ export function toFolioItem(it: OrderLineItem, config: Readonly<Record<string, u
     lineTotal: usd(cents / 100),
     config: snapshot,
     configSchemaVersion: CONFIG_SCHEMA_VERSION,
-    promoRef: null,
+    promoRef,
   };
 }
 
@@ -115,10 +117,11 @@ export function toFolioRequest(
     ...(supersedesCode ? { supersedesCode } : {}),
     customer: { name: customer.name, whatsapp: customer.whatsapp },
     delivery: { mode: i.entrega === 'instalacion' ? 'delivery' : 'pickup', ...(i.entrega === 'instalacion' ? { zone: i.zone, ...(i.address ? { address: i.address } : {}) } : {}) },
-    items: i.items.map((it) => toFolioItem(it, i.configs?.[it.id])),
+    items: i.items.map((it) => toFolioItem(it, i.configs?.[it.id], i.promoId ?? null)),
     transportFee: usd(i.transport),
     ...(i.shippingPending ? { shippingPending: true } : {}),
     ...(i.discount ? { discount: { code: i.discount.code, amount: usd(i.discount.amount) } } : {}),
+    ...(i.promoId ? { promoId: i.promoId } : {}),
     total: usd(i.total),
     consent: true,
     privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
@@ -127,7 +130,7 @@ export function toFolioRequest(
 
 /** Stable key for the prewarm cache and the idempotency key. */
 export function cartHash(i: Omit<QuoteDocumentInput, 'folio' | 'issuedAt' | 'customer' | 'configs'>): string {
-  const s = JSON.stringify([i.items.map((x) => [x.id, x.productId, x.detail, x.subtotal, x.requiresQuote]), i.entrega, i.zone, i.address ?? '', i.transport, i.total, ...(i.shippingPending ? ['pending'] : [])]);
+  const s = JSON.stringify([i.items.map((x) => [x.id, x.productId, x.detail, x.subtotal, x.requiresQuote]), i.entrega, i.zone, i.address ?? '', i.transport, i.total, ...(i.shippingPending ? ['pending'] : []), ...(i.promoId ? ['promo:' + i.promoId] : [])]);
   let h = 5381;
   for (let k = 0; k < s.length; k++) h = ((h << 5) + h + s.charCodeAt(k)) | 0;
   return (h >>> 0).toString(36);

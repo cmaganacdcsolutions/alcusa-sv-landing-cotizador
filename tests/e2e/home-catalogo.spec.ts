@@ -15,7 +15,7 @@ const SECTIONS = [
     id: 'puertas-de-bano',
     cards: [
       ['templada-10mm', 'Templada 10 mm', 'Desde $672', 'templada-10mm'],
-      ['recta', 'Rectas', 'Desde $222', 'recta'],
+      ['recta', 'Rectas', 'Desde $242', 'recta'],
       // En L: el producto que viaja al cotizador es su acabado por defecto (Aquaclara).
       ['en-l', 'En L', 'Desde $444', 'l-aquaclara'],
       ['bisagra', 'De bisagra', 'Desde $253', 'bisagra'],

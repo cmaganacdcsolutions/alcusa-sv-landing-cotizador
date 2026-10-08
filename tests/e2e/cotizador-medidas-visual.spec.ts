@@ -51,7 +51,7 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     // Table A, 110cm Natural Nevado — unchanged pricing, only the card's
     // markup/CSS moved to .estimate-card.
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$290.00');
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$297.00');
     await expect(page.locator('.estimate-card__preview img.photo-frame__img')).toHaveAttribute('src', '/images/renders/recta-natural-nevado-800.webp');
   });
 });

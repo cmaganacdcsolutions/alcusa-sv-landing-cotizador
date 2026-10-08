@@ -32,7 +32,7 @@ test.describe('visual - cotizador', () => {
     await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.locator('#step2-heading')).toBeVisible();
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$222.00');
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$258.00');
     await settleForScreenshot(page);
     await expect(page).toHaveScreenshot('paso2-precio.png', { timeout: 15_000 });
 
@@ -40,7 +40,7 @@ test.describe('visual - cotizador', () => {
     await fillAddress(page, 'Soyapango');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
-    await expect(page.getByTestId('resumen-total-value')).toHaveText('$262.00');
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$298.00');
     await settleForScreenshot(page);
     await expect(page).toHaveScreenshot('paso4-resumen.png', { timeout: 15_000 });
   });

@@ -80,6 +80,7 @@ export default function Step6Wompi({
         items,
         ...(onlineDiscount > 0 ? { discount: { code: 'online_card_10' as const, amount: onlineDiscount } } : {}),
         ...(shippingPending ? { shippingPending: true } : {}),
+        ...(state.promoId ? { promoId: state.promoId } : {}),
       })
         .then((link) => {
           savePendingPayment({
@@ -88,6 +89,7 @@ export default function Step6Wompi({
             zone: state.zone,
             address: state.address,
             entrega: state.entrega,
+            promoId: state.promoId,
           });
           window.location.assign(link.urlEnlace);
         })

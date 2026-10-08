@@ -159,6 +159,8 @@ function guardWizardFields(o: Record<string, unknown>): WizardFields | null {
   if (!isShortString(o.gardenQty)) return null;
   // Oferta 10% en linea (`?oferta=online10`). Un snapshot viejo sin el campo se descarta (aceptado).
   if (!isBoolean(o.onlineOffer)) return null;
+  // Contexto promo (`?promo=<id>`): null = normal. Se restaura solo si coincide con el de la URL (ver Cotizador).
+  if (o.promoId !== null && !isShortString(o.promoId)) return null;
 
   // Estados antiguos (cascada departamento/municipio/distrito): parseStoredAddress los migra a la zona o la deja
   // vacia. `zone` siempre sigue a la zona de la direccion; una cotizacion cargada por folio conserva la suya.
@@ -172,6 +174,7 @@ function guardWizardFields(o: Record<string, unknown>): WizardFields | null {
     addressFromQuote: o.addressFromQuote,
     editingItem: o.editingItem,
     onlineOffer: o.onlineOffer,
+    promoId: o.promoId,
     productId,
     width: o.width,
     color: o.color,
@@ -223,6 +226,7 @@ function isPristine(state: CotizadorState): boolean {
     state.zone === '' &&
     state.editingItem === null &&
     !state.onlineOffer &&
+    state.promoId === null &&
     !a.zona &&
     !a.colonia &&
     !a.calle &&
@@ -303,7 +307,7 @@ export function persistWizardState(state: CotizadorState, storage: StorageLike |
 // ---------------------------------------------------------------------------
 
 /** Parametros del deep link (`?producto=` de catalogo/inicio/promos y `?oferta=`). */
-export const DEEP_LINK_PARAMS = ['producto', 'paso', 'color', 'vidrio', 'oferta'] as const;
+export const DEEP_LINK_PARAMS = ['producto', 'paso', 'color', 'vidrio', 'oferta', 'promo'] as const;
 
 export function hasDeepLinkParams(search: string): boolean {
   const params = new URLSearchParams(search);

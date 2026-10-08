@@ -78,7 +78,7 @@ if ($total < $minTotal || $total > $maxTotal) {
 // Business rules (layer 2): item subtotals must add up; the remainder is
 // transport (bounded, non-negative; 0 when shippingPending). An optional
 // online-card discount is recomputed here, never trusted (wompi-pricing.php).
-$checked = wompi_check_order_amounts($items, $total, $in['discount'] ?? null, $in['shippingPending'] ?? null, $maxTotal, $maxTransport);
+$checked = wompi_check_order_amounts($items, $total, $in['discount'] ?? null, $in['shippingPending'] ?? null, $maxTotal, $maxTransport, $in['promoId'] ?? null);
 if (!$checked['ok']) {
     wompi_log('create', $checked['log'], $checked['ctx']);
     wompi_fail($checked['status'], $checked['code'], $checked['message']);

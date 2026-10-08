@@ -300,12 +300,12 @@ test.describe('promociones compactas', () => {
       }
       const cta = cards.first().locator('[data-promo-cta]');
       expect(Math.round((await cta.boundingBox())!.height)).toBe(44);
-      await expect(cta).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro');
+      await expect(cta).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&promo=promo-puerta-aquaclara');
     });
   }
   test('el enlace de la promo Aquafold lleva producto, paso Medidas, color natural y vidrio aquafold', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#promociones [data-promo-cta]').nth(2)).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold');
+    await expect(page.locator('#promociones [data-promo-cta]').nth(2)).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold&promo=promo-aquafold');
   });
 });
 

@@ -111,13 +111,13 @@ const QUOTER_CASES: QuoterCase[] = [
     changed: 'jardin-2-hojas-bronce-mallado',
   },
   {
-    // Deep link del contrato: color=bronce&vidrio=aquafold -> Step2 muestra recta-bronce-aquafold.
+    // Deep link del contrato: color=bronce&vidrio=nevado -> Step2 muestra recta-bronce-nevado (Aquafold recta sin ?promo va a asesor: no llega a Step2).
     name: 'puerta recta (color + vidrio)',
-    query: 'producto=recta&paso=medidas&color=bronce&vidrio=aquafold',
+    query: 'producto=recta&paso=medidas&color=bronce&vidrio=nevado',
     fill: async (page) => {
       await page.locator('#ancho').fill('110');
     },
-    initial: 'recta-bronce-aquafold',
+    initial: 'recta-bronce-nevado',
     change: { group: 'Tipo de vidrio', button: /^Decorado/ },
     changed: 'recta-bronce-decorado',
   },

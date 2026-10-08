@@ -98,9 +98,9 @@ test.describe('cotizador — Step5 forma de pago', () => {
     await toFormaPago(page);
     await page.getByRole('button', { name: 'Pago total 100%' }).click();
     await expect(page.getByRole('button', { name: 'Pago total 100%' })).toHaveAttribute('aria-pressed', 'true');
-    // $222 + $40 transport = $262.00; the Wompi (card) option applies the 10% online discount on the $222 only
-    // (behaviour change 2026-10-06): $262.00 - $22.20 = $239.80.
-    await expect(page.getByTestId('cotizador-root')).toContainText('Pagar $239.80 con Wompi');
+    // $258 + $40 transport = $298.00; the Wompi (card) option applies the 10% online discount on the $258 only
+    // (behaviour change 2026-10-06): $298.00 - $25.80 = $272.20.
+    await expect(page.getByTestId('cotizador-root')).toContainText('Pagar $272.20 con Wompi');
   });
 });
 

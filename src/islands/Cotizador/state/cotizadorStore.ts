@@ -3,6 +3,7 @@
 // (islands are the only layer allowed to touch window/history).
 import type { AluminumColor, CornerModel, GardenColor, GardenGlass, GardenHojas, StraightGlass, WindowGlass, WindowModel } from '@engine/pricing';
 import type { ProductId } from '@content/catalog';
+import type { PromoContext } from '@content/promoContext';
 import { HINGED_WIDTH_MAX_CM, HINGED_WIDTH_MIN_CM } from '@engine/pricing/hinged';
 import { STRAIGHT_WIDTH_MAX_CM, STRAIGHT_WIDTH_MIN_CM } from '@engine/pricing/straight';
 import { TEMPERED_WIDTH_MAX_CM, TEMPERED_WIDTH_MIN_CM } from '@engine/pricing/tempered';
@@ -137,6 +138,10 @@ export interface CotizadorState {
   // tambien deja payMethod 'pay' + payMethodChosen). Si luego elige WhatsApp en Step5 el descuento
   // se quita (payMethod 'wa'), pero el flag queda para avisar que solo aplica con tarjeta.
   onlineOffer: boolean;
+  // Contexto promo (`?promo=<id>`): id de la promo con cuyo reglaje se cotiza (producto/acabado/alto fijos,
+  // ancho en su rango, precio de la promo, SIN 10% con tarjeta). null = contexto normal. Nunca se mezcla:
+  // la cotizacion vive en UN contexto definido por la URL de entrada (igual que `onlineOffer`).
+  promoId: string | null;
   // --- sf-cot-checkout: mock Wompi result (Step6Wompi → Step7Resultado) ---
   // Set by SET_WOMPI_RESULT once src/integrations/wompi/mock.ts "resolves" a
   // mock payment attempt; null until then. No real gateway data lands here
@@ -234,6 +239,7 @@ export const initialCotizadorState: CotizadorState = {
   payMethodChosen: false,
   payAmountPct: 80,
   onlineOffer: false,
+  promoId: null,
   wompiOutcome: null,
   wompiOrderNumber: null,
   cart: [],
@@ -281,6 +287,7 @@ export const WIZARD_ORDER_KEYS = [
   'addressFromQuote',
   'editingItem',
   'onlineOffer',
+  'promoId',
 ] as const;
 export type WizardOrderKey = (typeof WIZARD_ORDER_KEYS)[number];
 export type WizardFields = Pick<CotizadorState, WizardOrderKey | ItemFieldKey>;
@@ -336,6 +343,12 @@ export type CotizadorAction =
   | { type: 'SET_PAY_AMOUNT_PCT'; pct: 80 | 100 }
   // `?oferta=online10` (navbar): marca la oferta y deja el pago con tarjeta elegido.
   | { type: 'APPLY_ONLINE_OFFER' }
+  // Entrada por promo: bloquea producto/color/vidrio/alto a la promo, ancho dentro de su rango, sin 10%.
+  | { type: 'ENTER_PROMO'; promo: PromoContext }
+  // "Cotizar otro modelo sin promocion": sale del contexto, descarta el item promo y reinicia en normal.
+  | { type: 'EXIT_PROMO' }
+  // Retorno de Wompi: restaura el contexto promo con el que se pago (no toca nada mas).
+  | { type: 'RESTORE_PROMO'; promoId: string | null }
   | { type: 'SET_WOMPI_RESULT'; outcome: 'approved' | 'declined' | 'pending'; orderNumber: string }
   // --- S7: multi-item cart ---
   // Commits the current item into `cart` and resets step 0 with a fresh
@@ -355,7 +368,7 @@ export type CotizadorAction =
   // the wizard returns to Resumen, instead of trailing at the end.
   | { type: 'EDIT_ITEM'; id: string }
   // --- F4 (ADR-012): reemplaza el carrito con una cotizacion cargada por folio ---
-  | { type: 'LOAD_QUOTE'; items: CartItem[]; entrega: Entrega; zone: string; notice: QuoteLoadNotice }
+  | { type: 'LOAD_QUOTE'; items: CartItem[]; entrega: Entrega; zone: string; notice: QuoteLoadNotice; promoId?: string | null }
   | { type: 'DISMISS_QUOTE_NOTICE' };
 
 /** Accepts meters ("1.10") or centimeters ("110"): values < 10 are ×100. */
@@ -391,6 +404,8 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
     case 'SET_GLASS':
       return { ...state, glass: action.glass };
     case 'SET_ENTREGA':
+      // Contexto promo: solo instalada (sin retiro en tienda).
+      if (state.promoId !== null && action.entrega === 'retiro') return state;
       return { ...state, entrega: action.entrega };
     case 'SET_ZONE':
       return { ...state, zone: action.zone, address: { ...state.address, zona: action.zone } };
@@ -487,6 +502,28 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       return { ...state, payAmountPct: action.pct };
     case 'APPLY_ONLINE_OFFER':
       return { ...state, onlineOffer: true, payMethod: 'pay', payMethodChosen: true };
+    case 'ENTER_PROMO': {
+      const { promo } = action;
+      const cm = parseWidthCm(state.width);
+      const width = cm >= promo.widthMinCm && cm <= promo.widthMaxCm ? state.width : String(promo.widthMinCm + Math.round((promo.widthMaxCm - promo.widthMinCm) / 20) * 10);
+      return {
+        ...state,
+        ...INITIAL_ITEM_FIELDS,
+        cart: [],
+        editingItem: null,
+        onlineOffer: false,
+        promoId: promo.id,
+        productId: promo.productId,
+        color: promo.color,
+        glass: promo.glass,
+        width,
+        step: state.step === 'producto' ? 'medidas' : state.step,
+      };
+    }
+    case 'RESTORE_PROMO':
+      return { ...state, promoId: action.promoId };
+    case 'EXIT_PROMO':
+      return { ...initialCotizadorState };
     case 'SET_WOMPI_RESULT':
       return { ...state, wompiOutcome: action.outcome, wompiOrderNumber: action.orderNumber };
     // --- S7: multi-item cart ---
@@ -554,6 +591,8 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
         address: { ...state.address, zona: action.zone },
         addressFromQuote: true,
         quoteLoad: action.notice,
+        promoId: action.promoId ?? null,
+        onlineOffer: action.promoId ? false : state.onlineOffer,
       };
       return { ...applyCartItem(base, last), step: 'resumen' };
     }

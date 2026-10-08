@@ -25,7 +25,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
   });
 
-  test('happy path: recta 110cm Natural Claro, Soyapango, con instalación → $262.00 total + WhatsApp href', async ({
+  test('happy path: recta 110cm Natural Claro, Soyapango, con instalación → $298.00 total + WhatsApp href', async ({
     page,
   }) => {
     await page.goto('/cotizador');
@@ -40,16 +40,16 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$222.00');
+    await expect(page.getByTestId('step2-price-value')).toHaveText('$258.00');
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
     await fillAddress(page, 'Soyapango');
-    await expect(page.getByTestId('zona-total-value')).toHaveText('$262.00');
+    await expect(page.getByTestId('zona-total-value')).toHaveText('$298.00');
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
-    await expect(page.getByTestId('resumen-total-value')).toHaveText('$262.00');
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$298.00');
 
     const waLink = (await textOnlyWaLink(page));
     const href = await waLink.getAttribute('href');
@@ -60,16 +60,16 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     expect(decoded).toContain('Hola ALCUSA, quiero confirmar esta cotización:');
     expect(decoded).toContain('Puerta de baño recta — 1.10×1.85 m · Color: Natural · Vidrio: Claro 5 mm');
     expect(decoded).toContain('Zona: Soyapango · Entrega: con instalación');
-    expect(decoded).toContain('Subtotal: $222.00');
+    expect(decoded).toContain('Subtotal: $258.00');
     expect(decoded).toContain('Transporte: $40.00');
-    expect(decoded).toContain('Total estimado: $262.00');
-    expect(decoded).toContain('Anticipo (80%): $209.60 · Saldo (20% al entregar): $52.40');
+    expect(decoded).toContain('Total estimado: $298.00');
+    expect(decoded).toContain('Anticipo (80%): $238.40 · Saldo (20% al entregar): $59.60');
     expect(decoded).toContain('Dirección: Residencial Las Flores, Pasaje 3, casa 12');
   });
 
   for (const [i, glass, label, price] of [
     [0, 'claro', 'Claro 5 mm', '$222.00'],
-    [1, 'nevado', 'Nevado 5 mm', '$290.00'],
+    [1, 'nevado', 'Nevado 5 mm', '$260.00'],
     [2, 'aquafold', 'Aquafold', '$279.99'],
   ] as const) {
     test(`promo CTA #${i + 1} lands on Medidas with ${glass} preselected and prices ${price} at 110 cm`, { tag: '@critical' }, async ({ page }) => {
@@ -78,8 +78,9 @@ test.describe('cotizador — recta, step 0 to 5', () => {
       await waitForHydration(page);
       // The promo link carries producto + color + vidrio + paso=medidas: it lands on Medidas (no product picker).
       await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Natural', pressed: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: label, pressed: true })).toBeVisible();
+      // Contexto promo (?promo=<id>): config bloqueada a la de la promo (sin selectores).
+      await expect(page.getByTestId('promo-locked')).toContainText('Natural');
+      await expect(page.getByTestId('promo-locked')).toContainText(label);
       await page.getByLabel('Ancho exacto de tu espacio').fill('110');
       await page.getByRole('button', { name: 'Siguiente' }).click();
       await expect(page.getByTestId('step2-price-value')).toHaveText(price);
@@ -93,7 +94,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     await expect(page.getByRole('button', { name: 'Claro 5 mm', pressed: true })).toBeVisible();
   });
 
-  test('retiro en tienda: 110cm Natural Claro → $188.70, sin transporte', async ({ page }) => {
+  test('retiro en tienda: 110cm Natural Claro → $219.30, sin transporte', async ({ page }) => {
     await page.goto('/cotizador');
     await waitForHydration(page);
     await pickProduct(page, 'recta');
@@ -101,7 +102,7 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await page.getByRole('button', { name: 'Retiro en tienda −15%' }).click();
-    await expect(page.getByTestId('zona-total-value')).toHaveText('$188.70');
+    await expect(page.getByTestId('zona-total-value')).toHaveText('$219.30');
   });
 
   test('out-of-range width (75cm) shows the "Cotización personalizada por WhatsApp" card, Siguiente disabled', async ({

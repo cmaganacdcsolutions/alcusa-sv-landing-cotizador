@@ -287,6 +287,10 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
             } else if (combo.model === 'ventana') {
               const exp = priceWindow({ widthM: 1.2, heightM: 1.0, model: combo.preset.windowType ?? 'francesa', frame: c as 'blanco', glass: g as 'claro', zaranda: false, desmontaje: false, qty: 1 }).subtotal;
               await expect(page.locator('.bottom-bar__price-value').first()).toHaveText(expectedMoney(exp));
+            } else if (combo.model === 'recta' && g === 'aquafold') {
+              // 2026-10-08: sin `?promo=<id>` el Aquafold recta no tiene precio web: se cotiza con asesor.
+              await expect(page.getByText(/Aquafold se cotiza con un asesor/)).toBeVisible();
+              await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
             } else {
               expectSanePrice(await priceViaPrecio(page));
               await backToMedidas(page);

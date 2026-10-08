@@ -161,9 +161,9 @@ describe('formato y tope', () => {
 describe('promoHref (contrato del inicio: producto -> paso -> color -> vidrio)', () => {
   it('el seed: las 3 promos caen en Medidas con recta + natural + su vidrio', () => {
     expect(PROMOTIONS.map((p) => [p.id, promoHref(p)])).toEqual([
-      ['promo-puerta-aquaclara', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro'],
-      ['promo-corrediza-nevado', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado'],
-      ['promo-aquafold', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold'],
+      ['promo-puerta-aquaclara', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&promo=promo-puerta-aquaclara'],
+      ['promo-corrediza-nevado', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado&promo=promo-corrediza-nevado'],
+      ['promo-aquafold', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold&promo=promo-aquafold'],
     ]);
   });
   it('orden de parametros estable aunque el JSON liste vidrio antes que color', () => {

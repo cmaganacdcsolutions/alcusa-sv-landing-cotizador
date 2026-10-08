@@ -139,6 +139,7 @@ export default function Step4Resumen({
     ...(direccionMsg ? { address: formatAddressLine(state.address) } : {}),
     transport: transporte,
     total: grandTotal,
+    ...(state.promoId ? { promoId: state.promoId } : {}),
     // Folio WITHOUT the card discount unless the customer already chose card in Step5.
     ...(shippingPending ? { shippingPending: true } : {}),
     ...(onlineDiscount > 0 ? { discount: { code: 'online_card_10' as const, amount: onlineDiscount } } : {}),
@@ -245,10 +246,13 @@ export default function Step4Resumen({
           </article>
         ))}
 
-        <button type="button" className="summary-add" onClick={handleAddAnother}>
-          <IconPlus />
-          Agregar otro producto
-        </button>
+        {/* Contexto promo: la cotizacion es solo el item de la promo (sin "agregar otro producto"). */}
+        {!state.promoId && (
+          <button type="button" className="summary-add" onClick={handleAddAnother}>
+            <IconPlus />
+            Agregar otro producto
+          </button>
+        )}
 
         {anyRequiresQuote && (
           <div className="callout" role="status" style={{ marginTop: 8 }}>

@@ -12,3 +12,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** Fecha congelada de promos (vite define en astro.config.mjs; "" = usar hoy en SV). */
+declare const __PROMOS_TODAY__: string;

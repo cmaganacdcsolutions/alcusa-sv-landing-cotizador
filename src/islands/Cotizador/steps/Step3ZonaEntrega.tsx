@@ -63,6 +63,8 @@ export default function Step3ZonaEntrega({
   const [attempted, setAttempted] = useState(false);
   const [liveMsg, setLiveMsg] = useState('');
   const inst = state.entrega === 'instalacion';
+  // Contexto promo: las promos son "Instaladas"; no se ofrece retiro en tienda.
+  const promoCtx = state.promoId !== null;
   const price = quote.amount ?? 0;
   // Only priceStraight ('recta') accepts a `pickup` flag and applies the
   // 15% discount (engine/pricing/straight.ts); corner/tempered/hinged/
@@ -138,6 +140,7 @@ export default function Step3ZonaEntrega({
           </span>
           <span className="delivery-option__radio" aria-hidden="true" />
         </button>
+        {!promoCtx && (
         <button
           type="button"
           className="delivery-option"
@@ -156,7 +159,13 @@ export default function Step3ZonaEntrega({
           </span>
           <span className="delivery-option__radio" aria-hidden="true" />
         </button>
+        )}
       </div>
+      {promoCtx && (
+        <p className="delivery-note__body" data-testid="promo-install-note" style={{ marginTop: 8 }}>
+          Esta promoción incluye instalación.
+        </p>
+      )}
 
       {!inst && (
         <div className="delivery-note" style={{ marginTop: 8 }}>

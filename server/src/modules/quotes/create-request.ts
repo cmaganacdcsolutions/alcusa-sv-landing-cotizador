@@ -43,6 +43,8 @@ export const QuoteCreateShape = z.object({
   // Optional (old clients omit them); null is read as absent. Business rules are checked in validateCreate.
   shippingPending: z.boolean().nullish(),
   discount: z.object({ code: z.string().max(40), amount: z.number() }).nullish(),
+  // Contexto promo (`?promo=<id>`): una cotizacion promo no admite el 10% de tarjeta.
+  promoId: z.string().max(80).nullish(),
   // Checked after the other rules so the error priority is deterministic (see pickCode).
   consent: z.boolean().optional(),
   privacyNoticeVersion: z.string().regex(/^[A-Za-z0-9._-]{1,20}$/u),
@@ -215,6 +217,7 @@ export function validateCreate(body: unknown): { ok: true; data: ValidCreate } |
   let discountCode: string | null = null;
   let discountCents = 0;
   if (b.discount) {
+    if (b.promoId) fields['discount.code'] = 'invalid'; // promo: sin 10%
     if (b.discount.code !== ONLINE_DISCOUNT_CODE) fields['discount.code'] = 'invalid';
     if (!isMoney(b.discount.amount)) fields['discount.amount'] = 'invalid';
     else if (!itemFieldBad && !discountMatches(toCents(b.discount.amount), subtotal)) fields['discount.amount'] = 'invalid';

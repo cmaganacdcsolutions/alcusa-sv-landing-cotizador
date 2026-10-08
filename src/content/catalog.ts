@@ -50,7 +50,7 @@ export const CATEGORIES: readonly Category[] = [
     name: 'Puertas de baño',
     subcategories: [
       { slug: 'templada-10mm', name: 'Templadas 10 mm', quoterModel: 'templado', fromPrice: 672, altoText: 'Alto fijo 2.00 m' },
-      { slug: 'recta', name: 'Rectas', quoterModel: 'recta', fromPrice: 222, altoText: 'Alto estándar 1.85 m' },
+      { slug: 'recta', name: 'Rectas', quoterModel: 'recta', fromPrice: 242, altoText: 'Alto estándar 1.85 m' },
       {
         slug: 'en-l',
         name: 'En L',

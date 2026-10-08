@@ -61,6 +61,9 @@ import {
 import { IconCardRect, IconSpinner } from './icons-checkout';
 import Step0Producto from './steps/Step0Producto';
 import Step1Medidas from './steps/Step1Medidas';
+import { PROMO_PARAM } from '@content/promotionsParser';
+import { PROMO_BANNER_PREFIX, PROMO_EXIT_LABEL, promoIdFromSearch } from '@content/promoContext';
+import { lookupActivePromo, lookupPromo } from './state/promoRegistry';
 import Step2Precio from './steps/Step2Precio';
 import Step3ZonaEntrega from './steps/Step3ZonaEntrega';
 import Step4Resumen from './steps/Step4Resumen';
@@ -269,6 +272,7 @@ export default function Cotizador(): ReactElement {
         dispatch({ type: 'RESTORE_ADDRESS', address: parseStoredAddress(pendingPayment.address) });
         dispatch({ type: 'SET_ENTREGA', entrega: pendingPayment.entrega });
         dispatch({ type: 'SET_PAY_AMOUNT_PCT', pct: pendingPayment.pct });
+        dispatch({ type: 'RESTORE_PROMO', promoId: pendingPayment.promoId ?? null });
       }
       const outcome =
         wompiReturn.pago === 'aprobado'
@@ -304,8 +308,12 @@ export default function Cotizador(): ReactElement {
     // eligible; a fresh deep-link arrival and a Wompi/folio return win instead.
     const storedSnapshot = readWizardSnapshot();
     const offerParam = hasOnlineOfferParam(window.location.search);
+    // Contexto de la URL de entrada: `?promo=<id>` vigente y con reglaje, o normal. Un snapshot solo se
+    // restaura si su contexto coincide (promo A != promo B != normal): si no, flujo fresco.
+    const urlPromo = lookupActivePromo(promoIdFromSearch(window.location.search));
     const restoring =
       storedSnapshot !== null &&
+      (storedSnapshot.promoId ?? null) === (urlPromo?.id ?? null) &&
       shouldRestoreWizard({
         wompiReturn: wompiReturn !== null,
         hasFolio: !!folio,
@@ -330,7 +338,16 @@ export default function Cotizador(): ReactElement {
     // below and AFTER RESTORE_WIZARD, so a reload with the param (the URL keeps it) re-applies the
     // offer on top of the restored wizard, and a priced deep link combined with it keeps both.
     // The offer (and its banner) exist ONLY with the param: restoreFields never turns it on from a snapshot.
-    if (offerParam) dispatch({ type: 'APPLY_ONLINE_OFFER' });
+    // Si llegan ambos params gana la promo (sin 10% con tarjeta en contexto promo).
+    if (offerParam && !urlPromo) dispatch({ type: 'APPLY_ONLINE_OFFER' });
+    // Entrada por promo (fresca): bloquea el wizard al reglaje de la promo. Con restore el snapshot ya trae el
+    // mismo contexto. Un id invalido/vencido se ignora y se limpia de la URL (flujo normal).
+    if (urlPromo && !wompiReturn && !folio && !restoring) dispatch({ type: 'ENTER_PROMO', promo: urlPromo });
+    if (!urlPromo && promoIdFromSearch(window.location.search)) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete(PROMO_PARAM);
+      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    }
 
     // Post-Wompi restoration wins: the deep link must not override it. A
     // restored wizard also skips the priced preset (it would reset the product).
@@ -338,7 +355,7 @@ export default function Cotizador(): ReactElement {
       // ADR-008 §3: `?producto=<slug>` (leaf, variant or legacy alias). Invalid
       // slugs are ignored; advisorOnly slugs never enter the wizard.
       const deepLink = parseDeepLink(window.location.search);
-      if (deepLink.kind === 'priced' && !restoring) {
+      if (deepLink.kind === 'priced' && !restoring && !urlPromo) {
         const { preset, quoterModel } = deepLink;
         if (preset.cornerFinish) dispatch({ type: 'SET_CORNER_MODEL', model: preset.cornerFinish });
         if (preset.gardenHojas) dispatch({ type: 'SET_GARDEN_HOJAS', hojas: preset.gardenHojas });
@@ -536,10 +553,25 @@ export default function Cotizador(): ReactElement {
     window.history.pushState(null, '', `#cotizador/${STEP_SLUGS.producto}`);
   }
 
+  // "Cotizar otro modelo sin promoción": sale del contexto promo (quita `?promo=` de la URL, descarta el
+  // item promo y reinicia el wizard en normal: precios regulares y 10% con tarjeta).
+  function exitPromo(): void {
+    dispatch({ type: 'EXIT_PROMO' });
+    clearWizardSnapshot();
+    const url = new URL(window.location.href);
+    url.searchParams.delete(PROMO_PARAM);
+    window.history.replaceState(null, '', `${url.pathname}${url.search}#cotizador/${STEP_SLUGS.producto}`);
+  }
+
   // S7 — "Quitar": `id: 'current'` removes the in-progress item (promoting
   // the last committed cart item back into it, or falling back to step 0
   // if the cart is empty too); any other id removes that committed item.
   function removeItem(id: string): void {
+    // Contexto promo: quitar el item de la promo = salir de la promo (la cotizacion es solo ese item).
+    if (state.promoId) {
+      exitPromo();
+      return;
+    }
     dispatch({ type: 'REMOVE_ITEM', id });
   }
 
@@ -557,6 +589,11 @@ export default function Cotizador(): ReactElement {
   }
 
   const quote = useMemo(() => computeQuote(state), [state]);
+  const promo = useMemo(() => lookupPromo(state.promoId), [state.promoId]);
+  // Contexto promo: el paso 0 (elegir producto) no existe; el wizard arranca en Medidas.
+  useEffect(() => {
+    if (promo && state.step === 'producto') dispatch({ type: 'GOTO_STEP', step: 'medidas' });
+  }, [promo, state.step]);
   const zoneFee =
     state.entrega === 'instalacion' ? (addressOk ? getZoneFee(state.zone) : undefined) : 0;
   // Single-current-item total — what steps 0-2 show ("Estimado sin
@@ -595,6 +632,7 @@ export default function Cotizador(): ReactElement {
           shipping,
           payMethod: payMethodForDiscount(state.step, state.payMethod, state.payMethodChosen, state.onlineOffer),
           pickup: state.entrega === 'retiro',
+          promo: !!state.promoId,
         })
       : null;
   // 10% card line for Precio -> Resumen: 'applied' (offer link / card chosen) or 'preview' ("Pagando
@@ -608,11 +646,12 @@ export default function Cotizador(): ReactElement {
     itemsSubtotal: state.step === 'precio' ? (quote.amount ?? 0) : orderItemsSubtotal(orderItems),
     shipping: state.step === 'precio' ? null : shipping,
     pickup: state.entrega === 'retiro',
+    promo: !!state.promoId,
   });
   // The offer is "live" (banner copy) while card is the chosen method; picking WhatsApp in Step5 drops it.
   const offerApplied = state.onlineOffer && state.payMethodChosen && state.payMethod === 'pay';
   // Banner only when the offer is active (entered through the navbar "Compra YA!" / `?oferta=online10`).
-  const showOfferBanner = state.onlineOffer && state.step !== 'wompi' && state.step !== 'resultado';
+  const showOfferBanner = state.onlineOffer && !state.promoId && state.step !== 'wompi' && state.step !== 'resultado';
   const onlineDiscount = payable?.discount.applies ? payable.discount.amount : 0;
   const shippingPending = payable?.shippingPending ?? false;
   // Sin direccion completa no se muestra un total con envio: "Por confirmar".
@@ -626,7 +665,7 @@ export default function Cotizador(): ReactElement {
     !!product && state.step !== 'producto' && state.step !== 'resultado';
 
   const currentIdx = STEP_ORDER.indexOf(state.step);
-  const isFirstStep = currentIdx <= 0;
+  const isFirstStep = currentIdx <= (promo ? 1 : 0);
   // Mobile 6-dot stepper (.step-rail-wrap) only exists through 'resumen' —
   // see MOBILE_STEPPER_STEPS comment above.
   const showMobileStepper = currentIdx <= MOBILE_STEPPER_LAST_VISIBLE_IDX;
@@ -959,7 +998,18 @@ export default function Cotizador(): ReactElement {
             </p>
           </div>
         )}
-        {state.step === 'producto' && (
+        {promo && state.step !== 'resultado' && (
+          <div className="online-discount-banner" data-testid="promo-banner" data-state="info" role="status">
+            <p className="online-discount-banner__text">
+              <strong>{`${PROMO_BANNER_PREFIX} ${promo.title}`}</strong>
+              {` · $${promo.price.toFixed(promo.price % 1 === 0 ? 0 : 2)} instalada en San Salvador y Santa Tecla (otras zonas suman su envío).`}
+            </p>
+            <button type="button" className="btn btn-secondary" data-testid="promo-exit" onClick={exitPromo}>
+              {PROMO_EXIT_LABEL}
+            </button>
+          </div>
+        )}
+        {state.step === 'producto' && !promo && (
           <Step0Producto
             asideTarget={selAsideEl}
             selectedId={state.productId}
@@ -968,8 +1018,15 @@ export default function Cotizador(): ReactElement {
               hasItems: state.cart.length > 0,
               autoFolio: folioParam,
               onLoad: (applied) => {
-                dispatch({ type: 'LOAD_QUOTE', items: applied.items, entrega: applied.entrega, zone: applied.zone, notice: applied.notice });
-                window.history.pushState(null, '', `#cotizador/${STEP_SLUGS.resumen}`);
+                dispatch({ type: 'LOAD_QUOTE', items: applied.items, entrega: applied.entrega, zone: applied.zone, notice: applied.notice, promoId: applied.promoId });
+                if (applied.promoId) {
+                  // Cotizacion de promo vigente: la URL refleja el contexto (un reload no lo pierde).
+                  const url = new URL(window.location.href);
+                  url.searchParams.set(PROMO_PARAM, applied.promoId);
+                  window.history.pushState(null, '', `${url.pathname}${url.search}#cotizador/${STEP_SLUGS.resumen}`);
+                } else {
+                  window.history.pushState(null, '', `#cotizador/${STEP_SLUGS.resumen}`);
+                }
               },
             }}
             onSelect={(productId, preset) => {
