@@ -134,7 +134,9 @@ export default function StraightForm({ product, state, dispatch, quote, onNext }
           <p className="callout__body">
             {promo
               ? `${promoWidthRuleCopy(promo)}. Para otras medidas, usa “Cotizar otro modelo sin promoción”.`
-              : state.glass === 'aquafold'
+              : state.color === 'negro'
+                ? 'El aluminio negro se cotiza con un asesor. Escríbenos por WhatsApp para darte el precio.'
+                : state.glass === 'aquafold'
                 ? 'El vidrio Aquafold se cotiza con un asesor. Escríbenos por WhatsApp para darte el precio.'
                 : `El ancho debe ser de ${STRAIGHT_WIDTH_MIN_CM} a ${STRAIGHT_WIDTH_MAX_CM} cm y la altura de 1.85 m. Para otras medidas, consulta con ALCUSA.`}
           </p>

@@ -6,7 +6,7 @@ import {
 } from '@engine/pricing';
 import {
   CORNER_COLORS, CORNER_MODELS, GARDEN_COLORS, GARDEN_GLASSES, HINGED_COLORS, HINGED_GLASSES,
-  STRAIGHT_COLORS, STRAIGHT_GLASSES, WINDOW_FRAMES, WINDOW_GLASSES,
+  STRAIGHT_COLORS, STRAIGHT_GLASSES, WINDOW_FRAMES, WINDOW_FRAMES_FRANCESA, WINDOW_GLASSES,
 } from '../../src/islands/Cotizador/steps/measures/finishOptions';
 import { COMBOS, typeTiles } from '../support/combos';
 import { expect, test } from './fixtures';
@@ -84,7 +84,9 @@ test.describe('cotizador - tabla dorada de precios/contrato', () => {
       const direct = combo.model === 'jardin' || combo.model === 'ventana'; // price live in the bottom bar
       const rows: Record<string, unknown>[] = [];
       let lastReachable: [number, number] | null = null;
-      const colors = fin.color ? fin.color[1] : [null];
+      // Ventana francesa ofrece ademas aluminio negro (Bilbao no).
+      const francesa = combo.model === 'ventana' && combo.preset.windowType === 'francesa';
+      const colors = fin.color ? (francesa ? WINDOW_FRAMES_FRANCESA : fin.color[1]) : [null];
       const glasses = fin.glass ? fin.glass[1] : [null];
       for (const [ci, c] of colors.entries()) {
         for (const [gi, g] of glasses.entries()) {

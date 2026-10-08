@@ -81,6 +81,23 @@ describe('home-media: solo fotos oficiales del portafolio', () => {
     expect(photoNameFor(spec, 'bronce', 'claro')).toBe('c');
   });
 
+  it('aluminio negro: foto por color (el vidrio manda sobre el color)', () => {
+    const n = (s: MediaRef | null): string | undefined => s?.src.replace(`${F}/`, '').replace('-800.webp', '');
+    expect(n(coverFor('recta', { color: 'negro', vidrio: 'claro' }))).toBe('recta-galeria'); // #21
+    expect(n(coverFor('recta', { color: 'negro', vidrio: 'nevado' }))).toBe('recta-nevado'); // vidrio manda
+    expect(n(coverFor('bisagra', { color: 'negro', vidrio: 'claro' }))).toBe('bisagra-decorado'); // #15
+    expect(n(coverFor('jardin-1-hoja', { color: 'negro', vidrio: 'claro' }))).toBe('jardin-1-hoja'); // #7
+    expect(n(coverFor('jardin-2-hojas', { color: 'negro', vidrio: 'claro' }))).toBe('jardin-2-hojas'); // #17
+    expect(n(coverFor('jardin-3-hojas', { color: 'negro', vidrio: 'claro' }))).toBe('jardin-3-hojas-galeria'); // #4
+    expect(n(coverFor('ventana-francesa', { color: 'negro', vidrio: 'claro' }))).toBe('ventana-francesa-negro'); // #1
+    expect(n(coverFor('recta', { color: 'natural', vidrio: 'claro' }))).toBe('recta');
+  });
+
+  it('negro solo en recta, bisagra, jardin x3 y ventana francesa (no en L, templada ni Bilbao)', () => {
+    const withNegro = Object.keys(PRODUCT_CONFIGS).filter((k) => PRODUCT_CONFIGS[k].groups.some((g) => g.name === 'color' && g.options.some((o) => o.value === 'negro'))).sort();
+    expect(withNegro).toEqual(['bisagra', 'jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas', 'recta', 'ventana-francesa']);
+  });
+
   it('mapeo del portafolio: recta, bisagra, en L, ventana francesa', () => {
     const n = (s: MediaRef | null): string | undefined => s?.src.replace(`${F}/`, '').replace('-800.webp', '');
     // recta: default aquaclara/claro, nevado, aquafold y decorado
@@ -100,7 +117,7 @@ describe('home-media: solo fotos oficiales del portafolio', () => {
     expect(n(coverFor('en-l', { color: 'natural', acabado: 'l-aquaclara' }))).toBe('en-l');
     expect(n(coverFor('en-l', { color: 'bronce', acabado: 'l-frosted' }))).toBe('en-l-frosted');
     expect(n(coverFor('en-l', { color: 'natural', acabado: 'l-aquafold' }))).toBe('en-l-aquafold');
-    // francesa: una sola foto (n18) para todos los marcos; la negra (n1) es solo galeria hasta agregar el color negro
+    // francesa: una sola foto (n18) para todos los marcos; la negra (n1) es del color negro
     expect(n(coverFor('ventana-francesa'))).toBe('ventana-francesa');
     expect(n(coverFor('ventana-francesa', { color: 'blanco', vidrio: 'claro' }))).toBe('ventana-francesa');
     expect(n(coverFor('ventana-francesa', { color: 'bronce', vidrio: 'bronce' }))).toBe('ventana-francesa');
@@ -115,7 +132,10 @@ describe('home-media: solo fotos oficiales del portafolio', () => {
     expect(coverFor('recta', { vidrio: 'nevado' })?.src).toBe(`${F}/recta-800.webp`); // sin color -> portada
     expect(Object.keys(variantsOf('recta'))).toContain(variantKey('natural', 'claro'));
     expect(Object.keys(variantsOf('en-l'))).toContain(variantKey('natural', 'l-aquaclara'));
-    expect(Object.keys(variantsOf('ventana-francesa'))).toHaveLength(0); // una sola foto por ahora (la negra, n1, es galeria)
+    // francesa: la foto negra (n1) solo sale con el aluminio negro; el resto usa la portada (n18)
+    const fr = variantsOf('ventana-francesa');
+    expect(fr[variantKey('negro', 'claro')]?.src).toBe(`${F}/ventana-francesa-negro-800.webp`);
+    expect(fr[variantKey('blanco', 'claro')]?.src).toBe(`${F}/ventana-francesa-800.webp`);
     expect(Object.keys(variantsOf('ventana-bilbao'))).toHaveLength(0); // una sola foto
     expect(Object.keys(variantsOf('templada-10mm'))).toHaveLength(0);
   });

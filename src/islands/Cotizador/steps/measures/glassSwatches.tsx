@@ -29,6 +29,7 @@ export const COLOR_SWATCHES: Readonly<Record<AluminumColor, GlassSwatchDef>> = {
   natural: { css: 'linear-gradient(135deg, #e4e7ec 0%, #aeb4be 55%, #d5d9df 100%)' },
   blanco: { css: '#ffffff' },
   bronce: { css: 'linear-gradient(135deg, #9a7550 0%, #6b4c2e 100%)' },
+  negro: { css: 'var(--swatch-color-negro)' },
 };
 
 // Window glass: tinted gradients (no photos exist for these).

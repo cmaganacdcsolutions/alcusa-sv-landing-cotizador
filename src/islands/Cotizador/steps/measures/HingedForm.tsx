@@ -185,6 +185,16 @@ export default function HingedForm({ product, state, dispatch, quote, onNext }: 
         )}
       </div>
 
+      {state.color === 'negro' && !widthInvalid && (
+        <div className="callout" role="status" style={{ marginTop: 20 }}>
+          <span className="callout__title">
+            <IconWarningTriangle />
+            Cotización personalizada por WhatsApp
+          </span>
+          <p className="callout__body">El aluminio negro se cotiza con un asesor. Escríbenos por WhatsApp para darte el precio.</p>
+        </div>
+      )}
+
       {widthInvalid && (
         <div className="callout" role="status" style={{ marginTop: 20 }}>
           <span className="callout__title">

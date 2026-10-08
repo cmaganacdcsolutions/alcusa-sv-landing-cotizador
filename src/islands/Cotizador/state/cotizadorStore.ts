@@ -61,6 +61,7 @@ export const COLOR_LABELS: Readonly<Record<AluminumColor, string>> = {
   natural: 'Natural',
   blanco: 'Blanco',
   bronce: 'Bronce',
+  negro: 'Negro',
 };
 
 export const GLASS_LABELS: Readonly<Record<StraightGlass, string>> = {
@@ -453,8 +454,10 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       return { ...state, productId: action.productId, width: widthForProduct(action.productId, state.width) };
     // --- S6: ventana ---
     case 'SET_WINDOW_MODEL':
-      return { ...state, windowModel: action.model };
+      // Negro solo existe en Francesa: al pasar a Bilbao se vuelve al marco por defecto.
+      return { ...state, windowModel: action.model, windowFrame: action.model === 'bilbao' && state.windowFrame === 'negro' ? 'blanco' : state.windowFrame };
     case 'SET_WINDOW_FRAME':
+      if (action.frame === 'negro' && state.windowModel === 'bilbao') return state;
       return { ...state, windowFrame: action.frame };
     case 'SET_WINDOW_GLASS':
       return { ...state, windowGlass: action.glass };

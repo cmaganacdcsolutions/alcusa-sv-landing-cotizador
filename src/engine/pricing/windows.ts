@@ -30,7 +30,7 @@ export function priceWindow(input: WindowPriceInput): WindowPriceResult {
   // Priced only for frame white/bronze and glass clear/bronze/frosted/gray/
   // reflective-azul; Natural frame or Reflectivo bronce → pendiente de
   // cotización (§3.3).
-  if (frame === 'natural' || glass === 'reflectivo_bronce') {
+  if (frame === 'natural' || frame === 'negro' || glass === 'reflectivo_bronce') {
     return { subtotal: null, requiresQuote: true };
   }
 

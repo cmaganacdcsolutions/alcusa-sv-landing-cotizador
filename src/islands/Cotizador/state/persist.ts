@@ -68,8 +68,8 @@ const STEPS: Record<CotizadorStep, true> = {
 };
 const ENTREGAS: Record<Entrega, true> = { instalacion: true, retiro: true };
 const PRODUCT_IDS: Record<ProductId, true> = { recta: true, l: true, templado: true, bisagra: true, jardin: true, ventana: true };
-const ALUMINUM_COLORS: Record<AluminumColor, true> = { natural: true, blanco: true, bronce: true };
-const GARDEN_COLORS: Record<GardenColor, true> = { natural: true, blanco: true, bronce: true };
+const ALUMINUM_COLORS: Record<AluminumColor, true> = { natural: true, blanco: true, bronce: true, negro: true };
+const GARDEN_COLORS: Record<GardenColor, true> = { natural: true, blanco: true, bronce: true, negro: true };
 const STRAIGHT_GLASSES: Record<StraightGlass, true> = {
   claro: true,
   nevado: true,

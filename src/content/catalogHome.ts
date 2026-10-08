@@ -36,7 +36,7 @@ export const GLASS_PARAM_NAME = 'vidrio';
 const colors = (order: readonly string[], custom: readonly string[] = []): readonly ChoiceOption[] =>
   order.map((value) => ({
     value,
-    label: { natural: 'Natural', blanco: 'Blanco', bronce: 'Bronce' }[value] ?? value,
+    label: { natural: 'Natural', blanco: 'Blanco', bronce: 'Bronce', negro: 'Negro' }[value] ?? value,
     custom: custom.includes(value) || undefined,
   }));
 
@@ -59,8 +59,8 @@ const glasses = (order: readonly string[], custom: readonly string[] = []): read
     custom: custom.includes(value) || undefined,
   }));
 
-const windowGroups = (): OptionGroup[] => [
-  { name: 'color', legend: 'Marco', options: colors(['blanco', 'bronce', 'natural'], ['natural']), defaultValue: 'blanco' },
+const windowGroups = (frames: readonly string[] = ['blanco', 'bronce', 'natural']): OptionGroup[] => [
+  { name: 'color', legend: 'Marco', options: colors(frames, ['natural']), defaultValue: 'blanco' },
   {
     name: 'vidrio',
     legend: 'Vidrio',
@@ -69,12 +69,12 @@ const windowGroups = (): OptionGroup[] => [
   },
 ];
 const gardenGroups = (): OptionGroup[] => [
-  { name: 'color', legend: 'Color', options: colors(['blanco', 'bronce', 'natural'], ['bronce', 'natural']), defaultValue: 'blanco' },
+  { name: 'color', legend: 'Color', options: colors(['blanco', 'bronce', 'natural', 'negro'], ['bronce', 'natural', 'negro']), defaultValue: 'blanco' },
   { name: 'vidrio', legend: 'Vidrio', options: glasses(['claro', 'nevado', 'decorado', 'mallado', 'duplex']), defaultValue: 'claro' },
 ];
 
 export const PRODUCT_CONFIGS: Readonly<Record<string, ProductConfig>> = {
-  'ventana-francesa': { cardSlug: 'ventana-francesa', productSlug: 'ventana-francesa', groups: windowGroups() },
+  'ventana-francesa': { cardSlug: 'ventana-francesa', productSlug: 'ventana-francesa', groups: windowGroups(['blanco', 'bronce', 'natural', 'negro']) },
   'ventana-bilbao': { cardSlug: 'ventana-bilbao', productSlug: 'ventana-bilbao', groups: windowGroups() },
   'jardin-1-hoja': { cardSlug: 'jardin-1-hoja', productSlug: 'jardin-1-hoja', groups: gardenGroups() },
   'jardin-2-hojas': { cardSlug: 'jardin-2-hojas', productSlug: 'jardin-2-hojas', groups: gardenGroups() },
@@ -84,7 +84,7 @@ export const PRODUCT_CONFIGS: Readonly<Record<string, ProductConfig>> = {
     cardSlug: 'recta',
     productSlug: 'recta',
     groups: [
-      { name: 'color', legend: 'Color', options: colors(['natural', 'blanco', 'bronce']), defaultValue: 'natural' },
+      { name: 'color', legend: 'Color', options: colors(['natural', 'blanco', 'bronce', 'negro'], ['negro']), defaultValue: 'natural' },
       {
         name: 'vidrio',
         legend: 'Vidrio',
@@ -114,7 +114,7 @@ export const PRODUCT_CONFIGS: Readonly<Record<string, ProductConfig>> = {
     cardSlug: 'bisagra',
     productSlug: 'bisagra',
     groups: [
-      { name: 'color', legend: 'Color', options: colors(['natural', 'blanco', 'bronce']), defaultValue: 'natural' },
+      { name: 'color', legend: 'Color', options: colors(['natural', 'blanco', 'bronce', 'negro'], ['negro']), defaultValue: 'natural' },
       { name: 'vidrio', legend: 'Vidrio', options: glasses(['nevado', 'claro', 'decorado', 'mallado', 'duplex']), defaultValue: 'claro' },
     ],
   },

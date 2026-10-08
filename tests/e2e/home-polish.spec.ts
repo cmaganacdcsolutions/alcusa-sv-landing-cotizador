@@ -125,9 +125,10 @@ test.describe('tarjetas: dropdowns con icono', () => {
 // src/content/home-media.ts. Solo hay foto distinta donde el portafolio la trae; el resto cae a la portada.
 const FOTO = (stem: string): string => `/images/fotos/${stem}-800.webp`;
 const EXPECTED_STEM: Record<string, (color: string, glass: string) => string> = {
-  recta: (_c, g) => (g === 'claro' ? 'recta' : g === 'nevado' ? 'recta-nevado' : g === 'decorado' || g === 'aquafold' ? 'recta-aquafold' : 'recta'),
+  // vidrio -> color -> portada; negro (#21) solo cuando el vidrio no tiene foto propia.
+  recta: (c, g) => (g === 'nevado' ? 'recta-nevado' : g === 'decorado' || g === 'aquafold' ? 'recta-aquafold' : c === 'negro' ? 'recta-galeria' : 'recta'),
   'jardin-2-hojas': () => 'jardin-2-hojas',
-  'ventana-francesa': () => 'ventana-francesa',
+  'ventana-francesa': (c) => (c === 'negro' ? 'ventana-francesa-negro' : 'ventana-francesa'),
   'en-l': (_c, g) => (g === 'l-frosted' ? 'en-l-frosted' : g === 'l-aquafold' ? 'en-l-aquafold' : 'en-l'),
 };
 type Variant = { src: string };

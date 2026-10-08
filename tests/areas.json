@@ -22,6 +22,7 @@
     "cotizador-layout.spec.ts": ["cotizador", "layout"],
     "cotizador-medidas-visual.spec.ts": ["cotizador"],
     "cotizador-navy.spec.ts": ["cotizador", "contacto"],
+    "cotizador-negro.spec.ts": ["cotizador", "home"],
     "cotizador-hover.spec.ts": ["cotizador", "contacto"],
     "cotizador-mobile.spec.ts": ["cotizador"],
     "cotizador-quote-load.spec.ts": ["cotizador"],

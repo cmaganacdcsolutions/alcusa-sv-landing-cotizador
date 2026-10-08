@@ -13,7 +13,7 @@ export function priceCorner(input: CornerPriceInput): CornerPriceResult {
   const { color, model } = input;
 
   // Blanco is not offered for corner (§3.1: "blanco not offered").
-  if (color === 'blanco') {
+  if (color === 'blanco' || color === 'negro') {
     return { price: null, requiresQuote: true };
   }
 

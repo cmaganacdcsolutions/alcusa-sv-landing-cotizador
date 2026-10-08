@@ -68,7 +68,7 @@ function foto(name: string, alt: string): MediaRef {
   };
 }
 
-export type AluminumKey = 'natural' | 'blanco' | 'bronce';
+export type AluminumKey = 'natural' | 'blanco' | 'bronce' | 'negro';
 export type GlassKey =
   | 'claro'
   | 'nevado'
@@ -122,7 +122,8 @@ const SPECS: Readonly<Record<string, ProductSpec>> = {
   'ventana-francesa': {
     cover: 'ventana-francesa',
     alt: 'Ventana francesa lisa de aluminio blanco con vidrio claro de 5 mm: una hoja fija y una corrediza',
-    // La foto de aluminio negro (#1) queda reservada para el color negro (rebanada siguiente): solo galeria.
+    // Aluminio negro (#1): foto del color negro (ver byColor); tambien en la galeria.
+    byColor: { negro: 'ventana-francesa-negro' },
     alts: {
       'ventana-francesa': 'Ventana francesa lisa de aluminio blanco con vidrio claro de 5 mm: una hoja fija y una corrediza',
       'ventana-francesa-negro': 'Ventana francesa lisa de aluminio negro con vidrio claro de 5 mm: una hoja fija y una corrediza',
@@ -142,15 +143,20 @@ const SPECS: Readonly<Record<string, ProductSpec>> = {
   'jardin-1-hoja': {
     cover: 'jardin-1-hoja',
     alt: 'Puerta corrediza de una hoja para patio, vidrio claro de 5 mm',
+    // Negro: su misma portada (#7).
+    byColor: { negro: 'jardin-1-hoja' },
   },
   'jardin-2-hojas': {
     cover: 'jardin-2-hojas',
     alt: 'Puerta de jardín de dos hojas corredizas, vidrio claro de 5 mm y aluminio negro',
+    byColor: { negro: 'jardin-2-hojas' }, // portada (#17)
     gallery: [['jardin-2-hojas-galeria', 'Puerta de dos hojas corredizas, vidrio claro de 5 mm, aluminio negro o blanco']],
   },
   'jardin-3-hojas': {
     cover: 'jardin-3-hojas',
     alt: 'Puerta de jardín corrediza de tres hojas, vidrio claro de 5 mm y aluminio natural',
+    byColor: { negro: 'jardin-3-hojas-galeria' }, // #4
+    alts: { 'jardin-3-hojas-galeria': 'Puerta de tres hojas corredizas, vidrio claro de 5 mm, aluminio negro o blanco' },
     gallery: [['jardin-3-hojas-galeria', 'Puerta de tres hojas corredizas, vidrio claro de 5 mm, aluminio negro o blanco']],
   },
   'jardin-2-fijas-2-corredizas': {
@@ -166,18 +172,24 @@ const SPECS: Readonly<Record<string, ProductSpec>> = {
   recta: {
     cover: 'recta',
     alt: 'Puerta de ducha corrediza aquaclara, vidrio claro de 5 mm y aluminio natural',
-    byGlass: { claro: 'recta', nevado: 'recta-nevado', decorado: 'recta-aquafold', aquafold: 'recta-aquafold' },
+    // claro no se lista: es la portada, y asi el color negro (#21) puede mostrarse con el vidrio por defecto.
+    byGlass: { nevado: 'recta-nevado', decorado: 'recta-aquafold', aquafold: 'recta-aquafold' },
+    byColor: { negro: 'recta-galeria' },
+
     alts: {
       recta: 'Puerta de ducha corrediza aquaclara, vidrio claro de 5 mm y aluminio natural',
       'recta-nevado': 'Puerta de ducha corrediza con vidrio nevado de 5 mm y aluminio natural',
       'recta-aquafold': 'Puerta de ducha corrediza aquafold, vidrio claro de 5 mm con diseño y aluminio natural',
+      'recta-galeria': 'Puerta de ducha corrediza con vidrio claro de 5 mm y aluminio negro',
     },
     gallery: [['recta-galeria', 'Puerta de ducha corrediza con vidrio claro de 5 mm y aluminio negro']],
   },
   bisagra: {
     cover: 'bisagra',
     alt: 'Puerta de bisagra para baño, vidrio nevado de 5 mm y aluminio natural, altura de 2 m',
-    byGlass: { nevado: 'bisagra', claro: 'bisagra', decorado: 'bisagra-decorado', aquafold: 'bisagra-decorado' },
+    // nevado/claro no se listan (son la portada): asi el color negro (#15) se ve con el vidrio por defecto.
+    byGlass: { decorado: 'bisagra-decorado', aquafold: 'bisagra-decorado' },
+    byColor: { negro: 'bisagra-decorado' },
     alts: {
       bisagra: 'Puerta de bisagra para baño, vidrio nevado de 5 mm y aluminio natural, altura de 2 m',
       'bisagra-decorado': 'Puerta de bisagra para ducha, vidrio claro de 5 mm con diseño y aluminio negro',

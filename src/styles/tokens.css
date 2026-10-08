@@ -214,6 +214,9 @@
   --motion-ease-sheen: cubic-bezier(.65, 0, .35, 1);
 
   --motion-reduced-motion-fallback-duration: 150ms;
+
+  /* Aluminio negro: swatch de color del marco (cotizador y cards del home) */
+  --swatch-color-negro: linear-gradient(135deg, #2b2e33 0%, #0f1114 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
