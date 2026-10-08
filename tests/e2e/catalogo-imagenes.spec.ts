@@ -13,7 +13,7 @@ test.beforeEach(({}, info) => {
 
 // El catalogo completo (3 secciones, 9 tarjetas + 2 de "Más opciones para tu jardín" = 11) esta en el inicio.
 const ROUTES = ['/'] as const;
-const CARD_COUNT = 11;
+const CARD_COUNT = 16;
 
 async function loadAllImages(page: Page): Promise<void> {
   // Lazy images: force eager loading, then wait (bounded) for each to settle.

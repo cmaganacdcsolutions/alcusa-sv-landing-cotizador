@@ -16,6 +16,34 @@ export const MORE_OPTIONS_GROUP = 'mas-opciones';
 /** Titulo del sub-bloque "Más opciones" del inicio (solo la categoria de jardin lo usa). */
 export const MORE_OPTIONS_TITLE = 'Más opciones para tu jardín';
 
+const MORE_OPTIONS_TITLES: Readonly<Record<string, string>> = {
+  'puertas-de-jardin': MORE_OPTIONS_TITLE,
+  'puertas-de-bano': 'Más opciones para tu baño',
+  ventanas: 'Más opciones para tus ventanas',
+};
+
+/** Titulo del sub-bloque "Más opciones" de una categoria. */
+export function moreOptionsTitle(categorySlug: string): string {
+  return MORE_OPTIONS_TITLES[categorySlug] ?? 'Más opciones';
+}
+
+const ADVISOR_SUBJECTS: Readonly<Record<string, string>> = {
+  'puertas-de-jardin': 'una puerta de jardín',
+  'puertas-de-bano': 'una puerta de baño',
+  ventanas: 'una ventana',
+  'puertas-abatibles': 'una puerta abatible',
+};
+
+/** Slug de la categoria que contiene el slug de una subcategoria o variante ('' si no existe). */
+export function categorySlugOf(slug: string, categories: readonly Category[] = CATEGORIES): string {
+  return categories.find((c) => c.subcategories.some((s) => s.slug === slug || (hasVariants(s) && s.variants.some((v) => v.slug === slug))))?.slug ?? '';
+}
+
+/** "una puerta de jardín 1 fijo + 3 corredizas": sujeto + titulo, para el mensaje de WhatsApp de una tarjeta solo asesor. */
+export function advisorSubject(categorySlug: string, title: string): string {
+  return `${ADVISOR_SUBJECTS[categorySlug] ?? 'un producto'} ${title}`;
+}
+
 /** Every slug the model exposes (categories, subcategories, variants). */
 export function allCatalogSlugs(categories: readonly Category[] = CATEGORIES): string[] {
   return categories.flatMap((c) => [

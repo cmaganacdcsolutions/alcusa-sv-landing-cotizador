@@ -6,7 +6,7 @@ import { waitForAnimationsSettled } from '../support/settle';
 
 // 2026-10-06 — linea de diseno unica: azul noche + blanco. El cotizador y /contacto ponen la cabecera sobre
 // el fondo azul del sitio y los pasos en una hoja/tarjeta clara. Ademas el cotizador NO carga ninguna foto
-// de Alcusa (solo renders de /images/renders/ via src/content/home-media.ts).
+// de Alcusa (solo fotos oficiales de /images/fotos/ via src/content/home-media.ts).
 
 const LEGACY_PHOTO = /\/(images\/catalog\/|img\/cotizador\/)/;
 
@@ -106,14 +106,14 @@ test.describe('cotizador — tema azul noche', () => {
   });
 });
 
-test.describe('cotizador — solo renders, ninguna foto de Alcusa', () => {
-  test('ningun paso pide /images/catalog/ ni /img/cotizador/ y las miniaturas son renders', async ({ page }) => {
+test.describe('cotizador — solo fotos oficiales del portafolio, ningun render', () => {
+  test('ningun paso pide /images/catalog/ ni /img/cotizador/ y las miniaturas son fotos', async ({ page }) => {
     const bad: string[] = [];
-    const renders = new Set<string>();
+    const fotos = new Set<string>();
     page.on('request', (req) => {
       const url = new URL(req.url()).pathname;
       if (LEGACY_PHOTO.test(url)) bad.push(url);
-      if (url.startsWith('/images/renders/')) renders.add(url);
+      if (url.startsWith('/images/fotos/')) fotos.add(url);
     });
 
     await page.goto('/cotizador');
@@ -131,7 +131,7 @@ test.describe('cotizador — solo renders, ninguna foto de Alcusa', () => {
     // Muestras de vidrio = circulos CSS, sin <img>.
     await expect(page.locator('.glass-chip__swatch img')).toHaveCount(0);
 
-    // Ventana: las tarjetas de modelo (Francesa / Bilbao) tambien son renders.
+    // Ventana: las tarjetas de modelo (Francesa / Bilbao) tambien son fotos.
     await page.goto('/cotizador?producto=ventana-francesa');
     await hydrated(page);
     await expect(page.locator('.model-card__image').first()).toBeVisible();
@@ -139,7 +139,7 @@ test.describe('cotizador — solo renders, ninguna foto de Alcusa', () => {
       .locator('.model-card__image')
       .evaluateAll((els) => els.map((e) => (e as HTMLImageElement).currentSrc));
     expect(modelSrcs.length).toBe(2);
-    for (const src of modelSrcs) expect(new URL(src).pathname).toMatch(/^\/images\/renders\//);
+    for (const src of modelSrcs) expect(new URL(src).pathname).toMatch(/^\/images\/fotos\//);
 
     // Deep links (promo ?producto=recta&vidrio=aquafold y el de los configuradores del inicio) siguen funcionando.
     await page.goto('/cotizador?producto=recta&vidrio=aquafold');
@@ -157,7 +157,7 @@ test.describe('cotizador — solo renders, ninguna foto de Alcusa', () => {
       .evaluateAll((els) => els.map((e) => (e as HTMLImageElement).currentSrc || e.getAttribute('src') || ''));
     for (const src of imgSrcs) if (src) expect(new URL(src, 'http://x').pathname).not.toMatch(LEGACY_PHOTO);
     expect(bad).toEqual([]);
-    expect(renders.size).toBeGreaterThan(3);
+    expect(fotos.size).toBeGreaterThan(3);
   });
 });
 

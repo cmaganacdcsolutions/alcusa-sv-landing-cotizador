@@ -6,6 +6,8 @@
 // Stand-in values are named in `pending`; `validateCatalogContent` fails the build
 // when the data contradicts itself (see catalogContent.test.ts).
 
+import { galleryOf } from './home-media';
+
 export type PendingField = 'photo' | 'description' | 'specs' | 'price';
 
 export interface CatalogImage {
@@ -15,6 +17,8 @@ export interface CatalogImage {
   alt: string;
   /** `render` = estudio 4:3 (cover, sin capa blur); `photo` (por defecto) = foto real (contain + ambiente). */
   kind?: 'render' | 'photo';
+  /** Candidatos `<url> <ancho>w` (descriptores veraces: el ancho real de cada archivo). */
+  srcSet?: string;
   /** Intrinsic pixel size of `src` (reserves space, avoids layout shift). */
   width: number;
   height: number;
@@ -54,7 +58,7 @@ export const CATEGORY_CONTENT: Readonly<Record<string, CatalogContent>> = {
   'puertas-de-bano': {
     blurb: 'Vidrio templado, rectas, en L y de bisagra.',
     description:
-      'Cuatro modelos fabricados a tu medida. Elige uno para ver el detalle o cotizarlo.',
+      'Cuatro modelos fabricados a tu medida, y la abatible de vidrio templado con asesor. Elige uno para ver el detalle o cotizarlo.',
     images: [],
     pending: ['photo', 'description'],
   },
@@ -72,9 +76,15 @@ export const CATEGORY_CONTENT: Readonly<Record<string, CatalogContent>> = {
     images: [],
     pending: ['photo', 'description'],
   },
+  'puertas-abatibles': {
+    blurb: 'Para oficina, interior y exterior.',
+    description: 'Puertas de bisagra de aluminio y vidrio para oficina, interior y exterior. Un asesor te prepara la cotización.',
+    images: [],
+    pending: ['photo'],
+  },
 };
 
-export const ITEM_CONTENT: Readonly<Record<string, CatalogContent>> = {
+const ITEM_CONTENT_BASE: Readonly<Record<string, CatalogContent>> = {
   'templada-10mm': {
     cardTitle: 'Templada 10 mm',
     chip: 'Templada 10 mm',
@@ -152,7 +162,7 @@ export const ITEM_CONTENT: Readonly<Record<string, CatalogContent>> = {
   'jardin-1-fijo-3-corredizas': {
     chip: 'Más opciones',
     description:
-      'Una combinación a medida para tu jardín. Un asesor te prepara la cotización.',
+      'Un vidrio fijo y tres hojas corredizas, a tu medida: se fabrican de 3.75 m en adelante, con la altura que necesites. Un asesor te prepara la cotización.',
     images: [],
     pending: ['photo', 'description'],
   },
@@ -168,7 +178,51 @@ export const ITEM_CONTENT: Readonly<Record<string, CatalogContent>> = {
     images: [],
     pending: ['photo', 'description'],
   },
+  'ventana-bilbao-medio-punto': {
+    cardTitle: 'Bilbao con medio punto',
+    chip: 'Más opciones',
+    description: 'Ventana Bilbao de dos hojas corredizas con medio punto. Un asesor te prepara la cotización.',
+    images: [],
+    pending: ['photo'],
+  },
+  'templada-10mm-abatible': {
+    cardTitle: 'Abatible templada 10 mm',
+    detailTitle: 'Puerta abatible de vidrio templado 10 mm',
+    chip: 'Más opciones',
+    description: 'Puerta abatible de vidrio templado de 10 mm con conectores y haladera tipo C. Un asesor te prepara la cotización.',
+    images: [],
+    pending: ['photo'],
+  },
+  'abatible-interior-exterior': {
+    cardTitle: 'Interior y exterior',
+    chip: 'Interior y exterior',
+    description: 'Puerta de bisagra para interior y exterior, de aluminio con chapa de doble manija. Un asesor te prepara la cotización.',
+    images: [],
+    pending: ['photo'],
+  },
+  'abatible-oficina-vidrio-fijo': {
+    cardTitle: 'Oficina con vidrio fijo',
+    chip: 'Con vidrio fijo',
+    description: 'Puerta de bisagra para oficina con vidrio fijo arriba, según la altura. Un asesor te prepara la cotización.',
+    images: [],
+    pending: ['photo'],
+  },
+  'abatible-oficina-cerrador': {
+    cardTitle: 'Oficina con cerrador',
+    chip: 'Con cerrador',
+    description: 'Puerta abatible para oficina con haladera de concha y cerrador automático. Un asesor te prepara la cotización.',
+    images: [],
+    pending: ['photo'],
+  },
 };
+
+/** ITEM_CONTENT_BASE + las fotos extra (galeria) que el mapa de fotos oficiales define por producto. */
+export const ITEM_CONTENT: Readonly<Record<string, CatalogContent>> = Object.fromEntries(
+  Object.entries(ITEM_CONTENT_BASE).map(([slug, c]) => {
+    const gallery = galleryOf(slug);
+    return [slug, gallery.length > 0 ? { ...c, gallery } : c];
+  }),
+);
 
 /** Content for a slug; unknown slugs fall back to an all-placeholder entry. */
 export function contentFor(slug: string): CatalogContent {

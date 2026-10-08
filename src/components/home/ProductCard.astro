@@ -7,7 +7,7 @@
 // WhatsApp con un asesor (no se puede cotizar en el cotizador).
 import PhotoFrame from '@components/PhotoFrame';
 import type { Subcategory } from '@content/catalog';
-import { cardTitle, priceView } from '@content/catalogView';
+import { advisorSubject, cardTitle, categorySlugOf, priceView } from '@content/catalogView';
 import { COVER_RATIO, coverFor, variantsOf } from '@content/home-media';
 import {
   buildCotizadorHref,
@@ -38,7 +38,7 @@ const price = priceView(sub);
 const choices = config ? defaultChoices(config) : undefined;
 const href = config && choices ? buildCotizadorHref(config.productSlug, choices) : '';
 // CTA de asesor: mensaje del catalogo ("Hola, quiero cotizar X") con el tipo de producto para dar contexto.
-const advisorHref = advisor ? buildWaLink(buildCatalogAdvisorMessage(`una puerta de jardín ${title}`)) : '';
+const advisorHref = advisor ? buildWaLink(buildCatalogAdvisorMessage(advisorSubject(categorySlugOf(sub.slug), title))) : '';
 // `choices` lleva color, vidrio y (en-l) acabado: coverFor resuelve la variante exacta de cada combinacion.
 const img = coverFor(sub.slug, choices);
 const variants = variantsOf(sub.slug);
@@ -62,9 +62,11 @@ const idBase = `pc-${sub.slug}`;
       img ? (
         <PhotoFrame
           src={img.src}
+          srcSet={img.srcSet}
+          sizes="(min-width: 1024px) 232px, (min-width: 768px) 44vw, 92vw"
           alt={img.alt}
           ratio={COVER_RATIO}
-          fit="cover"
+          fit={img.kind === 'render' ? 'cover' : 'contain'}
           width={img.width}
           height={img.height}
           loading={first ? 'eager' : 'lazy'}

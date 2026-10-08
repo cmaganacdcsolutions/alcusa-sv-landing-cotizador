@@ -1,7 +1,7 @@
 ---
 // Seccion de catalogo por categoria (spec home-catalogo-completo §2-§3). Datos: CATEGORIES + contenido.
 import type { Category } from '@content/catalog';
-import { MORE_OPTIONS_TITLE, splitSubcategories } from '@content/catalogView';
+import { moreOptionsTitle, splitSubcategories } from '@content/catalogView';
 import { CATEGORY_CONTENT } from '@content/catalogContent';
 import ProductCard from './ProductCard.astro';
 
@@ -28,7 +28,7 @@ const lead = CATEGORY_CONTENT[category.slug]?.blurb ?? category.blurb;
   {
     more.length > 0 && (
       <section class="csec__more" aria-labelledby={moreId}>
-        <h3 id={moreId} class="csec__more-title">{MORE_OPTIONS_TITLE}</h3>
+        <h3 id={moreId} class="csec__more-title">{moreOptionsTitle(category.slug)}</h3>
         <div class="csec__grid">{more.map((sub) => <ProductCard sub={sub} headingLevel={4} />)}</div>
       </section>
     )

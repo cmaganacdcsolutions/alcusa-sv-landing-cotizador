@@ -2,13 +2,13 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures';
 
 // "Más opciones para tu jardín" (inicio, categoria Puertas de jardin): 2 combinaciones SOLO ASESOR despues de las 3 tarjetas
-// con opciones. Misma tarjeta (.pcard) en su variante --advisor: solo portada render, sin selects ni precio "Desde";
+// con opciones. Misma tarjeta (.pcard) en su variante --advisor: solo portada foto, sin selects ni precio "Desde";
 // el CTA abre WhatsApp con un asesor (nunca el cotizador). Never opens wa.me (asserts hrefs; fixtures.ts aborts the route).
 
 const WA_NUMBER = '50376802410';
 const CARDS = [
-  { slug: 'jardin-2-fijas-2-corredizas', title: '2 fijas + 2 corredizas', alt: /dos fijas y dos corredizas/ },
-  { slug: 'jardin-1-fijo-3-corredizas', title: '1 fijo + 3 corredizas', alt: /una fija y tres corredizas/ },
+  { slug: 'jardin-2-fijas-2-corredizas', title: '2 fijas + 2 corredizas', alt: /un vidrio fijo en cada extremo y dos hojas corredizas/, h: '600' },
+  { slug: 'jardin-1-fijo-3-corredizas', title: '1 fijo + 3 corredizas', alt: /un vidrio fijo y tres hojas corredizas/, h: '1067' },
 ] as const;
 const waHref = (title: string): string =>
   `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Hola, quiero cotizar una puerta de jardín ${title}`)}`;
@@ -58,21 +58,21 @@ test.describe('inicio - Más opciones para tu jardín', () => {
     }
   });
 
-  test('2 renders propios (800x600) que cargan, con alt y width/height explicitos', async ({ page }) => {
+  test('2 fotos oficiales que cargan, con alt y width/height explicitos', async ({ page }) => {
     const failed: string[] = [];
     page.on('response', (r) => {
-      if (r.url().includes('/images/renders/') && r.status() >= 400) failed.push(`${r.status()} ${r.url()}`);
+      if (r.url().includes('/images/fotos/') && r.status() >= 400) failed.push(`${r.status()} ${r.url()}`);
     });
     await page.goto('/');
     await page.evaluate(() => document.querySelectorAll('img').forEach((img) => (img.loading = 'eager')));
     await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete), undefined, { timeout: 10_000 });
-    for (const { slug, alt } of CARDS) {
+    for (const { slug, alt, h } of CARDS) {
       const img = page.locator(`#p-${slug} img.photo-frame__img`);
       await expect(img).toHaveCount(1);
-      await expect(img).toHaveAttribute('src', `/images/renders/${slug}-800.webp`);
+      await expect(img).toHaveAttribute('src', `/images/fotos/${slug}-800.webp`);
       await expect(img).toHaveAttribute('alt', alt);
       await expect(img).toHaveAttribute('width', '800');
-      await expect(img).toHaveAttribute('height', '600');
+      await expect(img).toHaveAttribute('height', h);
       expect(await img.evaluate((el: HTMLImageElement) => el.naturalWidth), `${slug}: naturalWidth`).toBeGreaterThan(0);
     }
     await expect(page.locator('#puertas-de-jardin .pcard__nophoto')).toHaveCount(0);

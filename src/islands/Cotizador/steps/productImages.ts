@@ -1,6 +1,6 @@
 import type { ProductId } from '@content/catalog';
 import { defaultChoices, PRODUCT_CONFIGS } from '@content/catalogHome';
-import { coverFor, type VariantChoice } from '@content/home-media';
+import { CATEGORY_MEDIA, coverFor, type VariantChoice } from '@content/home-media';
 import type { CornerModel } from '@engine/pricing';
 import type { CotizadorState } from '../state/cotizadorStore';
 import { WINDOW_MODEL_SLUG } from './measures/windowModelImages';
@@ -64,6 +64,13 @@ const TYPE_SLUGS: readonly string[] = [
   'ventana-francesa',
   'ventana-bilbao',
 ];
+
+/** Portada de categoria (foto oficial) para el tile del paso 1. */
+export function categoryImage(slug: string): string {
+  const media = CATEGORY_MEDIA[slug];
+  if (!media) throw new Error(`home-media: falta la portada de la categoria "${slug}"`);
+  return media.src;
+}
 
 export const TYPE_IMAGES: Readonly<Record<string, string>> = Object.fromEntries(
   TYPE_SLUGS.map((slug) => [slug, renderSrc(slug)]),

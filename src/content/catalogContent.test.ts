@@ -17,7 +17,10 @@ import {
   defaultVariant,
   detailTitle,
   gridColsClass,
+  advisorSubject,
+  categorySlugOf,
   indexChips,
+  moreOptionsTitle,
   priceView,
   primaryImage,
   splitSubcategories,
@@ -62,6 +65,7 @@ describe('catalog content vs model (build-time validation)', () => {
       expect(contentFor(slug).pending).toContain('photo');
     }
     const all = JSON.stringify({ ...CATEGORY_CONTENT, ...ITEM_CONTENT });
+    expect(all).not.toContain('/images/renders/');
     expect(all).not.toMatch(new RegExp("images/(catalog|card-|hero-|galeria|finish-)"));
     expect(primaryImage('slug-sin-contenido')).toBeNull();
     expect(contentFor('slug-sin-contenido').pending).toContain('photo');
@@ -86,22 +90,33 @@ describe('catalog view + slug routing', () => {
   });
 
   it('keeps the client taxonomy order and "Más opciones" split', () => {
-    const [bano, jardin, ventanas] = CATEGORIES;
-    expect(bano?.subcategories.map((s) => s.slug)).toEqual(['templada-10mm', 'recta', 'en-l', 'bisagra']);
+    const [bano, jardin, ventanas, abatibles] = CATEGORIES;
+    expect(bano?.subcategories.map((s) => s.slug)).toEqual(['templada-10mm', 'recta', 'en-l', 'bisagra', 'templada-10mm-abatible']);
+    expect(splitSubcategories(bano!).more.map((s) => s.slug)).toEqual(['templada-10mm-abatible']);
     const { main, more } = splitSubcategories(jardin!);
     expect(main.map((s) => s.slug)).toEqual(['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas']);
     expect(more.map((s) => s.name)).toEqual(['2 fijas + 2 corredizas', '1 fijo + 3 corredizas']);
-    expect(ventanas?.subcategories.map((s) => s.name)).toEqual(['Francesa', 'Bilbao']);
+    expect(ventanas?.subcategories.map((s) => s.name)).toEqual(['Francesa', 'Bilbao', 'Bilbao con medio punto']);
+    expect(splitSubcategories(ventanas!).more.map((s) => s.slug)).toEqual(['ventana-bilbao-medio-punto']);
+    expect(abatibles?.slug).toBe('puertas-abatibles');
+    expect(splitSubcategories(abatibles!).more).toEqual([]); // todas son tarjetas principales
+    expect(abatibles?.subcategories.every((s) => s.advisorOnly)).toBe(true);
   });
 
   it('board copy: card/detail titles and index chips', () => {
     const bano = CATEGORIES[0]!;
-    expect(bano.subcategories.map(cardTitle)).toEqual(['Templada 10 mm', 'Rectas', 'En L', 'De bisagra']);
+    expect(bano.subcategories.map(cardTitle)).toEqual(['Templada 10 mm', 'Rectas', 'En L', 'De bisagra', 'Abatible templada 10 mm']);
     expect(detailTitle(findBySlug('en-l') as { slug: string; name: string })).toBe('Puerta en L');
-    expect(indexChips(bano)).toEqual(['Templada 10 mm', 'Rectas', 'En L', 'De bisagra']);
+    expect(indexChips(bano)).toEqual(['Templada 10 mm', 'Rectas', 'En L', 'De bisagra', 'Más opciones']);
     expect(indexChips(CATEGORIES[1]!)).toEqual(['1 hoja', '2 hojas', '3 hojas', 'Más opciones']);
     expect(verLabel(bano)).toBe('Ver puertas de baño');
     expect(verLabel(CATEGORIES[2]!)).toBe('Ver ventanas');
+    expect(moreOptionsTitle('puertas-de-jardin')).toBe('Más opciones para tu jardín');
+    expect(moreOptionsTitle('puertas-de-bano')).toBe('Más opciones para tu baño');
+    expect(moreOptionsTitle('ventanas')).toBe('Más opciones para tus ventanas');
+    expect(categorySlugOf('abatible-oficina-cerrador')).toBe('puertas-abatibles');
+    expect(categorySlugOf('l-frosted')).toBe('puertas-de-bano');
+    expect(advisorSubject('puertas-de-jardin', '1 fijo + 3 corredizas')).toBe('una puerta de jardín 1 fijo + 3 corredizas');
   });
 
   it('price view: "desde" from the model, advisor has no price, never a $ for advisor', () => {

@@ -375,7 +375,7 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
         gardenGlass: leftGlass as GardenGlass,
       };
       expect(bigSrc).toBe(estimateImage(combo.model, selection));
-      if (fin.colorGroup) expect(bigSrc, 'preview follows the chosen colour/glass').toMatch(/-(natural|blanco|bronce)-[a-z-]+-800\.webp$/);
+      if (fin.colorGroup) expect(bigSrc, 'preview follows the chosen colour/glass').toMatch(/^\/images\/fotos\/[a-z0-9-]+-800\.webp$/);
       expect((await bigFrame.boundingBox())!.width).toBeGreaterThanOrEqual(thumbWidth * 2); // step 2 is a real preview
 
       expect(errors).toEqual([]);
