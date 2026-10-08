@@ -14,13 +14,13 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
     await waitForHydration(page);
 
     const cards = page.locator('.sel-tile--cat');
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(4);
     const images = page.locator('.sel-tile--cat .photo-frame__img');
-    await expect(images).toHaveCount(3);
+    await expect(images).toHaveCount(4);
     for (const img of await images.all()) {
       const src = await img.getAttribute('src');
-      // 2026-10-06: renders del sitio (home-media), no fotos de Alcusa.
-      expect(src).toMatch(/^\/images\/renders\/.*\.webp$/);
+      // 2026-10-08: fotos oficiales del portafolio (home-media); 4 categorias (baño, jardin, ventanas, puertas abatibles).
+      expect(src).toMatch(/^\/images\/fotos\/.*\.webp$/);
       // naturalWidth > 0 => the browser actually decoded the file (not a 404).
       const naturalWidth = await img.evaluate((el) => (el as HTMLImageElement).naturalWidth);
       expect(naturalWidth).toBeGreaterThan(0);
@@ -52,6 +52,6 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
     // Table A, 110cm Natural Nevado — unchanged pricing, only the card's
     // markup/CSS moved to .estimate-card.
     await expect(page.getByTestId('step2-price-value')).toHaveText('$297.00');
-    await expect(page.locator('.estimate-card__preview img.photo-frame__img')).toHaveAttribute('src', '/images/renders/recta-natural-nevado-800.webp');
+    await expect(page.locator('.estimate-card__preview img.photo-frame__img')).toHaveAttribute('src', '/images/fotos/recta-nevado-800.webp');
   });
 });

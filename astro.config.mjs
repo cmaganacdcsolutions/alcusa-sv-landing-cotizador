@@ -24,9 +24,10 @@ function viteCacheDir() {
 // producto -> #p-<slug> (incluidos los 2 combos de asesor de "Más opciones para tu jardín").
 const CATALOG_REDIRECTS = (() => {
   const tree = {
-    'puertas-de-bano': ['templada-10mm', 'recta', 'en-l', 'bisagra'],
+    'puertas-de-bano': ['templada-10mm', 'recta', 'en-l', 'bisagra', 'templada-10mm-abatible'],
     'puertas-de-jardin': ['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas', 'jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas'],
-    ventanas: ['ventana-francesa', 'ventana-bilbao'],
+    ventanas: ['ventana-francesa', 'ventana-bilbao', 'ventana-bilbao-medio-punto'],
+    'puertas-abatibles': ['abatible-interior-exterior', 'abatible-oficina-vidrio-fijo', 'abatible-oficina-cerrador'],
   };
   const out = { '/catalogo': '/#catalogo' };
   for (const [cat, subs] of Object.entries(tree)) {

@@ -33,6 +33,7 @@
     "home-catalogo.spec.ts": ["home", "catalogo"],
     "home-renders.spec.ts": ["home", "catalogo"],
     "jardin-mas-opciones.spec.ts": ["home", "catalogo"],
+    "puertas-abatibles.spec.ts": ["home", "catalogo"],
     "render-variants.spec.ts": ["home", "cotizador"],
     "home-polish.spec.ts": ["home", "promos"],
     "landing-promos-states.spec.ts": ["promos", "home"],
