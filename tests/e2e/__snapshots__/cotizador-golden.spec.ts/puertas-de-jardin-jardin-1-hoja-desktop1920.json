@@ -1,7 +1,7 @@
 {
   "leaf": "puertas-de-jardin/jardin-1-hoja",
-  "thumb": "/images/renders/jardin-1-hoja-800.webp",
-  "step2Image": "/images/renders/jardin-1-hoja-natural-duplex-800.webp",
+  "thumb": "/images/fotos/jardin-1-hoja-800.webp",
+  "step2Image": "/images/fotos/jardin-1-hoja-800.webp",
   "step2Alt": "Puerta de jardín",
   "rows": [
     {
@@ -107,6 +107,41 @@
       "glass": "duplex",
       "price": "Por WhatsApp",
       "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Dúplex Cotización personalizada"
+    },
+    {
+      "color": "negro",
+      "glass": "claro",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "negro",
+      "glass": "nevado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
+      "glassLabel": "Nevado 5 mm Cotización personalizada"
+    },
+    {
+      "color": "negro",
+      "glass": "decorado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
+      "glassLabel": "Decorado Cotización personalizada"
+    },
+    {
+      "color": "negro",
+      "glass": "mallado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
+      "glassLabel": "Mallado Cotización personalizada"
+    },
+    {
+      "color": "negro",
+      "glass": "duplex",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
       "glassLabel": "Dúplex Cotización personalizada"
     }
   ]

@@ -1,7 +1,7 @@
 {
   "leaf": "puertas-de-bano/recta",
-  "thumb": "/images/renders/recta-800.webp",
-  "step2Image": "/images/renders/recta-bronce-duplex-800.webp",
+  "thumb": "/images/fotos/recta-800.webp",
+  "step2Image": "/images/fotos/recta-800.webp",
   "step2Alt": "Puerta de baño recta",
   "rows": [
     {
@@ -28,7 +28,7 @@
     {
       "color": "natural",
       "glass": "aquafold",
-      "price": "$389.00",
+      "price": "Por WhatsApp",
       "colorLabel": "Natural",
       "glassLabel": "Aquafold"
     },
@@ -70,7 +70,7 @@
     {
       "color": "blanco",
       "glass": "aquafold",
-      "price": "$459.00",
+      "price": "Por WhatsApp",
       "colorLabel": "Blanco",
       "glassLabel": "Aquafold"
     },
@@ -112,7 +112,7 @@
     {
       "color": "bronce",
       "glass": "aquafold",
-      "price": "$459.00",
+      "price": "Por WhatsApp",
       "colorLabel": "Bronce",
       "glassLabel": "Aquafold"
     },
@@ -128,6 +128,48 @@
       "glass": "duplex",
       "price": "$533.00",
       "colorLabel": "Bronce",
+      "glassLabel": "Dúplex"
+    },
+    {
+      "color": "negro",
+      "glass": "claro",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "negro",
+      "glass": "nevado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Nevado 5 mm"
+    },
+    {
+      "color": "negro",
+      "glass": "decorado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Decorado"
+    },
+    {
+      "color": "negro",
+      "glass": "aquafold",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Aquafold"
+    },
+    {
+      "color": "negro",
+      "glass": "mallado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Mallado"
+    },
+    {
+      "color": "negro",
+      "glass": "duplex",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
       "glassLabel": "Dúplex"
     }
   ]
