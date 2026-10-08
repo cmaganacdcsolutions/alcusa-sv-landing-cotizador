@@ -6,6 +6,9 @@
 // Pulido 2026-10-06: tarjetas compactas a escala de las del catalogo (3 por fila en escritorio, carrusel con
 // snap en movil), mismo contenedor de 1240 px que las secciones del catalogo. El flyer (9:16, con precio y letra
 // chica impresos) se ve COMPLETO en un marco 4:5 (contain): ~265 px de flyer legible en una tarjeta de ~376.
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import sharp from 'sharp';
 import PhotoFrame from './PhotoFrame';
 import {
   discountPct,
@@ -24,6 +27,18 @@ const promos = getActivePromotions();
 const count = promos.length;
 const single = count === 1;
 const title = promosTitle(count);
+
+// Ancho/alto REALES del flyer (algunas fuentes solo dan 720x1280): el srcset y width/height no declaran pixeles
+// que no existen. Solo archivos de /images/promos (build, en public/); otro origen cae al default 900x1600 (9:16).
+async function flyerSize(image: string): Promise<{ w: number; h: number }> {
+  const file = new URL(`../../public${image}`, import.meta.url);
+  if (image.startsWith('/images/promos/') && existsSync(file)) {
+    const { width, height } = await sharp(fileURLToPath(file)).metadata();
+    if (width && height) return { w: width, h: height };
+  }
+  return { w: 900, h: 1600 };
+}
+const sizes = await Promise.all(promos.map((p) => flyerSize(p.image)));
 ---
 
 <section id="promociones" class="promos" aria-labelledby="promo-t" data-count={count} hidden={count === 0}>
@@ -40,7 +55,7 @@ const title = promosTitle(count);
     </div>
     <div class="promos__list" role="list">
       {
-        promos.map((p) => {
+        promos.map((p, i) => {
           const pct = discountPct(p);
           const ahorro = savings(p);
           return (
@@ -48,11 +63,11 @@ const title = promosTitle(count);
               {/* Flyer oficial 9:16 (texto y precio incrustados): contain + capa ambiental = foto completa, sin recorte. */}
               <PhotoFrame
                 src={p.image}
-                srcSet={promoImageSrcSet(p.image)}
+                srcSet={promoImageSrcSet(p.image, sizes[i].w)}
                 sizes={PROMO_IMAGE_SIZES}
                 alt={p.imageAlt}
-                width={900}
-                height={1600}
+                width={sizes[i].w}
+                height={sizes[i].h}
                 ratio="4/5"
                 className="promo-card__photo"
               >
