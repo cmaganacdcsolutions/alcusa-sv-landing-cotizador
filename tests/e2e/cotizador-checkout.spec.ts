@@ -53,8 +53,8 @@ test.describe('cotizador — Step3 entrega y zona option states', () => {
     await expect(page.getByText('Completa tu dirección para ver el costo de envío y el total.')).toBeVisible();
     await expect(page.getByTestId('zona-total-value')).toHaveCount(0);
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await expect(page.locator('#addr-departamento')).toBeFocused();
-    await expect(page.locator('#addr-departamento-msg')).toHaveText('Elige tu departamento de la lista.');
+    await expect(page.locator('#addr-zona')).toBeFocused();
+    await expect(page.locator('#addr-zona-msg')).toHaveText('Elige tu zona de cobertura de la lista.');
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
   });
 });

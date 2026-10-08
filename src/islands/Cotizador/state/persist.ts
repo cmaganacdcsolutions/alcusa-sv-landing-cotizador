@@ -23,6 +23,7 @@ import type {
   WindowModel,
 } from '@engine/pricing';
 import type { ProductId } from '@content/catalog';
+import { isKnownZone } from '@content/deliveryZones';
 import { parseStoredAddress } from '../../../lib/delivery-address';
 import {
   ITEM_FIELD_KEYS,
@@ -159,11 +160,15 @@ function guardWizardFields(o: Record<string, unknown>): WizardFields | null {
   // Oferta 10% en linea (`?oferta=online10`). Un snapshot viejo sin el campo se descarta (aceptado).
   if (!isBoolean(o.onlineOffer)) return null;
 
+  // Estados antiguos (cascada departamento/municipio/distrito): parseStoredAddress los migra a la zona o la deja
+  // vacia. `zone` siempre sigue a la zona de la direccion; una cotizacion cargada por folio conserva la suya.
+  const parsedAddress = parseStoredAddress(o.address);
+  const zona = parsedAddress.zona || (o.addressFromQuote && isKnownZone(o.zone) ? o.zone : '');
   return {
     step: o.step,
     entrega: o.entrega,
-    zone: o.zone,
-    address: parseStoredAddress(o.address),
+    zone: zona,
+    address: { ...parsedAddress, zona },
     addressFromQuote: o.addressFromQuote,
     editingItem: o.editingItem,
     onlineOffer: o.onlineOffer,
@@ -218,9 +223,7 @@ function isPristine(state: CotizadorState): boolean {
     state.zone === '' &&
     state.editingItem === null &&
     !state.onlineOffer &&
-    !a.departamentoId &&
-    !a.municipioId &&
-    !a.distritoId &&
+    !a.zona &&
     !a.colonia &&
     !a.calle &&
     !a.referencia &&

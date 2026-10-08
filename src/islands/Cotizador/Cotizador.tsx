@@ -672,7 +672,7 @@ export default function Cotizador(): ReactElement {
         ? 'Te lo confirmamos por WhatsApp'
         : zoneKnown
           ? state.zone
-          : 'Municipio por confirmar';
+          : 'Zona por confirmar';
   const transportePrice =
     state.entrega === 'retiro'
       ? 'Sin costo'
@@ -752,7 +752,7 @@ export default function Cotizador(): ReactElement {
           : shippingPendingNow
             ? 'Envío por confirmar: te lo confirmamos por WhatsApp.'
             : !zoneKnown
-              ? 'Transporte por confirmar según tu municipio.'
+              ? 'Transporte por confirmar según tu zona.'
               : (zoneFee ?? 0) === 0
                 ? 'Transporte incluido en tu zona.'
                 : `Incluye transporte a ${state.zone}.`;

@@ -50,7 +50,7 @@ test.describe('whatsapp links — cotizador handoff', () => {
             'Transporte: $40.00\n' +
             'Total estimado: $262.00\n' +
             'Anticipo (80%): $209.60 · Saldo (20% al entregar): $52.40\n' +
-            'Dirección: Residencial Las Flores, Pasaje 3, casa 12 · Ref: frente a la iglesia, portón negro · Soyapango, San Salvador Este, San Salvador · Tel: 7123-4567\n\n' +
+            'Dirección: Residencial Las Flores, Pasaje 3, casa 12 · Ref: frente a la iglesia, portón negro · Soyapango · Tel: 7123-4567\n\n' +
             'Por favor confirmen medidas, disponibilidad y forma de pago. ¡Gracias!',
         ),
     );

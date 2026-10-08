@@ -33,7 +33,7 @@ describe('schema', () => {
   it('el JSON entregado valida: 3 flyers oficiales (no placeholder), sin precio anterior', () => {
     expect(PROMOTIONS.map((p) => [p.title, p.ahora])).toEqual([
       ['Puerta Aquaclara', 222],
-      ['Puerta corrediza con vidrio nevado', 290],
+      ['Puerta corrediza con vidrio nevado', 260],
       ['Modelo Aquafold', 279.99],
     ]);
     expect(PROMOTIONS.every((p) => !p.placeholder && p.antes === null && p.rules.length > 0)).toBe(true);

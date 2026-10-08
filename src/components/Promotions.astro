@@ -222,7 +222,7 @@ const title = promosTitle(count);
     box-shadow: var(--shadow-promo-badge);
   }
 
-  /* Banda de precio: delgada, en el rojo promo; antes/ahorras a la izquierda, ahora a la derecha. */
+  /* Fila de precio sobre la card blanca (sin franja de color): antes/ahorras a la izquierda, ahora (azul de marca) a la derecha. */
   .promo-card__band {
     display: flex;
     flex-wrap: wrap;
@@ -231,7 +231,7 @@ const title = promosTitle(count);
     column-gap: var(--space-2);
     row-gap: 2px;
     padding: var(--space-2) var(--space-3);
-    background: var(--color-promo);
+    background: var(--color-surface);
   }
   .promo-card__band-row {
     display: flex;
@@ -243,7 +243,7 @@ const title = promosTitle(count);
     font-size: 13px;
     line-height: 1.4;
     font-weight: var(--font-weight-body-semibold);
-    color: var(--color-surface);
+    color: var(--color-ink-muted);
   }
   .promo-card__antes s {
     text-decoration-line: line-through;
@@ -252,7 +252,7 @@ const title = promosTitle(count);
   .promo-card__ahorras {
     padding: 0 var(--space-2);
     border-radius: var(--radius-full);
-    background: var(--color-surface);
+    background: var(--color-promo-tint);
     color: var(--color-promo-strong);
     font-size: 11px;
     font-weight: var(--font-weight-body-bold);
@@ -263,7 +263,7 @@ const title = promosTitle(count);
     font-size: 24px;
     font-weight: var(--font-weight-display-semibold);
     line-height: 1.15;
-    color: var(--color-surface);
+    color: var(--color-primary);
   }
 
   .promo-card__body {

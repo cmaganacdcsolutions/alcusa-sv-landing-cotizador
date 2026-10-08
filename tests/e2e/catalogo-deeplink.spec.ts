@@ -15,9 +15,9 @@ test.describe('catalogo -> cotizador deep link', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     const titles = page.locator('#catalogo .csec .csec__title');
-    await expect(titles).toHaveText(['Ventanas', 'Puertas de jardín', 'Puertas de baño']);
+    await expect(titles).toHaveText(['Puertas de baño', 'Puertas de jardín', 'Ventanas']);
     const ids = await page.locator('#catalogo .csec').evaluateAll((els) => els.map((e) => e.id));
-    expect(ids).toEqual(['ventanas', 'puertas-de-jardin', 'puertas-de-bano']);
+    expect(ids).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas']);
 
     await page
       .getByRole('navigation', { name: 'Categorías' })

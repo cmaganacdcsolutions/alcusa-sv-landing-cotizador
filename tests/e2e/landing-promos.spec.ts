@@ -14,7 +14,8 @@ const VIEWPORTS = [
   { w: 1920, h: 1080, desktop: true },
 ] as const;
 
-const PROMO = 'rgb(211, 58, 11)';
+const SURFACE = 'rgb(255, 255, 255)';
+const BRAND = 'rgb(7, 59, 146)';
 
 test.describe('landing R3 — estructura', () => {
   test('sin galeria ni caja CTA de catalogo; orden: inicio, catalogo, promociones, proceso', async ({ page }) => {
@@ -93,9 +94,11 @@ test.describe('landing R3 — tarjeta compacta (pulido 2026-10-06)', () => {
       expect(await css(card.locator('.photo-frame__img'), 'object-fit')).toBe('contain');
       expect(await css(card.locator('.photo-frame__img'), 'object-position')).toBe('50% 50%');
       await expect(card.locator('.promo-card__badge')).toHaveCount(0);
-      // banda de precio delgada en rojo promo
+      // fila de precio sobre card blanca (sin franja de color), precio en azul de marca
       const band = card.locator('.promo-card__band');
-      expect(await css(band, 'background-color')).toBe(PROMO);
+      expect(await css(card, 'background-color')).toBe(SURFACE);
+      expect(await css(band, 'background-color')).toBe(SURFACE);
+      expect(await css(card.locator('.promo-card__ahora'), 'color')).toBe(BRAND);
       expect(await css(card.locator('.promo-card__ahora'), 'font-size')).toBe('24px');
       expect(await css(card.locator('.promo-card__antes'), 'font-size')).toBe('13px');
       // cuerpo compacto

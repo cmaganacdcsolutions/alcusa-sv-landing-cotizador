@@ -10,7 +10,7 @@ import type { QuoteLoadNotice } from './loadQuote';
 import {
   applyAddressField,
   EMPTY_ADDRESS,
-  zoneForDistrito,
+  zoneOf,
   type AddressField,
   type DeliveryAddress,
   type GeoPoint,
@@ -98,7 +98,7 @@ export interface CotizadorState {
   glass: StraightGlass;
   entrega: Entrega;
   zone: string;
-  // Direccion completa (solo instalacion). `zone` se deriva del distrito (ver zoneForDistrito).
+  // Direccion completa (solo instalacion). `zone` se deriva de la zona de cobertura elegida (ver zoneOf).
   address: DeliveryAddress;
   // true tras LOAD_QUOTE: el total guardado ya incluye transporte aunque no haya direccion.
   addressFromQuote: boolean;
@@ -393,15 +393,20 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
     case 'SET_ENTREGA':
       return { ...state, entrega: action.entrega };
     case 'SET_ZONE':
-      return { ...state, zone: action.zone };
+      return { ...state, zone: action.zone, address: { ...state.address, zona: action.zone } };
     case 'SET_ADDRESS_FIELD': {
       const address = applyAddressField(state.address, action.field, action.value);
-      return { ...state, address, zone: zoneForDistrito(address), addressFromQuote: false };
+      return { ...state, address, zone: zoneOf(address), addressFromQuote: false };
     }
     case 'SET_ADDRESS_GEO':
       return { ...state, address: { ...state.address, geo: action.geo } };
     case 'RESTORE_ADDRESS':
-      return { ...state, address: action.address, addressFromQuote: false };
+      return {
+        ...state,
+        address: action.address.zona ? action.address : { ...action.address, zona: state.zone },
+        zone: action.address.zona || state.zone,
+        addressFromQuote: false,
+      };
     case 'RESTORE_WIZARD':
       return { ...state, ...action.fields };
     case 'GOTO_STEP':
@@ -546,6 +551,7 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
         cart: action.items.slice(0, -1),
         entrega: action.entrega,
         zone: action.zone,
+        address: { ...state.address, zona: action.zone },
         addressFromQuote: true,
         quoteLoad: action.notice,
       };

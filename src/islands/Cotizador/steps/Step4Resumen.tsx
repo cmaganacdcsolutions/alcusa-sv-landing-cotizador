@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { CATALOG_PRODUCTS, type CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
-import { distritoName, formatAddressLine, formatAddressForMessage, isAddressComplete } from '../../../lib/delivery-address';
+import { zonaName, formatAddressLine, formatAddressForMessage, isAddressComplete } from '../../../lib/delivery-address';
 import { snapshotCartItem, type CotizadorState } from '../state/cotizadorStore';
 import { buildOrderMessageItems, orderItemsSubtotal, type OrderLineItem } from '../state/order';
 import { depositOf, formatDiscount } from '../state/payable';
@@ -189,7 +189,7 @@ export default function Step4Resumen({
           {entregaLabel === 'con instalación' && (
             <p className="summary-card__zone">
               <IconLocationPin />
-              Zona: {state.zone || distritoName(state.address)} · con instalación
+              Zona: {state.zone || zonaName(state.address)} · con instalación
               <button type="button" className="summary-card__zone-change" onClick={onEditZone}>
                 Cambiar
               </button>

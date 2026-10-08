@@ -48,9 +48,7 @@ function midFlowState(over: Partial<CotizadorState> = {}): CotizadorState {
     glass: 'nevado',
     zone: 'Soyapango',
     address: {
-      departamentoId: '06',
-      municipioId: '0603',
-      distritoId: '060301',
+      zona: 'Soyapango',
       colonia: 'Residencial Las Flores',
       calle: 'Pasaje 3',
       referencia: 'portón negro',
