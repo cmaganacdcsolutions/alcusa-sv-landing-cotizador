@@ -232,3 +232,87 @@ test.describe('motion E6: realce del precio en el cotizador', () => {
     await expect(price).not.toHaveAttribute('data-tick', /.*/);
   });
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// Motion 02 E5: transicion home -> cotizador (View Transitions entre documentos). Se registra, en cada documento,
+// que paso con el evento pagereveal: 'none' (sin transicion), 'ran' (la vista se animo) o 'skipped'.
+const trackReveal = `
+  addEventListener('pageswap', (e) => { sessionStorage.setItem('vt-swap', e.viewTransition ? 'created' : 'none'); });
+  window.__vt = 'pending';
+  addEventListener('pagereveal', (e) => {
+    if (!e.viewTransition) { window.__vt = 'none'; return; }
+    const vt = e.viewTransition;
+    window.__vt = 'running';
+    vt.ready.then(() => { window.__vt = 'ran'; }, () => { window.__vt = 'skipped'; });
+    vt.finished.then(() => { window.__vtDone = true; }, () => { window.__vtDone = true; });
+  });
+`;
+const vtState = (page: import('@playwright/test').Page) => page.evaluate(() => (window as unknown as { __vt: string }).__vt);
+const goCotizador = async (page: import('@playwright/test').Page) => {
+  const go = page.locator('#p-recta').getByRole('button', { name: /Continuar al cotizador/ });
+  await go.click();
+  await expect(page).toHaveURL(/\/cotizador\?/);
+  await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+};
+
+test.describe('motion E5: transicion al cotizador', () => {
+  test('con movimiento: home -> cotizador crea la transicion y termina asentada', async ({ page }) => {
+    await page.addInitScript(trackReveal);
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    test.skip(!(await page.evaluate(() => 'onpagereveal' in window)), 'navegador sin View Transitions entre documentos (degrada a corte directo)');
+    await goCotizador(page);
+    // El home crea la transicion al salir (pageswap). Chromium headless a veces descarta la vista entrante (reveal 'none'),
+    // por eso el estado final se afirma sin exigir que corra: si corre, debe terminar.
+    expect(await page.evaluate(() => sessionStorage.getItem('vt-swap'))).toBe('created');
+    await expect.poll(() => page.evaluate(() => { const w = window as unknown as { __vt: string; __vtDone?: boolean }; return w.__vt !== 'running' || w.__vtDone === true; })).toBe(true);
+    await expect(page.locator('main')).toHaveCSS('opacity', '1');
+    await expect(page.locator('header.nav')).toHaveCSS('view-transition-name', 'site-nav');
+    await expect(page.getByTestId('cotizador-root')).toBeVisible();
+  });
+
+  test('reduced-motion: la transicion no corre (corte directo)', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(trackReveal);
+    await page.goto('/');
+    await page.waitForSelector('html[data-js]');
+    await goCotizador(page);
+    await expect.poll(() => vtState(page)).toMatch(/^(none|skipped)$/);
+    await expect(page.locator('header.nav')).toHaveCSS('view-transition-name', 'none');
+  });
+
+  test('?motion=off en el home: la navegacion no anima', async ({ page }) => {
+    await page.addInitScript(trackReveal);
+    await page.goto('/?motion=off');
+    await page.waitForSelector('html[data-js]');
+    await goCotizador(page);
+    await expect.poll(() => vtState(page)).toMatch(/^(none|skipped)$/);
+    await expect(page.getByTestId('cotizador-root')).toBeVisible();
+  });
+
+  test('atras: vuelve al home sin transicion y el home queda completo; adelante conserva el cotizador', async ({ page }) => {
+    await page.addInitScript(trackReveal);
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    await goCotizador(page);
+    await page.goBack();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('.pcard').first()).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-motion', '');
+    // recarga o bfcache: 'none'/'skipped' (o pagina restaurada), nunca una transicion corriendo
+    await expect.poll(() => vtState(page)).not.toMatch(/^(running|ran)$/);
+    await expect(page.locator('.pcard').first()).toHaveCSS('opacity', '1');
+    await page.goForward();
+    await expect(page).toHaveURL(/\/cotizador\?/);
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    await expect.poll(() => vtState(page)).not.toMatch(/^(running|ran)$/);
+  });
+
+  test('deep link directo (sin pasar por el home): carga sin transicion', async ({ page }) => {
+    await page.addInitScript(trackReveal);
+    await page.goto('/cotizador?oferta=online10');
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    await expect.poll(() => vtState(page)).not.toMatch(/^(running|ran)$/);
+  });
+});
+
