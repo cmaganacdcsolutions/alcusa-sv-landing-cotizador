@@ -61,6 +61,8 @@ test.describe('motion E1: revelado escalonado', () => {
     await page.waitForSelector('html[data-js]');
     await expect(page.locator('html')).not.toHaveAttribute('data-motion', '');
     for (const el of await page.locator('[data-reveal]').all()) expect(await opacity(el)).toBe('1');
+    const h1After = await page.locator('.hintro__title').evaluate((n) => getComputedStyle(n, '::after').animationName);
+    expect(h1After).toBe('none');
   });
 
   test('?motion=off: modo estatico', async ({ page }) => {
@@ -69,6 +71,7 @@ test.describe('motion E1: revelado escalonado', () => {
     await expect(page.locator('html')).toHaveAttribute('data-motion-off', '');
     await expect(page.locator('html')).not.toHaveAttribute('data-motion', '');
     expect(await opacity(page.locator('.pcard').last())).toBe('1');
+    expect(await page.locator('.hintro__title').evaluate((n) => getComputedStyle(n, '::after').animationName)).toBe('none');
   });
 
   test('sin JS: todo visible', async ({ browser }) => {
@@ -81,3 +84,37 @@ test.describe('motion E1: revelado escalonado', () => {
   });
 });
 
+test.describe('motion E2: entrada del intro', () => {
+  test('el h1 nunca se oculta; el barrido corre una vez y el resto termina visible', async ({ page }) => {
+    await page.goto('/');
+    const h1 = page.locator('.hintro__title');
+    expect(await opacity(h1)).toBe('1');
+    expect(await h1.evaluate((n) => getComputedStyle(n, '::after').animationName)).toBe('mo-sweep');
+    expect(await h1.evaluate((n) => getComputedStyle(n, '::after').animationIterationCount)).toBe('1');
+    await expect(page.locator('.hintro__lede')).toHaveCSS('opacity', '1');
+    await expect(page.locator('.hintro__lede')).toHaveCSS('transform', 'none');
+    await expect(page.locator('.hintro__kicker')).toHaveCSS('opacity', '1');
+  });
+});
+
+test.describe('motion E3: reflejo de vidrio en la foto', () => {
+  test('puntero fino: el hover dispara el barrido y al salir se reinicia', async ({ page }) => {
+    await page.goto('/');
+    const photo = page.locator('.pcard__photo').first();
+    const anim = () => photo.evaluate((n) => getComputedStyle(n, '::after').animationName);
+    expect(await anim()).toBe('none');
+    await photo.hover();
+    await expect.poll(anim).toBe('mo-sweep');
+    await page.mouse.move(0, 0);
+    await expect.poll(anim).toBe('none');
+  });
+});
+
+test.describe('motion E3: tactil', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 412, height: 915 }, reducedMotion: 'no-preference' });
+  test('sin hover (tactil) no existe el reflejo', async ({ page }) => {
+    await page.goto('/');
+    const photo = page.locator('.pcard__photo').first();
+    expect(await photo.evaluate((n) => getComputedStyle(n, '::after').content)).toBe('none');
+  });
+});
