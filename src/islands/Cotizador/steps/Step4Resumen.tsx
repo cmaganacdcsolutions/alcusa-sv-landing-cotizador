@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { CATALOG_PRODUCTS, type CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
-import { distritoName, formatAddressLine, formatAddressForMessage, isAddressComplete } from '../../../lib/delivery-address';
+import { zonaName, formatAddressLine, formatAddressForMessage, isAddressComplete } from '../../../lib/delivery-address';
 import { snapshotCartItem, type CotizadorState } from '../state/cotizadorStore';
 import { buildOrderMessageItems, orderItemsSubtotal, type OrderLineItem } from '../state/order';
 import { depositOf, formatDiscount } from '../state/payable';
@@ -139,6 +139,7 @@ export default function Step4Resumen({
     ...(direccionMsg ? { address: formatAddressLine(state.address) } : {}),
     transport: transporte,
     total: grandTotal,
+    ...(state.promoId ? { promoId: state.promoId } : {}),
     // Folio WITHOUT the card discount unless the customer already chose card in Step5.
     ...(shippingPending ? { shippingPending: true } : {}),
     ...(onlineDiscount > 0 ? { discount: { code: 'online_card_10' as const, amount: onlineDiscount } } : {}),
@@ -189,7 +190,7 @@ export default function Step4Resumen({
           {entregaLabel === 'con instalación' && (
             <p className="summary-card__zone">
               <IconLocationPin />
-              Zona: {state.zone || distritoName(state.address)} · con instalación
+              Zona: {state.zone || zonaName(state.address)} · con instalación
               <button type="button" className="summary-card__zone-change" onClick={onEditZone}>
                 Cambiar
               </button>
@@ -245,10 +246,13 @@ export default function Step4Resumen({
           </article>
         ))}
 
-        <button type="button" className="summary-add" onClick={handleAddAnother}>
-          <IconPlus />
-          Agregar otro producto
-        </button>
+        {/* Contexto promo: la cotizacion es solo el item de la promo (sin "agregar otro producto"). */}
+        {!state.promoId && (
+          <button type="button" className="summary-add" onClick={handleAddAnother}>
+            <IconPlus />
+            Agregar otro producto
+          </button>
+        )}
 
         {anyRequiresQuote && (
           <div className="callout" role="status" style={{ marginTop: 8 }}>

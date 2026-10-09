@@ -1,7 +1,7 @@
 {
   "leaf": "puertas-de-bano/bisagra",
-  "thumb": "/images/renders/bisagra-800.webp",
-  "step2Image": "/images/renders/bisagra-bronce-duplex-800.webp",
+  "thumb": "/images/fotos/bisagra-800.webp",
+  "step2Image": "/images/fotos/bisagra-800.webp",
   "step2Alt": "Puerta con bisagra",
   "rows": [
     {
@@ -107,6 +107,41 @@
       "glass": "duplex",
       "price": "$419.00",
       "colorLabel": "Bronce",
+      "glassLabel": "Dúplex"
+    },
+    {
+      "color": "negro",
+      "glass": "nevado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Nevado 5 mm"
+    },
+    {
+      "color": "negro",
+      "glass": "claro",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Claro 5 mm"
+    },
+    {
+      "color": "negro",
+      "glass": "decorado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Decorado"
+    },
+    {
+      "color": "negro",
+      "glass": "mallado",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
+      "glassLabel": "Mallado"
+    },
+    {
+      "color": "negro",
+      "glass": "duplex",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro",
       "glassLabel": "Dúplex"
     }
   ]

@@ -14,8 +14,12 @@ export const ONLINE_CARD_DISCOUNT = {
   rate: 0.1,
   /** El envio nunca se descuenta. */
   appliesToShipping: false,
-  /** Los productos en promocion tambien reciben el 10%. */
-  appliesToPromoItems: true,
+  /**
+   * Cambio (2026-10-08, decision del usuario): "cada promocion tiene su propio reglaje". Una cotizacion
+   * en contexto promo (`?promo=<id>`) NO recibe el 10% con tarjeta: solo la promo. El flujo normal y
+   * `?oferta=online10` siguen igual. Ver `promo` en OnlineCardDiscountInput.
+   */
+  appliesToPromoItems: false,
   /** Se acumula con el -15% de retiro en tienda (el 10% se calcula DESPUES de ese -15%). */
   stacksWithPickupDiscount: true,
 } as const;
@@ -28,6 +32,8 @@ export interface OnlineCardDiscountInput {
   shippingFee?: number;
   /** Parte de itemsSubtotal que viene de productos en promocion (solo se usa si la config los excluye). */
   promoItemsSubtotal?: number;
+  /** true = la cotizacion esta en contexto promo: el 10% NO aplica (ni preview ni linea aplicada). */
+  promo?: boolean;
   /** true si la entrega es retiro en tienda (solo se usa si la config no permite acumular). */
   pickup?: boolean;
 }
@@ -51,10 +57,10 @@ const NONE: OnlineCardDiscountResult = { applies: false, rate: 0, base: 0, amoun
 export function computeOnlineCardDiscount(input: OnlineCardDiscountInput): OnlineCardDiscountResult {
   const cfg = ONLINE_CARD_DISCOUNT;
   if (input.payMethod !== ONLINE_CARD_PAY_METHOD) return NONE;
+  if (input.promo && !cfg.appliesToPromoItems) return NONE;
   if (input.pickup && !cfg.stacksWithPickupDiscount) return NONE;
 
   let base = input.itemsSubtotal;
-  if (!cfg.appliesToPromoItems) base -= input.promoItemsSubtotal ?? 0;
   if (cfg.appliesToShipping) base += input.shippingFee ?? 0;
   base = round2(Math.max(0, base));
 

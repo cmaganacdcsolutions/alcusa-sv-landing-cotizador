@@ -21,6 +21,8 @@ import {
   parseWidthCm,
   type CotizadorState,
 } from './cotizadorStore';
+import { isPromoWidthOk } from '@content/promoContext';
+import { lookupPromo } from './promoRegistry';
 import { WINDOW_GLASS_LABELS } from './labels';
 import { computeGardenQuote, computeWindowQuote } from './quoteWindowGarden';
 
@@ -43,6 +45,13 @@ export function computeQuote(state: CotizadorState): QuoteResult {
 
   switch (state.productId) {
     case 'recta': {
+      // Contexto promo: precio de ESA promo (instalada, sin -15% de retiro ni tabla); ancho dentro de su rango.
+      const promo = lookupPromo(state.promoId);
+      if (promo) {
+        return isPromoWidthOk(promo, widthCm)
+          ? { amount: promo.price, requiresQuote: false }
+          : { amount: null, requiresQuote: true };
+      }
       const r = priceStraight({ widthCm, color: state.color, glass: state.glass, pickup: state.entrega === 'retiro' });
       return { amount: r.price, requiresQuote: r.requiresQuote };
     }

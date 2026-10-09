@@ -38,7 +38,7 @@ export function wantsMedidas(search: string): boolean {
 }
 
 /** Colores de aluminio aceptados por `?color=` (los modelos que no tienen los 3 filtran despues). */
-export const DEEP_LINK_COLORS: readonly AluminumColor[] = ['natural', 'blanco', 'bronce'];
+export const DEEP_LINK_COLORS: readonly AluminumColor[] = ['natural', 'blanco', 'bronce', 'negro'];
 const COLORS = DEEP_LINK_COLORS;
 
 /** Valor valido de color o null (valores desconocidos se ignoran). */

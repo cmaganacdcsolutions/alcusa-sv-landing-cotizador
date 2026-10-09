@@ -2,8 +2,7 @@
 // resolucion de zona de transporte y formatos de texto. Sin React/window/fetch.
 // PII: este modulo nunca registra en consola ni arma URLs con la direccion; el unico
 // enlace que genera es el de mapa a partir de lat/lng (sin llamadas externas).
-import { DEPARTAMENTOS, getDistrito, getMunicipio, getDepartamento } from '@content/elSalvadorTerritory';
-import { ZONE_BY_DISTRITO, ZONE_UNMAPPED } from '@content/deliveryZones';
+import { ZONE_UNMAPPED, isKnownZone, zoneDisplayName, zoneFromLegacyDistrito } from '@content/deliveryZones';
 import { formatWhatsappInput, whatsappDigits } from '../quote-customer';
 
 export interface GeoPoint {
@@ -12,9 +11,8 @@ export interface GeoPoint {
 }
 
 export interface DeliveryAddress {
-  departamentoId: string;
-  municipioId: string;
-  distritoId: string;
+  /** Zona de cobertura elegida (clave de ZONE_FEES o ZONE_UNMAPPED 'otro'); '' = sin elegir. */
+  zona: string;
   colonia: string;
   calle: string;
   referencia: string;
@@ -24,9 +22,7 @@ export interface DeliveryAddress {
 }
 
 export const EMPTY_ADDRESS: DeliveryAddress = {
-  departamentoId: '',
-  municipioId: '',
-  distritoId: '',
+  zona: '',
   colonia: '',
   calle: '',
   referencia: '',
@@ -35,12 +31,10 @@ export const EMPTY_ADDRESS: DeliveryAddress = {
 };
 
 export type AddressTextField = 'colonia' | 'calle' | 'referencia' | 'telefono';
-export type AddressField = 'departamentoId' | 'municipioId' | 'distritoId' | AddressTextField;
+export type AddressField = 'zona' | AddressTextField;
 /** Orden visual = orden de foco al primer error. */
 export const ADDRESS_FIELD_ORDER: readonly AddressField[] = [
-  'departamentoId',
-  'municipioId',
-  'distritoId',
+  'zona',
   'colonia',
   'calle',
   'referencia',
@@ -48,9 +42,7 @@ export const ADDRESS_FIELD_ORDER: readonly AddressField[] = [
 ];
 
 export const ADDRESS_MSG = {
-  departamento: 'Elige tu departamento de la lista.',
-  municipio: 'Elige tu municipio de la lista.',
-  distrito: 'Elige tu distrito de la lista.',
+  zona: 'Elige tu zona de cobertura de la lista.',
   colonia: 'Escribe el nombre de tu colonia, residencial o barrio.',
   calle: 'Escribe tu calle, pasaje o avenida y el número de casa.',
   referencia: 'Escribe un punto de referencia para ubicar tu casa. Ejemplo: frente a la iglesia, portón negro.',
@@ -81,15 +73,11 @@ export function validateAddressPhone(raw: string): string {
   return PHONE_RE.test(whatsappDigits(raw)) ? '' : ADDRESS_MSG.telefonoInvalid;
 }
 
-/** Mensaje de error de un campo ('' si es valido). Los ids de territorio se validan contra el catalogo. */
+/** Mensaje de error de un campo ('' si es valido). La zona se valida contra la tabla de cobertura. */
 export function validateAddressField(a: DeliveryAddress, field: AddressField): string {
   switch (field) {
-    case 'departamentoId':
-      return getDepartamento(a.departamentoId) ? '' : ADDRESS_MSG.departamento;
-    case 'municipioId':
-      return getMunicipio(a.departamentoId, a.municipioId) ? '' : ADDRESS_MSG.municipio;
-    case 'distritoId':
-      return getDistrito(a.departamentoId, a.municipioId, a.distritoId) ? '' : ADDRESS_MSG.distrito;
+    case 'zona':
+      return isKnownZone(a.zona) ? '' : ADDRESS_MSG.zona;
     case 'colonia':
       return validateText(a.colonia, ADDRESS_MSG.colonia);
     case 'calle':
@@ -119,47 +107,32 @@ export function isAddressComplete(a: DeliveryAddress): boolean {
 }
 
 /**
- * Clave de ZONE_FEES para un distrito. Los distritos sin tarifa conocida devuelven
- * ZONE_UNMAPPED ('otro'), que el flujo trata como "sin tarifa automatica" (cotiza por
- * WhatsApp). '' mientras no haya distrito.
+ * Clave de ZONE_FEES de la direccion: la zona elegida ('otro' = sin tarifa automatica, cotiza por
+ * WhatsApp). '' mientras no se elija zona.
  */
-export function zoneForDistrito(a: Pick<DeliveryAddress, 'departamentoId' | 'municipioId' | 'distritoId'>): string {
-  const d = getDistrito(a.departamentoId, a.municipioId, a.distritoId);
-  if (!d) return '';
-  return ZONE_BY_DISTRITO[d.id] ?? ZONE_UNMAPPED;
+export function zoneOf(a: Pick<DeliveryAddress, 'zona'>): string {
+  return isKnownZone(a.zona) ? a.zona : '';
 }
 
-/** Aplica un cambio de campo respetando la cascada (cambiar departamento limpia municipio y distrito). */
+/** Aplica un cambio de campo. */
 export function applyAddressField(a: DeliveryAddress, field: AddressField, value: string): DeliveryAddress {
-  switch (field) {
-    case 'departamentoId':
-      return a.departamentoId === value ? a : { ...a, departamentoId: value, municipioId: '', distritoId: '' };
-    case 'municipioId':
-      return a.municipioId === value ? a : { ...a, municipioId: value, distritoId: '' };
-    case 'telefono':
-      return { ...a, telefono: formatWhatsappInput(value) };
-    default:
-      return { ...a, [field]: value };
-  }
+  if (field === 'telefono') return { ...a, telefono: formatWhatsappInput(value) };
+  return { ...a, [field]: value };
 }
 
 export function mapsUrl(g: GeoPoint): string {
   return `https://www.google.com/maps?q=${g.lat},${g.lng}`;
 }
 
-export function departamentoName(a: DeliveryAddress): string {
-  return getDepartamento(a.departamentoId)?.name ?? '';
-}
-export function municipioName(a: DeliveryAddress): string {
-  return getMunicipio(a.departamentoId, a.municipioId)?.name ?? '';
-}
-export function distritoName(a: DeliveryAddress): string {
-  return getDistrito(a.departamentoId, a.municipioId, a.distritoId)?.name ?? '';
+/** Nombre legible de la zona elegida ('' si no hay; "Otra zona" para ZONE_UNMAPPED). */
+export function zonaName(a: Pick<DeliveryAddress, 'zona'>): string {
+  if (a.zona === ZONE_UNMAPPED) return 'Otra zona';
+  return isKnownZone(a.zona) ? zoneDisplayName(a.zona) : '';
 }
 
-/** "Colonia X, Calle Y #3. Ref: ... · Distrito, Municipio, Departamento" */
+/** "Colonia X, Calle Y #3. Ref: ... · Zona de cobertura" */
 export function formatAddressLine(a: DeliveryAddress): string {
-  const place = [distritoName(a), municipioName(a), departamentoName(a)].filter(Boolean).join(', ');
+  const place = zonaName(a);
   const street = [normalizeText(a.colonia), normalizeText(a.calle)].filter(Boolean).join(', ');
   const ref = normalizeText(a.referencia);
   return [street, ref ? `Ref: ${ref}` : '', place].filter(Boolean).join(' · ');
@@ -178,9 +151,7 @@ export function formatAddressForMessage(a: DeliveryAddress): string {
 
 /** Payload plano para el adaptador de cotizaciones (sin ids internos de UI). */
 export interface AddressPayload {
-  departamento: string;
-  municipio: string;
-  distrito: string;
+  zona: string;
   colonia: string;
   calle: string;
   referencia: string;
@@ -191,9 +162,7 @@ export interface AddressPayload {
 
 export function toAddressPayload(a: DeliveryAddress): AddressPayload {
   return {
-    departamento: departamentoName(a),
-    municipio: municipioName(a),
-    distrito: distritoName(a),
+    zona: zonaName(a),
     colonia: normalizeText(a.colonia),
     calle: normalizeText(a.calle),
     referencia: normalizeText(a.referencia),
@@ -213,9 +182,9 @@ export function parseStoredAddress(v: unknown): DeliveryAddress {
       ? { lat: g.lat, lng: g.lng }
       : null;
   return {
-    departamentoId: s('departamentoId'),
-    municipioId: s('municipioId'),
-    distritoId: s('distritoId'),
+    // Estados antiguos guardaban departamento/municipio/distrito: se migra via la tabla de distritos o se
+    // deja la zona sin elegir (el cliente la elige de nuevo). Nunca lanza.
+    zona: isKnownZone(s('zona')) ? s('zona') : zoneFromLegacyDistrito(s('distritoId')),
     colonia: s('colonia'),
     calle: s('calle'),
     referencia: s('referencia'),
@@ -223,5 +192,3 @@ export function parseStoredAddress(v: unknown): DeliveryAddress {
     geo,
   };
 }
-
-export { DEPARTAMENTOS };

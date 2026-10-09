@@ -53,6 +53,8 @@ export interface QuoteFolioRequest {
   shippingPending?: boolean;
   /** 10% online-card discount; only when the customer already chose card. total = sum(items) - discount.amount + transportFee. */
   discount?: QuoteDiscount;
+  /** Contexto promo (`?promo=<id>`): sin 10%; el server rechaza discount + promoId. */
+  promoId?: string;
   total: Money;
   consent: true;
   privacyNoticeVersion: string;

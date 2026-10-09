@@ -1,7 +1,7 @@
 {
   "leaf": "ventanas/ventana-francesa",
-  "thumb": "/images/renders/ventana-francesa-800.webp",
-  "step2Image": "/images/renders/ventana-francesa-natural-reflectivo-bronce-800.webp",
+  "thumb": "/images/fotos/ventana-francesa-800.webp",
+  "step2Image": "/images/fotos/ventana-francesa-negro-800.webp",
   "step2Alt": "Ventana Francesa o Bilbao",
   "rows": [
     {
@@ -107,6 +107,41 @@
       "glass": "reflectivo_bronce",
       "price": "Por WhatsApp",
       "colorLabel": "Natural Cotización personalizada",
+      "glassLabel": "Reflectivo bronce Cotización personalizada"
+    },
+    {
+      "color": "negro",
+      "glass": "claro",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
+      "glassLabel": "Claro"
+    },
+    {
+      "color": "negro",
+      "glass": "bronce",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
+      "glassLabel": "Bronce 5 mm"
+    },
+    {
+      "color": "negro",
+      "glass": "super_gris",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
+      "glassLabel": "Súper gris"
+    },
+    {
+      "color": "negro",
+      "glass": "reflectivo_azul",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
+      "glassLabel": "Reflectivo azul"
+    },
+    {
+      "color": "negro",
+      "glass": "reflectivo_bronce",
+      "price": "Por WhatsApp",
+      "colorLabel": "Negro Cotización personalizada",
       "glassLabel": "Reflectivo bronce Cotización personalizada"
     }
   ]

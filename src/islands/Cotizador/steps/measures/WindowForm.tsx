@@ -6,7 +6,7 @@ import { computeWindowQuote } from '../../state/quoteWindowGarden';
 import { IconArrowRight, IconCheck, IconWarningTriangle, IconWindow } from '../../icons';
 import { modelImage, type WindowModelImage } from './windowModelImages';
 import { ColorSwatch, WindowGlassSwatch } from './glassSwatches';
-import { WINDOW_FRAMES, WINDOW_GLASSES } from './finishOptions';
+import { WINDOW_FRAMES, WINDOW_FRAMES_FRANCESA, WINDOW_GLASSES } from './finishOptions';
 
 const MODELS: WindowModel[] = ['francesa', 'bilbao'];
 // S7 — re-exported so existing `from './measures/WindowForm'` imports keep
@@ -63,7 +63,9 @@ export interface WindowFormProps {
 export default function WindowForm({ state, dispatch, onNext }: WindowFormProps): ReactElement {
   const quote = computeWindowQuote(state);
   const allRowsValid = state.windowRows.every((r) => isRowValid(r.qty, r.widthM, r.heightM));
-  const frameRequiresQuote = state.windowFrame === 'natural';
+  const frameRequiresQuote = state.windowFrame === 'natural' || state.windowFrame === 'negro';
+  const frameLabel = state.windowFrame === 'negro' ? 'Negro' : 'Natural';
+  const frames = state.windowModel === 'francesa' ? WINDOW_FRAMES_FRANCESA : WINDOW_FRAMES;
   const glassRequiresQuote = state.windowGlass === 'reflectivo_bronce';
 
   return (
@@ -167,7 +169,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
       <div className="field" style={{ marginTop: 20 }}>
         <span className="field__label">Color del marco</span>
         <div className="chip-row" role="group" aria-label="Color del marco">
-          {WINDOW_FRAMES.map((f) => (
+          {frames.map((f) => (
             <button
               key={f}
               type="button"
@@ -177,7 +179,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
             >
               <ColorSwatch color={f} />
               {COLOR_LABELS[f]}
-              {f === 'natural' && <span className="chip__badge">Cotización personalizada</span>}
+              {(f === 'natural' || f === 'negro') && <span className="chip__badge">Cotización personalizada</span>}
             </button>
           ))}
         </div>
@@ -231,9 +233,9 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
           </span>
           <p className="callout__body">
             {frameRequiresQuote && glassRequiresQuote
-              ? 'El marco Natural y el vidrio Reflectivo bronce se cotizan a la medida.'
+              ? `El marco ${frameLabel} y el vidrio Reflectivo bronce se cotizan a la medida.`
               : frameRequiresQuote
-                ? 'El marco Natural se cotiza a la medida.'
+                ? `El marco ${frameLabel} se cotiza a la medida.`
                 : 'El vidrio Reflectivo bronce se cotiza a la medida.'}{' '}
             Puedes seguir y confirmar por WhatsApp.
           </p>

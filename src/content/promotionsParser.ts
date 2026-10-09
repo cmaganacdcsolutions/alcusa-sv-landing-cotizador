@@ -7,10 +7,25 @@ import type { AluminumColor, StraightGlass } from '@engine/pricing';
 import { buildCotizadorHref } from './catalogHome';
 import { cotizadorHref, toColorParam, toGlassParam } from './deepLink';
 
+/** Parametro de URL que entra al cotizador en contexto promo. */
+export const PROMO_PARAM = 'promo';
+
 /** Acabados que la promo deja preseleccionados en el cotizador (ambos opcionales). */
 export interface PromotionCotizadorParams {
   color?: AluminumColor;
   vidrio?: StraightGlass;
+}
+
+/**
+ * Reglaje de cotizacion de la promo (ADITIVO, ADR-011): con la entrada `?promo=<id>` el cotizador
+ * se bloquea a `product_slug` + `cotizador_params` + `price_promo` y solo deja editar el ancho dentro de
+ * [widthMinCm, widthMaxCm] (pared a pared). Sin este bloque la promo solo preselecciona (comportamiento previo).
+ */
+export interface PromotionQuoteRules {
+  widthMinCm: number;
+  widthMaxCm: number;
+  /** Alto fijo en metros. */
+  altoM: number;
 }
 
 export interface Promotion {
@@ -27,6 +42,8 @@ export interface Promotion {
   productSlug: string;
   /** Acabados preseleccionados en el cotizador (`color` y/o `vidrio`); ausente = solo el producto. */
   cotizadorParams?: PromotionCotizadorParams;
+  /** Reglaje por promo (ancho permitido + alto); ausente = la promo no bloquea el cotizador. */
+  quoteRules?: PromotionQuoteRules;
   rules: readonly string[];
   placeholder: boolean;
 }
@@ -109,6 +126,19 @@ export function parsePromotions(
         if (params.color || params.vidrio) cotizadorParams = params;
       }
     }
+    let quoteRules: PromotionQuoteRules | undefined;
+    if (item.quote_rules !== undefined) {
+      const qr = item.quote_rules;
+      const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0;
+      if (!isRec(qr)) at('"quote_rules" debe ser un objeto');
+      else if (!num(qr.width_min_cm) || !num(qr.width_max_cm) || !num(qr.alto_m)) {
+        at('"quote_rules" requiere width_min_cm, width_max_cm y alto_m (numeros > 0)');
+      } else if (qr.width_min_cm > qr.width_max_cm) {
+        at('"quote_rules.width_min_cm" no puede ser mayor que "width_max_cm"');
+      } else {
+        quoteRules = { widthMinCm: qr.width_min_cm, widthMaxCm: qr.width_max_cm, altoM: qr.alto_m };
+      }
+    }
     const rules = item.rules ?? [];
     if (!Array.isArray(rules) || !rules.every((r) => typeof r === 'string')) {
       at('"rules" debe ser un arreglo de textos');
@@ -126,6 +156,7 @@ export function parsePromotions(
       hasta: item.ends_on as string,
       productSlug: item.product_slug as string,
       ...(cotizadorParams ? { cotizadorParams } : {}),
+      ...(quoteRules ? { quoteRules } : {}),
       rules: rules as string[],
       placeholder: item.placeholder === true,
     });
@@ -190,13 +221,14 @@ export function formatUsd(n: number): string {
  * es decir, cae directo en Medidas con producto y acabados elegidos (el cliente solo escribe la medida).
  * Sin acabados no hay nada que preseleccionar: se conserva `?producto=<slug>` (contrato previo).
  */
-export function promoHref(p: Pick<Promotion, 'productSlug' | 'cotizadorParams'>): string {
+export function promoHref(p: Pick<Promotion, 'productSlug' | 'cotizadorParams'> & { id?: string; quoteRules?: unknown }): string {
   const { color, vidrio } = p.cotizadorParams ?? {};
-  if (!color && !vidrio) return cotizadorHref(p.productSlug);
-  return buildCotizadorHref(p.productSlug, { color, vidrio });
+  const base = !color && !vidrio ? cotizadorHref(p.productSlug) : buildCotizadorHref(p.productSlug, { color, vidrio });
+  // Entrada por promo: `?promo=<id>` fija el contexto (reglaje de ESA promo; sin 10% con tarjeta).
+  // Solo las promos con reglaje (`quote_rules`) abren contexto promo; sin reglaje el param no tendria efecto.
+  return p.id && p.quoteRules ? `${base}${base.includes('?') ? '&' : '?'}${PROMO_PARAM}=${encodeURIComponent(p.id)}` : base;
 }
 
-/**
 /** Decision de Carlos (2026-09-30): la landing muestra como maximo 3 promos vigentes. */
 export const MAX_PROMOS = 3;
 
@@ -234,9 +266,13 @@ export function isSafePromoImage(url: string): boolean {
   return SAFE_PROMO_IMAGE.test(url) && !url.includes('..');
 }
 
-/** srcset 600w/900w cuando la imagen sigue la convencion `<clave>-900.webp` (la del sitio y la del admin). */
-export function promoImageSrcSet(image: string): string | undefined {
-  return /-900\.webp$/.test(image) ? `${image.replace(/-900\.webp$/, '-600.webp')} 600w, ${image} 900w` : undefined;
+/**
+ * srcset 600w/<ancho real> cuando la imagen sigue la convencion `<clave>-900.webp` (la del sitio y la del admin).
+ * `fullWidth` es el ancho REAL en px del archivo `-900` (default 900); el descriptor nunca declara mas pixeles de
+ * los que tiene la imagen (sin upscale: algunas fuentes solo dan 720 px).
+ */
+export function promoImageSrcSet(image: string, fullWidth = 900): string | undefined {
+  return /-900\.webp$/.test(image) ? `${image.replace(/-900\.webp$/, '-600.webp')} 600w, ${image} ${fullWidth}w` : undefined;
 }
 
 export const PROMO_IMAGE_SIZES = '(min-width: 900px) 376px, 360px';

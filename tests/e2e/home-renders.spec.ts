@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Locator } from '@playwright/test';
 import { expect, test } from './fixtures';
 
-// Inicio con renders profesionales (2026-10-06): sin fotos de Alcusa, jardin con 3 productos,
+// Inicio con las fotos oficiales de Alcusa (2026-10-08, reemplazan los renders), jardin con 3 productos,
 // iconos de color/vidrio en cada tarjeta, galeria de renders y guia "Como funciona" paso a paso.
 // Jardin: 3 productos + sub-bloque "Más opciones para tu jardín" (2 combinaciones solo asesor, ver jardin-mas-opciones.spec.ts).
 const LEGACY = /\/images\/(catalog|card-|hero-|galeria|finish-)/;
@@ -14,20 +14,24 @@ async function pick(card: Locator, field: string, option: RegExp): Promise<void>
 }
 
 test.describe('home: renders, iconos de acabado y guia', () => {
-  test('puertas de jardin muestra 3 productos con opciones y 2 de "Más opciones para tu jardín"; ninguna otra categoria las tiene', async ({ page }) => {
+  test('puertas de jardin muestra 3 productos con opciones y 2 de "Más opciones para tu jardín"; las demas categorias tienen sus propios solo-asesor', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#puertas-de-jardin .pcard')).toHaveCount(5);
     await expect(page.locator('#puertas-de-jardin .pcard:not(.pcard--advisor)')).toHaveCount(3);
     await expect(page.locator('#puertas-de-jardin .csec__more .pcard--advisor')).toHaveCount(2);
-    await expect(page.locator('.pcard--advisor')).toHaveCount(2);
-    await expect(page.getByText('Más opciones')).toHaveCount(1);
+    // Solo-asesor en todo el sitio: 2 de jardin + 1 de bano + 1 de ventanas + 3 de puertas abatibles.
+    await expect(page.locator('.pcard--advisor')).toHaveCount(7);
+    await expect(page.locator('#puertas-de-bano .csec__more .pcard--advisor')).toHaveCount(1);
+    await expect(page.locator('#ventanas .csec__more .pcard--advisor')).toHaveCount(1);
+    await expect(page.locator('#puertas-abatibles .pcard--advisor')).toHaveCount(3);
   });
 
-  test('tarjetas usan /images/renders/ y el HTML no tiene rutas de foto legacy', async ({ page }) => {
+  test('tarjetas usan /images/fotos/ (fotos oficiales) y el HTML no tiene rutas de foto legacy', async ({ page }) => {
     await page.goto('/');
     const srcs = await page.locator('.pcard img.photo-frame__img').evaluateAll((els) => els.map((e) => e.getAttribute('src')));
-    expect(srcs.length).toBe(11);
-    for (const s of srcs) expect(s).toMatch(/^\/images\/renders\//);
+    expect(srcs.length).toBe(16);
+    for (const s of srcs) expect(s).toMatch(/^\/images\/fotos\//);
+    expect(await page.content()).not.toContain('/images/renders/');
     expect(await page.content()).not.toMatch(LEGACY);
   });
 
@@ -50,24 +54,28 @@ test.describe('home: renders, iconos de acabado y guia', () => {
       }
     }
     const fr = page.locator('#p-ventana-francesa');
-    await expect(fr.locator('.pcard__opt .pcard__sw[data-sw^="color:"]')).toHaveCount(3);
+    // Francesa: blanco, bronce, natural y negro (2026-10-08).
+    await expect(fr.locator('.pcard__opt .pcard__sw[data-sw^="color:"]')).toHaveCount(4);
     await expect(fr.locator('[data-trigger] .pcard__sw').first()).toHaveCSS('border-radius', '50%');
   });
 
-  test('elegir color y vidrio (o acabado) cambia el render de la tarjeta, tambien en la cabina en L', async ({ page }) => {
+  test('elegir color y vidrio (o acabado) cambia la foto de la tarjeta donde el portafolio tiene otra, tambien en la cabina en L', async ({ page }) => {
     await page.goto('/');
     const card = page.locator('#p-recta');
     await card.scrollIntoViewIfNeeded();
     await page.waitForSelector('html[data-js]');
+    const img = card.locator('img.photo-frame__img');
+    await expect(img).toHaveAttribute('src', '/images/fotos/recta-800.webp');
     await pick(card, 'Color', /^Bronce/);
+    await expect(img).toHaveAttribute('src', '/images/fotos/recta-800.webp'); // el color solo no tiene foto propia
     await pick(card, 'Vidrio', /^Nevado/);
-    await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/renders/recta-bronce-nevado-800.webp');
+    await expect(img).toHaveAttribute('src', '/images/fotos/recta-nevado-800.webp');
     const enL = page.locator('#p-en-l');
-    await expect(enL.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/renders/en-l-natural-aquaclara-800.webp');
+    await expect(enL.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/fotos/en-l-800.webp');
     await pick(enL, 'Color', /^Bronce/);
-    await expect(enL.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/renders/en-l-bronce-aquaclara-800.webp');
+    await expect(enL.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/fotos/en-l-800.webp');
     await pick(enL, 'Acabado', /^Frosted/);
-    await expect(enL.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/renders/en-l-bronce-frosted-800.webp');
+    await expect(enL.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/fotos/en-l-frosted-800.webp');
   });
 
   test('ningun texto ni boton se sale del borde de su tarjeta (tolerancia 1px)', async ({ page }) => {

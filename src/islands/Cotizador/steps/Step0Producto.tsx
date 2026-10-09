@@ -14,7 +14,7 @@ import {
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import PhotoFrame from '@components/PhotoFrame';
 import { IconArrowRight, IconCheck, IconLock, IconWhatsApp } from '../icons';
-import { PRODUCT_IMAGES, typeImage, variantImage } from './productImages';
+import { categoryImage, typeImage, variantImage } from './productImages';
 import QuoteLoadBlock, { type QuoteLoadBlockProps } from './quote/QuoteLoadBlock';
 import { IconQuoteImage, IconQuoteTriangle } from './quote/QuoteIcons';
 import '@styles/cotizador-medidas.css';
@@ -37,11 +37,7 @@ const CATEGORY_SUPPORT: Readonly<Record<string, string>> = {
   'puertas-de-bano': '4 tipos',
   'puertas-de-jardin': '1, 2, 3 hojas y más',
   ventanas: 'Francesa y Bilbao',
-};
-const CATEGORY_THUMB: Readonly<Record<string, ProductId>> = {
-  'puertas-de-bano': 'recta',
-  'puertas-de-jardin': 'jardin',
-  ventanas: 'ventana',
+  'puertas-abatibles': 'Con un asesor',
 };
 const TYPE_LABEL: Readonly<Record<string, string>> = {
   'templada-10mm': 'Templada 10 mm',
@@ -50,16 +46,21 @@ const TYPE_LABEL: Readonly<Record<string, string>> = {
   'jardin-2-hojas': '2 hojas',
   'jardin-3-hojas': '3 hojas',
   'jardin-2-fijas-2-corredizas': 'Más opciones',
+  'templada-10mm-abatible': 'Más opciones',
+  'ventana-bilbao-medio-punto': 'Más opciones',
+  'abatible-interior-exterior': 'Más opciones',
 };
 const TYPE_KICKER: Readonly<Record<string, string>> = {
   'puertas-de-bano': '2 · TIPO DE PUERTA',
   'puertas-de-jardin': '2 · TIPO DE PUERTA',
   ventanas: '2 · TIPO DE VENTANA',
+  'puertas-abatibles': '2 · TIPO DE PUERTA',
 };
 const TYPE_GROUP_LABEL: Readonly<Record<string, string>> = {
   'puertas-de-bano': 'Tipo de puerta de baño',
   'puertas-de-jardin': 'Hojas de la puerta de jardín',
   ventanas: 'Tipo de ventana',
+  'puertas-abatibles': 'Tipo de puerta abatible',
 };
 // Desktop aside headline per type (board r03: "Puerta de baño en L · desde $444").
 const SUMMARY_NAME: Readonly<Record<string, string>> = {
@@ -73,9 +74,30 @@ const SUMMARY_NAME: Readonly<Record<string, string>> = {
   'jardin-2-fijas-2-corredizas': 'Puerta de jardín · más opciones',
   'ventana-francesa': 'Ventana francesa',
   'ventana-bilbao': 'Ventana bilbao',
+  'templada-10mm-abatible': 'Puerta de baño abatible templada 10 mm · más opciones',
+  'ventana-bilbao-medio-punto': 'Ventana · más opciones',
+  'abatible-interior-exterior': 'Puerta abatible · con asesor',
 };
-const ADVISOR_MESSAGE =
-  'Hola, quiero cotizar una puerta de jardín con más opciones (2 fijas + 2 corredizas o 1 fija + 3 corredizas).';
+// Copy del panel de asesor por categoria (las hojas solo asesor nunca entran al cotizador en linea).
+const ADVISOR_COPY: Readonly<Record<string, { message: string; text: string }>> = {
+  'puertas-de-jardin': {
+    message: 'Hola, quiero cotizar una puerta de jardín con más opciones (2 fijas + 2 corredizas o 1 fija + 3 corredizas).',
+    text: 'Las puertas de jardín de cuatro hojas (2 fijas + 2 corredizas, o 1 fija + 3 corredizas) se diseñan a tu medida y no entran al cotizador en línea. Escríbenos por WhatsApp y te respondemos con tu precio.',
+  },
+  'puertas-de-bano': {
+    message: 'Hola, quiero cotizar una puerta de baño abatible de vidrio templado de 10 mm.',
+    text: 'La puerta abatible de vidrio templado de 10 mm se diseña a tu medida y no entra al cotizador en línea. Escríbenos por WhatsApp y te respondemos con tu precio.',
+  },
+  ventanas: {
+    message: 'Hola, quiero cotizar una ventana Bilbao con medio punto.',
+    text: 'La ventana Bilbao con medio punto se diseña a tu medida y no entra al cotizador en línea. Escríbenos por WhatsApp y te respondemos con tu precio.',
+  },
+  'puertas-abatibles': {
+    message: 'Hola, quiero cotizar una puerta abatible (interior y exterior, o para oficina).',
+    text: 'Las puertas abatibles (interior y exterior, y de oficina con vidrio fijo o cerrador automático) se diseñan a tu medida y no entran al cotizador en línea. Escríbenos por WhatsApp y te respondemos con tu precio.',
+  },
+};
+const ADVISOR_FALLBACK = ADVISOR_COPY['puertas-de-jardin'] as { message: string; text: string };
 
 type Leaf = { model: ProductId; preset: QuoterPreset };
 
@@ -147,6 +169,7 @@ export default function Step0Producto({ asideTarget, selectedId, current, onSele
   const moreTile = category?.subcategories.find((s) => s.advisorOnly);
   const typeSelected = (s: Subcategory): boolean => s.slug === subSlug || (!!s.advisorOnly && !!sub?.advisorOnly);
 
+  const advisorCopy = (category && ADVISOR_COPY[category.slug]) || ADVISOR_FALLBACK;
   const summaryName = sub ? (SUMMARY_NAME[sub.slug] ?? sub.name) : null;
   const summaryPrice = variant?.fromPrice ?? (sub ? subFromPrice(sub) : null);
   const asideLabel = !summaryName
@@ -183,7 +206,7 @@ export default function Step0Producto({ asideTarget, selectedId, current, onSele
                 setVar(null);
               }}
             >
-              <PhotoFrame className="sel-tile__photo" src={PRODUCT_IMAGES[CATEGORY_THUMB[c.slug] as ProductId]} alt="" ratio="1/1" />
+              <PhotoFrame className="sel-tile__photo" src={categoryImage(c.slug)} alt="" ratio="1/1" />
               <span className="sel-tile__tx">
                 <span className="sel-tile__n sel-tile__n--lg">{c.name}</span>
                 <span className="sel-tile__m">{CATEGORY_SUPPORT[c.slug]}</span>
@@ -266,10 +289,10 @@ export default function Step0Producto({ asideTarget, selectedId, current, onSele
           <span className="qi qi--lg"><IconQuoteTriangle size={22} /></span>
           <h3 id="sel-adv" className="sel-advisor__title">Esta puerta la cotiza un asesor</h3>
           <p className="sel-advisor__text">
-            Las puertas de jardín de cuatro hojas (2 fijas + 2 corredizas, o 1 fija + 3 corredizas) se diseñan a tu medida y no entran al cotizador en línea. Escríbenos por WhatsApp y te respondemos con tu precio.
+            {advisorCopy.text}
           </p>
-          <p className="sel-advisor__msg"><strong>Mensaje prellenado:</strong> “{ADVISOR_MESSAGE}”</p>
-          <a className="bt bw" href={buildWaLink(ADVISOR_MESSAGE)} target="_blank" rel="noopener noreferrer">
+          <p className="sel-advisor__msg"><strong>Mensaje prellenado:</strong> “{advisorCopy.message}”</p>
+          <a className="bt bw" href={buildWaLink(advisorCopy.message)} target="_blank" rel="noopener noreferrer">
             <IconWhatsApp size={20} />
             Cotizar con un asesor por WhatsApp
           </a>

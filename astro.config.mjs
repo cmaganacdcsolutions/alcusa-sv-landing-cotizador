@@ -24,9 +24,10 @@ function viteCacheDir() {
 // producto -> #p-<slug> (incluidos los 2 combos de asesor de "Más opciones para tu jardín").
 const CATALOG_REDIRECTS = (() => {
   const tree = {
-    'puertas-de-bano': ['templada-10mm', 'recta', 'en-l', 'bisagra'],
+    'puertas-de-bano': ['templada-10mm', 'recta', 'en-l', 'bisagra', 'templada-10mm-abatible'],
     'puertas-de-jardin': ['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas', 'jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas'],
-    ventanas: ['ventana-francesa', 'ventana-bilbao'],
+    ventanas: ['ventana-francesa', 'ventana-bilbao', 'ventana-bilbao-medio-punto'],
+    'puertas-abatibles': ['abatible-interior-exterior', 'abatible-oficina-vidrio-fijo', 'abatible-oficina-cerrador'],
   };
   const out = { '/catalogo': '/#catalogo' };
   for (const [cat, subs] of Object.entries(tree)) {
@@ -44,6 +45,8 @@ export default defineConfig({
   integrations: [react()],
   redirects: CATALOG_REDIRECTS,
   vite: {
+    // Fecha congelada de promos (solo e2e/smoke): el cotizador valida la vigencia de `?promo=` con ella.
+    define: { __PROMOS_TODAY__: JSON.stringify(process.env.ALCUSA_PROMOS_TODAY ?? '') },
     // Per-checkout Vite dep cache. Parallel git worktrees share node_modules
     // through a junction, so the default node_modules/.vite cache was being
     // rewritten by one worktree's server under another's (React islands then

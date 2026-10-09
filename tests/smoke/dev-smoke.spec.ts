@@ -119,8 +119,8 @@ if (want('cotizador')) {
 }
 
 // Promos de src/content/promotions.json (orden del home): todas recta + aluminio natural, cambia el vidrio.
-const PROMO_GLASSES = [['claro', 'Claro 5 mm'], ['nevado', 'Nevado 5 mm'], ['aquafold', 'Aquafold']] as const;
-const promoDeepLink = (glass: string): string => `/cotizador?producto=recta&paso=medidas&color=natural&vidrio=${glass}`;
+const PROMO_GLASSES = [['claro', 'Claro 5 mm', 'promo-puerta-aquaclara'], ['nevado', 'Nevado 5 mm', 'promo-corrediza-nevado'], ['aquafold', 'Aquafold', 'promo-aquafold']] as const;
+const promoDeepLink = (glass: string, id: string): string => `/cotizador?producto=recta&paso=medidas&color=natural&vidrio=${glass}&promo=${id}`;
 
 if (want('promos', 'home')) {
   test('home (dev): CTA de promo abre el cotizador sin errores', async ({ page }) => {
@@ -130,13 +130,13 @@ if (want('promos', 'home')) {
     // Son los mismos que usa el test de deep links de abajo, para que no se desfasen del home.
     await expect(page.locator('[data-promo-cta]')).toHaveCount(PROMO_GLASSES.length);
     expect(await page.locator('[data-promo-cta]').evaluateAll((els) => els.map((e) => e.getAttribute('href')))).toEqual(
-      PROMO_GLASSES.map(([glass]) => promoDeepLink(glass)),
+      PROMO_GLASSES.map(([glass, , id]) => promoDeepLink(glass, id)),
     );
     await page.locator('[data-promo-cta]').first().click();
     // El enlace de la promo cae directo en Medidas (producto + color + vidrio ya elegidos).
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
     await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
-    await expect(page.getByRole('group', { name: 'Color del aluminio', exact: true }).getByRole('button', { name: 'Natural', pressed: true })).toBeVisible();
+    await expect(page.getByTestId('promo-locked')).toContainText('Natural');
     expect(problems).toEqual([]);
   });
 }
@@ -144,14 +144,14 @@ if (want('promos', 'home')) {
 // The 3 promo CTA deep links, in dev mode: the exact hrefs the home emits (promoHref) land straight on
 // Medidas with the aluminium colour and the glass preselected.
 if (want('promos', 'home', 'cotizador')) {
-  for (const [glass, label] of PROMO_GLASSES) {
+  for (const [glass, label, id] of PROMO_GLASSES) {
     test(`deep link de promo (dev): vidrio=${glass} preselecciona ${label}`, async ({ page }) => {
       const problems = watch(page);
-      await page.goto(promoDeepLink(glass), { waitUntil: 'networkidle' });
+      await page.goto(promoDeepLink(glass, id), { waitUntil: 'networkidle' });
       await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
       await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
-      await expect(page.getByRole('group', { name: 'Color del aluminio', exact: true }).getByRole('button', { name: 'Natural', pressed: true })).toBeVisible();
-      await expect(page.getByRole('button', { name: label, pressed: true })).toBeVisible();
+      await expect(page.getByTestId('promo-locked')).toContainText('Natural');
+      await expect(page.getByTestId('promo-locked')).toContainText(label);
       expect(problems, 'errores de consola / red').toEqual([]);
     });
   }

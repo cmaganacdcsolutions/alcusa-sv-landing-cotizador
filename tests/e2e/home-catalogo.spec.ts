@@ -9,13 +9,16 @@ import { waitForPageSettled } from '../support/settle';
 
 const WIDTHS = [360, 390, 412, 768, 1366, 1920] as const;
 
-/** Orden fijo del inicio (Ventanas, Puertas de jardin, Puertas de bano) con [slug de tarjeta, titulo, precio, producto]. */
+/** Orden fijo del inicio (Puertas de bano, Puertas de jardin, Ventanas) con [slug de tarjeta, titulo, precio, producto]. */
 const SECTIONS = [
   {
-    id: 'ventanas',
+    id: 'puertas-de-bano',
     cards: [
-      ['ventana-francesa', 'Francesa', 'Desde $108', 'ventana-francesa'],
-      ['ventana-bilbao', 'Bilbao', 'Desde $153.60', 'ventana-bilbao'],
+      ['templada-10mm', 'Templada 10 mm', 'Desde $672', 'templada-10mm'],
+      ['recta', 'Rectas', 'Desde $242', 'recta'],
+      // En L: el producto que viaja al cotizador es su acabado por defecto (Aquaclara).
+      ['en-l', 'En L', 'Desde $444', 'l-aquaclara'],
+      ['bisagra', 'De bisagra', 'Desde $253', 'bisagra'],
     ],
   },
   {
@@ -27,13 +30,10 @@ const SECTIONS = [
     ],
   },
   {
-    id: 'puertas-de-bano',
+    id: 'ventanas',
     cards: [
-      ['templada-10mm', 'Templada 10 mm', 'Desde $672', 'templada-10mm'],
-      ['recta', 'Rectas', 'Desde $222', 'recta'],
-      // En L: el producto que viaja al cotizador es su acabado por defecto (Aquaclara).
-      ['en-l', 'En L', 'Desde $444', 'l-aquaclara'],
-      ['bisagra', 'De bisagra', 'Desde $253', 'bisagra'],
+      ['ventana-francesa', 'Francesa', 'Desde $108', 'ventana-francesa'],
+      ['ventana-bilbao', 'Bilbao', 'Desde $153.60', 'ventana-bilbao'],
     ],
   },
 ] as const;

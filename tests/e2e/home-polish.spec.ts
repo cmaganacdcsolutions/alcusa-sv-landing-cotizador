@@ -54,7 +54,7 @@ test.describe('tarjetas: dropdowns con icono', () => {
     expect(await chip(combo(card, 'Color'))).toBe('color:bronce');
     expect(await chip(combo(card, 'Vidrio'))).toBe('glass:nevado');
     await expect(combo(card, 'Color')).toContainText('Bronce');
-    await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/renders/recta-bronce-nevado-800.webp');
+    await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/fotos/recta-nevado-800.webp');
     await card.getByRole('button', { name: /Continuar al cotizador/ }).click();
     await expect(page).toHaveURL(/\/cotizador\?producto=recta&paso=medidas&color=bronce&vidrio=nevado$/);
   });
@@ -121,14 +121,23 @@ test.describe('tarjetas: dropdowns con icono', () => {
   });
 });
 
-// Productos con opciones (todos menos templada-10mm): CADA combinacion color x vidrio (en-l: color x acabado) tiene su
-// propio render y la tarjeta lo muestra (variante exacta; la escalera a vidrio por defecto/portada es solo respaldo).
+// Fotos oficiales (2026-10-08): la tarjeta muestra la foto que dicta la regla vidrio -> color -> portada de
+// src/content/home-media.ts. Solo hay foto distinta donde el portafolio la trae; el resto cae a la portada.
+const FOTO = (stem: string): string => `/images/fotos/${stem}-800.webp`;
+const EXPECTED_STEM: Record<string, (color: string, glass: string) => string> = {
+  // vidrio -> color -> portada; negro (#21) solo cuando el vidrio no tiene foto propia.
+  recta: (c, g) => (g === 'nevado' ? 'recta-nevado' : g === 'decorado' || g === 'aquafold' ? 'recta-aquafold' : c === 'negro' ? 'recta-galeria' : 'recta'),
+  'jardin-2-hojas': () => 'jardin-2-hojas',
+  'ventana-francesa': (c) => (c === 'negro' ? 'ventana-francesa-negro' : 'ventana-francesa'),
+  'en-l': (_c, g) => (g === 'l-frosted' ? 'en-l-frosted' : g === 'l-aquafold' ? 'en-l-aquafold' : 'en-l'),
+};
 type Variant = { src: string };
 async function swapMatrix(page: Page, slug: string, how: 'mouse' | 'keyboard'): Promise<void> {
   await ready(page);
   const card = page.locator(`#p-${slug}`);
   await card.scrollIntoViewIfNeeded();
-  const variants = JSON.parse((await card.locator('form').getAttribute('data-variants'))!) as Record<string, Variant>;
+  const rawVariants = await card.locator('form').getAttribute('data-variants'); // ausente si el producto tiene una sola foto
+  const variants = (rawVariants ? JSON.parse(rawVariants) : {}) as Record<string, Variant>;
   const values = (field: string): Promise<string[]> =>
     card.locator(`[data-field="${field}"] .pcard__opt`).evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.value!));
   const colors = await values('color');
@@ -153,36 +162,47 @@ async function swapMatrix(page: Page, slug: string, how: 'mouse' | 'keyboard'): 
       await pick('color', c, colors);
       await pick(finishField, g, glasses);
       const exact = variants[`${c}-${g}`];
-      expect(exact, `${slug}: falta la variante ${c}-${g}`).toBeDefined();
-      await expect(card.locator('img.photo-frame__img'), `${slug} ${c} + ${g}`).toHaveAttribute('src', exact!.src);
-      seen.add(exact!.src);
+      if (rawVariants) expect(exact, `${slug}: falta la variante ${c}-${g}`).toBeDefined();
+      const stem = EXPECTED_STEM[slug]!(c, g);
+      if (exact) expect(exact.src, `${slug} ${c} + ${g}: el mapa debe dar la foto ${stem}`).toBe(FOTO(stem));
+      await expect(card.locator('img.photo-frame__img'), `${slug} ${c} + ${g}`).toHaveAttribute('src', FOTO(stem));
+      seen.add(FOTO(stem));
     }
   }
-  // Una imagen distinta por combinacion.
-  expect(seen.size).toBe(colors.length * glasses.length);
+  // Una foto distinta por cada foto del portafolio que aplica (no por combinacion).
+  const stems = new Set(colors.flatMap((c) => glasses.map((g) => EXPECTED_STEM[slug]!(c, g))));
+  expect(seen.size).toBe(stems.size);
 }
 
-test.describe('tarjetas: el render cambia con cada combinacion', () => {
+test.describe('tarjetas: la foto sigue cada combinacion', () => {
   for (const slug of ['recta', 'jardin-2-hojas', 'ventana-francesa', 'en-l']) {
     for (const how of ['mouse', 'keyboard'] as const) {
-      test(`${slug}: todas las combinaciones color x vidrio/acabado (${how})`, async ({ page }) => {
+      test(`${slug}: foto correcta en todas las combinaciones color x vidrio/acabado (${how})`, async ({ page }) => {
         test.setTimeout(150_000); // 15-18 combinaciones x 2 listas; WebKit tactil es lento
         await swapMatrix(page, slug, how);
       });
     }
   }
-  test('los demas productos con opciones tambien cambian de render con el color y el circulo del boton refleja la eleccion', async ({ page }) => {
+  test('los demas productos: el color no cambia la foto (solo hay una) y el circulo del boton refleja la eleccion; bisagra cambia por vidrio', async ({ page }) => {
     await ready(page);
     for (const slug of ['ventana-bilbao', 'jardin-1-hoja', 'jardin-3-hojas', 'bisagra']) {
       const card = page.locator(`#p-${slug}`);
       await card.scrollIntoViewIfNeeded();
-      const before = await card.locator('img.photo-frame__img').getAttribute('src');
+      const img = card.locator('img.photo-frame__img');
+      await expect(img).toHaveAttribute('src', FOTO(slug));
       await combo(card, /Color|Marco/).click();
       await card.getByRole('option').nth(1).click();
-      await expect(card.locator('img.photo-frame__img')).not.toHaveAttribute('src', before!);
-      await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', new RegExp(`/images/renders/${slug}-(blanco|bronce|natural)-[a-z-]+-800\\.webp$`));
+      await expect(img).toHaveAttribute('src', FOTO(slug));
       expect(await chip(combo(card, /Color|Marco/))).toMatch(/^color:/);
     }
+    const bis = page.locator('#p-bisagra');
+    const bimg = bis.locator('img.photo-frame__img');
+    await combo(bis, 'Vidrio').click();
+    await bis.getByRole('option', { name: /^Decorado/ }).click();
+    await expect(bimg).toHaveAttribute('src', FOTO('bisagra-decorado'));
+    await combo(bis, 'Vidrio').click();
+    await bis.getByRole('option', { name: /^Claro/ }).click();
+    await expect(bimg).toHaveAttribute('src', FOTO('bisagra'));
   });
 
   test('templada 10 mm (sin opciones) conserva su portada', async ({ page }) => {
@@ -190,37 +210,39 @@ test.describe('tarjetas: el render cambia con cada combinacion', () => {
     const card = page.locator('#p-templada-10mm');
     await card.scrollIntoViewIfNeeded();
     await expect(card.getByRole('combobox')).toHaveCount(0);
-    await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/renders/templada-10mm-800.webp');
+    await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', FOTO('templada-10mm'));
   });
 });
 
 test.describe('tarjetas: vidrio solo y acabado en una linea', () => {
-  test('cambiar SOLO el vidrio cambia el render (recta natural: claro <-> nevado; jardin-2-hojas blanco)', async ({ page }) => {
-    await ready(page);
-    for (const [slug, color] of [['recta', 'natural'], ['jardin-2-hojas', 'blanco']] as const) {
-      const card = page.locator(`#p-${slug}`);
-      await card.scrollIntoViewIfNeeded();
-      const img = card.locator('img.photo-frame__img');
-      await expect(img).toHaveAttribute('src', `/images/renders/${slug}-${color}-claro-800.webp`);
-      await combo(card, 'Vidrio').click();
-      await card.getByRole('option', { name: /^Nevado/ }).click();
-      await expect(img).toHaveAttribute('src', `/images/renders/${slug}-${color}-nevado-800.webp`);
-      await combo(card, 'Vidrio').click();
-      await card.getByRole('option', { name: /^Claro/ }).click();
-      await expect(img).toHaveAttribute('src', `/images/renders/${slug}-${color}-claro-800.webp`);
-    }
-  });
-
-  test('cada vidrio tiene su propio render (decorado y aquafold ya no caen al claro)', async ({ page }) => {
+  test('cambiar SOLO el vidrio cambia la foto de la recta (claro <-> nevado); en jardin-2-hojas no hay otra foto', async ({ page }) => {
     await ready(page);
     const card = page.locator('#p-recta');
     await card.scrollIntoViewIfNeeded();
+    const img = card.locator('img.photo-frame__img');
+    await expect(img).toHaveAttribute('src', FOTO('recta'));
     await combo(card, 'Vidrio').click();
-    await card.getByRole('option', { name: /^Decorado/ }).click();
-    await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/renders/recta-natural-decorado-800.webp');
+    await card.getByRole('option', { name: /^Nevado/ }).click();
+    await expect(img).toHaveAttribute('src', FOTO('recta-nevado'));
     await combo(card, 'Vidrio').click();
-    await card.getByRole('option', { name: /^Aquafold/ }).click();
-    await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/renders/recta-natural-aquafold-800.webp');
+    await card.getByRole('option', { name: /^Claro/ }).click();
+    await expect(img).toHaveAttribute('src', FOTO('recta'));
+    const jar = page.locator('#p-jardin-2-hojas');
+    await jar.scrollIntoViewIfNeeded();
+    await combo(jar, 'Vidrio').click();
+    await jar.getByRole('option', { name: /^Nevado/ }).click();
+    await expect(jar.locator('img.photo-frame__img')).toHaveAttribute('src', FOTO('jardin-2-hojas'));
+  });
+
+  test('decorado y aquafold usan la foto con diseno; mallado (sin foto propia) vuelve a la portada', async ({ page }) => {
+    await ready(page);
+    const card = page.locator('#p-recta');
+    await card.scrollIntoViewIfNeeded();
+    for (const [name, stem] of [[/^Decorado/, 'recta-aquafold'], [/^Aquafold/, 'recta-aquafold'], [/^Mallado/, 'recta']] as const) {
+      await combo(card, 'Vidrio').click();
+      await card.getByRole('option', { name }).click();
+      await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', FOTO(stem));
+    }
   });
 
   for (const w of [360, 768, 1440]) {
@@ -300,12 +322,12 @@ test.describe('promociones compactas', () => {
       }
       const cta = cards.first().locator('[data-promo-cta]');
       expect(Math.round((await cta.boundingBox())!.height)).toBe(44);
-      await expect(cta).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro');
+      await expect(cta).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&promo=promo-puerta-aquaclara');
     });
   }
   test('el enlace de la promo Aquafold lleva producto, paso Medidas, color natural y vidrio aquafold', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#promociones [data-promo-cta]').nth(2)).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold');
+    await expect(page.locator('#promociones [data-promo-cta]').nth(2)).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold&promo=promo-aquafold');
   });
 });
 

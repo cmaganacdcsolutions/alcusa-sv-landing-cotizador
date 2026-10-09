@@ -31,3 +31,64 @@ for (const route of ROUTES) {
     expect(bad).toEqual([]);
   });
 }
+
+// BUG-1008-01 (rendimiento): la capa ambiental de las fotos oficiales no puede llevar blur() en vivo.
+// 19 capas con blur(32px) volvian WebKit @DPR3 (ios390) 3-4x mas lento: 9 timeouts en home y paso 0 del
+// cotizador. Las fotos de /images/fotos/<stem>-<ancho>.webp usan la miniatura horneada <stem>-amb.webp
+// (el desenfoque ya viene en los pixeles). Los flyers de promos (/images/promos/*) no tienen miniatura:
+// conservan el blur en vivo, y esta prueba lo fija para que nadie lo quite por error.
+for (const route of ROUTES) {
+  test(`foto completa: ${route} la capa ambiental usa la miniatura horneada, sin blur en vivo`, async ({ page }) => {
+    await page.goto(route);
+    await page.waitForLoadState('networkidle');
+    if (route === '/cotizador') await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    const report = await page.evaluate(() => {
+      const bad: string[] = [];
+      let photos = 0;
+      let flyers = 0;
+      document.querySelectorAll<HTMLElement>('.photo-frame').forEach((frame) => {
+        const main = frame.querySelector<HTMLImageElement>('.photo-frame__img');
+        const ambient = frame.querySelector<HTMLImageElement>('.photo-frame__ambient');
+        if (!main || !ambient) return;
+        const mainPath = new URL(main.src, location.href).pathname;
+        const ambientPath = new URL(ambient.src, location.href).pathname;
+        const filter = getComputedStyle(ambient).filter;
+        if (mainPath.includes('/images/fotos/')) {
+          photos += 1;
+          const expected = mainPath.replace(/-\d+\.webp$/, '-amb.webp');
+          if (ambientPath !== expected) bad.push(`src ${ambientPath} != ${expected}`);
+          if (/blur/i.test(filter)) bad.push(`blur en vivo (${filter}) en ${ambientPath}`);
+          if (ambient.hasAttribute('srcset')) bad.push(`srcset en la ambiental ${ambientPath}`);
+          // Una miniatura que ya termino de cargar y quedo en 0x0 es una imagen rota (404).
+          if (ambient.complete && ambient.naturalWidth === 0) bad.push(`miniatura rota ${ambientPath}`);
+        } else if (mainPath.includes('/images/promos/')) {
+          flyers += 1;
+          if (!/blur/i.test(filter)) bad.push(`el flyer ${mainPath} perdio su blur (${filter})`);
+        }
+      });
+      return { bad, photos, flyers };
+    });
+    expect(report.bad).toEqual([]);
+    expect(report.photos).toBeGreaterThan(0);
+    if (route === '/') expect(report.flyers).toBeGreaterThan(0);
+  });
+}
+
+// BUG-1008-01: al cambiar de variante en el inicio, setPhoto (catalogHome.client.ts) mueve tambien la capa
+// ambiental a la miniatura de la foto nueva, sin blur en vivo y sin width/height/srcset.
+test('foto completa: / al cambiar de color la ambiental sigue a la foto (miniatura horneada)', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForSelector('html[data-js]');
+  const card = page.locator('#p-ventana-francesa');
+  await card.scrollIntoViewIfNeeded();
+  const ambient = card.locator('img.photo-frame__ambient');
+  await expect(ambient).toHaveAttribute('src', '/images/fotos/ventana-francesa-amb.webp');
+  await card.locator('[data-field="color"] [data-trigger]').click();
+  await card.locator('[data-field="color"] .pcard__opt[data-value="negro"]').click();
+  await expect(card.locator('img.photo-frame__img')).toHaveAttribute('src', '/images/fotos/ventana-francesa-negro-800.webp');
+  await expect(ambient).toHaveAttribute('src', '/images/fotos/ventana-francesa-negro-amb.webp');
+  await expect(ambient).toHaveClass(/photo-frame__ambient--baked/);
+  await expect(ambient).not.toHaveAttribute('width');
+  await expect(ambient).not.toHaveAttribute('srcset');
+  expect(await ambient.evaluate((el) => getComputedStyle(el).filter)).not.toMatch(/blur/i);
+});

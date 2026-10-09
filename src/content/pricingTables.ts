@@ -4,16 +4,8 @@
 
 export type StraightGlassKey = 'claro' | 'nevado' | 'decorado' | 'mallado' | 'duplex';
 
-/** Flyer oficial: Modelo Aquafold, aluminio natural, ancho 1.00-1.20 m. */
-export const AQUAFOLD_PROMO_PRICE = 279.99;
-export const AQUAFOLD_PROMO_MIN_CM = 100;
-export const AQUAFOLD_PROMO_MAX_CM = 120;
-
-export const STRAIGHT_PROMO: Record<'claro' | 'nevado' | 'decorado', number> = {
-  claro: 222,
-  nevado: 290,
-  decorado: 325,
-};
+// Las promos (Aquaclara $222, Nevado $260, Aquafold $279.99) ya NO viven aqui: son datos de
+// content/promotions.json y solo aplican con la entrada por promo (`?promo=<id>`).
 
 export type StraightGlassPriceRow = Record<StraightGlassKey, number>;
 

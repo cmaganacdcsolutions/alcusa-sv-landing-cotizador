@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactElement } from 'react';
-import { DEPARTAMENTOS, getDepartamento, getMunicipio } from '@content/elSalvadorTerritory';
+import { ZONE_OPTIONS } from '@content/deliveryZones';
 import {
   validateAddressField,
   mapsUrl,
@@ -14,9 +14,7 @@ import '@styles/cotizador-address.css';
 // PII: nada de esto se registra en consola ni viaja en URLs.
 
 export const ADDRESS_INPUT_ID: Readonly<Record<AddressField, string>> = {
-  departamentoId: 'addr-departamento',
-  municipioId: 'addr-municipio',
-  distritoId: 'addr-distrito',
+  zona: 'addr-zona',
   colonia: 'addr-colonia',
   calle: 'addr-calle',
   referencia: 'addr-referencia',
@@ -83,8 +81,6 @@ export default function AddressFields({ address, showAllErrors, onChange, onGeoC
     return () => el.removeEventListener('focusin', onFocusIn);
   }, []);
 
-  const departamento = getDepartamento(address.departamentoId);
-  const municipio = getMunicipio(address.departamentoId, address.municipioId);
   const errorOf = (f: AddressField): string => (showAllErrors || touched[f] ? validateAddressField(address, f) : '');
   const touch = (f: AddressField): void => setTouched((p) => (p[f] ? p : { ...p, [f]: true }));
 
@@ -134,78 +130,27 @@ export default function AddressFields({ address, showAllErrors, onChange, onGeoC
 
   return (
     <div ref={rootRef} className="addr" data-testid="address-fields">
-      <p className="addr__intro">Escribe la dirección donde instalaremos. Con ella calculamos el envío.</p>
+      <p className="addr__intro">Elige tu zona y escribe la dirección donde instalaremos. Con ella calculamos el envío.</p>
 
       <div className="field addr__field">
-        {label('departamentoId', 'Departamento')}
+        {label('zona', 'Ubicación / zona de cobertura')}
         <div className="select-field-wrap">
           <select
-            {...common('departamentoId')}
+            {...common('zona')}
             className="select-field addr__select"
-            autoComplete="address-level1"
-            value={address.departamentoId}
-            onChange={(e) => onChange('departamentoId', e.target.value)}
+            value={address.zona}
+            onChange={(e) => onChange('zona', e.target.value)}
           >
-            <option value="">Elige tu departamento</option>
-            {DEPARTAMENTOS.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
+            <option value="">Elige tu zona</option>
+            {ZONE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
               </option>
             ))}
           </select>
           <IconChevronDown />
         </div>
-        <Msg field="departamentoId" error={errorOf('departamentoId')} />
-      </div>
-
-      <div className="field addr__field">
-        {label('municipioId', 'Municipio')}
-        <div className="select-field-wrap">
-          <select
-            {...common('municipioId')}
-            className="select-field addr__select"
-            autoComplete="address-level2"
-            value={address.municipioId}
-            disabled={!departamento}
-            onChange={(e) => onChange('municipioId', e.target.value)}
-          >
-            <option value="">{departamento ? 'Elige tu municipio' : 'Primero elige el departamento'}</option>
-            {departamento?.municipios.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-          <IconChevronDown />
-        </div>
-        <Msg field="municipioId" error={errorOf('municipioId')} />
-      </div>
-
-      <div className="field addr__field">
-        {label('distritoId', 'Distrito')}
-        <div className="select-field-wrap">
-          <select
-            {...common('distritoId')}
-            className="select-field addr__select"
-            autoComplete="address-level3"
-            value={address.distritoId}
-            disabled={!municipio}
-            onChange={(e) => onChange('distritoId', e.target.value)}
-          >
-            <option value="">{municipio ? 'Elige tu distrito' : 'Primero elige el municipio'}</option>
-            {municipio?.distritos.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-          <IconChevronDown />
-        </div>
-        <Msg
-          field="distritoId"
-          error={errorOf('distritoId')}
-          hint="Desde 2024, los antiguos municipios son distritos."
-        />
+        <Msg field="zona" error={errorOf('zona')} hint="El envío se cobra una vez por pedido. Si tu zona no aparece, elige «Otra zona»." />
       </div>
 
       <div className="field addr__field">

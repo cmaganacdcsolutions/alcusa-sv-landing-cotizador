@@ -92,7 +92,7 @@ test.describe('promos runtime — el panel cambia la portada sin rebuild', () =>
     await expect(first.locator('.promo-card__rules li')).toHaveText(['Regla nueva 1', 'Regla nueva 2']);
     await expect(first.locator('[data-promo-cta]')).toHaveAttribute(
       'href',
-      '/cotizador?producto=ventana-francesa&paso=medidas&color=blanco',
+      '/cotizador?producto=ventana-francesa&paso=medidas&color=blanco&promo=promo-puerta-aquaclara',
     );
     const img = first.locator('img.photo-frame__img');
     await expect(img).toHaveAttribute('src', '/media/promos/9f2c1a7b3d4e-900.webp');
@@ -334,6 +334,6 @@ test.describe('promos runtime — mismo diseno que el HTML horneado', () => {
     await open(page);
     await settled(page, 'applied');
     const cta = cards(page).nth(2).locator('[data-promo-cta]');
-    await expect(cta).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold');
+    await expect(cta).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold&promo=promo-aquafold');
   });
 });

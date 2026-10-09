@@ -14,7 +14,8 @@ const VIEWPORTS = [
   { w: 1920, h: 1080, desktop: true },
 ] as const;
 
-const PROMO = 'rgb(211, 58, 11)';
+const SURFACE = 'rgb(255, 255, 255)';
+const BRAND = 'rgb(7, 59, 146)';
 
 test.describe('landing R3 — estructura', () => {
   test('sin galeria ni caja CTA de catalogo; orden: inicio, catalogo, promociones, proceso', async ({ page }) => {
@@ -62,13 +63,13 @@ test.describe('landing R3 — estructura', () => {
     expect(await first.locator('.photo-frame__img').evaluate((el) => getComputedStyle(el).objectFit)).toBe('contain');
     await expect(first.locator('.promo-card__ahora')).toHaveText('Ahora $222');
     await expect(first.locator('.promo-card__chip')).toContainText('Vigente hasta el 31 de octubre');
-    await expect(first.locator('[data-promo-cta]')).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro');
+    await expect(first.locator('[data-promo-cta]')).toHaveAttribute('href', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&promo=promo-puerta-aquaclara');
     await expect(first.locator('[data-promo-cta]')).toHaveText(/Cotizar esta promo/);
     const hrefs = await cards.locator('[data-promo-cta]').evaluateAll((a) => a.map((x) => x.getAttribute('href')));
     expect(hrefs).toEqual([
-      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro',
-      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado',
-      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&promo=promo-puerta-aquaclara',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado&promo=promo-corrediza-nevado',
+      '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold&promo=promo-aquafold',
     ]);
   });
 });
@@ -93,9 +94,11 @@ test.describe('landing R3 — tarjeta compacta (pulido 2026-10-06)', () => {
       expect(await css(card.locator('.photo-frame__img'), 'object-fit')).toBe('contain');
       expect(await css(card.locator('.photo-frame__img'), 'object-position')).toBe('50% 50%');
       await expect(card.locator('.promo-card__badge')).toHaveCount(0);
-      // banda de precio delgada en rojo promo
+      // fila de precio sobre card blanca (sin franja de color), precio en azul de marca
       const band = card.locator('.promo-card__band');
-      expect(await css(band, 'background-color')).toBe(PROMO);
+      expect(await css(card, 'background-color')).toBe(SURFACE);
+      expect(await css(band, 'background-color')).toBe(SURFACE);
+      expect(await css(card.locator('.promo-card__ahora'), 'color')).toBe(BRAND);
       expect(await css(card.locator('.promo-card__ahora'), 'font-size')).toBe('24px');
       expect(await css(card.locator('.promo-card__antes'), 'font-size')).toBe('13px');
       // cuerpo compacto

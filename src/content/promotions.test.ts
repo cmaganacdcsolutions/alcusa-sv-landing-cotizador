@@ -33,7 +33,7 @@ describe('schema', () => {
   it('el JSON entregado valida: 3 flyers oficiales (no placeholder), sin precio anterior', () => {
     expect(PROMOTIONS.map((p) => [p.title, p.ahora])).toEqual([
       ['Puerta Aquaclara', 222],
-      ['Puerta corrediza con vidrio nevado', 290],
+      ['Puerta corrediza con vidrio nevado', 260],
       ['Modelo Aquafold', 279.99],
     ]);
     expect(PROMOTIONS.every((p) => !p.placeholder && p.antes === null && p.rules.length > 0)).toBe(true);
@@ -161,9 +161,9 @@ describe('formato y tope', () => {
 describe('promoHref (contrato del inicio: producto -> paso -> color -> vidrio)', () => {
   it('el seed: las 3 promos caen en Medidas con recta + natural + su vidrio', () => {
     expect(PROMOTIONS.map((p) => [p.id, promoHref(p)])).toEqual([
-      ['promo-puerta-aquaclara', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro'],
-      ['promo-corrediza-nevado', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado'],
-      ['promo-aquafold', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold'],
+      ['promo-puerta-aquaclara', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=claro&promo=promo-puerta-aquaclara'],
+      ['promo-corrediza-nevado', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=nevado&promo=promo-corrediza-nevado'],
+      ['promo-aquafold', '/cotizador?producto=recta&paso=medidas&color=natural&vidrio=aquafold&promo=promo-aquafold'],
     ]);
   });
   it('orden de parametros estable aunque el JSON liste vidrio antes que color', () => {

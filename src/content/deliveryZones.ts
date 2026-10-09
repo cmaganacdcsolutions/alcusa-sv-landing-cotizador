@@ -6,7 +6,10 @@
 // se pueden mapear sin confirmacion del cliente: Planes de Renderos, Redondel Integración,
 // Paseo del Prado, San Bartolo, Altavista, Ciudad Versalles, Lourdes, Desvío de Opico.
 // Un distrito sin mapeo resuelve a ZONE_UNMAPPED y el flujo ofrece cotizar por WhatsApp.
+// 2026-10-08: la UI ya NO pide departamento/municipio/distrito; el cliente elige directo una zona de
+// cobertura (ZONE_OPTIONS). ZONE_BY_DISTRITO queda solo para migrar estados guardados antiguos.
 import { DEPARTAMENTOS } from './elSalvadorTerritory';
+import { ZONE_FEES, hasZoneFee } from '../engine/pricing/zoneFee';
 
 export const ZONE_UNMAPPED = 'otro';
 
@@ -41,3 +44,40 @@ function build(): Readonly<Record<string, string>> {
 
 /** id de distrito -> clave de ZONE_FEES. */
 export const ZONE_BY_DISTRITO: Readonly<Record<string, string>> = build();
+
+/** Texto de la opcion "Otra zona" (sin tarifa automatica; Alcusa confirma por WhatsApp). */
+export const OTHER_ZONE_LABEL = 'Otra zona — envío por confirmar';
+
+const ZONE_DISPLAY_NAME: Readonly<Record<string, string>> = {
+  'San Salvador': 'San Salvador (zona metropolitana)',
+};
+
+export function zoneDisplayName(zone: string): string {
+  return ZONE_DISPLAY_NAME[zone] ?? zone;
+}
+
+/** Etiqueta del dropdown: nombre + precio de envio ("Incluido" cuando es $0). */
+export function zoneOptionLabel(zone: string): string {
+  const fee = ZONE_FEES[zone] ?? 0;
+  return `${zoneDisplayName(zone)} — ${fee === 0 ? 'Incluido' : `$${fee.toFixed(2)}`}`;
+}
+
+export interface ZoneOption {
+  value: string;
+  label: string;
+}
+
+/** Opciones del dropdown, en el orden de la tabla (precio ascendente) y "Otra zona" al final. */
+export const ZONE_OPTIONS: readonly ZoneOption[] = [
+  ...Object.keys(ZONE_FEES).map((z) => ({ value: z, label: zoneOptionLabel(z) })),
+  { value: ZONE_UNMAPPED, label: OTHER_ZONE_LABEL },
+];
+
+export function isKnownZone(zone: string): boolean {
+  return zone === ZONE_UNMAPPED || hasZoneFee(zone);
+}
+
+/** Zona de un estado guardado antiguo (id de distrito) o '' si no se puede migrar limpio. */
+export function zoneFromLegacyDistrito(distritoId: string): string {
+  return ZONE_BY_DISTRITO[distritoId] ?? '';
+}

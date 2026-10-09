@@ -10,7 +10,7 @@ describe('state/quote — computeQuote', () => {
 
   it('recta: reuses priceStraight (110cm natural claro, con instalación)', () => {
     const result = computeQuote({ ...initialCotizadorState, productId: 'recta' });
-    expect(result).toEqual({ amount: 222, requiresQuote: false });
+    expect(result).toEqual({ amount: 258, requiresQuote: false });
   });
 
   // computeQuote is pre-zone; the AC figures ($484/$620/$690) include the Soyapango +$40 fee (exploratory-report §3.1).

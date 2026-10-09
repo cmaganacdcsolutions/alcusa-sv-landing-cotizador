@@ -46,11 +46,11 @@ test.describe('whatsapp links — cotizador handoff', () => {
           'Hola ALCUSA, quiero confirmar esta cotización:\n\n' +
             '1. Puerta de baño recta — 1.10×1.85 m · Color: Natural · Vidrio: Claro 5 mm\n' +
             '   Zona: Soyapango · Entrega: con instalación\n' +
-            '   Subtotal: $222.00\n\n' +
+            '   Subtotal: $258.00\n\n' +
             'Transporte: $40.00\n' +
-            'Total estimado: $262.00\n' +
-            'Anticipo (80%): $209.60 · Saldo (20% al entregar): $52.40\n' +
-            'Dirección: Residencial Las Flores, Pasaje 3, casa 12 · Ref: frente a la iglesia, portón negro · Soyapango, San Salvador Este, San Salvador · Tel: 7123-4567\n\n' +
+            'Total estimado: $298.00\n' +
+            'Anticipo (80%): $238.40 · Saldo (20% al entregar): $59.60\n' +
+            'Dirección: Residencial Las Flores, Pasaje 3, casa 12 · Ref: frente a la iglesia, portón negro · Soyapango · Tel: 7123-4567\n\n' +
             'Por favor confirmen medidas, disponibilidad y forma de pago. ¡Gracias!',
         ),
     );

@@ -76,6 +76,7 @@ export default function Step5FormaPago({
     shipping: shippingPending ? { kind: 'pending' } : { kind: 'fee', fee: transporte },
     payMethod: method,
     pickup: state.entrega === 'retiro',
+    promo: !!state.promoId,
   });
   const discountAmount = payable.discount.applies ? payable.discount.amount : 0;
   const grandTotal = total === null ? subtotal : payable.total;

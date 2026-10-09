@@ -3,6 +3,7 @@
 // lista de cambios para el aviso de Resumen. Puro: sin React/window.
 import type { CatalogProduct, ProductId } from '@content/catalog';
 import { CATALOG_PRODUCTS, findBySlug } from '@content/catalog';
+import { isPromoWidthOk, type PromoContext } from '@content/promoContext';
 import { getZoneFee } from '@engine/pricing/zoneFee';
 import type { QuoteLoadResponse } from '@integrations/quotes/types';
 import {
@@ -17,6 +18,7 @@ import {
 } from './cotizadorStore';
 import { GARDEN_HOJAS_LABELS, WINDOW_GLASS_LABELS, WINDOW_MODEL_LABELS } from './labels';
 import { buildOrderItems, orderTotal } from './order';
+import { lookupActivePromo } from './promoRegistry';
 
 /** Version del snapshot (`ITEM_FIELD_KEYS`) que este FE entiende (ADR-012 §2). */
 export const SUPPORTED_CONFIG_SCHEMA_VERSION = 1;
@@ -41,6 +43,8 @@ export interface AppliedQuote {
   items: CartItem[];
   entrega: Entrega;
   zone: string;
+  /** Promo vigente restaurada (cotizacion de una sola promo); null = contexto normal. */
+  promoId: string | null;
   notice: QuoteLoadNotice;
 }
 
@@ -101,11 +105,14 @@ export interface ApplyOptions {
   products?: readonly CatalogProduct[];
   /** Hoy ninguna promo se aplica en el motor: una `promoRef` guardada se da por vencida. */
   isPromoActive?: (ref: string) => boolean;
+  /** Promo vigente por id (default: registro del build). Si resuelve, la cotizacion vuelve al contexto promo. */
+  resolvePromo?: (id: string) => PromoContext | null;
   makeId?: (index: number) => string;
 }
 
 export function applyLoadedQuote(res: QuoteLoadResponse, opts: ApplyOptions = {}): AppliedQuote {
   const products = opts.products ?? CATALOG_PRODUCTS;
+  const resolvePromo = opts.resolvePromo ?? lookupActivePromo;
   const isPromoActive = opts.isPromoActive ?? ((): boolean => false);
   const makeId = opts.makeId ?? ((i: number): string => `item-${i}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
   const entrega: Entrega = res.delivery.mode === 'delivery' ? 'instalacion' : 'retiro';
@@ -122,7 +129,17 @@ export function applyLoadedQuote(res: QuoteLoadResponse, opts: ApplyOptions = {}
     kept.push({ item: { ...parsed.fields, id: makeId(i) }, saved: it.savedLineTotal, promoRef: it.promoRef });
   });
 
-  const base: CotizadorState = { ...initialCotizadorState, cart: kept.map((k) => k.item), entrega, zone };
+  // Contexto promo: una cotizacion de UNA promo vigente (misma config y ancho en rango) se restaura con el
+  // reglaje de la promo (precio plano, instalada). Vencida/inexistente/fuera de rango: flujo normal (recalcula).
+  const ref = kept.length === 1 && res.items.length === 1 ? (kept[0]?.promoRef ?? null) : null;
+  const ctx = ref ? resolvePromo(ref) : null;
+  const only = kept[0]?.item;
+  const restored =
+    ctx && only && entrega === 'instalacion' && only.productId === ctx.productId && only.color === ctx.color && only.glass === ctx.glass && isPromoWidthOk(ctx, Number(only.width))
+      ? ctx
+      : null;
+  const promoId = restored ? restored.id : null;
+  const base: CotizadorState = { ...initialCotizadorState, cart: kept.map((k) => k.item), entrega, zone, promoId };
   const lines = buildOrderItems(base, products);
   lines.forEach((line, i) => {
     const k = kept[i];
@@ -131,7 +148,7 @@ export function applyLoadedQuote(res: QuoteLoadResponse, opts: ApplyOptions = {}
     if (Math.abs(line.subtotal - k.saved) > 0.005) {
       changes.push({ kind: 'price_changed', name, before: k.saved, after: line.subtotal });
     }
-    if (k.promoRef && !isPromoActive(k.promoRef)) changes.push({ kind: 'promo_expired', name });
+    if (k.promoRef && !promoId && !isPromoActive(k.promoRef)) changes.push({ kind: 'promo_expired', name });
   });
 
   const fee = entrega === 'instalacion' ? (getZoneFee(zone) ?? 0) : 0;
@@ -139,6 +156,7 @@ export function applyLoadedQuote(res: QuoteLoadResponse, opts: ApplyOptions = {}
     items: kept.map((k) => k.item),
     entrega,
     zone,
+    promoId,
     notice: {
       code: res.code,
       createdAt: res.createdAt,

@@ -23,8 +23,8 @@ describe('state/order — T7.2 order-level transport + totals', () => {
 
     const items = buildOrderItems(state, CATALOG_PRODUCTS);
     expect(items).toHaveLength(2);
-    expect(orderItemsSubtotal(items)).toBe(666); // 222 + 444
-    expect(orderTotal(items, 40)).toBe(706); // + transport ONCE (not 40 x 2)
+    expect(orderItemsSubtotal(items)).toBe(702); // 258 + 444
+    expect(orderTotal(items, 40)).toBe(742); // + transport ONCE (not 40 x 2)
   });
 
   it('a single item whose own pricing already opted out of delivery (retiro) is not double-charged transport', () => {
@@ -52,8 +52,8 @@ describe('state/order — T7.2 order-level transport + totals', () => {
     expect(items[0].requiresQuote).toBe(true);
     expect(items[0].subtotal).toBe(0); // never null-poisons the sum
     expect(items[1].requiresQuote).toBe(false);
-    expect(items[1].subtotal).toBe(222);
-    expect(orderItemsSubtotal(items)).toBe(222);
+    expect(items[1].subtotal).toBe(258);
+    expect(orderItemsSubtotal(items)).toBe(258);
   });
 
   it('an empty order (no cart, no current product) has no items and no total', () => {

@@ -53,8 +53,8 @@ test.describe('cotizador — Step3 entrega y zona option states', () => {
     await expect(page.getByText('Completa tu dirección para ver el costo de envío y el total.')).toBeVisible();
     await expect(page.getByTestId('zona-total-value')).toHaveCount(0);
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await expect(page.locator('#addr-departamento')).toBeFocused();
-    await expect(page.locator('#addr-departamento-msg')).toHaveText('Elige tu departamento de la lista.');
+    await expect(page.locator('#addr-zona')).toBeFocused();
+    await expect(page.locator('#addr-zona-msg')).toHaveText('Elige tu zona de cobertura de la lista.');
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
   });
 });
@@ -98,9 +98,9 @@ test.describe('cotizador — Step5 forma de pago', () => {
     await toFormaPago(page);
     await page.getByRole('button', { name: 'Pago total 100%' }).click();
     await expect(page.getByRole('button', { name: 'Pago total 100%' })).toHaveAttribute('aria-pressed', 'true');
-    // $222 + $40 transport = $262.00; the Wompi (card) option applies the 10% online discount on the $222 only
-    // (behaviour change 2026-10-06): $262.00 - $22.20 = $239.80.
-    await expect(page.getByTestId('cotizador-root')).toContainText('Pagar $239.80 con Wompi');
+    // $258 + $40 transport = $298.00; the Wompi (card) option applies the 10% online discount on the $258 only
+    // (behaviour change 2026-10-06): $298.00 - $25.80 = $272.20.
+    await expect(page.getByTestId('cotizador-root')).toContainText('Pagar $272.20 con Wompi');
   });
 });
 

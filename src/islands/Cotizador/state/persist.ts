@@ -23,6 +23,7 @@ import type {
   WindowModel,
 } from '@engine/pricing';
 import type { ProductId } from '@content/catalog';
+import { isKnownZone } from '@content/deliveryZones';
 import { parseStoredAddress } from '../../../lib/delivery-address';
 import {
   ITEM_FIELD_KEYS,
@@ -67,8 +68,8 @@ const STEPS: Record<CotizadorStep, true> = {
 };
 const ENTREGAS: Record<Entrega, true> = { instalacion: true, retiro: true };
 const PRODUCT_IDS: Record<ProductId, true> = { recta: true, l: true, templado: true, bisagra: true, jardin: true, ventana: true };
-const ALUMINUM_COLORS: Record<AluminumColor, true> = { natural: true, blanco: true, bronce: true };
-const GARDEN_COLORS: Record<GardenColor, true> = { natural: true, blanco: true, bronce: true };
+const ALUMINUM_COLORS: Record<AluminumColor, true> = { natural: true, blanco: true, bronce: true, negro: true };
+const GARDEN_COLORS: Record<GardenColor, true> = { natural: true, blanco: true, bronce: true, negro: true };
 const STRAIGHT_GLASSES: Record<StraightGlass, true> = {
   claro: true,
   nevado: true,
@@ -158,15 +159,22 @@ function guardWizardFields(o: Record<string, unknown>): WizardFields | null {
   if (!isShortString(o.gardenQty)) return null;
   // Oferta 10% en linea (`?oferta=online10`). Un snapshot viejo sin el campo se descarta (aceptado).
   if (!isBoolean(o.onlineOffer)) return null;
+  // Contexto promo (`?promo=<id>`): null = normal. Se restaura solo si coincide con el de la URL (ver Cotizador).
+  if (o.promoId !== null && !isShortString(o.promoId)) return null;
 
+  // Estados antiguos (cascada departamento/municipio/distrito): parseStoredAddress los migra a la zona o la deja
+  // vacia. `zone` siempre sigue a la zona de la direccion; una cotizacion cargada por folio conserva la suya.
+  const parsedAddress = parseStoredAddress(o.address);
+  const zona = parsedAddress.zona || (o.addressFromQuote && isKnownZone(o.zone) ? o.zone : '');
   return {
     step: o.step,
     entrega: o.entrega,
-    zone: o.zone,
-    address: parseStoredAddress(o.address),
+    zone: zona,
+    address: { ...parsedAddress, zona },
     addressFromQuote: o.addressFromQuote,
     editingItem: o.editingItem,
     onlineOffer: o.onlineOffer,
+    promoId: o.promoId,
     productId,
     width: o.width,
     color: o.color,
@@ -218,9 +226,8 @@ function isPristine(state: CotizadorState): boolean {
     state.zone === '' &&
     state.editingItem === null &&
     !state.onlineOffer &&
-    !a.departamentoId &&
-    !a.municipioId &&
-    !a.distritoId &&
+    state.promoId === null &&
+    !a.zona &&
     !a.colonia &&
     !a.calle &&
     !a.referencia &&
@@ -300,7 +307,7 @@ export function persistWizardState(state: CotizadorState, storage: StorageLike |
 // ---------------------------------------------------------------------------
 
 /** Parametros del deep link (`?producto=` de catalogo/inicio/promos y `?oferta=`). */
-export const DEEP_LINK_PARAMS = ['producto', 'paso', 'color', 'vidrio', 'oferta'] as const;
+export const DEEP_LINK_PARAMS = ['producto', 'paso', 'color', 'vidrio', 'oferta', 'promo'] as const;
 
 export function hasDeepLinkParams(search: string): boolean {
   const params = new URLSearchParams(search);

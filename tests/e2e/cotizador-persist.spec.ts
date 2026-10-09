@@ -64,7 +64,7 @@ for (const scenario of ['granted', 'denied', 'unavailable'] as const) {
         });
       }
       await toZona(page);
-      await page.locator('#addr-departamento').selectOption({ label: 'San Salvador' });
+      await page.locator('#addr-zona').selectOption({ value: 'San Salvador' });
 
       // Proof of "no reload": a marker on <html> and a counter of full page loads after the click.
       await page.evaluate(() => {
@@ -80,13 +80,13 @@ for (const scenario of ['granted', 'denied', 'unavailable'] as const) {
       expect(await page.evaluate(() => document.documentElement.dataset.noReload)).toBe('1');
       await expect(page.getByRole('heading', { name: ZONA })).toBeVisible();
       await expect(page).toHaveURL(/#cotizador\/3-zona-entrega$/);
-      await expect(page.locator('#addr-departamento option:checked')).toHaveText('San Salvador');
+      await expect(page.locator('#addr-zona option:checked')).toHaveText('San Salvador (zona metropolitana) — Incluido');
       await expect.poll(() => readSnapshot(page)).toMatchObject({ step: 'zonaEntrega', productId: 'recta', width: '150' });
 
       // The mobile permission prompt can reload the tab: the flow must come back where it was.
       await page.reload();
       await expect(page.getByRole('heading', { name: ZONA })).toBeVisible();
-      await expect(page.locator('#addr-departamento option:checked')).toHaveText('San Salvador');
+      await expect(page.locator('#addr-zona option:checked')).toHaveText('San Salvador (zona metropolitana) — Incluido');
       await expect(page).toHaveURL(/#cotizador\/3-zona-entrega$/);
       if (scenario === 'granted') {
         await expect(page.getByTestId('geo-status')).toContainText('Ubicación guardada ✓');
@@ -115,7 +115,7 @@ test.describe('cotizador — reload mid-flow restores the wizard', () => {
     await expect(page.locator('#addr-colonia')).toHaveValue('Residencial Las Flores');
     await expect(page.locator('#addr-calle')).toHaveValue('Pasaje 3, casa 12');
     await expect(page.locator('#addr-telefono')).toHaveValue('7123-4567');
-    await expect(page.locator('#addr-distrito option:checked')).toHaveText('Soyapango');
+    await expect(page.locator('#addr-zona option:checked')).toHaveText('Soyapango — $40.00');
     await expect(page.getByTestId('geo-status')).toContainText('Ubicación guardada ✓');
     await expect(page.getByTestId('zona-total-value')).toHaveText('$368.00');
 

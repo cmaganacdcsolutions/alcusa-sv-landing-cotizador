@@ -8,6 +8,8 @@ import {
   type GeoPoint,
 } from '../../../lib/delivery-address';
 import AddressFields, { ADDRESS_INPUT_ID } from './AddressFields';
+import { getZoneFee } from '@engine/pricing/zoneFee';
+import { zoneDisplayName } from '@content/deliveryZones';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import type { CotizadorState, Entrega } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
@@ -61,6 +63,8 @@ export default function Step3ZonaEntrega({
   const [attempted, setAttempted] = useState(false);
   const [liveMsg, setLiveMsg] = useState('');
   const inst = state.entrega === 'instalacion';
+  // Contexto promo: las promos son "Instaladas"; no se ofrece retiro en tienda.
+  const promoCtx = state.promoId !== null;
   const price = quote.amount ?? 0;
   // Only priceStraight ('recta') accepts a `pickup` flag and applies the
   // 15% discount (engine/pricing/straight.ts); corner/tempered/hinged/
@@ -70,15 +74,18 @@ export default function Step3ZonaEntrega({
   // El total con envio solo aparece con la direccion completa (o cotizacion cargada por folio).
   const addressComplete = !inst || state.addressFromQuote || isAddressComplete(state.address);
   const zoneUnselected = inst && !addressComplete;
+  // La zona elegida muestra su linea de envio de inmediato; el TOTAL espera a la direccion completa.
+  const zoneChosen = inst && !state.addressFromQuote && state.zone !== '';
+  const chosenFee = getZoneFee(state.zone);
   // Distrito sin tarifa automatica: ya NO bloquea (decision 2026-10-06); el envio se confirma por WhatsApp.
   const zonePending = inst && addressComplete && shippingPending;
   const canProceed = !zoneUnselected;
-  const zoneFeeNote = zonePending
+  const zoneFeeNote = zonePending || (zoneChosen && chosenFee === undefined)
     ? 'Envío por confirmar: te lo confirmamos por WhatsApp.'
-    : inst && addressComplete && state.zone
-      ? zoneFee === 0
+    : inst && (addressComplete || zoneChosen) && state.zone
+      ? (chosenFee ?? zoneFee) === 0
         ? 'Envío incluido en tu zona.'
-        : `Envío a ${state.zone}: $${(zoneFee ?? 0).toFixed(2)}, una vez por pedido.`
+        : `Envío a ${zoneDisplayName(state.zone)}: $${(chosenFee ?? zoneFee ?? 0).toFixed(2)}, una vez por pedido.`
       : '';
 
   function handleNext(): void {
@@ -133,6 +140,7 @@ export default function Step3ZonaEntrega({
           </span>
           <span className="delivery-option__radio" aria-hidden="true" />
         </button>
+        {!promoCtx && (
         <button
           type="button"
           className="delivery-option"
@@ -151,7 +159,13 @@ export default function Step3ZonaEntrega({
           </span>
           <span className="delivery-option__radio" aria-hidden="true" />
         </button>
+        )}
       </div>
+      {promoCtx && (
+        <p className="delivery-note__body" data-testid="promo-install-note" style={{ marginTop: 8 }}>
+          Esta promoción incluye instalación.
+        </p>
+      )}
 
       {!inst && (
         <div className="delivery-note" style={{ marginTop: 8 }}>
@@ -207,7 +221,11 @@ export default function Step3ZonaEntrega({
       {zoneUnselected && (
         <div className="total-placeholder" style={{ marginTop: 20 }}>
           <span className="total-placeholder__title">Total por confirmar</span>
-          <p className="total-placeholder__body">Completa tu dirección para ver el costo de envío y el total.</p>
+          <p className="total-placeholder__body">
+            {zoneChosen
+              ? 'Completa tu dirección para ver el total.'
+              : 'Completa tu dirección para ver el costo de envío y el total.'}
+          </p>
         </div>
       )}
 

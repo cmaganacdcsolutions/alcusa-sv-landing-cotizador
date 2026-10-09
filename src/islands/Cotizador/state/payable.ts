@@ -31,6 +31,8 @@ export interface PayableInput {
   /** null/undefined = metodo aun no conocido -> sin descuento. */
   payMethod: PayMethod | null | undefined;
   pickup: boolean;
+  /** Contexto promo: sin 10% con tarjeta. */
+  promo?: boolean;
   promoItemsSubtotal?: number;
 }
 
@@ -57,6 +59,7 @@ export function computePayable(i: PayableInput): Payable {
     itemsSubtotal: i.itemsSubtotal,
     shippingFee,
     pickup: i.pickup,
+    ...(i.promo ? { promo: true } : {}),
     ...(i.promoItemsSubtotal !== undefined ? { promoItemsSubtotal: i.promoItemsSubtotal } : {}),
   });
   const totalBeforeDiscount = round2(i.itemsSubtotal + shippingFee);

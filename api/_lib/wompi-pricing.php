@@ -48,8 +48,15 @@ function wompi_price_fail(string $code, string $message, string $log, array $ctx
  * @return array{ok:true, sum:float, transport:float, discount:?array{code:string, amount:float}, shippingPending:bool, names:list<string>}
  *       | array{ok:false, status:int, code:string, message:string, log:string, ctx:array<string,mixed>}
  */
-function wompi_check_order_amounts(array $items, float $total, mixed $discount, mixed $shippingPending, float $maxTotal, float $maxTransport): array
+function wompi_check_order_amounts(array $items, float $total, mixed $discount, mixed $shippingPending, float $maxTotal, float $maxTransport, mixed $promoId = null): array
 {
+    // Contexto promo (`?promo=<id>`): una orden promo va SIN el 10% de tarjeta; el server lo rechaza.
+    if ($promoId !== null && (!is_string($promoId) || $promoId === '' || strlen($promoId) > 80)) {
+        return wompi_price_fail('invalid_request', 'Datos del pedido inválidos.', 'invalid_promo_id');
+    }
+    if ($promoId !== null && $discount !== null) {
+        return wompi_price_fail('invalid_discount', 'El descuento del pedido no es válido.', 'discount_not_allowed_on_promo');
+    }
     if ($shippingPending !== null && !is_bool($shippingPending)) {
         return wompi_price_fail('invalid_request', 'Datos del pedido inválidos.', 'invalid_shipping_pending');
     }

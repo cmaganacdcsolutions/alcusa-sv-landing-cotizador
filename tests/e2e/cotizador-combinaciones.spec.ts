@@ -27,6 +27,7 @@ import {
   STRAIGHT_COLORS,
   STRAIGHT_GLASSES,
   WINDOW_FRAMES,
+  WINDOW_FRAMES_FRANCESA,
   WINDOW_GLASSES,
 } from '../../src/islands/Cotizador/steps/measures/finishOptions';
 import { estimateImage, typeImage, type ImageSelection } from '../../src/islands/Cotizador/steps/productImages';
@@ -235,7 +236,9 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
   for (const combo of COMBOS) {
     test(`${combo.label}: miniatura, imagen en Precio, acabados y medidas`, async ({ page }) => {
       const errors = watchConsole(page);
-      const fin = FINISH[combo.model];
+      const base = FINISH[combo.model];
+      // Ventana francesa ofrece ademas aluminio negro (Bilbao no).
+      const fin: Finish = combo.model === 'ventana' && combo.preset.windowType === 'francesa' ? { ...base, colors: WINDOW_FRAMES_FRANCESA } : base;
       await openSelector(page);
       const typeGroup = await chooseCategory(page, combo.categoryIndex);
 
@@ -287,6 +290,14 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
             } else if (combo.model === 'ventana') {
               const exp = priceWindow({ widthM: 1.2, heightM: 1.0, model: combo.preset.windowType ?? 'francesa', frame: c as 'blanco', glass: g as 'claro', zaranda: false, desmontaje: false, qty: 1 }).subtotal;
               await expect(page.locator('.bottom-bar__price-value').first()).toHaveText(expectedMoney(exp));
+            } else if ((combo.model === 'recta' || combo.model === 'bisagra') && c === 'negro') {
+              // 2026-10-08: aluminio negro sin precio oficial: se cotiza con asesor (Siguiente bloqueado).
+              await expect(page.getByText(/El aluminio negro se cotiza con un asesor/)).toBeVisible();
+              await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+            } else if (combo.model === 'recta' && g === 'aquafold') {
+              // 2026-10-08: sin `?promo=<id>` el Aquafold recta no tiene precio web: se cotiza con asesor.
+              await expect(page.getByText(/Aquafold se cotiza con un asesor/)).toBeVisible();
+              await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
             } else {
               expectSanePrice(await priceViaPrecio(page));
               await backToMedidas(page);
@@ -375,7 +386,7 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
         gardenGlass: leftGlass as GardenGlass,
       };
       expect(bigSrc).toBe(estimateImage(combo.model, selection));
-      if (fin.colorGroup) expect(bigSrc, 'preview follows the chosen colour/glass').toMatch(/-(natural|blanco|bronce)-[a-z-]+-800\.webp$/);
+      if (fin.colorGroup) expect(bigSrc, 'preview follows the chosen colour/glass').toMatch(/^\/images\/fotos\/[a-z0-9-]+-800\.webp$/);
       expect((await bigFrame.boundingBox())!.width).toBeGreaterThanOrEqual(thumbWidth * 2); // step 2 is a real preview
 
       expect(errors).toEqual([]);

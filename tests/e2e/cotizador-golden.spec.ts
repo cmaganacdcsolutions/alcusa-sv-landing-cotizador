@@ -6,7 +6,7 @@ import {
 } from '@engine/pricing';
 import {
   CORNER_COLORS, CORNER_MODELS, GARDEN_COLORS, GARDEN_GLASSES, HINGED_COLORS, HINGED_GLASSES,
-  STRAIGHT_COLORS, STRAIGHT_GLASSES, WINDOW_FRAMES, WINDOW_GLASSES,
+  STRAIGHT_COLORS, STRAIGHT_GLASSES, WINDOW_FRAMES, WINDOW_FRAMES_FRANCESA, WINDOW_GLASSES,
 } from '../../src/islands/Cotizador/steps/measures/finishOptions';
 import { COMBOS, typeTiles } from '../support/combos';
 import { expect, test } from './fixtures';
@@ -83,7 +83,10 @@ test.describe('cotizador - tabla dorada de precios/contrato', () => {
       const glassG = fin.glass ? page.getByRole('group', { name: fin.glass[0], exact: true }) : null;
       const direct = combo.model === 'jardin' || combo.model === 'ventana'; // price live in the bottom bar
       const rows: Record<string, unknown>[] = [];
-      const colors = fin.color ? fin.color[1] : [null];
+      let lastReachable: [number, number] | null = null;
+      // Ventana francesa ofrece ademas aluminio negro (Bilbao no).
+      const francesa = combo.model === 'ventana' && combo.preset.windowType === 'francesa';
+      const colors = fin.color ? (francesa ? WINDOW_FRAMES_FRANCESA : fin.color[1]) : [null];
       const glasses = fin.glass ? fin.glass[1] : [null];
       for (const [ci, c] of colors.entries()) {
         for (const [gi, g] of glasses.entries()) {
@@ -92,7 +95,11 @@ test.describe('cotizador - tabla dorada de precios/contrato', () => {
           let price: string;
           if (direct) {
             price = (await page.locator('.bottom-bar__price-value').first().innerText()).trim();
+          } else if (await page.getByRole('button', { name: 'Siguiente' }).isDisabled()) {
+            // 2026-10-08: recta + Aquafold sin `?promo=<id>` se cotiza con asesor (Siguiente deshabilitado).
+            price = 'Por WhatsApp';
           } else {
+            lastReachable = [ci, gi];
             await clickNext(page);
             await expect(page.locator('#step2-heading')).toBeVisible();
             price = (await page.getByTestId('step2-price-value').innerText()).trim();
@@ -107,7 +114,11 @@ test.describe('cotizador - tabla dorada de precios/contrato', () => {
         }
       }
 
-      // step 2 once at the last selection: the big photo is a pure function of the leaf
+      // step 2 once at the last priced selection: the big photo is a pure function of the leaf
+      if (lastReachable && colorG && glassG && (await page.getByRole('button', { name: 'Siguiente' }).isDisabled())) {
+        await colorG.getByRole('button').nth(lastReachable[0]).click();
+        await glassG.getByRole('button').nth(lastReachable[1]).click();
+      }
       await clickNext(page);
       await expect(page.locator('#step2-heading')).toBeVisible();
       const big = page.locator('.estimate-card__preview img.photo-frame__img');

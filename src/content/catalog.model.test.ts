@@ -20,8 +20,17 @@ import { priceHinged } from '@engine/pricing/hinged';
 import { priceWindow } from '@engine/pricing/windows';
 import { priceGarden } from '@engine/pricing/garden';
 
-const CATEGORY_NAMES = ['Puertas de baño', 'Puertas de jardín', 'Ventanas'];
+const CATEGORY_NAMES = ['Puertas de baño', 'Puertas de jardín', 'Ventanas', 'Puertas abatibles'];
 const ADVISOR_SLUGS = ['jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas'];
+// Todas las hojas solo asesor, en orden de catalogo (2026-10-08: abatible de baño, Bilbao con medio punto, categoria Puertas abatibles).
+const ALL_ADVISOR_SLUGS = [
+  'templada-10mm-abatible',
+  ...ADVISOR_SLUGS,
+  'ventana-bilbao-medio-punto',
+  'abatible-interior-exterior',
+  'abatible-oficina-vidrio-fijo',
+  'abatible-oficina-cerrador',
+];
 
 function allSlugs(): string[] {
   return CATEGORIES.flatMap((c) => [
@@ -95,11 +104,11 @@ describe('content/catalog: R1 model integrity', () => {
         }
   });
 
-  it('taxonomy is complete: 11 subcategories, 3 En L finishes, exactly the 2 garden combos are advisorOnly', () => {
-    expect(CATEGORIES.flatMap((c) => c.subcategories)).toHaveLength(11);
+  it('taxonomy is complete: 16 subcategories, 3 En L finishes, exactly the 7 advisor leaves are advisorOnly', () => {
+    expect(CATEGORIES.flatMap((c) => c.subcategories)).toHaveLength(16);
     const enL = findBySlug('en-l');
     expect(enL && 'variants' in enL ? enL.variants.map((v) => v.slug) : []).toEqual(['l-aquaclara', 'l-frosted', 'l-aquafold']);
-    expect(allLeaves().filter((l) => l.advisorOnly).map((l) => l.slug)).toEqual(ADVISOR_SLUGS);
+    expect(allLeaves().filter((l) => l.advisorOnly).map((l) => l.slug)).toEqual(ALL_ADVISOR_SLUGS);
   });
 
   it('every SLUG_ALIASES target exists', () => {
@@ -132,7 +141,7 @@ describe('content/catalog: fromPrice per priced leaf == engine at minimum measur
 
   it('CATALOG_PRODUCTS legacy view: 6 items in the old order, prices derived from the model', () => {
     expect(CATALOG_PRODUCTS.map((p) => [p.id, p.fromPrice])).toEqual([
-      ['recta', 222],
+      ['recta', 242],
       ['l', 444],
       ['templado', 672],
       ['bisagra', 253],

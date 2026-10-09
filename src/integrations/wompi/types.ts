@@ -20,6 +20,8 @@ export interface CreateLinkRequest {
   discount?: CreateLinkDiscount;
   /** Distrito sin tarifa: envio "por confirmar" (no esta sumado en `total`). */
   shippingPending?: boolean;
+  /** Orden en contexto promo (`?promo=<id>`): va SIN descuento; el server rechaza un 10% sobre una promo. */
+  promoId?: string;
 }
 
 export interface CreateLinkDiscount {
@@ -55,4 +57,6 @@ export interface PendingPayment {
   /** Direccion de entrega (solo instalacion); se restaura al volver de Wompi. */
   address?: unknown;
   entrega: 'instalacion' | 'retiro';
+  /** Contexto promo con el que se pago; se restaura al volver de Wompi. */
+  promoId?: string | null;
 }

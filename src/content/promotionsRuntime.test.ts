@@ -123,6 +123,7 @@ describe('helpers del parser compartido', () => {
 
   it('promoImageSrcSet: 600w/900w para <clave>-900.webp; sin srcset en otro nombre', () => {
     expect(promoImageSrcSet('/images/promos/promo-1-900.webp')).toBe('/images/promos/promo-1-600.webp 600w, /images/promos/promo-1-900.webp 900w');
+    expect(promoImageSrcSet('/images/promos/promo-2-900.webp', 720)).toBe('/images/promos/promo-2-600.webp 600w, /images/promos/promo-2-900.webp 720w');
     expect(promoImageSrcSet('/media/promos/x.png')).toBeUndefined();
   });
 
