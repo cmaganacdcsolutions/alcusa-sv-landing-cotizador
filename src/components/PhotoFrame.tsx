@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
-import { bakedAmbientSrc } from '../lib/photo-ambient';
+import { ambientThumbSrc } from '../lib/photo-ambient';
 
 /** Proporciones de marco permitidas por la regla "Foto completa". */
 export type PhotoRatio = '1/1' | '4/5' | '4/3' | '9/16' | '3/2';
@@ -10,13 +10,13 @@ export interface PhotoFrameProps {
   ratio: PhotoRatio;
   /** Proporción desde el breakpoint desktop (900px); sin ella se conserva `ratio`. */
   ratioLg?: PhotoRatio;
-  /** srcset opcional; solo la capa ambiental con blur en vivo lo reutiliza (misma descarga). */
+  /** srcset opcional de la foto principal (la capa ambiental horneada no lo usa). */
   srcSet?: string;
   sizes?: string;
   /**
    * Miniatura ambiental horneada (desenfoque en los pixeles, sin `filter: blur()` en vivo).
-   * Por defecto se deriva de `src` si es una foto oficial de /images/fotos/ (ver `bakedAmbientSrc`);
-   * sin miniatura (p. ej. flyers de promos) la capa conserva el blur en vivo.
+   * Por defecto se deriva de `src` (foto oficial o flyer de promo, ver `ambientThumbSrc`); si `src` no sigue la
+   * convencion, la capa es un color solido de token (`--photo-ambient-fallback`): NUNCA blur en vivo.
    */
   ambientSrc?: string;
   /** `cover` = render de estudio (4:3 exacto, sin capa blur). `contain` (defecto) = foto real. */
@@ -55,7 +55,7 @@ export default function PhotoFrame({
   style,
   children,
 }: PhotoFrameProps) {
-  const baked = ambientSrc ?? bakedAmbientSrc(src);
+  const baked = ambientSrc ?? ambientThumbSrc(src);
   return (
     <div
       className={className ? `photo-frame ${className}` : 'photo-frame'}
@@ -83,19 +83,8 @@ export default function PhotoFrame({
             decoding="async"
           />
         ) : (
-          // Sin miniatura (flyers de promos): la misma imagen con blur en vivo.
-          <img
-            className="photo-frame__ambient"
-            src={src}
-            srcSet={srcSet}
-            sizes={sizes}
-            alt=""
-            aria-hidden="true"
-            width={width}
-            height={height}
-            loading={loading}
-            decoding="async"
-          />
+          // Sin miniatura derivable: color solido de token, sin imagen ni blur en vivo.
+          <span className="photo-frame__ambient photo-frame__ambient--solid" aria-hidden="true" />
         ))}
       <img
         className={fit === 'cover' ? 'photo-frame__img photo-frame__img--cover' : 'photo-frame__img'}

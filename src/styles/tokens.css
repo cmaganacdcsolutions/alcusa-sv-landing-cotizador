@@ -239,6 +239,7 @@
   --photo-ambient-brightness: 1.04;
   --photo-ambient-scale: 1.4;
   --photo-ambient-opacity: 0.75;
+  --photo-ambient-fallback: var(--color-footer-bg); /* navy solido: capa ambiental sin miniatura (nunca blur en vivo) */
   --photo-ambient-veil: rgba(246, 243, 237, 0.35);
 }
 

@@ -22,6 +22,7 @@ import {
   vigenciaLabel,
   type Promotion,
 } from '@content/promotionsParser';
+import { ambientThumbSrc } from '../lib/photo-ambient';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const FETCH_TIMEOUT_MS = 8000;
@@ -64,7 +65,18 @@ function photoFrame(p: Promotion, badge: HTMLElement | null): HTMLElement {
     loading: 'lazy',
     decoding: 'async',
   } as const;
-  const ambient = h('img', { class: 'photo-frame__ambient', ...common, alt: '', 'aria-hidden': 'true' });
+  // Capa ambiental: miniatura horneada derivada por convencion (sin blur en vivo); sin ella, color solido.
+  const thumb = ambientThumbSrc(p.image);
+  const ambient = thumb
+    ? h('img', {
+        class: 'photo-frame__ambient photo-frame__ambient--baked',
+        src: thumb,
+        alt: '',
+        'aria-hidden': 'true',
+        loading: 'lazy',
+        decoding: 'async',
+      })
+    : h('span', { class: 'photo-frame__ambient photo-frame__ambient--solid', 'aria-hidden': 'true' });
   const main = h('img', { class: 'photo-frame__img', ...common, alt: p.imageAlt });
   return h(
     'div',

@@ -8,7 +8,7 @@
 import PhotoFrame from '@components/PhotoFrame';
 import type { Subcategory } from '@content/catalog';
 import { advisorSubject, cardTitle, categorySlugOf, priceView } from '@content/catalogView';
-import { COVER_RATIO, coverFor, variantsOf } from '@content/home-media';
+import { COVER_RATIO, coverFor, PRODUCT_CARD_IMAGE_SIZES, variantsOf } from '@content/home-media';
 import {
   buildCotizadorHref,
   COTIZADOR_PATH,
@@ -63,7 +63,7 @@ const idBase = `pc-${sub.slug}`;
         <PhotoFrame
           src={img.src}
           srcSet={img.srcSet}
-          sizes="(min-width: 1024px) 232px, (min-width: 768px) 44vw, 92vw"
+          sizes={PRODUCT_CARD_IMAGE_SIZES}
           alt={img.alt}
           ratio={COVER_RATIO}
           fit={img.kind === 'render' ? 'cover' : 'contain'}

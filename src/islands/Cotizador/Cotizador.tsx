@@ -63,6 +63,7 @@ import Step0Producto from './steps/Step0Producto';
 import Step1Medidas from './steps/Step1Medidas';
 import { PROMO_PARAM } from '@content/promotionsParser';
 import { PROMO_BANNER_PREFIX, PROMO_EXIT_LABEL, promoIdFromSearch } from '@content/promoContext';
+import { clearStash, hasWork, readStash, writeStash, type WorkStash } from './state/stash';
 import { lookupActivePromo, lookupPromo } from './state/promoRegistry';
 import Step2Precio from './steps/Step2Precio';
 import Step3ZonaEntrega from './steps/Step3ZonaEntrega';
@@ -255,6 +256,8 @@ export default function Cotizador(): ReactElement {
   const [homeOptionsNotice, setHomeOptionsNotice] = useState(false);
   // F4 (ADR-012): folio from the `?folio=` deep link (read once, URL cleaned).
   const [folioParam, setFolioParam] = useState<string | null>(null);
+  // Cotizacion en curso apartada al entrar por `?promo=` (aviso no bloqueante "Recuperarla").
+  const [stashed, setStashed] = useState<WorkStash | null>(null);
 
   useEffect(() => {
     const initialHash = window.location.hash;
@@ -321,6 +324,15 @@ export default function Cotizador(): ReactElement {
         hashStep: initial,
         navigation: readNavigationType(),
       });
+    // Trabajo en curso de OTRO contexto + entrada fresca por `?promo=`: no se pierde, se aparta (stash) y se avisa.
+    if (urlPromo && !wompiReturn && !folio && !restoring) {
+      const work = { cart: loadPersistedCart(), snapshot: storedSnapshot };
+      if (hasWork(work.cart, work.snapshot)) {
+        // Re-ejecucion del efecto (StrictMode): el snapshot ya pudo limpiarse; no pisar un stash completo.
+        if (work.snapshot || !readStash()) writeStash(work);
+        setStashed(readStash());
+      }
+    }
     if (storedSnapshot && restoring) {
       const fields = restoreFields(storedSnapshot, initial, offerParam);
       dispatch({ type: 'RESTORE_WIZARD', fields });
@@ -555,6 +567,30 @@ export default function Cotizador(): ReactElement {
 
   // "Cotizar otro modelo sin promoción": sale del contexto promo (quita `?promo=` de la URL, descarta el
   // item promo y reinicia el wizard en normal: precios regulares y 10% con tarjeta).
+  // Promo completada (resultado): el trabajo apartado ya no se ofrece.
+  useEffect(() => {
+    if (state.step === 'resultado') {
+      clearStash();
+    }
+  }, [state.step]);
+
+  function recoverStash(): void {
+    if (!stashed) return;
+    const fields = stashed.snapshot ? restoreFields(stashed.snapshot, null, false) : null;
+    dispatch({ type: 'RECOVER_WORK', cart: stashed.cart, fields });
+    clearStash();
+    clearWizardSnapshot();
+    setStashed(null);
+    const url = new URL(window.location.href);
+    url.searchParams.delete(PROMO_PARAM);
+    window.history.replaceState(null, '', `${url.pathname}${url.search}#cotizador/${STEP_SLUGS[fields?.step ?? 'producto']}`);
+  }
+
+  function discardStash(): void {
+    clearStash();
+    setStashed(null);
+  }
+
   function exitPromo(): void {
     dispatch({ type: 'EXIT_PROMO' });
     clearWizardSnapshot();
@@ -1006,6 +1042,20 @@ export default function Cotizador(): ReactElement {
             </p>
             <button type="button" className="btn btn-secondary" data-testid="promo-exit" onClick={exitPromo}>
               {PROMO_EXIT_LABEL}
+            </button>
+          </div>
+        )}
+        {stashed && state.step !== 'resultado' && (
+          <div className="online-discount-banner" data-testid="stash-banner" data-state="info" role="status">
+            <p className="online-discount-banner__text">
+              <strong>Tienes una cotización en curso</strong>
+              {' · La guardamos aparte para que no la pierdas.'}
+            </p>
+            <button type="button" className="btn btn-secondary" data-testid="stash-recover" onClick={recoverStash}>
+              Recuperarla
+            </button>
+            <button type="button" className="btn btn-secondary" data-testid="stash-discard" onClick={discardStash}>
+              Descartar
             </button>
           </div>
         )}

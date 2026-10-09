@@ -310,6 +310,8 @@ export type CotizadorAction =
   | { type: 'RESTORE_ADDRESS'; address: DeliveryAddress }
   // Reload mid-flow: re-applies the (already validated) sessionStorage snapshot.
   | { type: 'RESTORE_WIZARD'; fields: WizardFields }
+  // "Recuperarla": devuelve la cotizacion apartada al entrar por `?promo=` (carrito + wizard, sin contexto promo nuevo).
+  | { type: 'RECOVER_WORK'; cart: CotizadorState['cart']; fields: WizardFields | null }
   | { type: 'GOTO_STEP'; step: CotizadorStep }
   | { type: 'NEXT' }
   | { type: 'BACK' }
@@ -425,6 +427,8 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       };
     case 'RESTORE_WIZARD':
       return { ...state, ...action.fields };
+    case 'RECOVER_WORK':
+      return { ...initialCotizadorState, ...(action.fields ?? {}), cart: action.cart };
     case 'GOTO_STEP':
       return { ...state, step: action.step };
     case 'NEXT': {
