@@ -1,0 +1,26 @@
+sequenceDiagram
+  autonumber
+  actor A as Operador
+  participant S as Fastify (admin)
+  participant D as MariaDB
+  participant W as Worker catalog-build
+  participant R as releases/ + symlink current
+  actor V as Visitante
+
+  A->>S: guardar producto (borrador) + imagen
+  S->>D: products / product_images (draft), uploads en /media
+  A->>S: POST Publicar catalogo (CSRF)
+  S->>D: INSERT publish_jobs queued (GET_LOCK catalog_build)
+  S-->>A: estado "en cola"
+  W->>D: export catalog.generated.json (solo published)
+  W->>W: astro build en directorio de trabajo
+  W->>W: validar: zod, assertCatalogContent, conteo de paginas, product_slug de promos
+  alt todo valido
+    W->>R: rsync releases/ts + swap atomico del symlink
+    W->>D: publish_jobs = published
+    V->>R: GET /catalogo/slug (HTML estatico nuevo)
+  else falla
+    W->>D: publish_jobs = failed + log_tail
+    Note over R: el sitio queda en la version previa
+  end
+  A->>S: ver estado del job

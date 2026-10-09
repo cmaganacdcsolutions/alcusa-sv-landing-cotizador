@@ -1,0 +1,34 @@
+flowchart LR
+  op(["Operador Alcusa<br/>(admin, navegador)"])
+  vis(["Visitante / cliente<br/>(navegador)"])
+  cdc(["CDC (SSH)<br/>create-admin, deploy"])
+
+  subgraph vps["Hostinger KVM 2 VPS (Ubuntu 24.04) - TLS termina en Nginx"]
+    nginx["Nginx :443<br/>estatico + proxy + limit_req + headers"]
+    static[("dist/ estatico (symlink current)<br/>18+ paginas Astro + React islands")]
+    pjson[("/api/promotions.json<br/>archivo estatico")]
+    media[("/media/ uploads WebP<br/>fuera de docroot")]
+    api["alcusa-api (Fastify 5, 127.0.0.1:3001)<br/>admin SSR + API publica<br/>modulos: admin, promotions, products, quotes"]
+    worker["catalog-build worker (systemd oneshot)<br/>export BD, astro build, validar, swap"]
+    db[("MariaDB 11.4 127.0.0.1<br/>promotions, products, admin_*, audit_log")]
+  end
+
+  wompi["Wompi (externo)"]
+
+  vis -->|HTTPS| nginx
+  op -->|"HTTPS ruta protegida ADMIN_BASE_PATH<br/>cookie __Host-, CSRF"| nginx
+  cdc -.->|"SSH: create-admin --prompt, rotate"| api
+  nginx --> static
+  nginx --> pjson
+  nginx --> media
+  nginx -->|"proxy_pass /api y ruta admin"| api
+  api -->|"SQL parametrizado"| db
+  api -->|"escribe tmp+rename"| pjson
+  api -->|"sharp: WebP 800/1200"| media
+  api -->|"INSERT publish_jobs"| db
+  worker -->|"lee export (published)"| db
+  worker -->|"rsync + swap atomico"| static
+  api <-->|"create-link / webhook"| wompi
+
+  classDef trust fill:#fff4e0,stroke:#c77700;
+  class nginx,api,worker trust;
