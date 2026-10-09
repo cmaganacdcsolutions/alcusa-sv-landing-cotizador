@@ -41,6 +41,7 @@ export default defineConfig({
   ],
   use: {
     baseURL: BASE_URL,
+    reducedMotion: 'reduce',
     trace: 'retain-on-failure',
   },
   webServer: {
