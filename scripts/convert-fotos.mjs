@@ -1,8 +1,11 @@
 // Convierte el portafolio oficial de Alcusa (06-assets/images/extracted/portafolio-web) a
 // public/images/fotos/<nombre>-{800,<ancho nativo>}.webp. Sin upscale. Uso: node scripts/convert-fotos.mjs <dirOrigen>
+// Al final hornea <nombre>-amb.webp (miniatura ambiental de PhotoFrame, BUG-1008-01) via scripts/bake-ambient.mjs:
+// una foto nueva sale siempre con su miniatura (el test de fs de src/lib/photo-ambient falla si falta).
 import sharp from 'sharp';
 import { mkdirSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { bakeAmbient } from './bake-ambient.mjs';
 
 const NAMES = {
   1: 'ventana-francesa-negro', 2: 'jardin-1-fijo-3-corredizas', 3: 'jardin-1-fijo-3-corredizas-galeria',
@@ -30,3 +33,5 @@ for (const f of files) {
   table[name] = { n, native: [width, height] };
 }
 console.log(JSON.stringify(table));
+// stderr: stdout sigue siendo solo la tabla JSON.
+console.error('bake-ambient:', JSON.stringify(await bakeAmbient(out)));

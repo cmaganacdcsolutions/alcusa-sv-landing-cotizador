@@ -199,6 +199,12 @@ svg {
   transform: scale(var(--photo-ambient-scale));
   opacity: var(--photo-ambient-opacity);
 }
+/* Miniatura horneada (<stem>-amb.webp, scripts/bake-ambient.mjs): el desenfoque, la saturacion y el brillo
+   ya viajan en los pixeles, asi que no hay filter en vivo (19 capas con blur(32px) volvian WebKit @DPR3 3-4x
+   mas lento, BUG-1008-01). Conserva inset, scale, opacity y velo. Los flyers de promos siguen con blur. */
+.photo-frame__ambient--baked {
+  filter: none;
+}
 /* Velo crema sobre la capa ambiental, bajo la foto. */
 .photo-frame::before {
   content: '';
