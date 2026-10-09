@@ -36,14 +36,14 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
     <script is:inline>
       // Motion 02 E5: solo home -> cotizador por navegacion nueva (no atras/adelante, no recarga), sin ?motion=off y sin reduce.
       (function () {
-        var path = function (u) { try { return new URL(u).pathname.replace(/\/$/, '') || '/'; } catch (e) { return ''; } };
-        var off = function () { return /[?&]motion=off/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches; };
+        const path = (u) => { try { return new URL(u).pathname.replace(/\/$/, '') || '/'; } catch { return ''; } };
+        const off = () => /[?&]motion=off/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
         addEventListener('pageswap', function (e) {
-          var a = e.activation;
+          const a = e.activation;
           if (e.viewTransition && !(a && a.entry && !off() && a.navigationType === 'push' && path(location.href) === '/' && path(a.entry.url) === '/cotizador')) e.viewTransition.skipTransition();
         });
         addEventListener('pagereveal', function (e) {
-          var a = window.navigation && navigation.activation;
+          const a = window.navigation && navigation.activation;
           if (e.viewTransition && !(a && a.from && !off() && a.navigationType === 'push' && path(a.from.url) === '/' && path(location.href) === '/cotizador')) e.viewTransition.skipTransition();
         });
       })();
