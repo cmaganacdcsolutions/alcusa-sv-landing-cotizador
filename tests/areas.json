@@ -14,6 +14,7 @@
     "cotizador-cart.spec.ts": ["cotizador"],
     "cotizador-persist.spec.ts": ["cotizador"],
     "cotizador-promo-context.spec.ts": ["cotizador", "promos"],
+    "cotizador-promo-stash.spec.ts": ["cotizador", "promos"],
     "cotizador-checkout.spec.ts": ["cotizador"],
     "cotizador-online-discount.spec.ts": ["cotizador"],
     "cotizador-combinaciones.spec.ts": ["cotizador"],

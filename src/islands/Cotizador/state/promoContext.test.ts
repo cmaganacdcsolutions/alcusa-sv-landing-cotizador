@@ -111,3 +111,21 @@ describe('promoContext — persist', () => {
     expect(snap?.promoId).toBeNull();
   });
 });
+
+describe('RECOVER_WORK — cotizacion en curso apartada al entrar por ?promo=', () => {
+  it('ENTER_PROMO vacia el carrito (por eso el cotizador lo aparta antes) y RECOVER_WORK lo devuelve sin contexto promo', () => {
+    const item = { id: 'x1' } as unknown as (typeof initialCotizadorState)['cart'][number];
+    const work = { ...initialCotizadorState, cart: [item], width: '130' };
+    const inPromo = cotizadorReducer(work, { type: 'ENTER_PROMO', promo: ctx('promo-corrediza-nevado') });
+    expect(inPromo.cart).toEqual([]);
+    const snap = snapshotFromState({ ...work, step: 'medidas', productId: 'recta' });
+    expect(snap).not.toBeNull();
+    const recovered = cotizadorReducer(inPromo, { type: 'RECOVER_WORK', cart: [item], fields: null });
+    expect(recovered.cart).toEqual([item]);
+    expect(recovered.promoId).toBeNull();
+    const { v: _v, ...fields } = snap as NonNullable<typeof snap>;
+    void _v;
+    const withFields = cotizadorReducer(inPromo, { type: 'RECOVER_WORK', cart: [item], fields });
+    expect(withFields).toMatchObject({ promoId: null, width: '130', productId: 'recta', step: 'medidas' });
+  });
+});
