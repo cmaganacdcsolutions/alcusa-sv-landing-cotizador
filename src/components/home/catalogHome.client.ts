@@ -10,6 +10,9 @@ document.documentElement.setAttribute('data-js', '');
 
 type Field = HTMLSelectElement | HTMLInputElement;
 
+/** Motion 02: motion.client.ts pone html[data-motion] solo con no-preference, sin ?motion=off y con IntersectionObserver. */
+const motionOn = (): boolean => document.documentElement.hasAttribute('data-motion');
+
 function readChoices(form: HTMLFormElement): Choices {
   const out: Choices = {};
   form.querySelectorAll<Field>('select[data-group], input[type=hidden][data-group]').forEach((el) => {
@@ -26,7 +29,13 @@ function syncFields(form: HTMLFormElement): void {
     if (!option) return;
     const field = select.closest<HTMLElement>('.pcard__field');
     const sw = option.dataset.sw;
-    if (sw) field?.querySelectorAll('[data-sw-chip]').forEach((chip) => chip.setAttribute('data-sw', sw));
+    if (sw) {
+      field?.querySelectorAll<HTMLElement>('[data-sw-chip]').forEach((chip) => {
+        // Motion 02 E4: el circulo elegido se asienta (a/b alternan para reiniciar la animacion sin reflow).
+        if (motionOn() && chip.getAttribute('data-sw') !== sw) chip.dataset.pop = chip.dataset.pop === 'a' ? 'b' : 'a';
+        chip.setAttribute('data-sw', sw);
+      });
+    }
     const note = field?.querySelector<HTMLElement>('[data-note]');
     if (note) note.hidden = !option.hasAttribute('data-custom');
     // Combobox: texto del boton y aria-selected de la lista.
@@ -194,14 +203,63 @@ interface VariantImage {
   height: number;
 }
 
+// Motion 02 E4: cambio de acabado en curso por tarjeta (la foto nueva se asienta sobre la anterior).
+const settling = new WeakMap<HTMLElement, () => void>();
+
+/** Foto principal con transicion: la nueva entra encima (opacity/scale) y la anterior se retira al terminar. */
+function settleImage(img: HTMLImageElement, image: VariantImage, card: HTMLElement): void {
+  const next = img.cloneNode() as HTMLImageElement;
+  next.removeAttribute('srcset');
+  next.removeAttribute('fetchpriority');
+  next.loading = 'eager';
+  next.width = image.width;
+  next.height = image.height;
+  next.alt = image.alt;
+  next.src = image.src;
+  let done = false;
+  const finish = (): void => {
+    if (done) return;
+    done = true;
+    settling.delete(card);
+    next.classList.remove('mo-swap');
+    img.remove();
+  };
+  next.addEventListener('animationend', finish, { once: true });
+  settling.set(card, finish);
+  // decode() antes de insertar: la entrada nunca arranca con la foto a medio cargar. Si falla, corte directo.
+  next
+    .decode()
+    .then(() => {
+      if (done) return;
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      next.classList.add('mo-swap');
+      img.after(next);
+    })
+    .catch(() => {
+      if (done) return;
+      img.src = image.src;
+      img.width = image.width;
+      img.height = image.height;
+      img.alt = image.alt;
+      done = true;
+      settling.delete(card);
+    });
+}
+
 function setPhoto(card: HTMLElement, image: VariantImage): void {
   // Capa ambiental: la miniatura horneada de la foto (sin blur en vivo, BUG-1008-01). Sin miniatura
   // (no es una foto de /images/fotos/), la propia imagen con el blur de siempre.
+  settling.get(card)?.(); // cambio rapido: cierra la transicion anterior de inmediato (queda una sola foto)
   const baked = bakedAmbientSrc(image.src);
   card.querySelectorAll<HTMLImageElement>('.photo-frame img').forEach((img) => {
     const isAmbient = img.classList.contains('photo-frame__ambient');
     const target = isAmbient && baked ? baked : image.src;
     if (img.getAttribute('src') === target) return;
+    if (!isAmbient && motionOn() && !img.classList.contains('photo-frame__img--cover') && !img.hasAttribute('aria-hidden')) {
+      settleImage(img, image, card);
+      return;
+    }
     img.removeAttribute('srcset');
     img.src = target;
     if (isAmbient) {
@@ -214,6 +272,22 @@ function setPhoto(card: HTMLElement, image: VariantImage): void {
   });
 }
 
+/** Motion 02 E4: al primer pointerenter/focusin de la tarjeta se precargan sus variantes (la entrada nunca espera la red). */
+function preloadVariants(card: HTMLElement, variants: Record<string, VariantImage>): void {
+  let warmed = false;
+  const warm = (): void => {
+    if (warmed || !motionOn()) return;
+    warmed = true;
+    Object.values(variants).forEach((v) => {
+      const pre = new Image();
+      pre.decoding = 'async';
+      pre.src = v.src;
+    });
+  };
+  card.addEventListener('pointerenter', warm, { once: true });
+  card.addEventListener('focusin', warm, { once: true });
+}
+
 function initForm(form: HTMLFormElement): void {
   const config = PRODUCT_CONFIGS[form.dataset.config ?? ''];
   if (!config) return;
@@ -221,6 +295,7 @@ function initForm(form: HTMLFormElement): void {
   const variants: Record<string, VariantImage> = form.dataset.variants ? JSON.parse(form.dataset.variants) : {};
   const cover: VariantImage | undefined = form.dataset.cover ? JSON.parse(form.dataset.cover) : undefined;
   const defaultFinish = defaultFinishOf(config);
+  if (card && Object.keys(variants).length > 0) preloadVariants(card, variants);
   const refresh = (): void => {
     const choices = readChoices(form);
     syncFields(form);

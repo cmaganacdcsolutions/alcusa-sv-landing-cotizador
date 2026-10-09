@@ -118,3 +118,81 @@ test.describe('motion E3: tactil', () => {
     expect(await photo.evaluate((n) => getComputedStyle(n, '::after').content)).toBe('none');
   });
 });
+
+test.describe('motion E4: cambio de acabado', () => {
+  const pick = async (page: import('@playwright/test').Page, field: string, option: RegExp) => {
+    const card = page.locator('#p-recta');
+    await card.getByRole('combobox', { name: field }).click();
+    await card.getByRole('option', { name: option }).click();
+    return card;
+  };
+
+  test('con movimiento: la foto nueva entra sobre la anterior y al terminar queda una sola imagen con la src elegida', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    const card = page.locator('#p-recta');
+    await card.scrollIntoViewIfNeeded();
+    const photo = card.locator('.pcard__photo');
+    const before = await photo.locator('img.photo-frame__img').getAttribute('src');
+    await pick(page, 'Vidrio', /^Aquafold/);
+    // estado final (poll: el clon entra tras decode() y la anterior se retira en animationend): una sola foto con la variante elegida
+    const srcs = () => photo.locator('img.photo-frame__img').evaluateAll((els) => els.map((e) => e.getAttribute('src') ?? ''));
+    await expect.poll(async () => (await srcs()).length).toBe(1);
+    await expect.poll(async () => (await srcs())[0]).toMatch(/recta-aquafold/);
+    await expect(photo.locator('img.photo-frame__img.mo-swap')).toHaveCount(0);
+    const after = photo.locator('img.photo-frame__img');
+    expect((await srcs())[0]).not.toBe(before);
+    expect(await after.getAttribute('alt')).toBeTruthy();
+    await expect(after).toHaveCSS('opacity', '1');
+    await expect(after).toHaveCSS('transform', 'none');
+  });
+
+  test('cambios rapidos: siempre queda una sola foto, la ultima elegida', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    const card = page.locator('#p-recta');
+    await card.scrollIntoViewIfNeeded();
+    await pick(page, 'Vidrio', /^Aquafold/);
+    await pick(page, 'Vidrio', /^Claro/);
+    const imgs = card.locator('.pcard__photo img.photo-frame__img');
+    const srcs = () => imgs.evaluateAll((els) => els.map((e) => e.getAttribute('src') ?? ''));
+    await expect.poll(async () => (await srcs()).length).toBe(1);
+    await expect.poll(async () => (await srcs())[0]).not.toMatch(/aquafold/);
+    await expect(card.locator('.mo-swap')).toHaveCount(0);
+  });
+
+  test('el circulo elegido alterna su marca de animacion al cambiar de vidrio', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    const card = page.locator('#p-recta');
+    await card.scrollIntoViewIfNeeded();
+    const chip = card.getByRole('combobox', { name: 'Vidrio' }).locator('[data-sw-chip]');
+    await pick(page, 'Vidrio', /^Aquafold/);
+    await expect(chip).toHaveAttribute('data-pop', /^[ab]$/);
+    await expect(chip).toHaveCSS('transform', 'none'); // termina asentado
+  });
+
+  test('reduced-motion: corte directo, sin clon ni marca de animacion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await page.waitForSelector('html[data-js]');
+    const card = page.locator('#p-recta');
+    await card.scrollIntoViewIfNeeded();
+    const chip = card.getByRole('combobox', { name: 'Vidrio' }).locator('[data-sw-chip]');
+    await pick(page, 'Vidrio', /^Aquafold/);
+    await expect(card.locator('.pcard__photo img.photo-frame__img')).toHaveAttribute('src', /recta-aquafold/);
+    await expect(card.locator('.mo-swap')).toHaveCount(0);
+    await expect(chip).not.toHaveAttribute('data-pop', /.*/);
+  });
+
+  test('precarga de variantes en el primer pointerenter de la tarjeta', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    const card = page.locator('#p-recta');
+    await card.scrollIntoViewIfNeeded();
+    const seen: string[] = [];
+    page.on('request', (r) => r.resourceType() === 'image' && seen.push(r.url()));
+    await card.hover();
+    await expect.poll(() => seen.some((u) => /recta-aquafold/.test(u))).toBe(true);
+  });
+});

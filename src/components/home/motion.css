@@ -71,3 +71,27 @@
     transform: none !important;
   }
 }
+
+/* E4 · cambio de acabado: la foto nueva (clon .mo-swap, ver catalogHome.client.ts) se asienta sobre la anterior;
+   el circulo elegido se asienta; el CTA se hunde al pulsar. Sin overshoot. */
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-motion-off]) .photo-frame__img.mo-swap {
+    animation: mo-settle var(--motion-duration-swap) var(--motion-ease-glass) both;
+  }
+  html:not([data-motion-off]) [data-sw-chip][data-pop='a'] { animation: mo-pop-a var(--motion-duration-slow) var(--motion-ease-glass); }
+  html:not([data-motion-off]) [data-sw-chip][data-pop='b'] { animation: mo-pop-b var(--motion-duration-slow) var(--motion-ease-glass); }
+  html:not([data-motion-off]) .pcard__go:active { animation: mo-press var(--motion-duration-fast) var(--motion-ease-ui) both; }
+}
+@keyframes mo-settle {
+  from { opacity: 0; transform: scale(1.03); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes mo-pop-a {
+  from { transform: scale(0.78); }
+}
+@keyframes mo-pop-b {
+  from { transform: scale(0.78); }
+}
+@keyframes mo-press {
+  to { transform: scale(0.97); }
+}
