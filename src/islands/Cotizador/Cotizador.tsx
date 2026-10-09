@@ -65,7 +65,7 @@ import Step1Medidas from './steps/Step1Medidas';
 import { PROMO_PARAM } from '@content/promotionsParser';
 import { PROMO_BANNER_PREFIX, PROMO_EXIT_LABEL, promoIdFromSearch } from '@content/promoContext';
 import { clearStash, hasWork, readStash, writeStash, type WorkStash } from './state/stash';
-import { lookupActivePromo, lookupPromo } from './state/promoRegistry';
+import { hydratePromoRegistry, lookupActivePromo, lookupPromo } from './state/promoRegistry';
 import Step2Precio from './steps/Step2Precio';
 import { usePriceTick } from './usePriceTick';
 import Step3ZonaEntrega from './steps/Step3ZonaEntrega';
@@ -261,8 +261,39 @@ export default function Cotizador(): ReactElement {
   // Cotizacion en curso apartada al entrar por `?promo=` (aviso no bloqueante "Recuperarla").
   const [stashed, setStashed] = useState<WorkStash | null>(null);
 
+  // ADR-014 add.2: el registro de promos se hidrata desde /api/promotions.json antes del efecto de arranque
+  // si la entrada depende de una promo (?promo=, snapshot o retorno de Wompi con promoId); si no, en segundo plano.
+  const [registryReady, setRegistryReady] = useState(false);
+  useEffect(() => {
+    const pendingPromoId = (): string | null => {
+      try {
+        return loadPendingPayment()?.promoId ?? null; // sessionStorage puede lanzar (storage bloqueado)
+      } catch {
+        return null;
+      }
+    };
+    const needsPromo =
+      promoIdFromSearch(window.location.search) !== null ||
+      (readWizardSnapshot()?.promoId ?? null) !== null ||
+      pendingPromoId() !== null;
+    const hydrating = hydratePromoRegistry();
+    if (!needsPromo) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only read of location/storage (no SSR access)
+      setRegistryReady(true);
+      return;
+    }
+    let live = true;
+    void hydrating.then(() => {
+      if (live) setRegistryReady(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
   useEffect(() => {
     const initialHash = window.location.hash;
+    if (!registryReady) return;
     const initial = stepFromHash(initialHash);
     if (initial) dispatch({ type: 'GOTO_STEP', step: initial });
 
@@ -439,7 +470,7 @@ export default function Cotizador(): ReactElement {
       window.removeEventListener('hashchange', syncFromHash);
       window.removeEventListener('popstate', syncFromHash);
     };
-  }, []);
+  }, [registryReady]);
 
   // sf-cot-mobile item 4 — every step transition (Siguiente, back, rail
   // click, Editar links, product pick — all funnel through GOTO_STEP/

@@ -47,6 +47,7 @@
     "landing5.spec.ts": ["home"],
     "landing6.spec.ts": ["home"],
     "promo-cta-medidas.spec.ts": ["promos", "cotizador", "home"],
+    "promos-cotizador-runtime.spec.ts": ["cotizador", "promos"],
     "promos-runtime.spec.ts": ["promos", "home"],
     "quote-customer.spec.ts": ["cotizador"],
     "quote-share.spec.ts": ["cotizador"],
