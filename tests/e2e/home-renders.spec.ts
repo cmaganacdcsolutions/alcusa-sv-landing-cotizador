@@ -54,7 +54,8 @@ test.describe('home: renders, iconos de acabado y guia', () => {
       }
     }
     const fr = page.locator('#p-ventana-francesa');
-    await expect(fr.locator('.pcard__opt .pcard__sw[data-sw^="color:"]')).toHaveCount(3);
+    // Francesa: blanco, bronce, natural y negro (2026-10-08).
+    await expect(fr.locator('.pcard__opt .pcard__sw[data-sw^="color:"]')).toHaveCount(4);
     await expect(fr.locator('[data-trigger] .pcard__sw').first()).toHaveCSS('border-radius', '50%');
   });
 
