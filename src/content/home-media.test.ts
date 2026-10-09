@@ -189,7 +189,7 @@ describe('home-media: solo fotos oficiales del portafolio', () => {
     const cards = jardin.subcategories.filter((s) => s.slug in PRODUCT_CONFIGS);
     expect(cards.map((s) => s.slug)).toEqual(['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas']);
     const more = jardin.subcategories.filter((s) => s.group === 'mas-opciones');
-    expect(more.map((s) => s.slug)).toEqual(['jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas']);
+    expect(more.map((s) => s.slug)).toEqual(['jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas', 'abatible-interior-exterior', 'abatible-oficina-vidrio-fijo', 'abatible-oficina-cerrador']);
     const expected: Record<string, string> = {
       'jardin-1-hoja': 'jardin-1-hoja',
       'jardin-2-hojas': 'jardin-2-hojas',
