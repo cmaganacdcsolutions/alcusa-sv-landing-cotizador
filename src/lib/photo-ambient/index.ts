@@ -8,8 +8,11 @@
 //
 //   /images/fotos/<stem>-<ancho>.webp  ->  /images/fotos/<stem>-amb.webp
 //
-// Todo lo que no cumpla ese patron (flyers de promos en /images/promos/*, URLs ajenas) devuelve
-// `undefined`: la capa conserva el blur en vivo de siempre, que es el fallback seguro.
+// Los flyers de promos siguen la MISMA convencion (`<stem>-<ancho>.webp` -> `<stem>-amb.webp`) en las dos
+// carpetas que permite el parser: /images/promos/ (las del build) y /media/promos/ (subidas del admin, que el
+// admin-server hornea al subir con los mismos parametros). Ver `bakedFlyerAmbientSrc`.
+// Todo lo que no cumpla el patron (URLs ajenas, flyers .jpg antiguos) devuelve `undefined`: la capa NO usa blur
+// en vivo, queda un color solido de token (`.photo-frame__ambient--solid`).
 
 /** Sufijo (sin guion ni extension) de la miniatura ambiental. scripts/bake-ambient.mjs escribe el mismo; el test de fs vigila que coincidan. */
 export const AMBIENT_SUFFIX = 'amb';
@@ -24,4 +27,22 @@ const FOTO_URL = /^(.*\/images\/fotos\/[^/?#]+)-\d+\.webp$/;
 export function bakedAmbientSrc(src: string): string | undefined {
   const match = FOTO_URL.exec(src);
   return match ? `${match[1]}-${AMBIENT_SUFFIX}.webp` : undefined;
+}
+
+// Flyers de promos: /images/promos/<stem>-<ancho>.webp (build) o /media/promos/<stem>-<ancho>.webp (admin).
+const PROMO_URL = /^(.*\/(?:images|media)\/promos\/[^/?#]+)-\d+\.webp$/;
+
+/**
+ * Miniatura ambiental de un flyer de promo (`<stem>-<ancho>.webp` -> `<stem>-amb.webp`), o `undefined` si la URL
+ * no sigue la convencion (entonces el marco usa el color solido, nunca blur en vivo). La miniatura puede no
+ * existir (flyer subido antes de hornear, 404): el `background` solido de la propia capa cubre ese caso.
+ */
+export function bakedFlyerAmbientSrc(src: string): string | undefined {
+  const match = PROMO_URL.exec(src);
+  return match ? `${match[1]}-${AMBIENT_SUFFIX}.webp` : undefined;
+}
+
+/** Miniatura ambiental de cualquier imagen de un PhotoFrame: foto oficial o flyer de promo. */
+export function ambientThumbSrc(src: string): string | undefined {
+  return bakedAmbientSrc(src) ?? bakedFlyerAmbientSrc(src);
 }

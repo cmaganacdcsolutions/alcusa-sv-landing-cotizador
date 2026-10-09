@@ -9,7 +9,9 @@
 // - Autocontenido: cada miniatura sale de <stem>-800.webp (o, si el stem no tiene 800, de su ancho mayor), que ya
 //   esta commiteado. Nunca reescribe un webp existente que no sea una miniatura.
 // - Idempotente y determinista: mismos webp de entrada + mismos parametros = mismos bytes; solo escribe si cambian.
-// - Uso: node scripts/bake-ambient.mjs [dirFotos]   (por defecto public/images/fotos)
+// - Uso: node scripts/bake-ambient.mjs [dir...]   (por defecto public/images/fotos y public/images/promos: los
+//   flyers de promos siguen la misma convencion <stem>-<ancho>.webp -> <stem>-amb.webp, y el admin-server
+//   hornea la suya al subir con estos mismos parametros)
 //   scripts/convert-fotos.mjs lo invoca al final, asi que las fotos futuras salen con su miniatura.
 import sharp from 'sharp';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -84,7 +86,10 @@ export async function bakeAmbient(dir, params = PARAMS) {
 
 // Solo corre al invocarse directo (node scripts/bake-ambient.mjs); convert-fotos.mjs importa bakeAmbient.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const dir = process.argv[2] ?? join(fileURLToPath(new URL('..', import.meta.url)), 'public', 'images', 'fotos');
-  const { written, unchanged } = await bakeAmbient(dir);
-  console.log(`bake-ambient: ${written} escritas, ${unchanged} sin cambios (${dir})`);
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const dirs = process.argv.length > 2 ? process.argv.slice(2) : [join(root, 'public', 'images', 'fotos'), join(root, 'public', 'images', 'promos')];
+  for (const dir of dirs) {
+    const { written, unchanged } = await bakeAmbient(dir);
+    console.log(`bake-ambient: ${written} escritas, ${unchanged} sin cambios (${dir})`);
+  }
 }

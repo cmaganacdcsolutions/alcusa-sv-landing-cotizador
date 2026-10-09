@@ -4,7 +4,7 @@
 // y la foto (escalera de variantes). El enlace al cotizador lo arma el propio formulario al enviarse.
 import { PRODUCT_CONFIGS, type Choices } from '@content/catalogHome';
 import { defaultFinishOf, pickVariant } from '@content/home-media';
-import { bakedAmbientSrc } from '../../lib/photo-ambient';
+import { ambientThumbSrc } from '../../lib/photo-ambient';
 
 document.documentElement.setAttribute('data-js', '');
 
@@ -196,18 +196,20 @@ interface VariantImage {
 
 function setPhoto(card: HTMLElement, image: VariantImage): void {
   // Capa ambiental: la miniatura horneada de la foto (sin blur en vivo, BUG-1008-01). Sin miniatura
-  // (no es una foto de /images/fotos/), la propia imagen con el blur de siempre.
-  const baked = bakedAmbientSrc(image.src);
+  // derivable, la capa queda sin imagen y se ve el color solido de token.
+  const baked = ambientThumbSrc(image.src);
   card.querySelectorAll<HTMLImageElement>('.photo-frame img').forEach((img) => {
     const isAmbient = img.classList.contains('photo-frame__ambient');
-    const target = isAmbient && baked ? baked : image.src;
-    if (img.getAttribute('src') === target) return;
+    const target = isAmbient ? baked : image.src;
+    if (img.getAttribute('src') === (target ?? null)) return;
     img.removeAttribute('srcset');
-    img.src = target;
     if (isAmbient) {
+      if (target) img.src = target;
+      else img.removeAttribute('src');
       img.classList.toggle('photo-frame__ambient--baked', Boolean(baked));
       return; // la ambiental no lleva width/height: el CSS la dimensiona al 120% del marco.
     }
+    img.src = image.src;
     img.width = image.width;
     img.height = image.height;
     if (!img.getAttribute('aria-hidden')) img.alt = image.alt;
