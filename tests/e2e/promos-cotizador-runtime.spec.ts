@@ -84,6 +84,7 @@ function watchConsole(page: Page): string[] {
 
 async function quoteAt(page: Page, ancho: string): Promise<void> {
   await page.locator('#ancho').fill(ancho);
+  await expect(page.locator('#ancho-ayuda')).toContainText(`Medida reconocida: ${ancho} cm`); // validacion lista
   await page.getByRole('button', { name: 'Siguiente' }).click();
 }
 
