@@ -60,3 +60,17 @@ starts with the counters at zero, so do not run it twice within seconds of anoth
   Read-only check: `ADMIN_STORE=mariadb npm run promos:status`. Round-trip guarantee: `test/admin/promo-roundtrip.test.ts`.
 - Tests: `npm run test:admin` (memory + MariaDB contract + persistence; MariaDB suites skip with a message if the DB env is absent),
   `npm run smoke:admin` (real Chromium on port 4500 against alcusa_test).
+
+## Pruebas con base de datos (alcusa_test)
+Requisitos: Node >=24.7 (con Node 20 `@fastify/static` y varias pruebas de admin fallan por `require(esm)`; verifica `node -v` en la misma shell).
+1. **MariaDB 11.4**: en Windows no hay servicio; se arranca como proceso de usuario con `scripts/mariadb-local.sh start`
+   (equivale a `mariadbd.exe --defaults-file=<my.ini> --bind-address=127.0.0.1`, puerto 3306). `status` / `stop` para el resto.
+2. **Primera vez**: `npm run db:setup-local` con `MARIADB_ROOT_PASSWORD` en la shell (crea las bases, cuentas, migra y escribe `server/.env`).
+   Si root no tiene contrasena, ejecuta `db/setup-local.sql` directamente con el cliente `mariadb` y luego `npm run db:migrate`.
+3. **Variables** (solo nombres; los valores van en `server/.env` o en un env fuera del repo, nunca en git): `DB_HOST`, `DB_PORT`, `DB_NAME`,
+   `DB_TEST_NAME`, `DB_APP_USER`, `DB_APP_PASSWORD`, `DB_MIGRATE_USER`, `DB_MIGRATE_PASSWORD`, `SECRETS_KEY`, `IP_HASH_PEPPER`.
+   Carga con `set -a; . <archivo.env>; set +a`. Con `NODE_ENV=test` la app usa `DB_TEST_NAME` (alcusa_test), nunca alcusa_dev.
+4. **Orden**: `npm test` migra solo (globalSetup), pero `npm run test:admin` NO migra: necesita el schema ya migrado en alcusa_test
+   (si no, las suites MariaDB fallan). Para no depender del orden usa `npm run test:db`: migra alcusa_test y luego corre `vitest run`
+   (acepta filtros: `npm run test:db -- test/unit`). Despues `npm run test:admin` es seguro.
+   Sin las variables de DB, las suites MariaDB de `test:admin` se saltan con un mensaje; `npm test` falla en globalSetup.
