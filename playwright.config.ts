@@ -24,6 +24,8 @@ export default defineConfig({
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
+    // Motion 02: todo e2e corre con movimiento reducido (estado final, determinista). Solo el proyecto 'motion' lo anula.
+    reducedMotion: 'reduce',
   },
   // Las variantes salen de scripts/build-e2e-fixtures.mjs (pretest:e2e): hoy congelado y
   // fixtures de promos, para que el e2e no dependa de la vigencia del seed.
@@ -39,18 +41,27 @@ export default defineConfig({
   projects: [
     {
       name: 'ios390',
+      testIgnore: /motion\.spec\.ts/,
       use: { ...devices['iPhone 13'] },
     },
     {
       name: 'android412',
+      testIgnore: /motion\.spec\.ts/,
       use: { ...devices['Pixel 7'] },
     },
     {
       name: 'desktop1920',
+      testIgnore: /motion\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1920, height: 1080 },
       },
+    },
+    {
+      // Motion 02: unico proyecto con movimiento real. Sin screenshots; afirma estados finales (tests/e2e/motion.spec.ts).
+      name: 'motion',
+      testMatch: /motion\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 }, reducedMotion: 'no-preference' },
     },
   ],
 });

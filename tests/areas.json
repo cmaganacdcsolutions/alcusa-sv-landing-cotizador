@@ -8,6 +8,7 @@
     "catalogo-imagenes.spec.ts": ["catalogo", "layout"],
     "contacto.spec.ts": ["contacto"],
     "mobile-keyboard.spec.ts": ["cotizador", "contacto"],
+    "motion.spec.ts": ["home", "cotizador"],
     "cotizador-address.spec.ts": ["cotizador"],
     "cotizador-deeplink-options.spec.ts": ["cotizador", "home"],
     "catalogo-redirects.spec.ts": ["catalogo", "home"],

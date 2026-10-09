@@ -21,7 +21,7 @@ export default defineConfig({
   retries: 0,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report-http' }]],
   globalSetup: './tests/e2e-http/global-setup.ts',
-  use: { baseURL: `http://localhost:${WEB_PORT}`, trace: 'on-first-retry' },
+  use: { baseURL: `http://localhost:${WEB_PORT}`, trace: 'on-first-retry', reducedMotion: 'reduce' },
   webServer: [
     {
       name: 'api',
