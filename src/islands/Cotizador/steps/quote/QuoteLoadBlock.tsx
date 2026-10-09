@@ -4,6 +4,7 @@ import { getQuoteClient, QuoteLoadFailure, type QuoteClient } from '@integration
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { IconWhatsApp } from '../../icons';
 import { applyLoadedQuote, type AppliedQuote } from '../../state/loadQuote';
+import { hydratePromoRegistry } from '../../state/promoRegistry';
 import {
   IconQuoteAlert,
   IconQuoteClock,
@@ -84,6 +85,7 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
     abortRef.current = ctl;
     try {
       const res = await (client ?? getQuoteClient()).getQuote(n.code, { signal: ctl.signal });
+      await hydratePromoRegistry(); // el precio de la promo sale del JSON publicado (ADR-014 add.2)
       const applied = applyLoadedQuote(res);
       if (applied.items.length === 0) {
         setPhase({ kind: 'error', problem: 'not_found' });
