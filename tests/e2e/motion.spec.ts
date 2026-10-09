@@ -21,3 +21,63 @@ test.describe('motion: tokens', () => {
     expect(await page.evaluate(token('--motion-dist-reveal'))).toBe(0);
   });
 });
+
+const opacity = (el: import('@playwright/test').Locator) => el.evaluate((n) => getComputedStyle(n).opacity);
+
+test.describe('motion E1: revelado escalonado', () => {
+  test('con movimiento: lo visible al cargar no se anima; lo de abajo parte oculto y termina visible', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    const intro = page.locator('.hintro');
+    const first = page.locator('.pcard').first();
+    await expect(intro).toHaveClass(/\bin\b/);
+    await expect(intro).not.toHaveClass(/\brv\b/);
+    await expect(first).toHaveClass(/\bin\b/);
+    await expect(first).not.toHaveClass(/\brv\b/);
+    const last = page.locator('.pcard').last();
+    await expect(last).not.toHaveClass(/\bin\b/);
+    expect(await opacity(last)).toBe('0');
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).toHaveClass(/\bin\b/);
+    await expect(last).toHaveCSS('opacity', '1'); // reintenta hasta que termina la animacion
+    await expect(last).toHaveCSS('transform', 'none');
+  });
+
+  test('el estado final se alcanza con cada elemento revelado una sola vez (clase in permanente)', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    const heads = page.locator('.csec__head');
+    const n = await heads.count();
+    await heads.nth(n - 1).scrollIntoViewIfNeeded();
+    await expect(heads.nth(n - 1)).toHaveClass(/\bin\b/);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(heads.nth(n - 1)).toHaveClass(/\bin\b/);
+    await expect(heads.nth(n - 1)).toHaveCSS('opacity', '1');
+  });
+
+  test('reduced-motion: nada se oculta ni se anima', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await page.waitForSelector('html[data-js]');
+    await expect(page.locator('html')).not.toHaveAttribute('data-motion', '');
+    for (const el of await page.locator('[data-reveal]').all()) expect(await opacity(el)).toBe('1');
+  });
+
+  test('?motion=off: modo estatico', async ({ page }) => {
+    await page.goto('/?motion=off');
+    await page.waitForSelector('html[data-js]');
+    await expect(page.locator('html')).toHaveAttribute('data-motion-off', '');
+    await expect(page.locator('html')).not.toHaveAttribute('data-motion', '');
+    expect(await opacity(page.locator('.pcard').last())).toBe('1');
+  });
+
+  test('sin JS: todo visible', async ({ browser }) => {
+    const ctx = await browser.newContext({ javaScriptEnabled: false, reducedMotion: 'no-preference' });
+    const page = await ctx.newPage();
+    await page.goto('/');
+    expect(await opacity(page.locator('.pcard').last())).toBe('1');
+    expect(await opacity(page.locator('.hintro__title'))).toBe('1');
+    await ctx.close();
+  });
+});
+

@@ -1,0 +1,26 @@
+/* Motion 02 (02-design/specs/motion-02-cinematic-proposal.md). Solo transform/opacity; cero filter/blur.
+   Todo vive bajo prefers-reduced-motion: no-preference; sin JS o con reduce el sitio queda estatico y completo.
+   Escape: ?motion=off pone html[data-motion-off] (script en index.astro). */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* E1 · revelado escalonado. El estado oculto solo existe si motion.client.ts puso html[data-motion];
+     lo que ya es visible al cargar entra con .in (sin animar) y no mueve LCP ni CLS. */
+  html[data-motion] [data-reveal]:not(.in) {
+    opacity: 0;
+    transform: translateY(var(--motion-dist-reveal));
+  }
+  html[data-motion] [data-reveal].rv {
+    animation: mo-rise var(--motion-duration-reveal) var(--motion-ease-glass) calc(var(--rv-i, 0) * var(--motion-stagger)) backwards;
+  }
+}
+
+@keyframes mo-rise {
+  from { opacity: 0; transform: translateY(var(--motion-dist-reveal)); }
+}
+
+@media print {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

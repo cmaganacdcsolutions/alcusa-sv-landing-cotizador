@@ -51,6 +51,10 @@ test.describe('cotizador mobile — fixed action bar (sf-cot-mobile item 1)', ()
     // `html { scroll-behavior: smooth }` hace que scrollTo anime: medir antes de que termine compara contra una posicion
     // intermedia (y el campo todavia cae bajo la barra). Esperar a que la ventana quede quieta y confirmar que llego al fondo.
     await waitForScrollSettled(page);
+    // Con reduced-motion (default del e2e, motion 02) el scroll es instantaneo y puede caer antes de que el contenido termine de
+    // crecer: se repite el salto al fondo ya con la pagina asentada.
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await waitForScrollSettled(page);
     expect(
       await page.evaluate(() => Math.ceil(window.scrollY + window.innerHeight) >= document.documentElement.scrollHeight - 1),
       'la ventana llego al fondo de la pagina',
