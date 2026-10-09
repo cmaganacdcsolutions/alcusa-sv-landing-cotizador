@@ -316,3 +316,99 @@ test.describe('motion E5: transicion al cotizador', () => {
   });
 });
 
+// ---------------------------------------------------------------------------------------------------------------
+// Cobertura de ?motion=off: con motion SI hay marcas/animacion; con ?motion=off NO (E1, E2, E3, E4, E6).
+const anim = (loc: import('@playwright/test').Locator, pseudo?: string) =>
+  loc.evaluate((n, p) => getComputedStyle(n, p ?? null).animationName, pseudo);
+
+test.describe('motion: apagado total con ?motion=off', () => {
+  test('E2 intro: con motion anima (kicker, lede, link, barrido); con ?motion=off nada', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    expect(await anim(page.locator('.hintro__kicker'))).toBe('mo-rise-sm');
+    expect(await anim(page.locator('.hintro__lede'))).toBe('mo-rise-sm');
+    expect(await anim(page.locator('.hintro__link'))).toBe('mo-rise-sm');
+    expect(await anim(page.locator('.hintro__title'), '::after')).toBe('mo-sweep');
+
+    await page.goto('/?motion=off');
+    await page.waitForSelector('html[data-js]');
+    await expect(page.locator('html')).toHaveAttribute('data-motion-off', '');
+    for (const sel of ['.hintro__kicker', '.hintro__lede', '.hintro__link']) expect(await anim(page.locator(sel))).toBe('none');
+    expect(await anim(page.locator('.hintro__title'), '::after')).toBe('none');
+    expect(await page.evaluate(() => document.querySelector('.hintro')!.getAnimations({ subtree: true }).length)).toBe(0);
+  });
+
+  test('E3 reflejo: con motion el hover anima; con ?motion=off no', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('html[data-motion]');
+    await page.locator('.pcard__photo').first().hover();
+    await expect.poll(() => anim(page.locator('.pcard__photo').first(), '::after')).toBe('mo-sweep');
+
+    await page.mouse.move(0, 0);
+    await page.goto('/?motion=off');
+    await page.waitForSelector('html[data-js]');
+    const photo = page.locator('.pcard__photo').first();
+    await photo.hover();
+    await expect(photo).toBeVisible();
+    expect(await anim(photo, '::after')).toBe('none');
+    expect(await photo.evaluate((n) => getComputedStyle(n, '::after').content)).toBe('none');
+  });
+
+  test('E4 acabado: con ?motion=off el cambio es corte directo (sin clon, sin marca, sin precarga)', async ({ page }) => {
+    await page.goto('/?motion=off');
+    await page.waitForSelector('html[data-js]');
+    await expect(page.locator('html')).not.toHaveAttribute('data-motion', '');
+    const card = page.locator('#p-recta');
+    await card.scrollIntoViewIfNeeded();
+    const chip = card.getByRole('combobox', { name: 'Vidrio' }).locator('[data-sw-chip]');
+    await card.getByRole('combobox', { name: 'Vidrio' }).click();
+    await card.getByRole('option', { name: /^Aquafold/ }).click();
+    const imgs = card.locator('.pcard__photo img.photo-frame__img');
+    await expect(imgs).toHaveCount(1);
+    await expect(imgs).toHaveAttribute('src', /recta-aquafold/);
+    await expect(card.locator('.mo-swap')).toHaveCount(0);
+    await expect(chip).not.toHaveAttribute('data-pop', /.*/);
+    expect(await anim(chip)).toBe('none');
+    expect(await anim(imgs.first())).toBe('none');
+  });
+
+  test('E1 revelado: con ?motion=off lo de abajo nunca parte oculto ni lleva clase de revelado', async ({ page }) => {
+    await page.goto('/?motion=off');
+    await page.waitForSelector('html[data-js]');
+    const last = page.locator('.pcard').last();
+    await expect(last).not.toHaveClass(/\b(in|rv)\b/);
+    await expect(last).toHaveCSS('opacity', '1');
+    await last.scrollIntoViewIfNeeded();
+    await expect(last).not.toHaveClass(/\b(in|rv)\b/);
+    expect(await anim(last)).toBe('none');
+  });
+
+  const openVentana = async (page: import('@playwright/test').Page, url: string) => {
+    await page.goto(url);
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    await pickProduct(page, 'ventana');
+    await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
+    await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
+    const price = page.getByTestId('summary-price-value');
+    await expect(price).toHaveText(/^\$\d/);
+    const first = (await price.textContent()) ?? '';
+    await page.getByLabel('Ancho en metros, ventana 1').fill('1.80');
+    await expect(price).not.toHaveText(first);
+    return price;
+  };
+
+  test('E6 precio: con ?motion=off el total cambia sin data-tick, sin animacion y sin linea', async ({ page }) => {
+    const price = await openVentana(page, '/cotizador?motion=off#cotizador/0-producto');
+    await expect(price).not.toHaveAttribute('data-tick', /.*/);
+    expect(await anim(price)).toBe('none');
+    expect(await anim(price, '::after')).toBe('none');
+    expect(await price.evaluate((n) => n.getAnimations({ subtree: true }).length)).toBe(0);
+  });
+
+  test('E6 precio: con motion el total lleva animacion de asentado y linea (contraste del caso off)', async ({ page }) => {
+    const price = await openVentana(page, '/cotizador#cotizador/0-producto');
+    await expect(price).toHaveAttribute('data-tick', /^[ab]$/);
+    expect(await anim(price)).toMatch(/^cm-tick-[ab]$/);
+    expect(await anim(price, '::after')).toMatch(/^cm-line-[ab]$/);
+  });
+});
