@@ -14,16 +14,16 @@ async function pick(card: Locator, field: string, option: RegExp): Promise<void>
 }
 
 test.describe('home: renders, iconos de acabado y guia', () => {
-  test('puertas de jardin muestra 3 productos con opciones y 2 de "Más opciones para tu jardín"; las demas categorias tienen sus propios solo-asesor', async ({ page }) => {
+  test('puertas de jardin muestra 3 productos con opciones y 5 de "Más opciones para tu jardín"; las demas categorias tienen sus propios solo-asesor', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('#puertas-de-jardin .pcard')).toHaveCount(5);
+    await expect(page.locator('#puertas-de-jardin .pcard')).toHaveCount(8);
     await expect(page.locator('#puertas-de-jardin .pcard:not(.pcard--advisor)')).toHaveCount(3);
-    await expect(page.locator('#puertas-de-jardin .csec__more .pcard--advisor')).toHaveCount(2);
-    // Solo-asesor en todo el sitio: 2 de jardin + 1 de bano + 1 de ventanas + 3 de puertas abatibles.
+    await expect(page.locator('#puertas-de-jardin .csec__more .pcard--advisor')).toHaveCount(5);
+    // Solo-asesor en todo el sitio: 5 de jardin (2 combinaciones + 3 abatibles) + 1 de bano + 1 de ventanas.
     await expect(page.locator('.pcard--advisor')).toHaveCount(7);
     await expect(page.locator('#puertas-de-bano .csec__more .pcard--advisor')).toHaveCount(1);
     await expect(page.locator('#ventanas .csec__more .pcard--advisor')).toHaveCount(1);
-    await expect(page.locator('#puertas-abatibles .pcard--advisor')).toHaveCount(3);
+    await expect(page.locator('#puertas-abatibles')).toHaveCount(0);
   });
 
   test('tarjetas usan /images/fotos/ (fotos oficiales) y el HTML no tiene rutas de foto legacy', async ({ page }) => {

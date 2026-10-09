@@ -225,7 +225,7 @@ const SPECS: Readonly<Record<string, ProductSpec>> = {
     cover: 'templada-10mm-abatible',
     alt: 'Puerta abatible de vidrio templado de 10 mm con conectores y haladera tipo C',
   },
-  // Puertas abatibles (todas solo asesor)
+  // Abatibles de jardin (solo asesor, "Más opciones para tu jardín")
   'abatible-interior-exterior': {
     cover: 'abatible-interior-exterior',
     alt: 'Puerta de bisagra para interior y exterior, aluminio blanco con vidrio claro de 5 mm y chapa de doble manija',
@@ -291,7 +291,6 @@ export const CATEGORY_MEDIA: Readonly<Record<string, MediaRef>> = {
   ventanas: foto('ventana-francesa-negro', 'Ventana francesa lisa de aluminio negro con vidrio claro de 5 mm'),
   'puertas-de-jardin': foto('jardin-1-fijo-3-corredizas', 'Puerta de jardín de aluminio negro con un vidrio fijo y tres hojas corredizas'),
   'puertas-de-bano': foto('en-l-galeria', 'Puerta de ducha en L con vidrio claro de 5 mm y aluminio natural'),
-  'puertas-abatibles': foto('abatible-oficina-vidrio-fijo', 'Puerta abatible de oficina, aluminio negro con vidrio claro y vidrio fijo arriba'),
 };
 
 /** Fotos extra (galeria) de un producto; vacio si no tiene. */

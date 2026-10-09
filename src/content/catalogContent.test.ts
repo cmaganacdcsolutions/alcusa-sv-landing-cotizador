@@ -90,17 +90,22 @@ describe('catalog view + slug routing', () => {
   });
 
   it('keeps the client taxonomy order and "Más opciones" split', () => {
-    const [bano, jardin, ventanas, abatibles] = CATEGORIES;
+    const [bano, jardin, ventanas] = CATEGORIES;
     expect(bano?.subcategories.map((s) => s.slug)).toEqual(['templada-10mm', 'recta', 'en-l', 'bisagra', 'templada-10mm-abatible']);
     expect(splitSubcategories(bano!).more.map((s) => s.slug)).toEqual(['templada-10mm-abatible']);
     const { main, more } = splitSubcategories(jardin!);
     expect(main.map((s) => s.slug)).toEqual(['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas']);
-    expect(more.map((s) => s.name)).toEqual(['2 fijas + 2 corredizas', '1 fijo + 3 corredizas']);
+    expect(more.map((s) => s.name)).toEqual([
+      '2 fijas + 2 corredizas',
+      '1 fijo + 3 corredizas',
+      'Abatible chapa doble manija',
+      'Abatible con vidrio fijo arriba',
+      'Abatible con cerrador automático',
+    ]);
     expect(ventanas?.subcategories.map((s) => s.name)).toEqual(['Francesa', 'Bilbao', 'Bilbao con medio punto']);
     expect(splitSubcategories(ventanas!).more.map((s) => s.slug)).toEqual(['ventana-bilbao-medio-punto']);
-    expect(abatibles?.slug).toBe('puertas-abatibles');
-    expect(splitSubcategories(abatibles!).more).toEqual([]); // todas son tarjetas principales
-    expect(abatibles?.subcategories.every((s) => s.advisorOnly)).toBe(true);
+    expect(CATEGORIES.map((c) => c.slug)).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas']);
+    expect(more.every((s) => s.advisorOnly)).toBe(true);
   });
 
   it('board copy: card/detail titles and index chips', () => {
@@ -114,7 +119,7 @@ describe('catalog view + slug routing', () => {
     expect(moreOptionsTitle('puertas-de-jardin')).toBe('Más opciones para tu jardín');
     expect(moreOptionsTitle('puertas-de-bano')).toBe('Más opciones para tu baño');
     expect(moreOptionsTitle('ventanas')).toBe('Más opciones para tus ventanas');
-    expect(categorySlugOf('abatible-oficina-cerrador')).toBe('puertas-abatibles');
+    expect(categorySlugOf('abatible-oficina-cerrador')).toBe('puertas-de-jardin');
     expect(categorySlugOf('l-frosted')).toBe('puertas-de-bano');
     expect(advisorSubject('puertas-de-jardin', '1 fijo + 3 corredizas')).toBe('una puerta de jardín 1 fijo + 3 corredizas');
   });

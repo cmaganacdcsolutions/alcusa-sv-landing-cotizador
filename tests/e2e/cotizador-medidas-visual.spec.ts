@@ -14,12 +14,12 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
     await waitForHydration(page);
 
     const cards = page.locator('.sel-tile--cat');
-    await expect(cards).toHaveCount(4);
+    await expect(cards).toHaveCount(3);
     const images = page.locator('.sel-tile--cat .photo-frame__img');
-    await expect(images).toHaveCount(4);
+    await expect(images).toHaveCount(3);
     for (const img of await images.all()) {
       const src = await img.getAttribute('src');
-      // 2026-10-08: fotos oficiales del portafolio (home-media); 4 categorias (baño, jardin, ventanas, puertas abatibles).
+      // 2026-10-08: fotos oficiales del portafolio (home-media); 3 categorias (baño, jardin, ventanas).
       expect(src).toMatch(/^\/images\/fotos\/.*\.webp$/);
       // naturalWidth > 0 => the browser actually decoded the file (not a 404).
       const naturalWidth = await img.evaluate((el) => (el as HTMLImageElement).naturalWidth);
