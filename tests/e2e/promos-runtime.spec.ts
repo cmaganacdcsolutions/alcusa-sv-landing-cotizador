@@ -102,6 +102,37 @@ test.describe('promos runtime — el panel cambia la portada sin rebuild', () =>
     await expect(cards(page).nth(1).locator('.promo-card__title')).toHaveText('Puerta corrediza con vidrio nevado');
   });
 
+  test('flyer del admin: la capa ambiental es la miniatura <stem>-amb.webp, sin blur en vivo; sin miniatura (404) = color solido', async ({ page }) => {
+    const doc = seed();
+    Object.assign(doc.promotions[0], { image: '/media/promos/9f2c1a7b3d4e-900.webp' });
+    await publish(page, doc);
+    // El admin-server hornea la miniatura al subir; aqui una responde y la otra (flyer 2 del seed, estatica) no existe.
+    await page.route('**/media/promos/9f2c1a7b3d4e-amb.webp', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/webp', body: readFileSync(resolve('public/images/promos/promo-1-amb.webp')) }),
+    );
+    await open(page);
+    await settled(page, 'applied');
+    const ambient = cards(page).first().locator('img.photo-frame__ambient');
+    await expect(ambient).toHaveAttribute('src', '/media/promos/9f2c1a7b3d4e-amb.webp');
+    await expect(ambient).toHaveClass(/photo-frame__ambient--baked/);
+    await expect(ambient).not.toHaveAttribute('srcset');
+    expect(await ambient.evaluate((el) => getComputedStyle(el).filter)).not.toMatch(/blur/i);
+  });
+
+  test('flyer del admin fuera de convencion (sin -<ancho>.webp): capa solida de token, sin imagen ni blur', async ({ page }) => {
+    const doc = seed();
+    Object.assign(doc.promotions[0], { image: '/media/promos/flyer-viejo.jpg' });
+    await publish(page, doc);
+    await open(page);
+    await settled(page, 'applied');
+    const frame = cards(page).first().locator('.photo-frame');
+    await expect(frame.locator('img.photo-frame__ambient')).toHaveCount(0);
+    const solid = frame.locator('.photo-frame__ambient--solid');
+    await expect(solid).toHaveCount(1);
+    expect(await solid.evaluate((el) => getComputedStyle(el).filter)).not.toMatch(/blur/i);
+    expect(await solid.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
   test('una promo archivada (ya no esta en el JSON) desaparece: quedan 2, titulo en plural', async ({ page }) => {
     const doc = seed();
     doc.promotions.splice(1, 1);
@@ -291,9 +322,11 @@ test.describe('promos runtime — mismo diseno que el HTML horneado', () => {
       await page.goto(variant);
       await settled(page, 'fallback');
       const baked = await dump(page, ['src', 'srcset']);
-      // Las fixtures usan fotos del catalogo (el runtime solo acepta /images/promos/): se cambia la foto y se ignora src/srcset.
+      // Las fixtures usan fotos del catalogo (el runtime solo acepta /media|/images/promos/): se cambia la foto y se ignora
+      // src/srcset. Se usa un .jpg fuera de la convencion `<stem>-<ancho>.webp`, igual que la foto del catalogo en el build:
+      // ambos caen en la capa ambiental solida (sin miniatura derivable), asi el DOM es comparable.
       const doc = JSON.parse(readFileSync(resolve(file), 'utf8')) as Doc;
-      for (const p of doc.promotions) p.image = '/images/promos/promo-1-900.webp';
+      for (const p of doc.promotions) p.image = '/media/promos/flyer-fixture.jpg';
       await page.unroute('**/api/promotions.json');
       await publish(page, doc);
       await page.reload();

@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures';
 
-// Fotos oficiales (2026-10-08): categoria nueva "Puertas abatibles" (3 productos solo asesor) y los bloques
+// Abatibles (2026-10-09): 3 productos solo asesor dentro de "Más opciones para tu jardín" (ya no hay categoria propia) y los bloques
 // "Más opciones para tu baño" / "Más opciones para tus ventanas". Nunca abre wa.me (se afirman los href; fixtures.ts aborta la ruta).
 
 const WA_NUMBER = '50376802410';
@@ -18,40 +18,39 @@ test.beforeEach(({}, info) => {
   test.skip(info.project.name !== 'desktop1920', 'content check');
 });
 
-test.describe('categoria Puertas abatibles', () => {
-  test('seccion y tab "Puertas abatibles" al final, con sus 3 tarjetas de asesor y CTA de WhatsApp por categoria', async ({ page }) => {
+test.describe('abatibles dentro de Puertas de jardín', () => {
+  test('el sitio tiene 3 categorías y las 3 abatibles viven en "Más opciones para tu jardín" con CTA a asesor', async ({ page }) => {
     await page.goto('/');
-    const section = page.locator('#puertas-abatibles');
-    await expect(section.locator('.csec__title')).toHaveText('Puertas abatibles');
+    await expect(page.locator('#puertas-abatibles')).toHaveCount(0);
     const ids = await page.locator('#catalogo .csec').evaluateAll((els) => els.map((e) => e.id));
-    expect(ids[ids.length - 1]).toBe('puertas-abatibles');
-    await expect(section.locator('article.pcard').evaluateAll((els) => els.map((e) => e.id))).resolves.toEqual(ABATIBLES.map((s) => `p-${s}`));
-    await expect(section.locator('article.pcard.pcard--advisor')).toHaveCount(3);
+    expect(ids).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas']);
+    await expect(page.getByRole('navigation', { name: 'Categorías' }).getByRole('link', { name: /abatibles/i })).toHaveCount(0);
+    await expect(page.locator('header a[href="/#puertas-abatibles"]')).toHaveCount(0);
 
-    const tab = page.getByRole('navigation', { name: 'Categorías' }).getByRole('link', { name: 'Puertas abatibles', exact: true });
-    await expect(tab).toHaveCount(1);
-    await tab.click();
-    await expect(page).toHaveURL(/\/#puertas-abatibles$/);
-    await expect(section).toBeInViewport();
+    const more = page.locator('#puertas-de-jardin').getByRole('region', { name: 'Más opciones para tu jardín' });
+    await expect(more).toBeVisible();
+    const moreIds = await more.locator('article.pcard').evaluateAll((els) => els.map((e) => e.id));
+    expect(moreIds.slice(-3)).toEqual(ABATIBLES.map((s) => `p-${s}`));
+    await expect(more.locator('article.pcard')).toHaveCount(5);
 
     for (const slug of ABATIBLES) {
-      const card = page.locator(`#p-${slug}`);
+      const card = more.locator(`#p-${slug}`);
+      await expect(card).toHaveClass(/pcard--advisor/);
       await expect(card.locator('form, select, [role="combobox"]')).toHaveCount(0);
       await expect(card.locator('.pcard__price')).toHaveText('Cotización personalizada');
       await expect(card.locator('a[href*="/cotizador"]')).toHaveCount(0);
       const cta = card.getByRole('link', { name: /Cotizar con un asesor/ });
       const href = (await cta.getAttribute('href'))!;
-      expect(href.startsWith(waPrefix('una puerta abatible')), href).toBe(true);
+      expect(href.startsWith(waPrefix('una puerta de jardín')), href).toBe(true);
       await expect(cta).toHaveAttribute('target', '_blank');
       await expect(cta).toHaveAttribute('rel', /noopener/);
     }
   });
 
-  test('entrada "Puertas abatibles" en el navbar apunta a la seccion', async ({ page }) => {
-    await page.goto('/');
-    const link = page.locator('header a[href="/#puertas-abatibles"]').first();
-    await expect(link).toHaveText('Puertas abatibles');
-    await expect(link).toHaveAttribute('href', '/#puertas-abatibles');
+  test('hash viejo /#puertas-abatibles lleva a la sección de jardín', async ({ page }) => {
+    await page.goto('/#puertas-abatibles');
+    await expect(page).toHaveURL(/\/#puertas-de-jardin$/);
+    await expect(page.locator('#puertas-de-jardin')).toBeInViewport();
   });
 });
 
@@ -74,7 +73,7 @@ test.describe('Más opciones para tu baño y tus ventanas', () => {
 
 test.describe('deep links de los slugs nuevos', () => {
   const CASES: readonly (readonly [from: string, hash: string])[] = [
-    ['/catalogo/puertas-abatibles', '#puertas-abatibles'],
+    ['/catalogo/puertas-abatibles', '#puertas-de-jardin'],
     ['/catalogo/puertas-abatibles/abatible-interior-exterior', '#p-abatible-interior-exterior'],
     ['/catalogo/puertas-abatibles/abatible-oficina-vidrio-fijo', '#p-abatible-oficina-vidrio-fijo'],
     ['/catalogo/puertas-abatibles/abatible-oficina-cerrador', '#p-abatible-oficina-cerrador'],

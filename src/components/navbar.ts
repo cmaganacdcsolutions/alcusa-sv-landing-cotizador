@@ -9,7 +9,6 @@ const SPY_SECTIONS: Record<string, string> = {
   ventanas: 'catalogo',
   'puertas-de-jardin': 'catalogo',
   'puertas-de-bano': 'catalogo',
-  'puertas-abatibles': 'catalogo',
   promociones: 'promociones',
 };
 

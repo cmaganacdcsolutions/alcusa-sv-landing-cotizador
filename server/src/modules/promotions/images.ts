@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
+import { ensureAmbient } from './ambient.ts';
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 export const WIDTHS = [600, 900] as const;
@@ -51,5 +52,7 @@ export async function ingestPromoImage(buf: Buffer, dir: string, urlPrefix: stri
     await Promise.all(written.map((f) => rm(f, { force: true })));
     throw new ImageError(err instanceof ImageError ? err.message : 'No se pudo procesar la imagen.');
   }
+  // Miniatura ambiental `<key>-amb.webp` (best-effort: si falla, el sitio cae a color solido).
+  await ensureAmbient(dir, key);
   return { key, publicPath: `${urlPrefix.replace(/\/$/, '')}/${key}-900.webp` };
 }

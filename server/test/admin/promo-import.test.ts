@@ -41,8 +41,8 @@ describe('importPromotions', () => {
 
   it('copies both flyer sizes byte-for-byte into the admin image store', async () => {
     await importPromotions(s.doc, opts(s, store));
-    expect(readdirSync(s.imagesDir).sort()).toEqual(['promo-1-600.webp', 'promo-1-900.webp', 'promo-2-600.webp', 'promo-2-900.webp', 'promo-3-600.webp', 'promo-3-900.webp']);
-    for (const f of readdirSync(s.imagesDir)) {
+    expect(readdirSync(s.imagesDir).sort()).toEqual(['promo-1-600.webp', 'promo-1-900.webp', 'promo-1-amb.webp', 'promo-2-600.webp', 'promo-2-900.webp', 'promo-2-amb.webp', 'promo-3-600.webp', 'promo-3-900.webp', 'promo-3-amb.webp']);
+    for (const f of readdirSync(s.imagesDir).filter((n) => !n.endsWith('-amb.webp'))) {
       expect(readFileSync(join(s.imagesDir, f)).equals(readFileSync(join(s.publicDir, 'images', 'promos', f)))).toBe(true);
     }
   });

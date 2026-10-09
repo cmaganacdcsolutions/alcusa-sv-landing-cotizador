@@ -11,13 +11,13 @@ async function waitForHydration(page: Page): Promise<void> {
 const MEDIDAS = 'Medidas y acabado';
 
 test.describe('catalogo -> cotizador deep link', () => {
-  test('home shows the 4 categories in order; each tab scrolls to its section with its cards', async ({ page }) => {
+  test('home shows the 3 categories in order; each tab scrolls to its section with its cards', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
     const titles = page.locator('#catalogo .csec .csec__title');
-    await expect(titles).toHaveText(['Puertas de baño', 'Puertas de jardín', 'Ventanas', 'Puertas abatibles']);
+    await expect(titles).toHaveText(['Puertas de baño', 'Puertas de jardín', 'Ventanas']);
     const ids = await page.locator('#catalogo .csec').evaluateAll((els) => els.map((e) => e.id));
-    expect(ids).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas', 'puertas-abatibles']);
+    expect(ids).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas']);
 
     await page
       .getByRole('navigation', { name: 'Categorías' })
@@ -25,8 +25,8 @@ test.describe('catalogo -> cotizador deep link', () => {
       .click();
     await expect(page).toHaveURL(/\/#puertas-de-jardin$/);
     await expect(page.locator('#puertas-de-jardin')).toBeInViewport();
-    // 3 modelos de jardin con opciones + las 2 combinaciones "solo asesor" de "Más opciones para tu jardín"
-    await expect(page.locator('#puertas-de-jardin article.pcard')).toHaveCount(5);
+    // 3 modelos de jardin con opciones + 5 "solo asesor" de "Más opciones para tu jardín" (2 combinaciones + 3 abatibles)
+    await expect(page.locator('#puertas-de-jardin article.pcard')).toHaveCount(8);
     await expect(page.locator('#puertas-de-jardin article.pcard:not(.pcard--advisor)')).toHaveCount(3);
   });
 

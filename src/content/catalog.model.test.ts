@@ -20,16 +20,19 @@ import { priceHinged } from '@engine/pricing/hinged';
 import { priceWindow } from '@engine/pricing/windows';
 import { priceGarden } from '@engine/pricing/garden';
 
-const CATEGORY_NAMES = ['Puertas de baño', 'Puertas de jardín', 'Ventanas', 'Puertas abatibles'];
-const ADVISOR_SLUGS = ['jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas'];
-// Todas las hojas solo asesor, en orden de catalogo (2026-10-08: abatible de baño, Bilbao con medio punto, categoria Puertas abatibles).
+const CATEGORY_NAMES = ['Puertas de baño', 'Puertas de jardín', 'Ventanas'];
+const ADVISOR_SLUGS = [
+  'jardin-2-fijas-2-corredizas',
+  'jardin-1-fijo-3-corredizas',
+  'abatible-interior-exterior',
+  'abatible-oficina-vidrio-fijo',
+  'abatible-oficina-cerrador',
+];
+// Todas las hojas solo asesor, en orden de catalogo (2026-10-09: las 3 abatibles viven en "Más opciones para tu jardín").
 const ALL_ADVISOR_SLUGS = [
   'templada-10mm-abatible',
   ...ADVISOR_SLUGS,
   'ventana-bilbao-medio-punto',
-  'abatible-interior-exterior',
-  'abatible-oficina-vidrio-fijo',
-  'abatible-oficina-cerrador',
 ];
 
 function allSlugs(): string[] {

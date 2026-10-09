@@ -5,7 +5,7 @@
 
 // The 6 pricing-engine models the cotizador wizard supports.
 export type ProductId = 'recta' | 'l' | 'templado' | 'bisagra' | 'jardin' | 'ventana';
-export type CategorySlug = 'puertas-de-bano' | 'puertas-de-jardin' | 'ventanas' | 'puertas-abatibles';
+export type CategorySlug = 'puertas-de-bano' | 'puertas-de-jardin' | 'ventanas';
 /** Which pricing-engine model a leaf uses. Reuses today's ProductId. */
 export type QuoterModel = ProductId;
 
@@ -74,6 +74,9 @@ export const CATEGORIES: readonly Category[] = [
       { slug: 'jardin-3-hojas', name: '3 hojas corredizas', quoterModel: 'jardin', preset: { gardenHojas: 3 }, fromPrice: 1229, altoText: 'Alto 2.10 o 2.40 m' },
       { slug: 'jardin-2-fijas-2-corredizas', name: '2 fijas + 2 corredizas', advisorOnly: true, group: 'mas-opciones', altoText: 'Alto 2.10 o 2.40 m' },
       { slug: 'jardin-1-fijo-3-corredizas', name: '1 fijo + 3 corredizas', advisorOnly: true, group: 'mas-opciones', altoText: 'Alto 2.10 o 2.40 m' },
+      { slug: 'abatible-interior-exterior', name: 'Abatible chapa doble manija', advisorOnly: true, group: 'mas-opciones' },
+      { slug: 'abatible-oficina-vidrio-fijo', name: 'Abatible con vidrio fijo arriba', advisorOnly: true, group: 'mas-opciones' },
+      { slug: 'abatible-oficina-cerrador', name: 'Abatible con cerrador automático', advisorOnly: true, group: 'mas-opciones' },
     ],
   },
   {
@@ -83,15 +86,6 @@ export const CATEGORIES: readonly Category[] = [
       { slug: 'ventana-francesa', name: 'Francesa', quoterModel: 'ventana', preset: { windowType: 'francesa' }, fromPrice: 108, altoText: 'Alto a tu medida' },
       { slug: 'ventana-bilbao', name: 'Bilbao', quoterModel: 'ventana', preset: { windowType: 'bilbao' }, fromPrice: 153.6, altoText: 'Alto a tu medida' },
       { slug: 'ventana-bilbao-medio-punto', name: 'Bilbao con medio punto', advisorOnly: true, group: 'mas-opciones', altoText: 'Alto a tu medida' },
-    ],
-  },
-  {
-    slug: 'puertas-abatibles',
-    name: 'Puertas abatibles',
-    subcategories: [
-      { slug: 'abatible-interior-exterior', name: 'Interior y exterior', advisorOnly: true },
-      { slug: 'abatible-oficina-vidrio-fijo', name: 'Oficina con vidrio fijo', advisorOnly: true },
-      { slug: 'abatible-oficina-cerrador', name: 'Oficina con cerrador', advisorOnly: true },
     ],
   },
 ];

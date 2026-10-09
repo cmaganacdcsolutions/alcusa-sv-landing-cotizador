@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:admin": "vitest run --config vitest.admin.config.ts",
+    "test:db": "tsx --env-file-if-exists=.env scripts/test-db.ts",
     "admin:dev": "tsx --env-file-if-exists=.env src/admin-server.ts",
     "admin:create": "tsx --env-file-if-exists=.env src/cli/create-admin.ts",
     "promos:import": "tsx --env-file-if-exists=.env src/cli/import-promos.ts",

@@ -14,6 +14,7 @@ import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, resolve, sep } from 'node:path';
 import sharp from 'sharp';
 import type { AuditEntry, PromoRepo, StoredPromo } from '../admin/store.ts';
+import { ensureAmbient } from './ambient.ts';
 import { type PromoRecord, validateAdminLimits, validatePromotions } from './schema.ts';
 import { MAX_ACTIVE } from './service.ts';
 
@@ -247,6 +248,9 @@ export async function importPromotions(doc: unknown, o: ImportOptions): Promise<
     if (!dryRun) {
       for (const [i, s] of stored.entries()) {
         for (const c of plans[i]?.plan.copies ?? []) if (c.action === 'copy') await writeAtomic(c.dest, c.bytes);
+        // Miniatura ambiental del flyer (tambien si el 900 ya estaba y solo faltaba la -amb).
+        const stem = IMAGE_RE.exec(basename(s.image))?.[1];
+        if (stem && !/^https?:\/\//i.test(s.image)) await ensureAmbient(o.imagesDir, stem);
         const item = items[i] as ImportItem;
         if (item.action === 'unchanged') continue;
         await o.repo.save(s);

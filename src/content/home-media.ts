@@ -17,6 +17,15 @@ export const FOTOS_DIR = '/images/fotos' as const;
 
 /** Ratio del slot de portada de tarjeta (4:3). Las fotos verticales se contienen dentro, sin recorte. */
 export const COVER_RATIO = '4/3' as const;
+
+/**
+ * `sizes` de la foto de la tarjeta de producto, medido contra el ancho real renderizado (2026-10-09):
+ * <768 px = 1 columna (100vw - 58px de padding de pagina y tarjeta); 768-1023 px = 2 columnas
+ * ((100vw - 116px) / 2); >=1024 px = columna fija de 232px. Antes `92vw`/`44vw` pedian ~8% de mas.
+ * Si cambia el layout de .pcard, tests/e2e/home-card-sizes.spec.ts avisa.
+ */
+export const PRODUCT_CARD_IMAGE_SIZES =
+  '(min-width: 1024px) 232px, (min-width: 768px) calc((100vw - 116px) / 2), calc(100vw - 58px)';
 /** Ancho de la version ligera (la que usan tarjetas y tiles). */
 const W = 800;
 
@@ -216,7 +225,7 @@ const SPECS: Readonly<Record<string, ProductSpec>> = {
     cover: 'templada-10mm-abatible',
     alt: 'Puerta abatible de vidrio templado de 10 mm con conectores y haladera tipo C',
   },
-  // Puertas abatibles (todas solo asesor)
+  // Abatibles de jardin (solo asesor, "Más opciones para tu jardín")
   'abatible-interior-exterior': {
     cover: 'abatible-interior-exterior',
     alt: 'Puerta de bisagra para interior y exterior, aluminio blanco con vidrio claro de 5 mm y chapa de doble manija',
@@ -282,7 +291,6 @@ export const CATEGORY_MEDIA: Readonly<Record<string, MediaRef>> = {
   ventanas: foto('ventana-francesa-negro', 'Ventana francesa lisa de aluminio negro con vidrio claro de 5 mm'),
   'puertas-de-jardin': foto('jardin-1-fijo-3-corredizas', 'Puerta de jardín de aluminio negro con un vidrio fijo y tres hojas corredizas'),
   'puertas-de-bano': foto('en-l-galeria', 'Puerta de ducha en L con vidrio claro de 5 mm y aluminio natural'),
-  'puertas-abatibles': foto('abatible-oficina-vidrio-fijo', 'Puerta abatible de oficina, aluminio negro con vidrio claro y vidrio fijo arriba'),
 };
 
 /** Fotos extra (galeria) de un producto; vacio si no tiene. */

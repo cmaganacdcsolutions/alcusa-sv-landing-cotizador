@@ -31,7 +31,6 @@ const ADVISOR_SUBJECTS: Readonly<Record<string, string>> = {
   'puertas-de-jardin': 'una puerta de jardín',
   'puertas-de-bano': 'una puerta de baño',
   ventanas: 'una ventana',
-  'puertas-abatibles': 'una puerta abatible',
 };
 
 /** Slug de la categoria que contiene el slug de una subcategoria o variante ('' si no existe). */

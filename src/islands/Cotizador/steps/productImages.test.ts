@@ -63,7 +63,6 @@ describe('cotizador: imagenes solo desde las fotos oficiales de home-media', () 
 
   it('portada de categoria del paso 1 = foto oficial de la categoria', () => {
     expect(categoryImage('puertas-de-bano')).toBe(CATEGORY_MEDIA['puertas-de-bano']?.src);
-    expect(categoryImage('puertas-abatibles')).toBe(CATEGORY_MEDIA['puertas-abatibles']?.src);
     for (const c of CATEGORIES) expect(exists(categoryImage(c.slug)), c.slug).toBe(true);
     expect(() => categoryImage('no-existe')).toThrow();
   });

@@ -34,6 +34,8 @@ export const QuoteFolioRequestSchema = z.object({
   shippingPending: z.boolean().optional(),
   /** 10% online-card discount, recomputed and validated server-side (only code `online_card_10`). */
   discount: z.object({ code: z.literal(ONLINE_DISCOUNT_CODE), amount: money }).optional(),
+  /** Contexto promo (`?promo=<id>`): no admite el 10% de tarjeta (regla en create-request.ts, que lo valida con nullish + max 80). */
+  promoId: z.string().optional(),
   consent: z.literal(true),
   privacyNoticeVersion: z.string(),
 });

@@ -189,7 +189,7 @@ describe('home-media: solo fotos oficiales del portafolio', () => {
     const cards = jardin.subcategories.filter((s) => s.slug in PRODUCT_CONFIGS);
     expect(cards.map((s) => s.slug)).toEqual(['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas']);
     const more = jardin.subcategories.filter((s) => s.group === 'mas-opciones');
-    expect(more.map((s) => s.slug)).toEqual(['jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas']);
+    expect(more.map((s) => s.slug)).toEqual(['jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas', 'abatible-interior-exterior', 'abatible-oficina-vidrio-fijo', 'abatible-oficina-cerrador']);
     const expected: Record<string, string> = {
       'jardin-1-hoja': 'jardin-1-hoja',
       'jardin-2-hojas': 'jardin-2-hojas',
@@ -207,24 +207,26 @@ describe('home-media: solo fotos oficiales del portafolio', () => {
     expect(PRODUCT_MEDIA['jardin-1-hoja']!.cover).toMatchObject({ width: 800, height: 1067, kind: 'photo' });
   });
 
-  it('solo asesor nuevos: templada abatible, Bilbao con medio punto y las 3 puertas abatibles', () => {
+  it('solo asesor nuevos: templada abatible, Bilbao con medio punto y las 3 abatibles de jardín', () => {
     const adv = allLeaves().filter((l) => l.advisorOnly).map((l) => l.slug);
     expect(adv).toEqual([
       'templada-10mm-abatible',
       'jardin-2-fijas-2-corredizas',
       'jardin-1-fijo-3-corredizas',
-      'ventana-bilbao-medio-punto',
       'abatible-interior-exterior',
       'abatible-oficina-vidrio-fijo',
       'abatible-oficina-cerrador',
+      'ventana-bilbao-medio-punto',
     ]);
     for (const slug of adv) {
       expect(slug in PRODUCT_CONFIGS, `${slug} no entra al wizard`).toBe(false);
       expect(PRODUCT_MEDIA[slug]!.cover.src, slug).toBe(`${F}/${slug}-800.webp`);
     }
-    const abatibles = CATEGORIES.find((c) => c.slug === 'puertas-abatibles')!;
-    expect(abatibles.subcategories.every((s) => s.advisorOnly === true)).toBe(true);
-    expect(CATEGORIES.map((c) => c.slug)).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas', 'puertas-abatibles']);
+    expect(CATEGORIES.map((c) => c.slug)).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas']);
+    expect(CATEGORY_MEDIA['puertas-abatibles']).toBeUndefined();
+    for (const slug of ['abatible-interior-exterior', 'abatible-oficina-vidrio-fijo', 'abatible-oficina-cerrador']) {
+      expect(PRODUCT_MEDIA[slug]!.cover, slug).toMatchObject({ width: 800, height: 1067 });
+    }
   });
 
   it('portadas de categoria, galerias y hero', () => {
@@ -232,7 +234,6 @@ describe('home-media: solo fotos oficiales del portafolio', () => {
     expect(f(CATEGORY_MEDIA['puertas-de-bano']!)).toBe(`${F}/en-l-galeria-800.webp`);
     expect(f(CATEGORY_MEDIA['puertas-de-jardin']!)).toBe(`${F}/jardin-1-fijo-3-corredizas-800.webp`);
     expect(f(CATEGORY_MEDIA['ventanas']!)).toBe(`${F}/ventana-francesa-negro-800.webp`);
-    expect(f(CATEGORY_MEDIA['puertas-abatibles']!)).toBe(`${F}/abatible-oficina-vidrio-fijo-800.webp`);
     expect(galleryOf('recta').map(f)).toEqual([`${F}/recta-galeria-800.webp`]);
     expect(galleryOf('jardin-3-hojas').map(f)).toEqual([`${F}/jardin-3-hojas-galeria-800.webp`]);
     expect(galleryOf('jardin-1-hoja')).toEqual([]);

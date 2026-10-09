@@ -25,11 +25,13 @@ function viteCacheDir() {
 const CATALOG_REDIRECTS = (() => {
   const tree = {
     'puertas-de-bano': ['templada-10mm', 'recta', 'en-l', 'bisagra', 'templada-10mm-abatible'],
-    'puertas-de-jardin': ['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas', 'jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas'],
+    'puertas-de-jardin': ['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas', 'jardin-2-fijas-2-corredizas', 'jardin-1-fijo-3-corredizas', 'abatible-interior-exterior', 'abatible-oficina-vidrio-fijo', 'abatible-oficina-cerrador'],
     ventanas: ['ventana-francesa', 'ventana-bilbao', 'ventana-bilbao-medio-punto'],
-    'puertas-abatibles': ['abatible-interior-exterior', 'abatible-oficina-vidrio-fijo', 'abatible-oficina-cerrador'],
   };
   const out = { '/catalogo': '/#catalogo' };
+  // Categoria retirada 2026-10-09: las abatibles viven en jardin ("Más opciones para tu jardín").
+  out['/catalogo/puertas-abatibles'] = '/#puertas-de-jardin';
+  for (const sub of tree['puertas-de-jardin'].slice(-3)) out[`/catalogo/puertas-abatibles/${sub}`] = `/#p-${sub}`;
   for (const [cat, subs] of Object.entries(tree)) {
     out[`/catalogo/${cat}`] = `/#${cat}`;
     for (const sub of subs) out[`/catalogo/${cat}/${sub}`] = `/#p-${sub}`;

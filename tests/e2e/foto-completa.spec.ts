@@ -35,8 +35,8 @@ for (const route of ROUTES) {
 // BUG-1008-01 (rendimiento): la capa ambiental de las fotos oficiales no puede llevar blur() en vivo.
 // 19 capas con blur(32px) volvian WebKit @DPR3 (ios390) 3-4x mas lento: 9 timeouts en home y paso 0 del
 // cotizador. Las fotos de /images/fotos/<stem>-<ancho>.webp usan la miniatura horneada <stem>-amb.webp
-// (el desenfoque ya viene en los pixeles). Los flyers de promos (/images/promos/*) no tienen miniatura:
-// conservan el blur en vivo, y esta prueba lo fija para que nadie lo quite por error.
+// (el desenfoque ya viene en los pixeles). Los flyers de promos usan la misma convencion
+// (/images/promos/<stem>-900.webp -> <stem>-amb.webp): cero blur en vivo en el sitio publico.
 for (const route of ROUTES) {
   test(`foto completa: ${route} la capa ambiental usa la miniatura horneada, sin blur en vivo`, async ({ page }) => {
     await page.goto(route);
@@ -61,9 +61,14 @@ for (const route of ROUTES) {
           if (ambient.hasAttribute('srcset')) bad.push(`srcset en la ambiental ${ambientPath}`);
           // Una miniatura que ya termino de cargar y quedo en 0x0 es una imagen rota (404).
           if (ambient.complete && ambient.naturalWidth === 0) bad.push(`miniatura rota ${ambientPath}`);
-        } else if (mainPath.includes('/images/promos/')) {
+        } else if (mainPath.includes('/images/promos/') || mainPath.includes('/media/promos/')) {
+          // Flyers: misma miniatura horneada (<stem>-900.webp -> <stem>-amb.webp), sin blur en vivo.
           flyers += 1;
-          if (!/blur/i.test(filter)) bad.push(`el flyer ${mainPath} perdio su blur (${filter})`);
+          const expected = mainPath.replace(/-\d+\.webp$/, '-amb.webp');
+          if (ambientPath !== expected) bad.push(`flyer src ${ambientPath} != ${expected}`);
+          if (/blur/i.test(filter)) bad.push(`blur en vivo (${filter}) en el flyer ${ambientPath}`);
+          if (ambient.hasAttribute('srcset')) bad.push(`srcset en la ambiental del flyer ${ambientPath}`);
+          if (ambient.complete && ambient.naturalWidth === 0) bad.push(`miniatura de flyer rota ${ambientPath}`);
         }
       });
       return { bad, photos, flyers };
@@ -91,4 +96,25 @@ test('foto completa: / al cambiar de color la ambiental sigue a la foto (miniatu
   await expect(ambient).not.toHaveAttribute('width');
   await expect(ambient).not.toHaveAttribute('srcset');
   expect(await ambient.evaluate((el) => getComputedStyle(el).filter)).not.toMatch(/blur/i);
+});
+
+// Flyer sin miniatura (subido desde el admin sin hornear, 404 o URL fuera de convencion): el fondo es el color solido
+// de token (--photo-ambient-fallback), nunca el blur en vivo.
+test('foto completa: / flyer sin miniatura (404) => fondo solido de token, sin blur', async ({ page }) => {
+  await page.route('**/images/promos/*-amb.webp', (route) => route.fulfill({ status: 404 }));
+  await page.goto('/');
+  const ambient = page.locator('.promo-card__photo img.photo-frame__ambient').first();
+  await expect(ambient).toHaveCount(1);
+  const css = await ambient.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--photo-ambient-fallback');
+    document.body.append(probe);
+    const token = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return { filter: cs.filter, bg: cs.backgroundColor, token };
+  });
+  expect(css.filter).not.toMatch(/blur/i);
+  expect(css.bg).toBe(css.token);
+  expect(css.token).not.toBe('rgba(0, 0, 0, 0)');
 });
