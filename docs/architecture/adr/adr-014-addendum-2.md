@@ -44,6 +44,7 @@
 
 ## 6. Preguntas abiertas / decisiones del usuario
 - P1. **"Archivar/borrar"**: v1.0 = archivar con Reactivar (addendum 1, D3). Recomendación: mantener; borrado físico a v1.1 (rompería el historial con `promoRef`). Confirmar con Alcusa.
+  - **Decidido por el usuario (2026-10-09): P1 = solo archivar con Reactivar; no hay borrado definitivo en v1.0.**
 - P2. **Promo archivada con cotización/pago en vuelo**: se trata como vencida (cotiza normal con aviso). Alternativa: guardar el precio de la promo en snapshot/cotización y honrarlo (toca `persist.ts`/`quoteDocument.ts`). Decidir antes de cobros reales.
 - P3. **Validación server-side del precio de promo**: obligatoria antes de `PUBLIC_QUOTE_API=real`; registrar en `docs/architecture/tech-debt.md` con disparador "antes del primer cobro real".
 - P4. **Tope de 3 y reactivar**: se mantiene "reactivar permitido, tope al publicar" (addendum 1 §4). Una 4ª publicada simplemente no aparece (ni en home ni en cotizador); confirmar que el usuario lo entiende.
