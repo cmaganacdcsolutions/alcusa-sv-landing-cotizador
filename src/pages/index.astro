@@ -17,8 +17,8 @@ import { assertCatalogForBuild } from '@content/catalogBuild';
 
 assertCatalogForBuild();
 
-// Orden fijo del inicio: Puertas de baño, Puertas de jardín, Ventanas, Puertas abatibles (solo asesor).
-const ORDER: readonly CategorySlug[] = ['puertas-de-bano', 'puertas-de-jardin', 'ventanas', 'puertas-abatibles'];
+// Orden fijo del inicio: Puertas de baño, Puertas de jardín, Ventanas.
+const ORDER: readonly CategorySlug[] = ['puertas-de-bano', 'puertas-de-jardin', 'ventanas'];
 const sections = ORDER.map((slug) => CATEGORIES.find((c) => c.slug === slug)).filter(
   (c): c is (typeof CATEGORIES)[number] => !!c,
 );
@@ -26,7 +26,7 @@ const sections = ORDER.map((slug) => CATEGORIES.find((c) => c.slug === slug)).fi
 
 <BaseLayout
   title="ALCUSA | Aluminio y vidrio en El Salvador"
-  description="ALCUSA: puertas de baño, puertas de jardín, ventanas y puertas abatibles de aluminio y vidrio a la medida en El Salvador. Elige tus opciones y cotiza en línea."
+  description="ALCUSA: puertas de baño, puertas de jardín, ventanas de aluminio y vidrio a la medida en El Salvador. Elige tus opciones y cotiza en línea."
 >
   <Navbar />
 
@@ -57,6 +57,11 @@ const sections = ORDER.map((slug) => CATEGORIES.find((c) => c.slug === slug)).fi
   if (window.location.hash === '#modelos') {
     window.history.replaceState(null, '', '/#catalogo');
     document.getElementById('catalogo')?.scrollIntoView();
+  }
+  // Categoria retirada: #puertas-abatibles -> seccion de jardin (donde viven las abatibles).
+  if (window.location.hash === '#puertas-abatibles') {
+    window.history.replaceState(null, '', '/#puertas-de-jardin');
+    document.getElementById('puertas-de-jardin')?.scrollIntoView();
   }
 </script>
 
