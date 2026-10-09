@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { expect, pickProduct, test } from './fixtures';
 
 // Motion 02 (02-design/specs/motion-02-cinematic-proposal.md). Unico spec que corre con movimiento REAL:
 // el proyecto "motion" usa reducedMotion:'no-preference'; los demas proyectos lo ignoran (testIgnore).
@@ -194,5 +194,41 @@ test.describe('motion E4: cambio de acabado', () => {
     page.on('request', (r) => r.resourceType() === 'image' && seen.push(r.url()));
     await card.hover();
     await expect.poll(() => seen.some((u) => /recta-aquafold/.test(u))).toBe(true);
+  });
+});
+
+test.describe('motion E6: realce del precio en el cotizador', () => {
+  const openVentana = async (page: import('@playwright/test').Page) => {
+    await page.goto('/cotizador#cotizador/0-producto');
+    await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
+    await pickProduct(page, 'ventana');
+    await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
+    await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
+  };
+
+  test('al cambiar el valor el total se marca y termina asentado, con el texto definitivo (sin contar digitos)', async ({ page }) => {
+    await openVentana(page);
+    const price = page.getByTestId('summary-price-value');
+    await expect(price).toHaveText(/^\$\d/);
+    const first = (await price.textContent()) ?? '';
+    await page.getByLabel('Ancho en metros, ventana 1').fill('1.80');
+    await expect(price).not.toHaveText(first);
+    await expect(price).toHaveAttribute('data-tick', /^[ab]$/);
+    // el texto cambia de una vez al valor final (nunca pasa por valores intermedios) y la animacion termina visible
+    const final = (await price.textContent()) ?? '';
+    expect(final).toMatch(/^\$\d+(\.\d{2})?$/);
+    await expect(price).toHaveCSS('opacity', '1');
+    await expect(price).toHaveCSS('transform', 'none');
+    expect(await price.getAttribute('aria-live')).toBe('polite');
+  });
+
+  test('reduced-motion: el precio cambia sin marca de animacion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await openVentana(page);
+    const price = page.getByTestId('summary-price-value');
+    const first = (await price.textContent()) ?? '';
+    await page.getByLabel('Ancho en metros, ventana 1').fill('1.80');
+    await expect(price).not.toHaveText(first);
+    await expect(price).not.toHaveAttribute('data-tick', /.*/);
   });
 });

@@ -9,6 +9,7 @@ import {
 } from 'react';
 import '@styles/cotizador.css';
 import '@styles/cotizador-discount.css';
+import '@styles/cotizador-motion.css';
 import { CATALOG_PRODUCTS } from '@content/catalog';
 import { parseDeepLink, parseDeepLinkOptions, wantsMedidas } from '@content/deepLink';
 import { getZoneFee } from '@engine/pricing';
@@ -65,6 +66,7 @@ import { PROMO_PARAM } from '@content/promotionsParser';
 import { PROMO_BANNER_PREFIX, PROMO_EXIT_LABEL, promoIdFromSearch } from '@content/promoContext';
 import { lookupActivePromo, lookupPromo } from './state/promoRegistry';
 import Step2Precio from './steps/Step2Precio';
+import { usePriceTick } from './usePriceTick';
 import Step3ZonaEntrega from './steps/Step3ZonaEntrega';
 import Step4Resumen from './steps/Step4Resumen';
 import Step5FormaPago from './steps/Step5FormaPago';
@@ -851,6 +853,8 @@ export default function Cotizador(): ReactElement {
     }
   }
 
+  const priceRef = usePriceTick(aside?.totalValue ?? ''); // motion 02 E6: realce del total al cambiar
+
   return (
     <div ref={rootRef} className="cotizador" data-testid="cotizador-root" data-hydrated="false">
       {advisorProduct ? (
@@ -1154,6 +1158,7 @@ export default function Cotizador(): ReactElement {
             </div>
             <span className="cotizador-aside__total-label">{aside.totalLabel}</span>
             <span
+              ref={priceRef}
               className="cotizador-aside__total-value"
               aria-live="polite"
               data-testid="summary-price-value"
