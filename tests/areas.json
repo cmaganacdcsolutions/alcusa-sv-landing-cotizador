@@ -31,6 +31,7 @@
     "cotizador.spec.ts": ["cotizador", "promos"],
     "critical.spec.ts": ["cotizador", "home", "promos", "catalogo", "contacto", "layout"],
     "foto-completa.spec.ts": ["layout", "home", "catalogo", "cotizador"],
+    "home-card-sizes.spec.ts": ["home", "catalogo", "layout"],
     "home-catalogo.spec.ts": ["home", "catalogo"],
     "home-renders.spec.ts": ["home", "catalogo"],
     "jardin-mas-opciones.spec.ts": ["home", "catalogo"],
