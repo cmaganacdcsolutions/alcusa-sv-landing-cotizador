@@ -265,10 +265,17 @@ export default function Cotizador(): ReactElement {
   // si la entrada depende de una promo (?promo=, snapshot o retorno de Wompi con promoId); si no, en segundo plano.
   const [registryReady, setRegistryReady] = useState(false);
   useEffect(() => {
+    const pendingPromoId = (): string | null => {
+      try {
+        return loadPendingPayment()?.promoId ?? null; // sessionStorage puede lanzar (storage bloqueado)
+      } catch {
+        return null;
+      }
+    };
     const needsPromo =
       promoIdFromSearch(window.location.search) !== null ||
       (readWizardSnapshot()?.promoId ?? null) !== null ||
-      (loadPendingPayment()?.promoId ?? null) !== null;
+      pendingPromoId() !== null;
     const hydrating = hydratePromoRegistry();
     if (!needsPromo) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only read of location/storage (no SSR access)
