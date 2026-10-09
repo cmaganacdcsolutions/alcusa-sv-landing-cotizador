@@ -10,6 +10,13 @@ const CARDS = [
   { slug: 'jardin-2-fijas-2-corredizas', title: '2 fijas + 2 corredizas', alt: /un vidrio fijo en cada extremo y dos hojas corredizas/, h: '600' },
   { slug: 'jardin-1-fijo-3-corredizas', title: '1 fijo + 3 corredizas', alt: /un vidrio fijo y tres hojas corredizas/, h: '1067' },
 ] as const;
+// 2026-10-09: las 3 abatibles (chapa doble manija) cierran el mismo sub-bloque; su detalle se prueba en puertas-abatibles.spec.ts.
+const ABATIBLES = [
+  { slug: 'abatible-interior-exterior', title: 'Abatible chapa doble manija' },
+  { slug: 'abatible-oficina-vidrio-fijo', title: 'Abatible con vidrio fijo arriba' },
+  { slug: 'abatible-oficina-cerrador', title: 'Abatible con cerrador automático' },
+] as const;
+const MORE_ALL = [...CARDS, ...ABATIBLES];
 const waHref = (title: string): string =>
   `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(`Hola, quiero cotizar una puerta de jardín ${title}`)}`;
 
@@ -20,21 +27,21 @@ test.beforeEach(({}, info) => {
 });
 
 test.describe('inicio - Más opciones para tu jardín', () => {
-  test('sub-bloque con su titulo, despues de las 3 tarjetas de jardin, con 2 tarjetas ancladas #p-<slug>', async ({ page }) => {
+  test('sub-bloque con su titulo, despues de las 3 tarjetas de jardin, con 5 tarjetas ancladas #p-<slug>', async ({ page }) => {
     await page.goto('/');
     const section = page.locator('#puertas-de-jardin');
     const more = section.getByRole('region', { name: 'Más opciones para tu jardín' });
     await expect(more).toBeVisible();
     await expect(more.getByRole('heading', { level: 3, name: 'Más opciones para tu jardín' })).toHaveCount(1);
-    await expect(more.locator('article.pcard')).toHaveCount(2);
+    await expect(more.locator('article.pcard')).toHaveCount(5);
     await expect(more.locator('article.pcard').evaluateAll((els) => els.map((e) => e.id))).resolves.toEqual(
-      CARDS.map((c) => `p-${c.slug}`),
+      MORE_ALL.map((c) => `p-${c.slug}`),
     );
     // Titulos de tarjeta un nivel bajo el titulo del sub-bloque (h3 -> h4).
-    await expect(more.getByRole('heading', { level: 4 })).toHaveText(CARDS.map((c) => c.title));
+    await expect(more.getByRole('heading', { level: 4 })).toHaveText(MORE_ALL.map((c) => c.title));
     // Orden: las 3 tarjetas con opciones primero, el sub-bloque despues.
     const order = await section.locator('article.pcard').evaluateAll((els) => els.map((e) => e.id));
-    expect(order).toEqual(['p-jardin-1-hoja', 'p-jardin-2-hojas', 'p-jardin-3-hojas', ...CARDS.map((c) => `p-${c.slug}`)]);
+    expect(order).toEqual(['p-jardin-1-hoja', 'p-jardin-2-hojas', 'p-jardin-3-hojas', ...MORE_ALL.map((c) => `p-${c.slug}`)]);
   });
 
   test('cada tarjeta: sin selects ni precio "Desde", linea de alto, "Cotización personalizada" y CTA de asesor a WhatsApp', async ({
