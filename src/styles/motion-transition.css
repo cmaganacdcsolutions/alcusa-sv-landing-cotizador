@@ -1,0 +1,31 @@
+/* Motion 02 E5 · transicion home -> cotizador (View Transitions entre documentos, MPA).
+   Discreta: el contenido se funde (240 ms) con una subida minima y la barra de navegacion queda quieta
+   (view-transition-name compartido), asi la foto no se "teletransporta". El cotizador no tiene foto de producto
+   en su cabecera (Q4 de la spec), por eso no hay morph de foto. Solo opacity/transform.
+   Sin soporte (Firefox, Safari < 18.2): se ignora y la navegacion es un corte directo, como antes.
+   Chromium no honra @view-transition anidado en @media: el opt-in va a nivel raiz y el reduced-motion se
+   garantiza con el script inline de BaseLayout (pageswap/pagereveal -> skipTransition), junto con ?motion=off,
+   atras/adelante y toda ruta distinta de home -> cotizador. Con reduce tampoco se pone view-transition-name. */
+@view-transition {
+  navigation: auto;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nav {
+    view-transition-name: site-nav;
+  }
+  ::view-transition-group(site-nav) {
+    animation-duration: 0s;
+  }
+  ::view-transition-old(root) {
+    animation: vt-out 160ms var(--motion-ease-glass) both;
+  }
+  ::view-transition-new(root) {
+    animation: vt-in 240ms var(--motion-ease-glass) both;
+  }
+}
+@keyframes vt-out {
+  to { opacity: 0; }
+}
+@keyframes vt-in {
+  from { opacity: 0; transform: translateY(6px); }
+}

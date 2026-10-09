@@ -1,5 +1,6 @@
 ---
 import '@styles/global.css';
+import '@styles/motion-transition.css';
 // Unico archivo de la tipografia display que se precarga (latin, eje opsz): evita el salto de swap en el H1 sin
 // sumar peso a la ruta critica. El resto de subconjuntos carga bajo demanda por unicode-range.
 import displayFontLatin from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url';
@@ -32,6 +33,21 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
     <meta property="og:url" content={canonicalUrl} />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline>
+      // Motion 02 E5: solo home -> cotizador por navegacion nueva (no atras/adelante, no recarga), sin ?motion=off y sin reduce.
+      (function () {
+        const path = (u) => { try { return new URL(u).pathname.replace(/\/$/, '') || '/'; } catch { return ''; } };
+        const off = () => /[?&]motion=off/.test(location.search) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+        addEventListener('pageswap', function (e) {
+          const a = e.activation;
+          if (e.viewTransition && !(a && a.entry && !off() && a.navigationType === 'push' && path(location.href) === '/' && path(a.entry.url) === '/cotizador')) e.viewTransition.skipTransition();
+        });
+        addEventListener('pagereveal', function (e) {
+          const a = window.navigation && navigation.activation;
+          if (e.viewTransition && !(a && a.from && !off() && a.navigationType === 'push' && path(a.from.url) === '/' && path(location.href) === '/cotizador')) e.viewTransition.skipTransition();
+        });
+      })();
+    </script>
     <link rel="preload" href={displayFontLatin} as="font" type="font/woff2" crossorigin />
   </head>
   <body>
