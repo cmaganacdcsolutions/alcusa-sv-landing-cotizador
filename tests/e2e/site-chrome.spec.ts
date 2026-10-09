@@ -197,6 +197,7 @@ test.describe('titulos con degradado', () => {
   });
 
   test('respaldos: @supports sin background-clip y forced-colors', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' }); // el e2e corre con 'reduce' (transition 0.001ms): la lectura sincrona de fill en forced-colors queda a medio transicionar (BUG-1009-02)
     await page.goto('/');
     const rules = await page.evaluate(() => {
       const found = { supportsNot: false, forced: false };
