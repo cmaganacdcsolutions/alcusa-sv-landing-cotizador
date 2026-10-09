@@ -15,7 +15,7 @@ export default defineConfig({
   timeout: 180_000,
   forbidOnly: true,
   reporter: [['list'], ['html', { open: 'never', outputFolder: "playwright-report/smoke" }]],
-  use: { baseURL: `http://localhost:${PORT}` },
+  use: { baseURL: `http://localhost:${PORT}`, reducedMotion: 'reduce' },
   webServer: {
     command: `npx astro dev --port ${PORT} --host localhost --ignore-lock`,
     url: `http://localhost:${PORT}/`,

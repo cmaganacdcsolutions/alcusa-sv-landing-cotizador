@@ -378,6 +378,7 @@ test.describe('hover de botones (como el navbar: color/relleno, sin movimiento)'
   ];
   for (const c of REST) {
     test(`${c.path} ${c.sel}: relleno suave con puntero fino, sin transform ni sombra nueva`, async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' }); // el e2e corre con 'reduce' por defecto (motion 02): aqui se mide el hover real
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(c.path);
       const fine = await hasFineHover(page);
