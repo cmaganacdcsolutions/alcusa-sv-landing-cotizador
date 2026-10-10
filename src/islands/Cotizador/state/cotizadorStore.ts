@@ -396,6 +396,13 @@ function widthForProduct(productId: ProductId, current: string): string {
   return Number.isFinite(cm) && cm >= spec.min && cm <= spec.max ? current : spec.def;
 }
 
+// Llegar a Forma de pago cuenta como elegir el metodo por defecto (Resumen y aside coinciden con el).
+// Se marca aqui y no solo en el montaje de Step5FormaPago: ese paso es un chunk diferido y, si el cliente
+// vuelve antes de que monte, el efecto de montaje nunca corre y el descuento se perderia.
+function enterStep(state: CotizadorState, step: CotizadorStep): CotizadorState {
+  return step === 'formaPago' ? { ...state, step, payMethodChosen: true } : { ...state, step };
+}
+
 export function cotizadorReducer(state: CotizadorState, action: CotizadorAction): CotizadorState {
   switch (action.type) {
     case 'SELECT_PRODUCT':
@@ -430,11 +437,11 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
     case 'RECOVER_WORK':
       return { ...initialCotizadorState, ...(action.fields ?? {}), cart: action.cart };
     case 'GOTO_STEP':
-      return { ...state, step: action.step };
+      return enterStep(state, action.step);
     case 'NEXT': {
       const idx = STEP_ORDER.indexOf(state.step);
       const next = STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)];
-      return { ...state, step: next };
+      return enterStep(state, next);
     }
     case 'BACK': {
       const idx = STEP_ORDER.indexOf(state.step);

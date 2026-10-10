@@ -21,13 +21,24 @@
 import { gzipSync } from 'node:zlib';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { extractAstroIslandUrls, extractDynamicImports, extractHtmlScriptSrcs, extractStaticImports } from './bundle-imports.mjs';
+import {
+  budgetForRoute,
+  extractAstroIslandUrls,
+  extractDynamicImports,
+  extractHtmlScriptSrcs,
+  extractStaticImports,
+  extractViteMapDeps,
+} from './bundle-imports.mjs';
 
 // 2026-10-10 (decision del usuario): el gate mide el JS de ARRANQUE, no el total del sitio.
 // Cuentan solo dependencias estaticas: <script src>, <link rel=modulepreload>, component-url/
 // renderer-url de <astro-island>, `from "x.js"` e `import "x.js"`. Los `import("x.js")` dinamicos
 // (chunks diferidos, p.ej. los pasos del cotizador) NO cuentan contra el presupuesto; se informan
-// aparte por pagina como "deferred" (solo informativo, nunca falla). Los presupuestos no cambiaron.
+// aparte por pagina como "deferred" (solo informativo, nunca falla); Vite los emite como
+// `__vitePreload(()=>import(..), __vite__mapDeps([..]))` con las rutas en `m.f=["_astro/X.js",..]`, y de ahi se leen.
+// Presupuestos: estaticas 40 KiB, paginas con islas 90 KiB, y /cotizador 120 KiB propio: React pesa ~70 KB
+// fijos mas un cotizador de 7 pasos (nucleo ~44 KB; los pasos ya van diferidos). Decision del usuario 2026-10-10.
+// El calculo del presupuesto vive en scripts/bundle-imports.mjs (budgetForRoute, con test unitario).
 
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
 
@@ -40,8 +51,6 @@ const DIST_DIR = path.resolve(process.cwd(), 'dist');
 // (currently /cotizador and /contacto), not just the cotizador route by
 // name. Pages with zero islands (currently just the landing, "/") keep the
 // strict ADR-001 budget.
-const STATIC_PAGE_BUDGET_BYTES = 40 * 1024;
-const ISLAND_PAGE_BUDGET_BYTES = 90 * 1024;
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -117,6 +126,7 @@ async function reachableBytesForPage(html) {
     try {
       const src = await readFile(file, 'utf-8');
       for (const spec of extractDynamicImports(src)) dynamicSeeds.push(resolveDistPath(spec, path.dirname(file)));
+      for (const spec of extractViteMapDeps(src)) dynamicSeeds.push(resolveDistPath(spec, path.dirname(file)));
     } catch {
       continue;
     }
@@ -147,8 +157,8 @@ async function main() {
   for (const htmlFile of htmlFiles) {
     const html = await readFile(htmlFile, 'utf-8');
     const { totalBytes, fileCount, deferredBytes, deferredCount, hasIslands } = await reachableBytesForPage(html);
-    const budget = hasIslands ? ISLAND_PAGE_BUDGET_BYTES : STATIC_PAGE_BUDGET_BYTES;
     const route = path.relative(DIST_DIR, htmlFile).replace(/\\/g, '/');
+    const budget = budgetForRoute(route, hasIslands);
 
     console.log(
       `${route}: ${totalBytes} bytes gz (${fileCount} JS file(s), budget ${budget} — ${

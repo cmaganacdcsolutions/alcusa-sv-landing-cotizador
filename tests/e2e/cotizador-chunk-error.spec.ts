@@ -6,11 +6,11 @@ test.use({ blockQuotePdf: true });
 // aparece el error con "Reintentar" y, ya con red, el paso carga conservando el estado.
 test.describe('cotizador: chunk de paso falla', () => {
   test('error boundary + Reintentar conserva el estado', async ({ page }) => {
+    // Bloqueo ANTES del goto: la precarga en idle tambien falla (si no, el chunk ya estaria en cache).
+    let abort = true;
+    await page.route(/\/_astro\/Step2Precio\..*\.js/, (route) => (abort ? route.abort() : route.continue()));
     await page.goto('/cotizador');
     await page.waitForLoadState('networkidle');
-
-    let abort = true;
-    await page.route('**/_astro/Step2Precio.*.js', (route) => (abort ? route.abort() : route.continue()));
 
     await pickProduct(page, 'recta');
     await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();

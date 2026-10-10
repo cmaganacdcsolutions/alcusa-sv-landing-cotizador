@@ -39,3 +39,28 @@ export function extractAstroIslandUrls(html) {
   }
   return urls;
 }
+
+/**
+ * Chunks diferidos que Vite lista en `__vite__mapDeps` (array `m.f=["_astro/X.js", ...]`) para
+ * `__vitePreload(()=>import(...), __vite__mapDeps([i...]))`. Rutas relativas a la raiz de dist;
+ * se devuelven con "/" inicial. Sirve solo para el informe "deferred": NO afecta el arranque.
+ */
+export function extractViteMapDeps(jsSource) {
+  const out = new Set();
+  for (const arr of jsSource.matchAll(/\.f\s*=\s*\[([^\]]*)\]/g)) {
+    for (const s of arr[1].matchAll(/["'`]([^"'`]+\.js)["'`]/g)) out.add(s[1].startsWith('/') ? s[1] : `/${s[1]}`);
+  }
+  return [...out];
+}
+
+const STATIC_PAGE_BUDGET_BYTES = 40 * 1024;
+const ISLAND_PAGE_BUDGET_BYTES = 90 * 1024;
+// /cotizador: React ~70 KB fijos + cotizador de 7 pasos (nucleo ~44 KB) con pasos ya diferidos.
+// Decision del usuario 2026-10-10: presupuesto propio de 120 KiB.
+const COTIZADOR_BUDGET_BYTES = 120 * 1024;
+
+/** Presupuesto (bytes gz de arranque) por ruta HTML construida (p.ej. "cotizador/index.html"). */
+export function budgetForRoute(route, hasIslands) {
+  if (/^cotizador\/(index\.html)?$/.test(route) || route === 'cotizador.html') return COTIZADOR_BUDGET_BYTES;
+  return hasIslands ? ISLAND_PAGE_BUDGET_BYTES : STATIC_PAGE_BUDGET_BYTES;
+}

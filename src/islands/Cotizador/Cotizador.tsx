@@ -482,22 +482,22 @@ export default function Cotizador(): ReactElement {
     }
     const headingId = HEADING_ID[state.step];
     const scrollToHeading = (heading: HTMLElement): void => {
-    const topBar = document.querySelector('.top-bar');
-    const header = rootRef.current?.querySelector('.cotizador__header');
-    const isMobile = window.innerWidth < 1024;
-    const topBarHeight = topBar?.getBoundingClientRect().height ?? 0;
-    const headerStackHeight =
-      isMobile && headingId !== 'cotizador-page-title'
-        ? (header?.getBoundingClientRect().height ?? 0)
-        : 0;
-    const offset = topBarHeight + headerStackHeight + (isMobile ? 0 : 24);
-    const targetY = Math.max(
-      window.scrollY + heading.getBoundingClientRect().top - offset,
-      0,
-    );
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.scrollTo({ top: targetY, behavior: reduceMotion ? 'auto' : 'smooth' });
-    heading.focus({ preventScroll: true });
+      const topBar = document.querySelector('.top-bar');
+      const header = rootRef.current?.querySelector('.cotizador__header');
+      const isMobile = window.innerWidth < 1024;
+      const topBarHeight = topBar?.getBoundingClientRect().height ?? 0;
+      const headerStackHeight =
+        isMobile && headingId !== 'cotizador-page-title'
+          ? (header?.getBoundingClientRect().height ?? 0)
+          : 0;
+      const offset = topBarHeight + headerStackHeight + (isMobile ? 0 : 24);
+      const targetY = Math.max(
+        window.scrollY + heading.getBoundingClientRect().top - offset,
+        0,
+      );
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: targetY, behavior: reduceMotion ? 'auto' : 'smooth' });
+      heading.focus({ preventScroll: true });
     };
     // El paso puede ser un chunk diferido que aun no monta su titulo: se espera a que aparezca.
     const found = document.getElementById(headingId);
