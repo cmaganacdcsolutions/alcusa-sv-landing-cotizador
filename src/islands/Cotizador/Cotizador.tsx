@@ -61,19 +61,13 @@ import {
 } from './icons';
 import { IconCardRect, IconSpinner } from './icons-checkout';
 import Step0Producto from './steps/Step0Producto';
-import Step1Medidas from './steps/Step1Medidas';
 import { PROMO_PARAM } from '@content/promotionsParser';
 import { PROMO_BANNER_PREFIX, PROMO_EXIT_LABEL, promoIdFromSearch } from '@content/promoContext';
 import { clearStash, hasWork, readStash, writeStash, type WorkStash } from './state/stash';
 import { hydratePromoRegistry, lookupActivePromo, lookupPromo } from './state/promoRegistry';
-import Step2Precio from './steps/Step2Precio';
 import { usePriceTick } from './usePriceTick';
-import Step3ZonaEntrega from './steps/Step3ZonaEntrega';
-import Step4Resumen from './steps/Step4Resumen';
-import Step5FormaPago from './steps/Step5FormaPago';
-import Step6Wompi from './steps/Step6Wompi';
+import { LazyStep, usePreloadLaterSteps, Step1Medidas, Step2Precio, Step3ZonaEntrega, Step4Resumen, Step5FormaPago, Step6Wompi, Step7Resultado } from './steps/lazySteps';
 import { loadPendingPayment, parseWompiReturn } from '@integrations/wompi/client';
-import Step7Resultado from './steps/Step7Resultado';
 
 const STEP_LABELS: Record<CotizadorStep, string> = {
   producto: 'Producto',
@@ -210,6 +204,7 @@ function loadPersistedCart(): CotizadorState['cart'] {
 }
 
 export default function Cotizador(): ReactElement {
+  usePreloadLaterSteps();
   const [state, dispatch] = useReducer(
     cotizadorReducer,
     initialCotizadorState,
@@ -486,8 +481,7 @@ export default function Cotizador(): ReactElement {
       return;
     }
     const headingId = HEADING_ID[state.step];
-    const heading = document.getElementById(headingId);
-    if (!heading) return;
+    const scrollToHeading = (heading: HTMLElement): void => {
     const topBar = document.querySelector('.top-bar');
     const header = rootRef.current?.querySelector('.cotizador__header');
     const isMobile = window.innerWidth < 1024;
@@ -504,6 +498,23 @@ export default function Cotizador(): ReactElement {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     window.scrollTo({ top: targetY, behavior: reduceMotion ? 'auto' : 'smooth' });
     heading.focus({ preventScroll: true });
+    };
+    // El paso puede ser un chunk diferido que aun no monta su titulo: se espera a que aparezca.
+    const found = document.getElementById(headingId);
+    if (found) {
+      scrollToHeading(found);
+      return;
+    }
+    const root = rootRef.current;
+    if (!root) return;
+    const waiting = new MutationObserver(() => {
+      const el = document.getElementById(headingId);
+      if (!el) return;
+      waiting.disconnect();
+      scrollToHeading(el);
+    });
+    waiting.observe(root, { childList: true, subtree: true });
+    return () => waiting.disconnect();
   }, [state.step]);
 
   // sf-cot-mobile item 1 — .bottom-bar's real rendered height (it differs per
@@ -516,20 +527,32 @@ export default function Cotizador(): ReactElement {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    const bar = root.querySelector<HTMLElement>('.bottom-bar');
-    if (!bar) {
-      root.style.setProperty('--cotizador-bottom-bar-height', '0px');
-      return;
-    }
-    const update = () =>
-      root.style.setProperty(
-        '--cotizador-bottom-bar-height',
-        `${bar.getBoundingClientRect().height}px`,
-      );
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(bar);
-    return () => observer.disconnect();
+    // Los pasos 1-7 son chunks diferidos: al cambiar de paso la barra puede aun no existir.
+    // Se mide al aparecer (MutationObserver) y se vuelve a medir si cambia de tamano.
+    let resize: ResizeObserver | null = null;
+    let measured: HTMLElement | null = null;
+    const measure = () => {
+      const bar = root.querySelector<HTMLElement>('.bottom-bar');
+      if (bar === measured) return;
+      resize?.disconnect();
+      measured = bar;
+      if (!bar) {
+        root.style.setProperty('--cotizador-bottom-bar-height', '0px');
+        return;
+      }
+      const update = () =>
+        root.style.setProperty('--cotizador-bottom-bar-height', `${bar.getBoundingClientRect().height}px`);
+      update();
+      resize = new ResizeObserver(update);
+      resize.observe(bar);
+    };
+    measure();
+    const mutations = new MutationObserver(measure);
+    mutations.observe(root, { childList: true, subtree: true });
+    return () => {
+      mutations.disconnect();
+      resize?.disconnect();
+    };
   }, [state.step]);
 
   const product = useMemo(
@@ -1124,95 +1147,109 @@ export default function Cotizador(): ReactElement {
           />
         )}
         {state.step === 'medidas' && product && (
-          <Step1Medidas
-            product={product}
-            state={state}
-            dispatch={dispatch}
-            quote={quote}
-            onNext={next}
-          />
+          <LazyStep>
+            <Step1Medidas
+              product={product}
+              state={state}
+              dispatch={dispatch}
+              quote={quote}
+              onNext={next}
+            />
+          </LazyStep>
         )}
         {state.step === 'precio' && product && (
-          <Step2Precio
-            product={product}
-            state={state}
-            quote={quote}
-            payOffer={payOffer}
-            onNext={next}
-            onEditMedidas={() => goToStep('medidas')}
-          />
+          <LazyStep>
+            <Step2Precio
+              product={product}
+              state={state}
+              quote={quote}
+              payOffer={payOffer}
+              onNext={next}
+              onEditMedidas={() => goToStep('medidas')}
+            />
+          </LazyStep>
         )}
         {state.step === 'zonaEntrega' && product && (
-          <Step3ZonaEntrega
-            product={product}
-            state={state}
-            quote={quote}
-            items={orderItems}
-            zoneFee={zoneFee}
-            total={total}
-            payOffer={payOffer}
-            shippingPending={shippingPendingNow}
-            onEntregaChange={(entrega) => dispatch({ type: 'SET_ENTREGA', entrega })}
-            onAddressChange={(field, value) => dispatch({ type: 'SET_ADDRESS_FIELD', field, value })}
-            onGeoChange={(geo) => dispatch({ type: 'SET_ADDRESS_GEO', geo })}
-            onNext={next}
-          />
+          <LazyStep>
+            <Step3ZonaEntrega
+              product={product}
+              state={state}
+              quote={quote}
+              items={orderItems}
+              zoneFee={zoneFee}
+              total={total}
+              payOffer={payOffer}
+              shippingPending={shippingPendingNow}
+              onEntregaChange={(entrega) => dispatch({ type: 'SET_ENTREGA', entrega })}
+              onAddressChange={(field, value) => dispatch({ type: 'SET_ADDRESS_FIELD', field, value })}
+              onGeoChange={(geo) => dispatch({ type: 'SET_ADDRESS_GEO', geo })}
+              onNext={next}
+            />
+          </LazyStep>
         )}
         {state.step === 'resumen' && product && (
-          <Step4Resumen
-            product={product}
-            state={state}
-            items={orderItems}
-            zoneFee={zoneFee}
-            total={total}
-            onlineDiscount={onlineDiscount}
-            payOffer={payOffer}
-            shippingPending={shippingPending}
-            onNext={next}
-            onEditZone={() => goToStep('zonaEntrega')}
-            onAddAnother={addToCart}
-            onRemoveItem={removeItem}
-            onEditItem={editItem}
-            onDismissQuoteNotice={() => dispatch({ type: 'DISMISS_QUOTE_NOTICE' })}
-            asideCtaTarget={portalCtaEl}
-          />
+          <LazyStep>
+            <Step4Resumen
+              product={product}
+              state={state}
+              items={orderItems}
+              zoneFee={zoneFee}
+              total={total}
+              onlineDiscount={onlineDiscount}
+              payOffer={payOffer}
+              shippingPending={shippingPending}
+              onNext={next}
+              onEditZone={() => goToStep('zonaEntrega')}
+              onAddAnother={addToCart}
+              onRemoveItem={removeItem}
+              onEditItem={editItem}
+              onDismissQuoteNotice={() => dispatch({ type: 'DISMISS_QUOTE_NOTICE' })}
+              asideCtaTarget={portalCtaEl}
+            />
+          </LazyStep>
         )}
         {state.step === 'formaPago' && product && (
-          <Step5FormaPago
-            state={state}
-            quote={quote}
-            zoneFee={zoneFee}
-            total={total}
-            itemsSubtotal={orderItemsSubtotal(orderItems)}
-            shippingPending={shippingPending}
-            dispatch={dispatch}
-            onNext={next}
-            asideCtaTarget={portalCtaEl}
-          />
+          <LazyStep>
+            <Step5FormaPago
+              state={state}
+              quote={quote}
+              zoneFee={zoneFee}
+              total={total}
+              itemsSubtotal={orderItemsSubtotal(orderItems)}
+              shippingPending={shippingPending}
+              dispatch={dispatch}
+              onNext={next}
+              asideCtaTarget={portalCtaEl}
+            />
+          </LazyStep>
         )}
         {state.step === 'wompi' && product && (
-          <Step6Wompi
-            state={state}
-            quote={quote}
-            zoneFee={zoneFee}
-            total={total}
-            onlineDiscount={onlineDiscount}
-            shippingPending={shippingPending}
-            dispatch={dispatch}
-            onNext={next}
-          />
+          <LazyStep>
+            <Step6Wompi
+              state={state}
+              quote={quote}
+              zoneFee={zoneFee}
+              total={total}
+              onlineDiscount={onlineDiscount}
+              shippingPending={shippingPending}
+              dispatch={dispatch}
+              onNext={next}
+            />
+          </LazyStep>
         )}
         {state.step === 'resultado' && (product || state.wompiOutcome !== null) && (
-          <Step7Resultado
-            product={product ?? undefined}
-            state={state}
-            quote={quote}
-            zoneFee={zoneFee}
-            total={total}
-            onlineDiscount={onlineDiscount}
-            shippingPending={shippingPending}
-            onRetry={() => goToStep('wompi')}
-          />
+          <LazyStep>
+            <Step7Resultado
+              product={product ?? undefined}
+              state={state}
+              quote={quote}
+              zoneFee={zoneFee}
+              total={total}
+              onlineDiscount={onlineDiscount}
+              shippingPending={shippingPending}
+              onRetry={() => goToStep('wompi')}
+            />
+          </LazyStep>
         )}
       </div>
 

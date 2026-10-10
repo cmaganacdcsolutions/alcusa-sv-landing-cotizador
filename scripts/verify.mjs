@@ -1,6 +1,6 @@
 // Regression gate runner.   node scripts/verify.mjs <full|quick|area> [area[,area]...]
-//   full   : lint, typecheck, unit, build, FULL e2e (3 projects, :4410), dev-mode smoke (:4420)
-//   quick  : lint, typecheck, unit, @critical e2e on desktop1920 + ios390   (pre-push hook)
+//   full   : lint, typecheck, unit, build, bundle size, FULL e2e (3 projects, :4410), dev-mode smoke (:4420)
+//   quick  : lint, typecheck, unit, build + bundle size, @critical e2e on desktop1920 + ios390   (pre-push hook)
 //   area   : lint, typecheck, unit, e2e specs of the areas (3 projects), dev smoke limited to the areas
 // Area map: tests/areas.json. 'layout' (shared code) pulls in EVERY area.
 // Ports: e2e uses 4410 (4411/4412 promo variants), dev smoke uses 4420. 4400 is the user's live dev
@@ -58,9 +58,13 @@ steps.push({ name: 'typecheck', cmd: npm('typecheck') });
 steps.push({ name: 'unit', cmd: npm('test') });
 if (mode === 'full') {
   steps.push({ name: 'build', cmd: npm('build') });
+  steps.push({ name: 'bundle size', cmd: 'node scripts/check-bundle-size.mjs' });
   steps.push({ name: 'e2e (full, 3 projects)', cmd: npm('test:e2e') });
   steps.push({ name: 'dev smoke', cmd: 'npx playwright test --config=playwright.smoke.config.ts' });
 } else if (mode === 'quick') {
+  // quick no genera dist/ (el e2e usa dist-e2e/p<PUERTO>); el gate mide dist/, asi que se construye aqui (~20 s).
+  steps.push({ name: 'build', cmd: npm('build') });
+  steps.push({ name: 'bundle size', cmd: 'node scripts/check-bundle-size.mjs' });
   steps.push({ name: 'e2e @critical (desktop1920 + ios390)', cmd: npm('test:e2e', '--grep @critical --project=desktop1920 --project=ios390') });
 } else {
   const files = specs.filter((f) => map.specs[f].some((a) => areas.includes(a)));
