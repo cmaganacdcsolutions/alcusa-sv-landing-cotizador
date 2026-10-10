@@ -28,6 +28,7 @@
     "cotizador-hover.spec.ts": ["cotizador", "contacto"],
     "cotizador-mobile.spec.ts": ["cotizador"],
     "cotizador-quote-load.spec.ts": ["cotizador"],
+    "cotizador-chunk-error.spec.ts": ["cotizador"],
     "cotizador-shell.spec.ts": ["cotizador"],
     "cotizador-ventana.spec.ts": ["cotizador"],
     "cotizador.spec.ts": ["cotizador", "promos"],

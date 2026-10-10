@@ -21,6 +21,24 @@
 import { gzipSync } from 'node:zlib';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import {
+  budgetForRoute,
+  extractAstroIslandUrls,
+  extractDynamicImports,
+  extractHtmlScriptSrcs,
+  extractStaticImports,
+  extractViteMapDeps,
+} from './bundle-imports.mjs';
+
+// 2026-10-10 (decision del usuario): el gate mide el JS de ARRANQUE, no el total del sitio.
+// Cuentan solo dependencias estaticas: <script src>, <link rel=modulepreload>, component-url/
+// renderer-url de <astro-island>, `from "x.js"` e `import "x.js"`. Los `import("x.js")` dinamicos
+// (chunks diferidos, p.ej. los pasos del cotizador) NO cuentan contra el presupuesto; se informan
+// aparte por pagina como "deferred" (solo informativo, nunca falla); Vite los emite como
+// `__vitePreload(()=>import(..), __vite__mapDeps([..]))` con las rutas en `m.f=["_astro/X.js",..]`, y de ahi se leen.
+// Presupuestos: estaticas 40 KiB, paginas con islas 90 KiB, y /cotizador 120 KiB propio: React pesa ~70 KB
+// fijos mas un cotizador de 7 pasos (nucleo ~44 KB; los pasos ya van diferidos). Decision del usuario 2026-10-10.
+// El calculo del presupuesto vive en scripts/bundle-imports.mjs (budgetForRoute, con test unitario).
 
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
 
@@ -33,8 +51,6 @@ const DIST_DIR = path.resolve(process.cwd(), 'dist');
 // (currently /cotizador and /contacto), not just the cotizador route by
 // name. Pages with zero islands (currently just the landing, "/") keep the
 // strict ADR-001 budget.
-const STATIC_PAGE_BUDGET_BYTES = 40 * 1024;
-const ISLAND_PAGE_BUDGET_BYTES = 90 * 1024;
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -45,34 +61,6 @@ async function walk(dir) {
     }),
   );
   return files.flat();
-}
-
-function extractHtmlScriptSrcs(html) {
-  const matches = [...html.matchAll(/<script[^>]+src=["']([^"']+\.js)["'][^>]*>/gi)];
-  return matches.map((m) => m[1]);
-}
-
-// Astro's static-output island hydration marker — see the FIX note above.
-// Attributes may appear in any order, so pull each one independently rather
-// than assuming a fixed attribute sequence.
-function extractAstroIslandUrls(html) {
-  const urls = [];
-  for (const islandMatch of html.matchAll(/<astro-island\b[^>]*>/gi)) {
-    const tag = islandMatch[0];
-    for (const attr of ['component-url', 'renderer-url']) {
-      const attrMatch = tag.match(new RegExp(`${attr}=["']([^"']+)["']`));
-      if (attrMatch) urls.push(attrMatch[1]);
-    }
-  }
-  return urls;
-}
-
-function extractImportSpecifiers(jsSource) {
-  const specifiers = new Set();
-  for (const m of jsSource.matchAll(/from\s*["']([^"']+\.js)["']/g)) specifiers.add(m[1]);
-  for (const m of jsSource.matchAll(/import\s*["']([^"']+\.js)["']/g)) specifiers.add(m[1]);
-  for (const m of jsSource.matchAll(/import\(\s*["']([^"']+\.js)["']\s*\)/g)) specifiers.add(m[1]);
-  return [...specifiers];
 }
 
 function resolveDistPath(specifier, fromDir) {
@@ -86,47 +74,72 @@ function resolveDistPath(specifier, fromDir) {
 // entry points, a single site-wide total can't tell "landing is too big"
 // apart from "cotizador is too big").
 async function reachableBytesForPage(html) {
-  const reachable = new Set();
-  const queue = [];
-
   const entryPoints = [...extractHtmlScriptSrcs(html), ...extractAstroIslandUrls(html)];
-  for (const src of entryPoints) {
-    const resolved = path.join(DIST_DIR, src.replace(/^\//, ''));
-    if (!reachable.has(resolved)) {
-      reachable.add(resolved);
-      queue.push(resolved);
-    }
-  }
 
-  while (queue.length > 0) {
-    const current = queue.pop();
-    let source;
-    try {
-      source = await readFile(current, 'utf-8');
-    } catch {
-      continue;
-    }
-    const dir = path.dirname(current);
-    for (const specifier of extractImportSpecifiers(source)) {
-      const resolved = resolveDistPath(specifier, dir);
-      if (!reachable.has(resolved)) {
-        reachable.add(resolved);
-        queue.push(resolved);
+  // BFS sobre las aristas elegidas por `extract`, desde `seeds`, sin repetir `skip`.
+  async function walkGraph(seeds, extract, skip = new Set()) {
+    const reachable = new Set();
+    const queue = [];
+    for (const f of seeds) {
+      if (!reachable.has(f) && !skip.has(f)) {
+        reachable.add(f);
+        queue.push(f);
       }
     }
+    while (queue.length > 0) {
+      const current = queue.pop();
+      let source;
+      try {
+        source = await readFile(current, 'utf-8');
+      } catch {
+        continue;
+      }
+      const dir = path.dirname(current);
+      for (const specifier of extract(source)) {
+        const resolved = resolveDistPath(specifier, dir);
+        if (!reachable.has(resolved) && !skip.has(resolved)) {
+          reachable.add(resolved);
+          queue.push(resolved);
+        }
+      }
+    }
+    return reachable;
   }
 
-  let totalBytes = 0;
-  for (const file of reachable) {
-    let contents;
+  async function gzBytes(files) {
+    let total = 0;
+    for (const file of files) {
+      try {
+        total += gzipSync(await readFile(file)).byteLength;
+      } catch {
+        continue;
+      }
+    }
+    return total;
+  }
+
+  const seeds = entryPoints.map((src) => path.join(DIST_DIR, src.replace(/^\//, '')));
+  const startup = await walkGraph(seeds, extractStaticImports);
+  // Diferido (informativo): todo lo alcanzable por import() desde el arranque, ya sin lo estatico.
+  const dynamicSeeds = [];
+  for (const file of startup) {
     try {
-      contents = await readFile(file);
+      const src = await readFile(file, 'utf-8');
+      for (const spec of extractDynamicImports(src)) dynamicSeeds.push(resolveDistPath(spec, path.dirname(file)));
+      for (const spec of extractViteMapDeps(src)) dynamicSeeds.push(resolveDistPath(spec, path.dirname(file)));
     } catch {
       continue;
     }
-    totalBytes += gzipSync(contents).byteLength;
   }
-  return { totalBytes, fileCount: reachable.size, hasIslands: entryPoints.length > 0 };
+  const deferred = await walkGraph(dynamicSeeds, (src) => [...extractStaticImports(src), ...extractDynamicImports(src)], startup);
+
+  return {
+    totalBytes: await gzBytes(startup),
+    fileCount: startup.size,
+    deferredBytes: await gzBytes(deferred),
+    deferredCount: deferred.size,
+    hasIslands: entryPoints.length > 0,
+  };
 }
 
 async function main() {
@@ -143,15 +156,19 @@ async function main() {
 
   for (const htmlFile of htmlFiles) {
     const html = await readFile(htmlFile, 'utf-8');
-    const { totalBytes, fileCount, hasIslands } = await reachableBytesForPage(html);
-    const budget = hasIslands ? ISLAND_PAGE_BUDGET_BYTES : STATIC_PAGE_BUDGET_BYTES;
+    const { totalBytes, fileCount, deferredBytes, deferredCount, hasIslands } = await reachableBytesForPage(html);
     const route = path.relative(DIST_DIR, htmlFile).replace(/\\/g, '/');
+    const budget = budgetForRoute(route, hasIslands);
 
     console.log(
       `${route}: ${totalBytes} bytes gz (${fileCount} JS file(s), budget ${budget} — ${
         hasIslands ? 'island page' : 'static page'
       })`,
     );
+
+    if (deferredCount > 0) {
+      console.log(`  deferred (informativo, no cuenta): ${deferredBytes} bytes gz (${deferredCount} JS file(s))`);
+    }
 
     if (totalBytes > budget) {
       failures.push(`${route}: JS budget exceeded — ${totalBytes} > ${budget} bytes gz`);
