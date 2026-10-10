@@ -19,7 +19,16 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   snapshotPathTemplate: '{testDir}/__snapshots__/{testFilePath}/{arg}{-projectName}{ext}',
-  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.01, animations: 'disabled', caret: 'hide' } },
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled',
+      caret: 'hide',
+      // Visual baselines are per OS (font rendering differs win32 vs linux). Golden JSON (toMatchSnapshot)
+      // keeps the global snapshotPathTemplate above and stays platform independent.
+      pathTemplate: '{testDir}/__snapshots__/{testFilePath}/{arg}{-projectName}-{platform}{ext}',
+    },
+  },
   reporter: [['html', { open: 'never' }]],
   use: {
     baseURL: BASE_URL,
