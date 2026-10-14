@@ -34,8 +34,8 @@ re-runnable statements (`IF NOT EXISTS`). After a migration that adds a table, `
 | `GET /api/quotes/:code` | `200 QuoteLoadResponse` (no PII, `expired` from the SV date) | 404 `not_found` (uniform: missing / cancelled), 422 `invalid_code` (no `quotes` read), 429 `rate_limited` + `Retry-After` (30 queries/h and 10 failures/h per ip_hash) |
 
 All `/api/*` responses are `Cache-Control: no-store`. Rate limits live in the `rate_limits` table (HMAC with `IP_HASH_PEPPER`). Pricing is trusted from the client
-(`pricing_source='client'`, ADR-011 §5): the server verifies `lineTotal == qty*unitPrice` and `sum(lineTotal) - discount.amount + transportFee == total` in cents, nothing more.
-Optional (2026-10-06, migration `0002`): `discount: {code:'online_card_10', amount}` is recomputed server-side (10% of `sum(lineTotal)`, +-0.01; any other code or amount is `422 invalid_discount`), and `shippingPending: true` (delivery only) requires `transportFee == 0`. Both are persisted (`discount_code`, `discount_amount`, `shipping_pending`); the public GET is unchanged. Deploy order: `db:migrate` BEFORE restarting the new release (the old release keeps working on the new schema).
+(`pricing_source='client'`, ADR-011 §5): the server verifies `lineTotal == qty*unitPrice` and `sum(lineTotal) + transportFee == total` in cents, nothing more.
+Optional (2026-10-06, migration `0005`): `shippingPending: true` (delivery only) requires `transportFee == 0`. It is persisted (`shipping_pending`); the public GET is unchanged. Scope cut 2026-10-14: the 10% online discount was retired; a legacy `discount` field in the body is ignored (never applied, not persisted; columns `discount_code`/`discount_amount` stay in the schema with defaults) and a discounted `total` is `422 invalid_request` (`fields.total`). `invalid_discount` no longer exists. Deploy order: `db:migrate` BEFORE restarting the new release (the old release keeps working on the new schema).
 `npm run smoke:quotes` (server running on :3001) does POST -> replay -> GET with a FE-shaped request.
 
 ## FE http e2e (N2-FE)

@@ -8,12 +8,12 @@ import {
   type ReactElement,
 } from 'react';
 import '@styles/cotizador.css';
-import '@styles/cotizador-discount.css';
+import '@styles/cotizador-banner.css';
 import '@styles/cotizador-motion.css';
 import { CATALOG_PRODUCTS } from '@content/catalog';
 import { parseDeepLink, parseDeepLinkOptions, wantsMedidas } from '@content/deepLink';
 import { getZoneFee } from '@engine/pricing';
-import { isAddressComplete, parseStoredAddress } from '../../lib/delivery-address';
+import { isAddressComplete } from '../../lib/delivery-address';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildAdvisorMessage } from '@integrations/whatsapp/buildMessage';
 import {
@@ -34,40 +34,20 @@ import {
   shouldRestoreWizard,
 } from './state/persist';
 import { buildLineItem, computeQuote } from './state/quote';
-import { buildOrderItems, orderItemsSubtotal, orderTotal as computeOrderTotal } from './state/order';
-import {
-  computePayable,
-  depositOf,
-  formatDiscount,
-  payMethodForDiscount,
-  resolveShipping,
-  type Payable,
-  type ShippingState,
-} from './state/payable';
-import {
-  buildPayOffer,
-  hasOnlineOfferParam,
-  ONLINE_DISCOUNT_LABEL,
-  ONLINE_OFFER_BANNER_TEXT,
-  type PayOffer,
-} from './state/payOffer';
-import OnlineDiscountPreview from './steps/OnlineDiscountPreview';
+import { buildOrderItems, depositOf, orderTotal as computeOrderTotal } from './state/order';
 import {
   IconArrowRight,
   IconCheck,
   IconChevronLeft,
-  IconLock,
   IconWhatsApp,
 } from './icons';
-import { IconCardRect, IconSpinner } from './icons-checkout';
 import Step0Producto from './steps/Step0Producto';
 import { PROMO_PARAM } from '@content/promotionsParser';
 import { PROMO_BANNER_PREFIX, PROMO_EXIT_LABEL, promoIdFromSearch } from '@content/promoContext';
 import { clearStash, hasWork, readStash, writeStash, type WorkStash } from './state/stash';
 import { hydratePromoRegistry, lookupActivePromo, lookupPromo } from './state/promoRegistry';
 import { usePriceTick } from './usePriceTick';
-import { LazyStep, usePreloadLaterSteps, Step1Medidas, Step2Precio, Step3ZonaEntrega, Step4Resumen, Step5FormaPago, Step6Wompi, Step7Resultado } from './steps/lazySteps';
-import { loadPendingPayment, parseWompiReturn } from '@integrations/wompi/client';
+import { LazyStep, usePreloadLaterSteps, Step1Medidas, Step2Precio, Step3ZonaEntrega, Step4Resumen } from './steps/lazySteps';
 
 const STEP_LABELS: Record<CotizadorStep, string> = {
   producto: 'Producto',
@@ -75,36 +55,20 @@ const STEP_LABELS: Record<CotizadorStep, string> = {
   precio: 'Precio',
   zonaEntrega: 'Entrega',
   resumen: 'Resumen',
-  formaPago: 'Pago',
-  wompi: 'Wompi',
-  resultado: 'Resultado',
 };
 
-// sf-cot-polish: navigation now spans the full 8-step wizard (was clamped to
-// the first 6, which made Step6Wompi/Step7Resultado unreachable — next()
-// could never advance past 'formaPago'). The mobile 6-dot stepper is a
-// separate, narrower list (see MOBILE_STEPPER_STEPS below) — grepping
-// ios-0N/android-0N confirms the "Pasos del cotizador" <ol> only appears on
-// 03/04/05 (producto, medidas, precio, zonaEntrega, resumen); 06
-// (whatsapp-pago/formaPago) and 07 (payment-result/wompi+resultado) render
-// no stepper at all on mobile.
-const MOBILE_STEPPER_STEPS: readonly CotizadorStep[] = STEP_ORDER.slice(0, 6);
+// El cotizador termina en el Resumen: 5 pasos (recorte de alcance 2026-10-13, sin pagos en la web).
+const MOBILE_STEPPER_STEPS: readonly CotizadorStep[] = STEP_ORDER;
 const MOBILE_STEPPER_LAST_VISIBLE_IDX = 4; // 'resumen' — index of the last step that still shows the mobile stepper
 
-// Desktop-only rail (nav) — desktop-0[3-7]-*.dc.html render all 8 STEP_ORDER
-// entries with a title + one-line sub-label, unlike the 6-dot mobile
-// stepper (ios/android boards never show these sub-labels or steps 7-8 at
-// all — verified: no "¿Dudas con tu medida?"/"Paso N de 8"/"TU COTIZACIÓN"
-// string anywhere in ios-0N/android-0N).
+// Desktop-only rail (nav): every STEP_ORDER entry with a title + one-line sub-label, unlike the
+// mobile stepper (ios/android never show these sub-labels).
 const RAIL_ITEMS: Record<CotizadorStep, { title: string; sub: string }> = {
   producto: { title: 'Elige tu producto', sub: 'Categoría, tipo y acabado' },
   medidas: { title: 'Medidas y acabado', sub: 'Ancho, alto y vidrio' },
   precio: { title: 'Precio estimado', sub: 'En vivo, sin transporte' },
   zonaEntrega: { title: 'Entrega y zona', sub: 'Instalación o retiro en tienda' },
   resumen: { title: 'Resumen', sub: 'Uno o varios productos' },
-  formaPago: { title: 'Forma de pago', sub: 'WhatsApp o pagar ahora' },
-  wompi: { title: 'Pago (Wompi)', sub: 'Tarjeta de crédito o débito' },
-  resultado: { title: 'Resultado', sub: 'Confirmación de tu pedido' },
 };
 
 // Boards repeat the same header block (back link + H1) at the top of every
@@ -118,15 +82,12 @@ const PAGE_TITLES: Record<CotizadorStep, string> = {
   precio: 'Cotiza tu proyecto',
   zonaEntrega: 'Cotiza tu proyecto',
   resumen: 'Resumen de tu cotización',
-  formaPago: 'Forma de pago',
-  wompi: 'Pago',
-  resultado: 'Resultado',
 };
 
 // sf-cot-mobile item 4 — the id of the heading each step should scroll/focus
 // into view on transition. Steps 0-3 own a per-step <h3> (step0-heading …
 // step3-heading, each already `tabIndex={-1}` for programmatic focus);
-// resumen/formaPago/wompi/resultado render no sub-heading of their own (see
+// resumen renders no sub-heading of their own (see
 // the PAGE_TITLES comment above) so the shared page <h2> is the target.
 const HEADING_ID: Record<CotizadorStep, string> = {
   producto: 'step0-heading',
@@ -134,13 +95,10 @@ const HEADING_ID: Record<CotizadorStep, string> = {
   precio: 'step2-heading',
   zonaEntrega: 'step3-heading',
   resumen: 'cotizador-page-title',
-  formaPago: 'cotizador-page-title',
-  wompi: 'cotizador-page-title',
-  resultado: 'cotizador-page-title',
 };
 
 function stepFromHash(hash: string): CotizadorStep | null {
-  // Strip a fragment query (`#cotizador/7-resultado?pago=...` from the Wompi return).
+  // Strip a fragment query.
   const raw = hash.replace(/^#/, '').split('?')[0] ?? '';
   const [section, slug] = raw.split('/');
   if (section !== 'cotizador' || !slug) return null;
@@ -160,14 +118,10 @@ interface AsideView {
   note: string;
   items: AsideItem[];
   showDeposit: boolean;
-  /** 'Pagando con tarjeta en línea: $X (−10%)' line (only rendered in preview mode). */
-  previewOffer?: PayOffer | null;
   /**
-   * null on resumen/formaPago: desktop-05/06 draw "Enviar por WhatsApp para
-   * confirmar"/"Pagar ahora" (resumen) and the Wompi CTA (formaPago) ONLY in
-   * this aside, never in the main content column — Step4Resumen/
-   * Step5FormaPago own the message/amount logic (per-product WhatsApp text,
-   * amount toggle) so they still render their own copy of the same control
+   * null on resumen: desktop draws the CTAs (PDF quote / WhatsApp advisor) ONLY in
+   * this aside, never in the main content column — Step4Resumen owns the
+   * message logic (per-product WhatsApp text, PDF share) so it still renders their own copy of the same control
    * for the mobile bottom-bar (ios/android boards draw it there instead),
    * then `createPortal` a second, real, identically-wired copy into this
    * card's `.cotizador-aside__ctas` mount point (via the `asideCtaTarget`
@@ -176,15 +130,12 @@ interface AsideView {
    * `.cotizador-aside` display:none rules) so exactly one is ever visible —
    * `getByRole` locators (which only match elements in the accessibility
    * tree, i.e. not display:none) resolve to that one without scoping.
-   * On 'wompi' this is instead a static "Creando enlace de pago…" pill
-   * (desktop-06's own "ANOTACIÓN · ESTADO DE CARGA" callout) — there's
-   * nothing to click while the mock payment is in flight.
    */
   ctas: ReactElement | null;
 }
 
 // S7 — sessionStorage persistence for the cart under its own key: a reload
-// mid-checkout shouldn't lose already-committed items. The rest of the wizard
+// mid-flow shouldn't lose already-committed items. The rest of the wizard
 // (step, current item, delivery) is a separate snapshot, see state/persist.ts.
 // Guarded for the Astro build's server-side render pass (no `window` there)
 // and for private-mode/quota errors (try/catch, silently drops the cart).
@@ -241,8 +192,8 @@ export default function Cotizador(): ReactElement {
     if (!persistReadyRef.current || state === bootStateRef.current) return;
     persistWizardState(state);
   }, [state]);
-  // Portal mount for the resumen/formaPago aside CTAs — see the AsideView.ctas
-  // comment below and Step4Resumen/Step5FormaPago's `asideCtaTarget` prop.
+  // Portal mount for the resumen aside CTAs — see the AsideView.ctas
+  // comment below and Step4Resumen's `asideCtaTarget` prop.
   const [portalCtaEl, setPortalCtaEl] = useState<HTMLDivElement | null>(null);
   // Step 0 (selector): the desktop resumen aside is owned by Step0Producto
   // (it holds the category/type/finish state); it portals its body in here.
@@ -257,20 +208,12 @@ export default function Cotizador(): ReactElement {
   const [stashed, setStashed] = useState<WorkStash | null>(null);
 
   // ADR-014 add.2: el registro de promos se hidrata desde /api/promotions.json antes del efecto de arranque
-  // si la entrada depende de una promo (?promo=, snapshot o retorno de Wompi con promoId); si no, en segundo plano.
+  // si la entrada depende de una promo (?promo= o snapshot); si no, en segundo plano.
   const [registryReady, setRegistryReady] = useState(false);
   useEffect(() => {
-    const pendingPromoId = (): string | null => {
-      try {
-        return loadPendingPayment()?.promoId ?? null; // sessionStorage puede lanzar (storage bloqueado)
-      } catch {
-        return null;
-      }
-    };
     const needsPromo =
       promoIdFromSearch(window.location.search) !== null ||
-      (readWizardSnapshot()?.promoId ?? null) !== null ||
-      pendingPromoId() !== null;
+      (readWizardSnapshot()?.promoId ?? null) !== null;
     const hydrating = hydratePromoRegistry();
     if (!needsPromo) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-only read of location/storage (no SSR access)
@@ -292,35 +235,11 @@ export default function Cotizador(): ReactElement {
     const initial = stepFromHash(initialHash);
     if (initial) dispatch({ type: 'GOTO_STEP', step: initial });
 
-    // Return from Wompi (real gateway): api/wompi-return already verified
-    // the redirect hash server-side and encoded the result in the fragment.
-    // Restore what the redirect wiped, show the result, then tidy the URL.
-    const wompiReturn = parseWompiReturn(initialHash);
-    if (wompiReturn) {
-      const pendingPayment = loadPendingPayment();
-      if (pendingPayment) {
-        dispatch({ type: 'SET_ZONE', zone: pendingPayment.zone });
-        dispatch({ type: 'RESTORE_ADDRESS', address: parseStoredAddress(pendingPayment.address) });
-        dispatch({ type: 'SET_ENTREGA', entrega: pendingPayment.entrega });
-        dispatch({ type: 'SET_PAY_AMOUNT_PCT', pct: pendingPayment.pct });
-        dispatch({ type: 'RESTORE_PROMO', promoId: pendingPayment.promoId ?? null });
-      }
-      const outcome =
-        wompiReturn.pago === 'aprobado'
-          ? 'approved'
-          : wompiReturn.pago === 'rechazado'
-            ? 'declined'
-            : 'pending';
-      dispatch({
-        type: 'SET_WOMPI_RESULT',
-        outcome,
-        orderNumber: wompiReturn.ref ?? pendingPayment?.reference ?? 'ALC-2026-0001',
-      });
-      window.history.replaceState(
-        null,
-        '',
-        `${window.location.pathname}${window.location.search}#cotizador/${STEP_SLUGS.resultado}`,
-      );
+    // `?oferta=online10` (link viejo del navbar): ya no existe la oferta; se abre el cotizador normal y se limpia el parametro.
+    if (new URLSearchParams(window.location.search).has('oferta')) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('oferta');
+      window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
     }
 
     // ADR-012 §5: `?folio=` is processed once and removed from the URL.
@@ -336,9 +255,8 @@ export default function Cotizador(): ReactElement {
     // A page reload (or a mobile tab reload around the geolocation permission
     // prompt) used to wipe everything but the cart, then bounce to step 0 because
     // the hash still named a later step. Restore the stored wizard snapshot when
-    // eligible; a fresh deep-link arrival and a Wompi/folio return win instead.
+    // eligible; a fresh deep-link arrival and a folio return win instead.
     const storedSnapshot = readWizardSnapshot();
-    const offerParam = hasOnlineOfferParam(window.location.search);
     // Contexto de la URL de entrada: `?promo=<id>` vigente y con reglaje, o normal. Un snapshot solo se
     // restaura si su contexto coincide (promo A != promo B != normal): si no, flujo fresco.
     const urlPromo = lookupActivePromo(promoIdFromSearch(window.location.search));
@@ -346,14 +264,13 @@ export default function Cotizador(): ReactElement {
       storedSnapshot !== null &&
       (storedSnapshot.promoId ?? null) === (urlPromo?.id ?? null) &&
       shouldRestoreWizard({
-        wompiReturn: wompiReturn !== null,
         hasFolio: !!folio,
         search: window.location.search,
         hashStep: initial,
         navigation: readNavigationType(),
       });
     // Trabajo en curso de OTRO contexto + entrada fresca por `?promo=`: no se pierde, se aparta (stash) y se avisa.
-    if (urlPromo && !wompiReturn && !folio && !restoring) {
+    if (urlPromo && !folio && !restoring) {
       const work = { cart: loadPersistedCart(), snapshot: storedSnapshot };
       if (hasWork(work.cart, work.snapshot)) {
         // Re-ejecucion del efecto (StrictMode): el snapshot ya pudo limpiarse; no pisar un stash completo.
@@ -362,7 +279,7 @@ export default function Cotizador(): ReactElement {
       }
     }
     if (storedSnapshot && restoring) {
-      const fields = restoreFields(storedSnapshot, initial, offerParam);
+      const fields = restoreFields(storedSnapshot, initial);
       dispatch({ type: 'RESTORE_WIZARD', fields });
       window.history.replaceState(
         null,
@@ -373,25 +290,17 @@ export default function Cotizador(): ReactElement {
       clearWizardSnapshot(); // stale or unusable: never leak it into a fresh flow
     }
 
-    // `?oferta=online10` (navbar "Compra YA! 10% de descuento"): the 10% online-card discount is
-    // APPLIED from the first screen. Deliberately outside the `!wompiReturn` / `!restoring` block
-    // below and AFTER RESTORE_WIZARD, so a reload with the param (the URL keeps it) re-applies the
-    // offer on top of the restored wizard, and a priced deep link combined with it keeps both.
-    // The offer (and its banner) exist ONLY with the param: restoreFields never turns it on from a snapshot.
-    // Si llegan ambos params gana la promo (sin 10% con tarjeta en contexto promo).
-    if (offerParam && !urlPromo) dispatch({ type: 'APPLY_ONLINE_OFFER' });
     // Entrada por promo (fresca): bloquea el wizard al reglaje de la promo. Con restore el snapshot ya trae el
     // mismo contexto. Un id invalido/vencido se ignora y se limpia de la URL (flujo normal).
-    if (urlPromo && !wompiReturn && !folio && !restoring) dispatch({ type: 'ENTER_PROMO', promo: urlPromo });
+    if (urlPromo && !folio && !restoring) dispatch({ type: 'ENTER_PROMO', promo: urlPromo });
     if (!urlPromo && promoIdFromSearch(window.location.search)) {
       const url = new URL(window.location.href);
       url.searchParams.delete(PROMO_PARAM);
       window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
     }
 
-    // Post-Wompi restoration wins: the deep link must not override it. A
-    // restored wizard also skips the priced preset (it would reset the product).
-    if (!wompiReturn) {
+    // A restored wizard skips the priced preset (it would reset the product).
+    {
       // ADR-008 §3: `?producto=<slug>` (leaf, variant or legacy alias). Invalid
       // slugs are ignored; advisorOnly slugs never enter the wizard.
       const deepLink = parseDeepLink(window.location.search);
@@ -523,7 +432,7 @@ export default function Cotizador(): ReactElement {
   // 136px magic number. Overridden as an inline custom property (wins the
   // cascade over the :root fallback in cotizador.css, which still covers the
   // instant before this effect's first run). Steps with no bottom bar at all
-  // (producto, wompi, resultado) get 0 — no bar to clear.
+  // (producto) get 0 — no bar to clear.
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -563,15 +472,10 @@ export default function Cotizador(): ReactElement {
   // ADR-005: a mid-wizard state with no product selected falls back to step 0
   // instead of rendering a broken step.
   useEffect(() => {
-    // Exception: the result step reached from the Wompi return (fresh page load).
-    if (
-      state.step !== 'producto' &&
-      !product &&
-      !(state.step === 'resultado' && state.wompiOutcome !== null)
-    ) {
+    if (state.step !== 'producto' && !product) {
       dispatch({ type: 'GOTO_STEP', step: 'producto' });
     }
-  }, [state.step, state.wompiOutcome, product]);
+  }, [state.step, product]);
 
   function goToStep(step: CotizadorStep): void {
     dispatch({ type: 'GOTO_STEP', step });
@@ -622,17 +526,10 @@ export default function Cotizador(): ReactElement {
   }
 
   // "Cotizar otro modelo sin promoción": sale del contexto promo (quita `?promo=` de la URL, descarta el
-  // item promo y reinicia el wizard en normal: precios regulares y 10% con tarjeta).
-  // Promo completada (resultado): el trabajo apartado ya no se ofrece.
-  useEffect(() => {
-    if (state.step === 'resultado') {
-      clearStash();
-    }
-  }, [state.step]);
-
+  // item promo y reinicia el wizard en normal: precios regulares).
   function recoverStash(): void {
     if (!stashed) return;
-    const fields = stashed.snapshot ? restoreFields(stashed.snapshot, null, false) : null;
+    const fields = stashed.snapshot ? restoreFields(stashed.snapshot, null) : null;
     dispatch({ type: 'RECOVER_WORK', cart: stashed.cart, fields });
     clearStash();
     clearWizardSnapshot();
@@ -698,78 +595,29 @@ export default function Cotizador(): ReactElement {
 
   // S7 — the whole order: every committed cart item + the current item (if
   // any), one subtotal each, transport (zoneFee) added exactly ONCE
-  // (T7.2) regardless of item count. This is what Resumen/Forma de
-  // pago/Wompi/Resultado must show as "the total" — see HANDOFF to S8.
+  // (T7.2) regardless of item count. This is what Resumen must
+  // show as "the total".
   // sf-cot-s7gaps gap 2 — 'zonaEntrega' is included here too: when it's
   // reopened via Resumen's "Cambiar" with 2+ items already in the cart, its
   // breakdown must total the whole order, not just the current item.
   const orderItems = useMemo(() => buildOrderItems(state, CATALOG_PRODUCTS), [state]);
   const isOrderPhase =
     state.step === 'zonaEntrega' ||
-    state.step === 'resumen' ||
-    state.step === 'formaPago' ||
-    state.step === 'wompi' ||
-    state.step === 'resultado';
+    state.step === 'resumen';
   const orderTotalValue =
     orderItems.length > 0 ? computeOrderTotal(orderItems, zoneFee ?? 0) : null;
-  // Envio de la entrega: retiro = none, zona con tarifa = fee, distrito sin tarifa ('otro') = pending
-  // ("Envío por confirmar": nunca bloquea). Solo se resuelve con la direccion completa.
-  const shipping: ShippingState | null = addressOk ? resolveShipping(state.entrega, state.zone) : null;
-  // Descuento 10% pagando con tarjeta en linea: pasos 0-3 nunca; Resumen solo tras elegir metodo
-  // en el Paso 5; pago/Wompi/resultado usan state.payMethod (ver payMethodForDiscount).
-  const payable: Payable | null =
-    isOrderPhase && shipping && orderItems.length > 0
-      ? computePayable({
-          itemsSubtotal: orderItemsSubtotal(orderItems),
-          shipping,
-          payMethod: payMethodForDiscount(state.step, state.payMethod, state.payMethodChosen, state.onlineOffer),
-          pickup: state.entrega === 'retiro',
-          promo: !!state.promoId,
-        })
-      : null;
-  // 10% card line for Precio -> Resumen: 'applied' (offer link / card chosen) or 'preview' ("Pagando
-  // con tarjeta en línea: $X (−10%)", golden totals untouched). Precio prices the current item with no
-  // shipping yet (same figure the aside shows there); zona/resumen use the whole order and its shipping.
-  const payOffer = buildPayOffer({
-    step: state.step,
-    offer: state.onlineOffer,
-    payMethod: state.payMethod,
-    chosen: state.payMethodChosen,
-    itemsSubtotal: state.step === 'precio' ? (quote.amount ?? 0) : orderItemsSubtotal(orderItems),
-    shipping: state.step === 'precio' ? null : shipping,
-    pickup: state.entrega === 'retiro',
-    promo: !!state.promoId,
-  });
-  // The offer is "live" (banner copy) while card is the chosen method; picking WhatsApp in Step5 drops it.
-  const offerApplied = state.onlineOffer && state.payMethodChosen && state.payMethod === 'pay';
-  // Banner only when the offer is active (entered through the navbar "Compra YA!" / `?oferta=online10`).
-  const showOfferBanner = state.onlineOffer && !state.promoId && state.step !== 'wompi' && state.step !== 'resultado';
-  const onlineDiscount = payable?.discount.applies ? payable.discount.amount : 0;
-  const shippingPending = payable?.shippingPending ?? false;
   // Sin direccion completa no se muestra un total con envio: "Por confirmar".
-  // Sin descuento payable.total === orderTotalValue (mismos productos + envio, mismo redondeo).
-  const total = isOrderPhase ? (addressOk ? (payable?.total ?? orderTotalValue) : null) : singleItemTotal;
+  const total = isOrderPhase ? (addressOk ? orderTotalValue : null) : singleItemTotal;
 
-  // desktop-07-payment-result.dc.html is the only board (03-07) with no
-  // "TU COTIZACIÓN" aside at all — the wizard is done, there's nothing left
-  // to summarize mid-flow.
-  const showSummaryColumn =
-    !!product && state.step !== 'producto' && state.step !== 'resultado';
+  const showSummaryColumn = !!product && state.step !== 'producto';
 
   const currentIdx = STEP_ORDER.indexOf(state.step);
   const isFirstStep = currentIdx <= (promo ? 1 : 0);
-  // Mobile 6-dot stepper (.step-rail-wrap) only exists through 'resumen' —
-  // see MOBILE_STEPPER_STEPS comment above.
+  // Mobile stepper (.step-rail-wrap) spans every step (the last one is 'resumen').
   const showMobileStepper = currentIdx <= MOBILE_STEPPER_LAST_VISIBLE_IDX;
 
-  // --- Desktop rail (kicker + "Paso N de 8" + progress bar + 8-item list) ---
-  // desktop-07-payment-result.dc.html (the only board covering wompi/
-  // resultado) shows "Paso 7 de 8", aria-current on item 7 ("Pago (Wompi)"),
-  // AND item 8 ("Resultado") highlighted the same way (bold, accent ring)
-  // but without aria-current — i.e. wompi+resultado share rail position 7;
-  // resultado never advances the counter or the current pointer.
-  const isPaymentPhase = state.step === 'wompi' || state.step === 'resultado';
-  const railIdx = STEP_ORDER.indexOf(isPaymentPhase ? 'wompi' : state.step);
+  // --- Desktop rail (kicker + "Paso N de M" + progress bar + item list) ---
+  const railIdx = STEP_ORDER.indexOf(state.step);
   const railStepNumber = railIdx + 1;
   const railProgressPct = (railStepNumber / STEP_ORDER.length) * 100;
   // "¿Dudas con tu medida?" block (desktop rail only, all of boards 03-07) —
@@ -789,36 +637,23 @@ export default function Cotizador(): ReactElement {
       : quote.requiresQuote
         ? 'Por WhatsApp'
         : 'Por confirmar';
-  // "Conocida" = retiro, zona con tarifa o distrito sin tarifa con direccion completa ("Envío por confirmar"
-  // ya no bloquea: el flujo sigue y el envio se confirma por WhatsApp).
+  // "Conocida" = retiro, o zona de cobertura elegida con direccion completa.
   const zoneKnown =
-    state.entrega === 'retiro' ||
-    (addressOk && state.zone !== '' && getZoneFee(state.zone) !== undefined) ||
-    (addressOk && shipping?.kind === 'pending');
-  const shippingPendingNow = state.entrega === 'instalacion' && shipping?.kind === 'pending';
+    state.entrega === 'retiro' || (addressOk && state.zone !== '' && getZoneFee(state.zone) !== undefined);
   const transporteDetail =
     state.entrega === 'retiro'
       ? 'Retiro en tienda'
-      : shippingPendingNow
-        ? 'Te lo confirmamos por WhatsApp'
-        : zoneKnown
-          ? state.zone
-          : 'Zona por confirmar';
+      : zoneKnown
+        ? state.zone
+        : 'Zona por confirmar';
   const transportePrice =
     state.entrega === 'retiro'
       ? 'Sin costo'
-      : shippingPendingNow
-        ? 'Por confirmar'
-        : zoneKnown
-          ? `$${(zoneFee ?? 0).toFixed(2)}`
-          : 'Por confirmar';
-  const discountRow = (amount: number): AsideItem[] =>
-    amount > 0
-      ? [{ name: ONLINE_DISCOUNT_LABEL, detail: 'Solo productos, no incluye envío', price: formatDiscount(amount) }]
-      : [];
-  const discountItem = discountRow(onlineDiscount);
+      : zoneKnown
+        ? `$${(zoneFee ?? 0).toFixed(2)}`
+        : 'Por confirmar';
   const depositAmount = total !== null ? depositOf(total) : 0;
-  const balanceAmount = total !== null ? total - depositAmount : 0;
+  const balanceAmount = total !== null ? Math.round((total - depositAmount) * 100) / 100 : 0;
   // Same one-liner "Hola ALCUSA, quiero cotizar: <producto> · <medida>." the
   // boards use for the aside's always-on "Cotizar por WhatsApp" (desktop-03
   // script `waHref`, shared verbatim with the requiresQuote callout's own
@@ -858,17 +693,14 @@ export default function Cotizador(): ReactElement {
     );
 
     if (state.step === 'medidas' || state.step === 'precio') {
-      // Offer link: Precio already shows the card price (discount row + discounted total).
-      const precioOffer = state.step === 'precio' && payOffer?.mode === 'applied' ? payOffer : null;
       aside = {
         totalLabel: 'Estimado sin transporte',
-        totalValue: precioOffer ? `$${precioOffer.cardTotal.toFixed(2)}` : amountText,
+        totalValue: amountText,
         note: quote.requiresQuote
           ? 'Esta medida se cotiza por WhatsApp.'
           : 'El costo final incluye transporte según tu zona.',
-        items: [baseItem, ...discountRow(precioOffer?.discount ?? 0)],
+        items: [baseItem],
         showDeposit: false,
-        previewOffer: state.step === 'precio' ? payOffer : null,
         ctas: (
           <>
             {siguiente(quote.requiresQuote)}
@@ -880,13 +712,11 @@ export default function Cotizador(): ReactElement {
       const note =
         state.entrega === 'retiro'
           ? 'Retiro en tienda · 15% de descuento aplicado.'
-          : shippingPendingNow
-            ? 'Envío por confirmar: te lo confirmamos por WhatsApp.'
-            : !zoneKnown
-              ? 'Transporte por confirmar según tu zona.'
-              : (zoneFee ?? 0) === 0
-                ? 'Transporte incluido en tu zona.'
-                : `Incluye transporte a ${state.zone}.`;
+          : !zoneKnown
+            ? 'Transporte por confirmar según tu zona.'
+            : (zoneFee ?? 0) === 0
+              ? 'Transporte incluido en tu zona.'
+              : `Incluye transporte a ${state.zone}.`;
       aside = {
         totalLabel: 'Total estimado',
         totalValue: totalText,
@@ -894,10 +724,8 @@ export default function Cotizador(): ReactElement {
         items: [
           baseItem,
           { name: 'Transporte', detail: transporteDetail, price: transportePrice },
-          ...discountItem,
         ],
         showDeposit: false,
-        previewOffer: total !== null ? payOffer : null,
         ctas: (
           <>
             {siguiente(!zoneKnown)}
@@ -905,17 +733,11 @@ export default function Cotizador(): ReactElement {
           </>
         ),
       };
-    } else if (
-      state.step === 'resumen' ||
-      state.step === 'formaPago' ||
-      state.step === 'wompi'
-    ) {
+    } else if (state.step === 'resumen') {
       aside = {
         totalLabel: 'Total estimado',
         totalValue: totalText,
-        note: shippingPendingNow
-          ? 'Envío por confirmar: te lo confirmamos por WhatsApp.'
-          : 'Incluye transporte, cobrado 1 vez por pedido.',
+        note: 'Incluye transporte, cobrado 1 vez por pedido.',
         // S7 — every cart+current item, one row each, then the single
         // order-level transport row (never one row per item — T7.2).
         items: [
@@ -925,20 +747,9 @@ export default function Cotizador(): ReactElement {
             price: it.requiresQuote ? 'Por WhatsApp' : `$${it.subtotal.toFixed(2)}`,
           })),
           { name: 'Transporte', detail: transporteDetail, price: transportePrice },
-          ...discountItem,
         ],
         showDeposit: total !== null,
-        previewOffer: payOffer,
-        ctas:
-          state.step === 'wompi' ? (
-            <span
-              className="cotizador-aside__cta cotizador-aside__cta--loading"
-              aria-hidden="true"
-            >
-              <IconSpinner size={20} />
-              Creando enlace de pago…
-            </span>
-          ) : null, // resumen/formaPago: real CTAs portal in from the step component — see the AsideView.ctas comment above.
+        ctas: null, // resumen: the real CTAs portal in from Step4Resumen — see the AsideView.ctas comment above.
       };
     }
   }
@@ -1035,13 +846,10 @@ export default function Cotizador(): ReactElement {
           </div>
           <ol className="rail-desktop__list">
             {STEP_ORDER.map((step, index) => {
-              // 'resultado' (index railIdx+1) shares the "current" look while
-              // isPaymentPhase, without aria-current — see the railIdx comment.
-              const isExtraCurrent = isPaymentPhase && index === railIdx + 1;
               const itemState =
                 index < railIdx
                   ? 'done'
-                  : index === railIdx || isExtraCurrent
+                  : index === railIdx
                     ? 'current'
                     : 'upcoming';
               const item = RAIL_ITEMS[step];
@@ -1079,22 +887,9 @@ export default function Cotizador(): ReactElement {
       </div>
 
       <div className="cotizador__form-col">
-        {showOfferBanner && (
-          <div
-            className="online-discount-banner"
-            data-testid="online-discount-banner"
-            data-state={offerApplied ? 'applied' : 'info'}
-            role="status"
-          >
-            <IconCardRect size={22} className="online-discount-banner__icon" />
-            <p className="online-discount-banner__text">
-              <strong>{ONLINE_OFFER_BANNER_TEXT}</strong>
-            </p>
-          </div>
-        )}
-        {promo && state.step !== 'resultado' && (
-          <div className="online-discount-banner" data-testid="promo-banner" data-state="info" role="status">
-            <p className="online-discount-banner__text">
+        {promo && (
+          <div className="cotizador-banner" data-testid="promo-banner" data-state="info" role="status">
+            <p className="cotizador-banner__text">
               <strong>{`${PROMO_BANNER_PREFIX} ${promo.title}`}</strong>
               {` · $${promo.price.toFixed(promo.price % 1 === 0 ? 0 : 2)} instalada en San Salvador y Santa Tecla (otras zonas suman su envío).`}
             </p>
@@ -1103,9 +898,9 @@ export default function Cotizador(): ReactElement {
             </button>
           </div>
         )}
-        {stashed && state.step !== 'resultado' && (
-          <div className="online-discount-banner" data-testid="stash-banner" data-state="info" role="status">
-            <p className="online-discount-banner__text">
+        {stashed && (
+          <div className="cotizador-banner" data-testid="stash-banner" data-state="info" role="status">
+            <p className="cotizador-banner__text">
               <strong>Tienes una cotización en curso</strong>
               {' · La guardamos aparte para que no la pierdas.'}
             </p>
@@ -1163,7 +958,6 @@ export default function Cotizador(): ReactElement {
               product={product}
               state={state}
               quote={quote}
-              payOffer={payOffer}
               onNext={next}
               onEditMedidas={() => goToStep('medidas')}
             />
@@ -1178,8 +972,6 @@ export default function Cotizador(): ReactElement {
               items={orderItems}
               zoneFee={zoneFee}
               total={total}
-              payOffer={payOffer}
-              shippingPending={shippingPendingNow}
               onEntregaChange={(entrega) => dispatch({ type: 'SET_ENTREGA', entrega })}
               onAddressChange={(field, value) => dispatch({ type: 'SET_ADDRESS_FIELD', field, value })}
               onGeoChange={(geo) => dispatch({ type: 'SET_ADDRESS_GEO', geo })}
@@ -1195,59 +987,12 @@ export default function Cotizador(): ReactElement {
               items={orderItems}
               zoneFee={zoneFee}
               total={total}
-              onlineDiscount={onlineDiscount}
-              payOffer={payOffer}
-              shippingPending={shippingPending}
-              onNext={next}
               onEditZone={() => goToStep('zonaEntrega')}
               onAddAnother={addToCart}
               onRemoveItem={removeItem}
               onEditItem={editItem}
               onDismissQuoteNotice={() => dispatch({ type: 'DISMISS_QUOTE_NOTICE' })}
               asideCtaTarget={portalCtaEl}
-            />
-          </LazyStep>
-        )}
-        {state.step === 'formaPago' && product && (
-          <LazyStep>
-            <Step5FormaPago
-              state={state}
-              quote={quote}
-              zoneFee={zoneFee}
-              total={total}
-              itemsSubtotal={orderItemsSubtotal(orderItems)}
-              shippingPending={shippingPending}
-              dispatch={dispatch}
-              onNext={next}
-              asideCtaTarget={portalCtaEl}
-            />
-          </LazyStep>
-        )}
-        {state.step === 'wompi' && product && (
-          <LazyStep>
-            <Step6Wompi
-              state={state}
-              quote={quote}
-              zoneFee={zoneFee}
-              total={total}
-              onlineDiscount={onlineDiscount}
-              shippingPending={shippingPending}
-              dispatch={dispatch}
-              onNext={next}
-            />
-          </LazyStep>
-        )}
-        {state.step === 'resultado' && (product || state.wompiOutcome !== null) && (
-          <LazyStep>
-            <Step7Resultado
-              product={product ?? undefined}
-              state={state}
-              quote={quote}
-              zoneFee={zoneFee}
-              total={total}
-              onlineDiscount={onlineDiscount}
-              shippingPending={shippingPending}
-              onRetry={() => goToStep('wompi')}
             />
           </LazyStep>
         )}
@@ -1296,27 +1041,22 @@ export default function Cotizador(): ReactElement {
               </li>
             ))}
           </ul>
-          <OnlineDiscountPreview offer={aside.previewOffer ?? null} testId="aside-online-discount-preview" />
           {aside.showDeposit && (
             <div className="cotizador-aside__deposit">
               <div className="cotizador-aside__deposit-row">
-                <span>Anticipo 80% hoy</span>
+                <span>Anticipo 80%</span>
                 <span>${depositAmount.toFixed(2)}</span>
               </div>
               <div className="cotizador-aside__deposit-row">
-                <span>Saldo 20% al recibir</span>
+                <span>Saldo 20% contra entrega</span>
                 <span>${balanceAmount.toFixed(2)}</span>
               </div>
             </div>
           )}
           {aside.ctas && <div className="cotizador-aside__ctas">{aside.ctas}</div>}
-          {(state.step === 'resumen' || state.step === 'formaPago') && (
+          {state.step === 'resumen' && (
             <div className="cotizador-aside__ctas" ref={setPortalCtaEl} />
           )}
-          <p className="cotizador-aside__wompi-note">
-            <IconLock size={16} />
-            Pago con tarjeta vía Wompi · excepto American Express
-          </p>
         </aside>
       )}
     </div>

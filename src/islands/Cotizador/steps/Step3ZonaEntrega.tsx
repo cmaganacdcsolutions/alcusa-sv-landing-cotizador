@@ -10,16 +10,11 @@ import {
 import AddressFields, { ADDRESS_INPUT_ID } from './AddressFields';
 import { getZoneFee } from '@engine/pricing/zoneFee';
 import { zoneDisplayName } from '@content/deliveryZones';
-import { buildWaLink } from '@integrations/whatsapp/waLink';
 import type { CotizadorState, Entrega } from '../state/cotizadorStore';
 import type { QuoteResult } from '../state/quote';
 import { orderItemsSubtotal, type OrderLineItem } from '../state/order';
-import { formatDiscount } from '../state/payable';
-import { ONLINE_DISCOUNT_LABEL, type PayOffer } from '../state/payOffer';
-import OnlineDiscountPreview from './OnlineDiscountPreview';
-import { IconArrowRight, IconCheck, IconWarningCircle } from '../icons';
-import { IconStore, IconTruck } from '../icons-checkout';
-import '@styles/cotizador-checkout.css';
+import { IconArrowRight, IconCheck, IconStore, IconTruck } from '../icons';
+import '@styles/cotizador-entrega-resumen.css';
 
 export interface Step3ZonaEntregaProps {
   product: CatalogProduct;
@@ -32,12 +27,7 @@ export interface Step3ZonaEntregaProps {
   // instead of showing just the current item's price.
   items: OrderLineItem[];
   zoneFee: number | undefined;
-  /** Already net of the 10% card discount when `payOffer` is 'applied' (offer link). */
   total: number | null;
-  /** 'applied' (offer link) adds the discount row; 'preview' shows what the card would cost. */
-  payOffer: PayOffer | null;
-  /** Distrito sin tarifa ('otro') con direccion completa: "Envío por confirmar", no bloquea el flujo. */
-  shippingPending: boolean;
   onEntregaChange: (entrega: Entrega) => void;
   onAddressChange: (field: AddressField, value: string) => void;
   onGeoChange: (geo: GeoPoint | null) => void;
@@ -53,8 +43,6 @@ export default function Step3ZonaEntrega({
   items,
   zoneFee,
   total,
-  payOffer,
-  shippingPending,
   onEntregaChange,
   onAddressChange,
   onGeoChange,
@@ -77,12 +65,8 @@ export default function Step3ZonaEntrega({
   // La zona elegida muestra su linea de envio de inmediato; el TOTAL espera a la direccion completa.
   const zoneChosen = inst && !state.addressFromQuote && state.zone !== '';
   const chosenFee = getZoneFee(state.zone);
-  // Distrito sin tarifa automatica: ya NO bloquea (decision 2026-10-06); el envio se confirma por WhatsApp.
-  const zonePending = inst && addressComplete && shippingPending;
   const canProceed = !zoneUnselected;
-  const zoneFeeNote = zonePending || (zoneChosen && chosenFee === undefined)
-    ? 'Envío por confirmar: te lo confirmamos por WhatsApp.'
-    : inst && (addressComplete || zoneChosen) && state.zone
+  const zoneFeeNote = inst && (addressComplete || zoneChosen) && state.zone
       ? (chosenFee ?? zoneFee) === 0
         ? 'Envío incluido en tu zona.'
         : `Envío a ${zoneDisplayName(state.zone)}: $${(chosenFee ?? zoneFee ?? 0).toFixed(2)}, una vez por pedido.`
@@ -200,24 +184,6 @@ export default function Step3ZonaEntrega({
         {liveMsg}
       </p>
 
-      {zonePending && (
-        <div className="callout" role="status" data-testid="zona-envio-pendiente" style={{ marginTop: 20 }}>
-          <span className="callout__title">
-            <IconWarningCircle />
-            Tu zona aún no tiene tarifa de transporte automática
-          </span>
-          <p className="callout__body">
-            Puedes continuar con tu pedido: el envío queda por confirmar y te lo confirmamos por WhatsApp.
-          </p>
-          <a
-            href={buildWaLink('Hola ALCUSA, quiero cotizar el transporte a mi municipio.')}
-            className="btn btn-whatsapp"
-          >
-            Confirmar envío por WhatsApp
-          </a>
-        </div>
-      )}
-
       {zoneUnselected && (
         <div className="total-placeholder" style={{ marginTop: 20 }}>
           <span className="total-placeholder__title">Total por confirmar</span>
@@ -236,23 +202,11 @@ export default function Step3ZonaEntrega({
             <dd>{productPriceText}</dd>
           </div>
           <div className="breakdown__row">
-            <dt>
-              {zonePending
-                ? 'Envío: por confirmar (te lo confirmamos por WhatsApp)'
-                : inst
-                  ? `Transporte · ${state.zone}`
-                  : 'Transporte'}
-            </dt>
-            <dd>{zonePending ? 'Por confirmar' : inst ? `$${(zoneFee ?? 0).toFixed(2)}` : 'Sin costo'}</dd>
+            <dt>{inst ? `Transporte · ${state.zone}` : 'Transporte'}</dt>
+            <dd>{inst ? `$${(zoneFee ?? 0).toFixed(2)}` : 'Sin costo'}</dd>
           </div>
-          {payOffer?.mode === 'applied' && (
-            <div className="breakdown__row" data-testid="zona-discount-row">
-              <dt>{ONLINE_DISCOUNT_LABEL}</dt>
-              <dd data-testid="zona-discount-value">{formatDiscount(payOffer.discount)}</dd>
-            </div>
-          )}
           <div className="breakdown__row breakdown__row--total">
-            <dt>{zonePending ? 'Total productos' : 'Total estimado'}</dt>
+            <dt>Total estimado</dt>
             <dd data-testid="zona-total-value">${(total ?? price).toFixed(2)}</dd>
           </div>
           <div className="breakdown__row">
@@ -264,13 +218,11 @@ export default function Step3ZonaEntrega({
           </div>
         </dl>
       )}
-      {canProceed && <OnlineDiscountPreview offer={payOffer} />}
 
       <div className="bottom-bar" style={{ marginTop: 24 }}>
         <div className="bottom-bar__price">
-          <span className="bottom-bar__price-label">{zonePending ? 'Total productos' : 'Total estimado'}</span>
+          <span className="bottom-bar__price-label">Total estimado</span>
           <span className="bottom-bar__price-value">{canProceed ? `$${(total ?? price).toFixed(2)}` : 'Por confirmar'}</span>
-          {zonePending && <span className="bottom-bar__price-label">+ envío por confirmar</span>}
         </div>
         <button type="button" className="btn btn-primary" onClick={handleNext}>
           Siguiente

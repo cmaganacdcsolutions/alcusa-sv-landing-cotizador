@@ -48,9 +48,9 @@ const STEPS = [
   {
     id: 'confirmar',
     title: 'Confirma tu pedido',
-    copy: 'Para apartarlo, paga el anticipo del 80% con tarjeta. Si prefieres, toca «Enviar por WhatsApp para confirmar»: no se cobra nada en ese paso. El 20% restante lo pagas al recibir tu producto.',
+    copy: 'Toca «Cotización en PDF»: te pedimos tus datos y generamos tu cotización con folio. Si tienes dudas, habla con un asesor por WhatsApp. Las condiciones de pago son 80% de anticipo y 20% contra entrega.',
     // TODO Alcusa confirmar: fechas/tiempos de fabricación, visita e instalación (hoy el cotizador solo dice "Acordamos contigo fecha y hora").
-    next: 'Te escribimos por WhatsApp y acordamos contigo fecha y hora.',
+    next: 'Alcusa coordina contigo el pago, la fecha y la hora por WhatsApp.',
   },
 ] as const;
 ---
@@ -133,8 +133,8 @@ const STEPS = [
               )}
               {step.id === 'confirmar' && (
                 <div class="mock">
-                  <span class="mock__opt mock__opt--on"><b>Anticipo 80%</b><em>Pago con tarjeta</em></span>
-                  <span class="mock__opt"><b>Enviar por WhatsApp para confirmar</b><em>No se cobra nada</em></span>
+                  <span class="mock__opt mock__opt--on"><b>Cotización en PDF</b><em>Con folio y tus datos</em></span>
+                  <span class="mock__opt"><b>Hablar con un asesor por WhatsApp</b><em>Anticipo 80% · Saldo 20% contra entrega</em></span>
                 </div>
               )}
             </div>

@@ -23,7 +23,6 @@ export default defineConfig({
     timeout: 180_000,
     gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },
     env: {
-      PUBLIC_COTIZADOR_MODE: 'mock',
       PUBLIC_QUOTE_API: 'mock',
       ALCUSA_PROMOS_TODAY: '2026-10-15',
     },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cotizadorReducer, initialCotizadorState, type CotizadorState } from './cotizadorStore';
+import { cotizadorReducer, initialCotizadorState, slugToStep, type CotizadorState } from './cotizadorStore';
 import {
   clearWizardSnapshot,
   hasDeepLinkParams,
@@ -79,61 +79,37 @@ describe('state/persist — snapshot round-trip', () => {
     expect(parsed?.address.colonia).toBe('Residencial Las Flores');
   });
 
-  it('RESTORE_WIZARD aplica el snapshot sobre un estado limpio sin tocar pago ni carrito', () => {
+  it('RESTORE_WIZARD aplica el snapshot sobre un estado limpio sin tocar el carrito', () => {
     const snap = snapshotFromState(midFlowState({ editingItem: { id: 'x1', index: 1 } }));
     const restored = cotizadorReducer(
-      { ...initialCotizadorState, cart: [], payMethodChosen: false },
-      { type: 'RESTORE_WIZARD', fields: restoreFields(snap!, null, false) },
+      { ...initialCotizadorState, cart: [] },
+      { type: 'RESTORE_WIZARD', fields: restoreFields(snap!, null) },
     );
     expect(restored.step).toBe('zonaEntrega');
     expect(restored.productId).toBe('recta');
     expect(restored.editingItem).toEqual({ id: 'x1', index: 1 });
-    expect(restored.payMethod).toBe(initialCotizadorState.payMethod);
-    expect(restored.payMethodChosen).toBe(false);
-    expect(restored.wompiOutcome).toBeNull();
   });
 
-  it('el snapshot nunca contiene pago ni campos de Wompi', () => {
-    const snap = snapshotFromState(
-      midFlowState({ payMethod: 'wa', payMethodChosen: true, payAmountPct: 100, wompiOrderNumber: 'ALC-1' }),
-    )!;
-    for (const key of ['payMethod', 'payMethodChosen', 'payAmountPct', 'wompiOutcome', 'wompiOrderNumber', 'cart', 'quoteLoad']) {
+  it('el snapshot nunca contiene carrito ni campos de pago', () => {
+    const snap = snapshotFromState(midFlowState())!;
+    for (const key of ['payMethod', 'payMethodChosen', 'payAmountPct', 'onlineOffer', 'wompiOutcome', 'wompiOrderNumber', 'cart', 'quoteLoad']) {
       expect(snap).not.toHaveProperty(key);
     }
   });
 
-  it('onlineOffer hace round-trip y RESTORE_WIZARD lo devuelve (URL con ?oferta=) sin tocar el metodo de pago', () => {
-    const snap = snapshotFromState(midFlowState({ onlineOffer: true, payMethod: 'wa', payMethodChosen: true }))!;
-    expect(snap.onlineOffer).toBe(true);
-    expect(parseWizardSnapshot(JSON.parse(JSON.stringify(snap)))?.onlineOffer).toBe(true);
-    const restored = cotizadorReducer(initialCotizadorState, { type: 'RESTORE_WIZARD', fields: restoreFields(snap, null, true) });
-    expect(restored.onlineOffer).toBe(true);
-    // payMethod/payMethodChosen siguen FUERA del snapshot: el link `?oferta=` los vuelve a aplicar al montar.
-    expect(restored.payMethod).toBe(initialCotizadorState.payMethod);
-    expect(restored.payMethodChosen).toBe(false);
-  });
-
-  it('sin ?oferta= en la URL un snapshot con onlineOffer true NUNCA enciende la oferta al restaurar (ni con hash ni con reload)', () => {
-    const snap = snapshotFromState(midFlowState({ onlineOffer: true }))!;
-    expect(snap.onlineOffer).toBe(true);
-    for (const hashStep of [null, 'precio', 'resumen'] as const) {
-      const fields = restoreFields(snap, hashStep, false);
-      expect(fields.onlineOffer).toBe(false);
-      expect(cotizadorReducer(initialCotizadorState, { type: 'RESTORE_WIZARD', fields }).onlineOffer).toBe(false);
-    }
-    // El resto del snapshot se restaura igual: solo la oferta queda fuera.
-    expect(restoreFields(snap, 'precio', false).step).toBe('precio');
-    expect(restoreFields(snap, null, false).productId).toBe('recta');
-  });
-
-  it('un snapshot sin oferta nunca la enciende, tenga o no el parametro (APPLY_ONLINE_OFFER la aplica al montar)', () => {
-    const snap = snapshotFromState(midFlowState({ onlineOffer: false }))!;
-    expect(restoreFields(snap, null, true).onlineOffer).toBe(false);
-    expect(restoreFields(snap, null, false).onlineOffer).toBe(false);
-  });
-
-  it('sin la oferta el snapshot guarda onlineOffer false', () => {
-    expect(snapshotFromState(midFlowState())?.onlineOffer).toBe(false);
+  it('un snapshot viejo con pago, descuento y onlineOffer se acepta e ignora esos campos', () => {
+    const legacy = {
+      ...JSON.parse(JSON.stringify(snapshotFromState(midFlowState({ step: 'resumen' })))),
+      onlineOffer: true,
+      payMethod: 'pay',
+      payMethodChosen: true,
+      payAmountPct: 100,
+      wompiOutcome: 'approved',
+    } as Record<string, unknown>;
+    const parsed = parseWizardSnapshot(legacy);
+    expect(parsed?.step).toBe('resumen');
+    expect(parsed).not.toHaveProperty('onlineOffer');
+    expect(parsed).not.toHaveProperty('payMethod');
   });
 
   it('ventana, jardin y esquina (campos de item) hacen round-trip', () => {
@@ -166,19 +142,6 @@ describe('state/persist — snapshot round-trip', () => {
 });
 
 describe('state/persist — clampeo y borrado al escribir', () => {
-  it('wompi se guarda como formaPago', () => {
-    expect(snapshotFromState(midFlowState({ step: 'wompi' }))?.step).toBe('formaPago');
-  });
-
-  it('resultado aprobado o pendiente borra el guardado', () => {
-    expect(snapshotFromState(midFlowState({ step: 'resultado', wompiOutcome: 'approved' }))).toBeNull();
-    expect(snapshotFromState(midFlowState({ step: 'resultado', wompiOutcome: 'pending' }))).toBeNull();
-  });
-
-  it('resultado rechazado guarda formaPago para reintentar', () => {
-    expect(snapshotFromState(midFlowState({ step: 'resultado', wompiOutcome: 'declined' }))?.step).toBe('formaPago');
-  });
-
   it('estado virgen borra el guardado; un paso intermedio sin producto tambien', () => {
     expect(snapshotFromState(initialCotizadorState)).toBeNull();
     expect(snapshotFromState(midFlowState({ productId: null }))).toBeNull();
@@ -187,20 +150,11 @@ describe('state/persist — clampeo y borrado al escribir', () => {
   it('con retiro elegido y sin producto (tras agregar al carrito) el estado NO es virgen', () => {
     expect(snapshotFromState({ ...initialCotizadorState, entrega: 'retiro' })).not.toBeNull();
   });
-
-  it('con la oferta online aplicada el estado NO es virgen (se guarda aunque no haya producto)', () => {
-    const offerOnly = cotizadorReducer(initialCotizadorState, { type: 'APPLY_ONLINE_OFFER' });
-    const snap = snapshotFromState(offerOnly);
-    expect(snap).not.toBeNull();
-    expect(snap?.onlineOffer).toBe(true);
-    expect(snap?.step).toBe('producto');
-    expect(snapshotFromState({ ...initialCotizadorState, onlineOffer: false })).toBeNull();
-  });
 });
 
 describe('state/persist — parseWizardSnapshot rechaza lo no confiable', () => {
   const good = () =>
-    JSON.parse(JSON.stringify(snapshotFromState(midFlowState({ onlineOffer: true })))) as Record<string, unknown>;
+    JSON.parse(JSON.stringify(snapshotFromState(midFlowState()))) as Record<string, unknown>;
 
   it('acepta el snapshot valido', () => {
     expect(parseWizardSnapshot(good())).not.toBeNull();
@@ -235,9 +189,6 @@ describe('state/persist — parseWizardSnapshot rechaza lo no confiable', () => 
     ['zone', 'z'.repeat(121)],
     ['hingedFixedPanelEnabled', 'true'],
     ['addressFromQuote', 1],
-    ['onlineOffer', 'x'],
-    ['onlineOffer', 1],
-    ['onlineOffer', null],
     ['windowRows', []],
     ['windowRows', [{ id: 'r', qty: 1, widthM: '1', heightM: '1' }]],
     ['windowRows', 'nope'],
@@ -253,12 +204,6 @@ describe('state/persist — parseWizardSnapshot rechaza lo no confiable', () => 
   it('rechaza un campo faltante', () => {
     const snap = good();
     delete snap.glass;
-    expect(parseWizardSnapshot(snap)).toBeNull();
-  });
-
-  it('un snapshot viejo sin onlineOffer se descarta (sin bump de version)', () => {
-    const snap = good();
-    delete snap.onlineOffer;
     expect(parseWizardSnapshot(snap)).toBeNull();
   });
 
@@ -294,7 +239,7 @@ describe('state/persist — storage', () => {
     const storage = fakeStorage();
     persistWizardState(midFlowState(), storage);
     expect(readWizardSnapshot(storage)?.step).toBe('zonaEntrega');
-    persistWizardState(midFlowState({ step: 'resultado', wompiOutcome: 'approved' }), storage);
+    persistWizardState(initialCotizadorState, storage);
     expect(storage.data.has(WIZARD_STORAGE_KEY)).toBe(false);
   });
 
@@ -318,7 +263,7 @@ describe('state/persist — storage', () => {
 });
 
 describe('state/persist — elegibilidad de la restauracion', () => {
-  const base: RestoreContext = { wompiReturn: false, hasFolio: false, search: '', hashStep: null, navigation: 'navigate' };
+  const base: RestoreContext = { hasFolio: false, search: '', hashStep: null, navigation: 'navigate' };
 
   it('llegada nueva sin hash ni deep link: no restaura', () => {
     expect(shouldRestoreWizard(base)).toBe(false);
@@ -333,8 +278,7 @@ describe('state/persist — elegibilidad de la restauracion', () => {
     expect(shouldRestoreWizard({ ...base, hashStep: 'zonaEntrega' })).toBe(true);
   });
 
-  it('retorno de Wompi y ?folio= nunca restauran', () => {
-    expect(shouldRestoreWizard({ ...base, wompiReturn: true, navigation: 'reload', hashStep: 'resultado' })).toBe(false);
+  it('?folio= nunca restaura', () => {
     expect(shouldRestoreWizard({ ...base, hasFolio: true, navigation: 'reload' })).toBe(false);
   });
 
@@ -346,24 +290,57 @@ describe('state/persist — elegibilidad de la restauracion', () => {
     expect(shouldRestoreWizard({ ...base, search, navigation: 'back_forward' })).toBe(true);
   });
 
-  it('hasDeepLinkParams reconoce producto|paso|color|vidrio|oferta y nada mas', () => {
-    for (const p of ['producto', 'paso', 'color', 'vidrio', 'oferta']) expect(hasDeepLinkParams(`?${p}=x`)).toBe(true);
+  it('hasDeepLinkParams reconoce producto|paso|color|vidrio|promo y nada mas; ?oferta= (retirada) ya no cuenta', () => {
+    for (const p of ['producto', 'paso', 'color', 'vidrio', 'promo']) expect(hasDeepLinkParams(`?${p}=x`)).toBe(true);
+    expect(hasDeepLinkParams('?oferta=online10')).toBe(false);
     expect(hasDeepLinkParams('')).toBe(false);
     expect(hasDeepLinkParams('?utm_source=x&folio=1')).toBe(false);
   });
 
   it('restoreFields quita la version y resuelve el paso', () => {
     const snap = snapshotFromState(midFlowState({ step: 'resumen' }))!;
-    const fields = restoreFields(snap, 'precio', false);
+    const fields = restoreFields(snap, 'precio');
     expect(fields).not.toHaveProperty('v');
     expect(fields.step).toBe('precio');
   });
 
-  it('restoredStep: hash gana al snapshot; wompi/resultado se llevan a formaPago', () => {
+  it('restoredStep: el hash gana al snapshot', () => {
     const snap = snapshotFromState(midFlowState({ step: 'resumen' }))!;
     expect(restoredStep(null, snap)).toBe('resumen');
     expect(restoredStep('precio', snap)).toBe('precio');
-    expect(restoredStep('wompi', snap)).toBe('formaPago');
-    expect(restoredStep('resultado', snap)).toBe('formaPago');
+  });
+});
+
+describe('state/persist — migracion de estado guardado antes del recorte de pagos', () => {
+  const stored = (over: Record<string, unknown>) => ({
+    ...JSON.parse(JSON.stringify(snapshotFromState(midFlowState({ step: 'resumen' })))),
+    ...over,
+  });
+
+  it.each(['formaPago', 'wompi', 'resultado'])('un snapshot en el paso %s cae en el Resumen', (step) => {
+    const parsed = parseWizardSnapshot(stored({ step, payMethod: 'pay', onlineOffer: true }));
+    expect(parsed?.step).toBe('resumen');
+    const fields = restoreFields(parsed!, null);
+    const restored = cotizadorReducer(initialCotizadorState, { type: 'RESTORE_WIZARD', fields });
+    expect(restored.step).toBe('resumen');
+  });
+
+  it('el hash de un paso de pago retirado se resuelve al Resumen', () => {
+    for (const slug of ['5-forma-pago', '6-pago', '7-resultado']) expect(slugToStep(slug)).toBe('resumen');
+    expect(slugToStep('4-resumen')).toBe('resumen');
+  });
+
+  it('quien eligio «Otra zona» (otro) y estaba en el Resumen vuelve a Zona sin zona elegida', () => {
+    const parsed = parseWizardSnapshot(
+      stored({ step: 'formaPago', zone: 'otro', address: { zona: 'otro', colonia: 'X', calle: 'Y', referencia: '', telefono: '7123-4567' } }),
+    );
+    expect(parsed?.step).toBe('zonaEntrega');
+    expect(parsed?.zone).toBe('');
+    expect(parsed?.address.zona).toBe('');
+  });
+
+  it('«Otra zona» con retiro no vuelve a Zona (no necesita zona)', () => {
+    const parsed = parseWizardSnapshot(stored({ step: 'resumen', entrega: 'retiro', zone: 'otro' }));
+    expect(parsed?.step).toBe('resumen');
   });
 });

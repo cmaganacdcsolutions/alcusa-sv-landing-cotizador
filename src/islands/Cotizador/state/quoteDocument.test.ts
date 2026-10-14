@@ -56,7 +56,7 @@ describe('quoteDocument mapper', () => {
     const pr = toFolioRequest({ ...base, promoId: 'promo-aquafold' }, cust, 'k');
     expect(pr).toMatchObject({ promoId: 'promo-aquafold' });
     expect(pr.items[0]?.promoRef).toBe('promo-aquafold');
-    expect(pr.discount).toBeUndefined();
+    expect(pr).not.toHaveProperty('discount');
     expect(toFolioRequest(base, cust, 'k').promoId).toBeUndefined();
     const withCust = toQuoteDocument({ ...base, customer: cust, folio: 'x', issuedAt: new Date() });
     expect(withCust.customer).toEqual({ name: 'María López', whatsapp: '+503 7123-4567', zone: 'Soyapango' });
@@ -66,9 +66,9 @@ describe('quoteDocument mapper', () => {
     expect(pickup.transportLabel).toBeUndefined();
   });
 
-  it('shippingPending / discount: opcionales, solo viajan cuando existen (folio sin descuento por defecto)', () => {
+  it('shippingPending: opcional, solo viaja cuando existe; el folio nunca lleva descuento', () => {
     const cust = { name: 'Ana', whatsapp: '+50371234567' };
-    const base = { items: [line('1.10 × 1.85 m · Natural · Claro 5 mm')], entrega: 'instalacion' as const, zone: 'otro', transport: 0, total: 222 };
+    const base = { items: [line('1.10 × 1.85 m · Natural · Claro 5 mm')], entrega: 'instalacion' as const, zone: 'Soyapango', transport: 0, total: 222 };
     const plain = toFolioRequest(base, cust, 'k');
     expect(plain).not.toHaveProperty('shippingPending');
     expect(plain).not.toHaveProperty('discount');
@@ -78,9 +78,5 @@ describe('quoteDocument mapper', () => {
     expect(toFolioRequest(pending, cust, 'k')).toMatchObject({ shippingPending: true, transportFee: 0, total: 222 });
     expect(toQuoteDocument({ ...pending, folio: 'x', issuedAt: new Date() }).shippingPending).toBe(true);
     expect(cartHash(pending)).not.toBe(cartHash(base));
-
-    const withDiscount = { ...base, total: 199.8, discount: { code: 'online_card_10' as const, amount: 22.2 } };
-    expect(toFolioRequest(withDiscount, cust, 'k')).toMatchObject({ discount: { code: 'online_card_10', amount: 22.2 }, total: 199.8 });
-    expect(toQuoteDocument({ ...withDiscount, folio: 'x', issuedAt: new Date() }).discount).toBe(22.2);
   });
 });

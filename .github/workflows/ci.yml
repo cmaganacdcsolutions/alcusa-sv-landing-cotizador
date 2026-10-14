@@ -7,7 +7,6 @@ on:
     branches: [main]
 
 env:
-  PUBLIC_COTIZADOR_MODE: mock
   PUBLIC_SITE_URL: https://alcusasv.com
   PUBLIC_WHATSAPP_NUMBER: '50376802410'
 
@@ -31,11 +30,6 @@ jobs:
             echo "Possible committed secret found." >&2
             exit 1
           fi
-
-      - name: PHP syntax + pure unit checks (no credentials, no network)
-        run: |
-          for f in api/*.php api/_lib/*.php api/_dev/*.php; do php -l "$f"; done
-          php api/_dev/wompi-smoke.php unit
 
       - name: Lint
         run: npm run lint

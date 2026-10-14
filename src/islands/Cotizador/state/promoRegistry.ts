@@ -73,7 +73,7 @@ export function lookupActivePromo(id: string | null): PromoContext | null {
 }
 
 /**
- * Promo por id sin mirar vigencia (restaurar un snapshot/retorno de Wompi). Busca primero en el JSON publicado
+ * Promo por id sin mirar vigencia (restaurar un snapshot). Busca primero en el JSON publicado
  * (el precio editado manda) y despues en la semilla del build. Archivada y fuera de la semilla = null.
  */
 export function lookupPromo(id: string | null): PromoContext | null {

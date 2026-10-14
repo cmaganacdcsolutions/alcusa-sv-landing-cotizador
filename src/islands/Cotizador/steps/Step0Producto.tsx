@@ -13,7 +13,7 @@ import {
 } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import PhotoFrame from '@components/PhotoFrame';
-import { IconArrowRight, IconCheck, IconLock, IconWhatsApp } from '../icons';
+import { IconArrowRight, IconCheck, IconWhatsApp } from '../icons';
 import { categoryImage, typeImage, variantImage } from './productImages';
 import QuoteLoadBlock, { type QuoteLoadBlockProps } from './quote/QuoteLoadBlock';
 import { IconQuoteImage, IconQuoteTriangle } from './quote/QuoteIcons';
@@ -332,10 +332,6 @@ export default function Step0Producto({ asideTarget, selectedId, current, onSele
                 Cotizar por WhatsApp
               </a>
             </div>
-            <p className="cotizador-aside__wompi-note">
-              <IconLock size={16} />
-              Pago con tarjeta vía Wompi · excepto American Express
-            </p>
           </>,
           asideTarget,
         )}

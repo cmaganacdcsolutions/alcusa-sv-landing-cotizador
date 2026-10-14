@@ -52,7 +52,7 @@ sudo -i                                              # deploy has passwordless s
 | `/etc/letsencrypt/live/dev.alcusasv.com/` | dev certificate (auto-renew via `certbot.timer`) |
 | `/root/alcusa-srv/` | copies of the bootstrap script and the nginx sources used at provisioning |
 
-Nginx serves Astro static output with `try_files $uri $uri/ $uri.html =404` and the build's `404.html`. `/_astro/*` (hashed assets) gets `Cache-Control: public, max-age=31536000, immutable`. No CSP header yet; add one when the final asset and 3rd-party list (Wompi, analytics) is known.
+Nginx serves Astro static output with `try_files $uri $uri/ $uri.html =404` and the build's `404.html`. `/_astro/*` (hashed assets) gets `Cache-Control: public, max-age=31536000, immutable`. No CSP header yet; add one when the final asset and 3rd-party list (analytics; Wompi was retired 2026-10-14) is known.
 
 ## 4. Deploy
 
@@ -274,3 +274,5 @@ Restore (DB): `zcat /var/backups/alcusa/alcusa_dev-<ts>.sql.gz | sudo mariadb --
 - Item 5 (section 3.5): `Origin: null` is accepted only with `Sec-Fetch-Site: same-origin`. The review accepted it; the hardening (also reject when the header is absent, as defence in depth) is still open.
 - Item 8 (section 3.8): during a per-user lockout the app answers 429, which tells an attacker which usernames exist. Close it by answering a generic 401 during the lockout. The nginx half of the gate (`limit_req` 5/min/IP on login, 60/min/IP on the route) has been in place since 2026-10-07; the optional IP allowlist and the fail2ban jail are not.
 - 3-active rule: enforced by `PromoService` (`MAX_ACTIVE = 3`). A 4th overlapping publish must answer 422 "Ya hay 3 promociones publicadas en esas fechas". Check it by hand in the panel once the admin account exists (the seed leaves exactly 3 published).
+
+> **2026-10-14: Wompi retired.** No payments on the web (scope cut). `api/wompi-*.php`, the Wompi env vars and key files are removed from the repo; the VPS dev cleanup is tracked in the scope-cut-pagos handoff. `docs/ops/wompi-go-live.md` is historical only.

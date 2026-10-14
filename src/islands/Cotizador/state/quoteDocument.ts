@@ -7,7 +7,6 @@ import type { QuoteDocument, QuoteDocumentItem } from '../../../lib/quote-pdf/ty
 import {
   CONFIG_MAX_BYTES,
   CONFIG_SCHEMA_VERSION,
-  type QuoteDiscount,
   type QuoteFolioItem,
   type QuoteFolioRequest,
 } from '../../../lib/quote-folio';
@@ -56,8 +55,6 @@ export interface QuoteDocumentInput {
   total: number;
   /** Distrito sin tarifa: `transport` es 0 y se muestra "Por confirmar". */
   shippingPending?: boolean;
-  /** 10% online-card discount; only present once the customer chose card (the folio is normally issued before). */
-  discount?: QuoteDiscount;
   /** Contexto promo: viaja como `promoId` y como `promoRef` de cada item (carga por folio restaura el contexto). */
   promoId?: string | null;
   customer?: CustomerData;
@@ -77,7 +74,6 @@ export function toQuoteDocument(i: QuoteDocumentInput): QuoteDocument {
     transport: i.transport,
     total: i.total,
     ...(i.shippingPending ? { shippingPending: true } : {}),
-    ...(i.discount ? { discount: i.discount.amount } : {}),
   };
 }
 
@@ -120,7 +116,6 @@ export function toFolioRequest(
     items: i.items.map((it) => toFolioItem(it, i.configs?.[it.id], i.promoId ?? null)),
     transportFee: usd(i.transport),
     ...(i.shippingPending ? { shippingPending: true } : {}),
-    ...(i.discount ? { discount: { code: i.discount.code, amount: usd(i.discount.amount) } } : {}),
     ...(i.promoId ? { promoId: i.promoId } : {}),
     total: usd(i.total),
     consent: true,

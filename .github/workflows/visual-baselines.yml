@@ -17,7 +17,6 @@ permissions:
   contents: read
 
 env:
-  PUBLIC_COTIZADOR_MODE: mock
   PUBLIC_SITE_URL: https://alcusasv.com
   PUBLIC_WHATSAPP_NUMBER: '50376802410'
 

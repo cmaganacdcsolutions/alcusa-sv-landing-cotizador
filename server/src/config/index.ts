@@ -28,12 +28,6 @@ const envSchema = z.object({
   SECRETS_KEY: optional(z.string().min(1)),
   IP_HASH_PEPPER: optional(z.string().min(1)),
 
-  WOMPI_MODE: z.enum(['mock', 'sandbox', 'live']).default('mock'),
-  WOMPI_APP_ID: optional(z.string()),
-  WOMPI_API_SECRET: optional(z.string()),
-  WOMPI_API_BASE: optional(z.string()),
-  WOMPI_AUTH_URL: optional(z.string()),
-
   PUBLIC_SITE_URL: z.string().default('http://localhost:4321'),
   PROMOTIONS_OUT_DIR: z.string().default('../public/data'),
   UPLOADS_DIR: z.string().default('./.local/uploads'),
@@ -86,12 +80,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     if (!cfg.SECRETS_KEY) missing.push('SECRETS_KEY');
     if (!cfg.IP_HASH_PEPPER) missing.push('IP_HASH_PEPPER');
     if (cfg.SERVE_STATIC_DIR) invalid.push('SERVE_STATIC_DIR');
-  }
-  if (cfg.WOMPI_MODE === 'live' && !prod) invalid.push('WOMPI_MODE');
-  if (cfg.WOMPI_MODE !== 'mock') {
-    for (const k of ['WOMPI_APP_ID', 'WOMPI_API_SECRET', 'WOMPI_API_BASE', 'WOMPI_AUTH_URL'] as const) {
-      if (!cfg[k]) missing.push(k);
-    }
   }
   if (missing.length || invalid.length) fail(missing, invalid);
   return { ...cfg, dbName: cfg.NODE_ENV === 'test' ? cfg.DB_TEST_NAME : cfg.DB_NAME };

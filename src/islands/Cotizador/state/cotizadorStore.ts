@@ -22,21 +22,15 @@ export type CotizadorStep =
   | 'medidas'
   | 'precio'
   | 'zonaEntrega'
-  | 'resumen'
-  | 'formaPago'
-  | 'wompi'
-  | 'resultado';
+  | 'resumen';
 
-// Slice 1 implements the first 6 steps end to end; wompi/resultado are S8.
+// El cotizador termina en el Resumen (recorte de alcance 2026-10-13: sin pagos en la web).
 export const STEP_ORDER: readonly CotizadorStep[] = [
   'producto',
   'medidas',
   'precio',
   'zonaEntrega',
   'resumen',
-  'formaPago',
-  'wompi',
-  'resultado',
 ];
 
 export const STEP_SLUGS: Readonly<Record<CotizadorStep, string>> = {
@@ -45,12 +39,13 @@ export const STEP_SLUGS: Readonly<Record<CotizadorStep, string>> = {
   precio: '2-precio',
   zonaEntrega: '3-zona-entrega',
   resumen: '4-resumen',
-  formaPago: '5-forma-pago',
-  wompi: '6-pago',
-  resultado: '7-resultado',
 };
 
+// Hashes de los pasos de pago retirados (`#cotizador/5-forma-pago`, `6-pago`, `7-resultado`): caen en el Resumen.
+const LEGACY_PAYMENT_SLUGS: readonly string[] = ['5-forma-pago', '6-pago', '7-resultado'];
+
 export function slugToStep(slug: string): CotizadorStep | null {
+  if (LEGACY_PAYMENT_SLUGS.includes(slug)) return 'resumen';
   const entry = (Object.entries(STEP_SLUGS) as [CotizadorStep, string][]).find(([, s]) => s === slug);
   return entry ? entry[0] : null;
 }
@@ -128,31 +123,14 @@ export interface CotizadorState {
   gardenColor: GardenColor;
   gardenGlass: GardenGlass;
   gardenQty: string;
-  // --- sf-cot-checkout: Step5 forma de pago selection ---
-  payMethod: 'wa' | 'pay';
-  // true once the customer picked a method in Step5 (SET_PAY_METHOD); until then payMethod is only
-  // the default and the 10% online-card discount is NOT shown in steps 0-3 (Resumen: chosen && 'pay').
-  payMethodChosen: boolean;
-  payAmountPct: 80 | 100;
-  // true cuando el cliente llego por `?oferta=online10` (navbar "Compra YA! 10% de descuento"):
-  // el 10% de pago en linea con tarjeta ya cuenta como APLICADO desde Medidas (APPLY_ONLINE_OFFER
-  // tambien deja payMethod 'pay' + payMethodChosen). Si luego elige WhatsApp en Step5 el descuento
-  // se quita (payMethod 'wa'), pero el flag queda para avisar que solo aplica con tarjeta.
-  onlineOffer: boolean;
   // Contexto promo (`?promo=<id>`): id de la promo con cuyo reglaje se cotiza (producto/acabado/alto fijos,
-  // ancho en su rango, precio de la promo, SIN 10% con tarjeta). null = contexto normal. Nunca se mezcla:
-  // la cotizacion vive en UN contexto definido por la URL de entrada (igual que `onlineOffer`).
+  // ancho en su rango, precio de la promo). null = contexto normal. Nunca se mezcla:
+  // la cotizacion vive en UN contexto definido por la URL de entrada.
   promoId: string | null;
-  // --- sf-cot-checkout: mock Wompi result (Step6Wompi → Step7Resultado) ---
-  // Set by SET_WOMPI_RESULT once src/integrations/wompi/mock.ts "resolves" a
-  // mock payment attempt; null until then. No real gateway data lands here
-  // until the live integration slice.
-  wompiOutcome: 'approved' | 'declined' | 'pending' | null;
-  wompiOrderNumber: string | null;
   // --- S7: multi-item cart ---
   // Committed items from a previous "+ Agregar otro producto" loop. The
   // fields ABOVE (productId..gardenQty) always describe the "current" item
-  // being edited through steps 1-3; zone/entrega/pay/wompi fields are
+  // being edited through steps 1-3; zone/entrega fields are
   // order-level (shared, charged/decided once) and never snapshotted here.
   cart: CartItem[];
   // --- sf-cot-s7gaps: desktop "Editar" on a committed cart item (gap 1) ---
@@ -236,13 +214,7 @@ export const initialCotizadorState: CotizadorState = {
   gardenColor: 'blanco',
   gardenGlass: 'claro',
   gardenQty: '1',
-  payMethod: 'pay',
-  payMethodChosen: false,
-  payAmountPct: 80,
-  onlineOffer: false,
   promoId: null,
-  wompiOutcome: null,
-  wompiOrderNumber: null,
   cart: [],
   editingItem: null,
   quoteLoad: null,
@@ -250,7 +222,7 @@ export const initialCotizadorState: CotizadorState = {
 
 // The initial values of just the "per item" fields — used to reset the
 // current item back to a blank slate on ADD_TO_CART/REMOVE_ITEM without
-// touching order-level fields (zone/entrega/pay/wompi/cart).
+// touching order-level fields (zone/entrega/cart).
 const INITIAL_ITEM_FIELDS: CartItemFields = ITEM_FIELD_KEYS.reduce((acc, key) => {
   (acc as Record<string, unknown>)[key] = initialCotizadorState[key];
   return acc;
@@ -276,9 +248,7 @@ export function applyCartItem(state: CotizadorState, item: CartItem): CotizadorS
 
 // --- Persistencia del wizard (state/persist.ts) ---
 // Campos que sobreviven un reload de pagina (sessionStorage): el paso, la
-// decision de entrega/direccion, el item en edicion y la oferta `onlineOffer`
-// (el link del navbar la vuelve a aplicar igual en cada carga). NUNCA payMethod,
-// payMethodChosen, payAmountPct ni campos de Wompi. Para persistir un campo
+// decision de entrega/direccion, el item en edicion y el contexto promo. Para persistir un campo
 // nuevo: agregarlo aqui y su guard en persist.ts (el reducer no cambia).
 export const WIZARD_ORDER_KEYS = [
   'step',
@@ -287,7 +257,6 @@ export const WIZARD_ORDER_KEYS = [
   'address',
   'addressFromQuote',
   'editingItem',
-  'onlineOffer',
   'promoId',
 ] as const;
 export type WizardOrderKey = (typeof WIZARD_ORDER_KEYS)[number];
@@ -341,18 +310,12 @@ export type CotizadorAction =
   | { type: 'SET_GARDEN_COLOR'; color: GardenColor }
   | { type: 'SET_GARDEN_GLASS'; glass: GardenGlass }
   | { type: 'SET_GARDEN_QTY'; value: string }
-  // --- sf-cot-checkout: Step5 forma de pago + mock Wompi result ---
-  | { type: 'SET_PAY_METHOD'; method: 'wa' | 'pay' }
-  | { type: 'SET_PAY_AMOUNT_PCT'; pct: 80 | 100 }
-  // `?oferta=online10` (navbar): marca la oferta y deja el pago con tarjeta elegido.
-  | { type: 'APPLY_ONLINE_OFFER' }
-  // Entrada por promo: bloquea producto/color/vidrio/alto a la promo, ancho dentro de su rango, sin 10%.
+  // Entrada por promo: bloquea producto/color/vidrio/alto a la promo, ancho dentro de su rango.
   | { type: 'ENTER_PROMO'; promo: PromoContext }
   // "Cotizar otro modelo sin promocion": sale del contexto, descarta el item promo y reinicia en normal.
   | { type: 'EXIT_PROMO' }
-  // Retorno de Wompi: restaura el contexto promo con el que se pago (no toca nada mas).
+  // Restaura el contexto promo de un snapshot (no toca nada mas).
   | { type: 'RESTORE_PROMO'; promoId: string | null }
-  | { type: 'SET_WOMPI_RESULT'; outcome: 'approved' | 'declined' | 'pending'; orderNumber: string }
   // --- S7: multi-item cart ---
   // Commits the current item into `cart` and resets step 0 with a fresh
   // item (the "+ Agregar otro producto" loop, prototype-spec.md §2.1 step 4).
@@ -396,13 +359,6 @@ function widthForProduct(productId: ProductId, current: string): string {
   return Number.isFinite(cm) && cm >= spec.min && cm <= spec.max ? current : spec.def;
 }
 
-// Llegar a Forma de pago cuenta como elegir el metodo por defecto (Resumen y aside coinciden con el).
-// Se marca aqui y no solo en el montaje de Step5FormaPago: ese paso es un chunk diferido y, si el cliente
-// vuelve antes de que monte, el efecto de montaje nunca corre y el descuento se perderia.
-function enterStep(state: CotizadorState, step: CotizadorStep): CotizadorState {
-  return step === 'formaPago' ? { ...state, step, payMethodChosen: true } : { ...state, step };
-}
-
 export function cotizadorReducer(state: CotizadorState, action: CotizadorAction): CotizadorState {
   switch (action.type) {
     case 'SELECT_PRODUCT':
@@ -437,11 +393,11 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
     case 'RECOVER_WORK':
       return { ...initialCotizadorState, ...(action.fields ?? {}), cart: action.cart };
     case 'GOTO_STEP':
-      return enterStep(state, action.step);
+      return { ...state, step: action.step };
     case 'NEXT': {
       const idx = STEP_ORDER.indexOf(state.step);
       const next = STEP_ORDER[Math.min(idx + 1, STEP_ORDER.length - 1)];
-      return enterStep(state, next);
+      return { ...state, step: next };
     }
     case 'BACK': {
       const idx = STEP_ORDER.indexOf(state.step);
@@ -509,13 +465,6 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       return { ...state, gardenGlass: action.glass };
     case 'SET_GARDEN_QTY':
       return { ...state, gardenQty: action.value };
-    // --- sf-cot-checkout: Step5 forma de pago + mock Wompi result ---
-    case 'SET_PAY_METHOD':
-      return { ...state, payMethod: action.method, payMethodChosen: true };
-    case 'SET_PAY_AMOUNT_PCT':
-      return { ...state, payAmountPct: action.pct };
-    case 'APPLY_ONLINE_OFFER':
-      return { ...state, onlineOffer: true, payMethod: 'pay', payMethodChosen: true };
     case 'ENTER_PROMO': {
       const { promo } = action;
       const cm = parseWidthCm(state.width);
@@ -525,7 +474,6 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
         ...INITIAL_ITEM_FIELDS,
         cart: [],
         editingItem: null,
-        onlineOffer: false,
         promoId: promo.id,
         productId: promo.productId,
         color: promo.color,
@@ -538,8 +486,6 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
       return { ...state, promoId: action.promoId };
     case 'EXIT_PROMO':
       return { ...initialCotizadorState };
-    case 'SET_WOMPI_RESULT':
-      return { ...state, wompiOutcome: action.outcome, wompiOrderNumber: action.orderNumber };
     // --- S7: multi-item cart ---
     case 'ADD_TO_CART': {
       if (!state.productId) return state;
@@ -606,7 +552,6 @@ export function cotizadorReducer(state: CotizadorState, action: CotizadorAction)
         addressFromQuote: true,
         quoteLoad: action.notice,
         promoId: action.promoId ?? null,
-        onlineOffer: action.promoId ? false : state.onlineOffer,
       };
       return { ...applyCartItem(base, last), step: 'resumen' };
     }

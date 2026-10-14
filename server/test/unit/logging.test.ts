@@ -26,7 +26,6 @@ describe('logging', () => {
         {
           customer: { name: 'Ana', whatsapp: '7000-0000' },
           password: 'hunter2',
-          wompi_hash: 'abc',
           nested: { cookie: 'sid=1', totp: '123456' },
         },
         'probe',
