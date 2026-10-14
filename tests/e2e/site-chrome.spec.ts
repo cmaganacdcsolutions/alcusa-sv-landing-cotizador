@@ -4,10 +4,8 @@ import type { Page } from '@playwright/test';
 import { colorToken } from '../support/tokens';
 
 // Cromo del sitio (pedido 2026-10-06): fondo azul noche continuo en TODAS las paginas, navbar y footer sobre noche,
-// CTA ambar "Compra YA!" en el navbar, sin telefono en el navbar, titulos con degradado (+ respaldos).
+// sin banner "Compra YA!" en el navbar (quitado 2026-10-14), sin telefono en el navbar, titulos con degradado (+ respaldos).
 
-const DEAL_NAME = 'Compra YA! 10% de descuento al hacer tu compra en línea';
-const DEAL_HREF = '/cotizador?oferta=online10'; // la oferta llega ya aplicada al cotizador
 const NIGHT = 'rgb(10, 26, 51)'; // --color-surface-dark
 const NIGHT_RAISED = 'rgb(15, 37, 72)'; // --color-surface-dark-raised
 const PAGE_BOTTOM = 'rgb(7, 19, 38)'; // --color-page-bottom
@@ -28,7 +26,6 @@ async function navBoxes(page: Page): Promise<Box[]> {
   return page.evaluate(() => {
     const pick: Array<[string, string]> = [
       ['logo', '.nav__logo'],
-      ['deal', '.nav__deal'],
       ['catalogo', '[data-nav-link="catalogo"]'],
       ['chev', '[data-nav-chev]'],
       ['promociones', '[data-nav-link="promociones"]'],
@@ -77,47 +74,43 @@ test.describe('navbar sobre azul noche', () => {
   });
 });
 
-test.describe('CTA "Compra YA!" del navbar', () => {
-  for (const width of [390, 1440]) {
-    test(`visible, enlaza a /cotizador?oferta=online10, nombre accesible completo y sin desborde a ${width}px`, async ({ page }) => {
+test.describe('navbar sin banner "Compra YA!" (quitado 2026-10-14)', () => {
+  for (const width of [390, 1920]) {
+    test(`sin "Compra YA"/"10%"/oferta=online10 y sin desborde horizontal a ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
-      const deal = page.locator('a[data-nav-deal]');
-      await expect(deal).toBeVisible();
-      await expect(deal).toHaveAttribute('href', DEAL_HREF);
-      await expect(page.locator('.nav__cta')).toHaveAttribute('href', '/cotizador'); // el boton Cotizar no lleva la oferta
-      await expect(deal).toHaveAccessibleName(DEAL_NAME);
-      await expect(page.getByRole('link', { name: DEAL_NAME })).toBeVisible();
-      // Acento ambar con tinta noche (AAA 9.5:1).
-      await expect(deal).toHaveCSS('background-color', 'rgb(255, 176, 32)');
-      await expect(deal).toHaveCSS('color', NIGHT);
-      const box = await deal.boundingBox();
-      expect(box).not.toBeNull();
-      if (!box) return;
-      expect(box.x).toBeGreaterThanOrEqual(0);
-      expect(box.x + box.width).toBeLessThanOrEqual(width);
-      const noOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
-      expect(noOverflow).toBe(true);
-      // Responsivo: chip corto en movil; texto completo (todo visible) en escritorio ancho.
-      const visibleParts = await page.evaluate(() => {
-        const w = (sel: string) => document.querySelector(sel)?.getBoundingClientRect().width ?? 0;
-        return { x1: w('.nav__deal-x1'), x2: w('.nav__deal-x2') };
-      });
-      if (width === 390) {
-        expect(visibleParts.x1).toBeLessThanOrEqual(1);
-        expect(visibleParts.x2).toBeLessThanOrEqual(1);
-      } else {
-        expect(visibleParts.x1).toBeGreaterThan(20);
-        expect(visibleParts.x2).toBeGreaterThan(20);
-      }
+      const nav = page.locator('header[data-nav]');
+      await expect(nav.locator('a[data-nav-deal], .nav__deal')).toHaveCount(0);
+      await expect(nav).not.toContainText(/Compra YA|10\s*%|en línea/i);
+      await expect(nav.locator('a[href*="oferta=online10"]')).toHaveCount(0);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
     });
   }
 
-  test('el item de promo llega al cotizador', async ({ page }) => {
+  test('menu Catalogo: 7 items en orden con sus anclas', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    await page.locator('a[data-nav-deal]').click();
-    // El cotizador puede consumir y limpiar ?oferta=online10 de la URL; lo que se exige aqui es llegar a /cotizador.
-    await expect(page).toHaveURL(/\/cotizador\/?(\?.*)?$/);
+    const items = page.locator('header[data-nav] .nav__menu-link');
+    await expect(items).toHaveText([
+      'Puertas de baño',
+      'Puertas de jardín',
+      'Ventanas',
+      'Espejos',
+      'Zarandas',
+      'Fachadas comerciales',
+      'Ver todo el catálogo',
+    ]);
+    await expect(items).toHaveCount(7);
+    const hrefs = await items.evaluateAll((els) => els.map((e) => e.getAttribute('href')));
+    expect(hrefs).toEqual([
+      '/#puertas-de-bano',
+      '/#puertas-de-jardin',
+      '/#ventanas',
+      '/#espejos',
+      '/#zarandas',
+      '/#fachadas-comerciales',
+      '/#catalogo',
+    ]);
   });
 });
 
@@ -129,7 +122,7 @@ test.describe('navbar sin telefono y sin superposiciones', () => {
       await expect(page.locator('header.nav a[href^="tel:"]')).toHaveCount(0);
       const boxes = await navBoxes(page);
       const names = boxes.map((b) => b.name);
-      for (const required of ['logo', 'deal', 'contacto', 'whatsapp', 'cotizar']) expect(names).toContain(required);
+      for (const required of ['logo', 'contacto', 'whatsapp', 'cotizar']) expect(names).toContain(required);
       for (let i = 0; i < boxes.length; i++) {
         for (let j = i + 1; j < boxes.length; j++) {
           const a = boxes[i];
@@ -149,8 +142,12 @@ test.describe('navbar sin telefono y sin superposiciones', () => {
 
   test('el telefono sigue en el footer y en /contacto', async ({ page }) => {
     await page.goto('/contacto');
-    await expect(page.locator('footer a[href="tel:+50322782460"]')).toHaveCount(1);
-    await expect(page.locator('main a[href^="tel:"]').first()).toBeAttached();
+    for (const n of ['2278-2460', '2563-7742', '2208-4101']) {
+      const tel = `tel:+503${n.replace('-', '')}`;
+      await expect(page.locator(`footer a[href="${tel}"]`)).toHaveCount(1);
+      await expect(page.locator(`footer a[href="${tel}"]`)).toHaveText(n);
+      await expect(page.locator(`main a[href="${tel}"]`).first()).toBeAttached();
+    }
   });
 });
 
@@ -389,10 +386,6 @@ test.describe('hover de botones (como el navbar: color/relleno, sin movimiento)'
       await expect(tab).toHaveCSS('background-color', before);
     }
     await expect(tab).toHaveCSS('transform', 'none');
-    const deal = page.locator('a[data-nav-deal]');
-    await deal.hover();
-    await expect(deal).toHaveCSS('background-color', 'rgb(255, 194, 71)');
-    await expect(deal).toHaveCSS('transform', 'none');
   });
 
   // `hover`: un color rgb() literal o el nombre de un token (`--...`), que se resuelve en el navegador.
@@ -428,12 +421,9 @@ test.describe('hover de botones (como el navbar: color/relleno, sin movimiento)'
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    const deal = page.locator('a[data-nav-deal]');
-    await deal.hover();
-    await expect(deal).toHaveCSS('transform', 'none');
     // La regla global de movimiento reducido fija transition-duration: 0.001ms (1e-6 s); con 'transition: none' en cada
     // boton no queda propiedad animada. Se exige < 1 ms, nunca los 160 ms del hover normal.
-    for (const sel of ['a[data-nav-deal]', '.ctabs__link', '.hintro__link', '.proceso__help-btn', '.site-footer__whatsapp']) {
+    for (const sel of ['.ctabs__link', '.hintro__link', '.proceso__help-btn', '.site-footer__whatsapp']) {
       const ds = await durations(page, sel);
       expect(
         ds.every((d) => d < 0.001),
@@ -453,4 +443,57 @@ test.describe('contraste AA sobre noche (enlaces sin clase y texto base)', () =>
       expect(summary).toEqual([]);
     });
   }
+});
+
+test.describe('footer: sin pagos, acordeon Productos y telefonos', () => {
+  const PRODUCTOS: Array<[string, string]> = [
+    ['Puertas de baño', '/#puertas-de-bano'],
+    ['Puertas de jardín', '/#puertas-de-jardin'],
+    ['Ventanas', '/#ventanas'],
+    ['Espejos', '/#espejos'],
+    ['Zarandas', '/#zarandas'],
+    ['Fachadas comerciales', '/#fachadas-comerciales'],
+  ];
+
+  test('sin "Formas de pago", Wompi ni textos pendientes', async ({ page }) => {
+    await page.goto('/');
+    const footer = page.locator('footer.site-footer');
+    await expect(footer).not.toContainText(/Formas de pago|Wompi|pendiente|\[contenido/i);
+  });
+
+  test('"Productos" abierto por defecto con los 6 enlaces en orden; colapsa/expande con Enter y Espacio', async ({ page }) => {
+    await page.goto('/');
+    const acc = page.locator('footer details.site-footer__acc');
+    const summary = acc.locator('summary');
+    await expect(acc).toHaveAttribute('open', '');
+    await expect(summary).toHaveText('Productos');
+    const links = acc.locator('a');
+    await expect(links).toHaveText(PRODUCTOS.map(([l]) => l));
+    expect(await links.evaluateAll((els) => els.map((e) => e.getAttribute('href')))).toEqual(PRODUCTOS.map(([, h]) => h));
+    await summary.focus();
+    await page.keyboard.press('Enter');
+    await expect(acc).not.toHaveAttribute('open', '');
+    await page.keyboard.press('Space');
+    await expect(acc).toHaveAttribute('open', '');
+    await page.keyboard.press('Enter');
+    await expect(acc).not.toHaveAttribute('open', '');
+  });
+
+  test('sin desborde horizontal a 390px', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const path of ['/', '/contacto']) {
+      await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), path).toBe(true);
+    }
+  });
+
+  test('/contacto lista los 3 telefonos fijos y el celular/WhatsApp', async ({ page }) => {
+    await page.goto('/contacto');
+    const info = page.getByTestId('contacto-info-list');
+    for (const n of ['2278-2460', '2563-7742', '2208-4101']) {
+      await expect(info.getByRole('link', { name: n, exact: true })).toHaveAttribute('href', `tel:+503${n.replace('-', '')}`);
+    }
+    await expect(info).toContainText('Celular / WhatsApp');
+    await expect(info).toContainText('7680-2410');
+  });
 });
