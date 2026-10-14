@@ -129,26 +129,21 @@ export async function renderQuotePdf(
     const pct = company.paymentScheme.anticipoPct;
     const anticipo = Math.round(doc.total * pct) / 100;
     const saldo = Math.round((doc.total - anticipo) * 100) / 100;
-    const discount = doc.discount ?? 0;
-    const subtotal = Math.round((doc.total + discount - doc.transport) * 100) / 100;
+    const subtotal = Math.round((doc.total - doc.transport) * 100) / 100;
     rect(p, M.left, B(429), TAIL.schemeW, TAIL.schemeH, COLORS.soft);
     rect(p, 48, B(460.5), TAIL.trackW, TAIL.trackH, COLORS.track);
     rect(p, 48, B(460.5), (TAIL.trackW * pct) / 100, TAIL.trackH, COLORS.primary);
     rect(p, 334.5, B(489), 225, 39, COLORS.tint);
     hline(p, 334.5, M.right, B(480));
-    text(p, 'Esquema de pago', 48, B(448.65), f.bold, 10.5, COLORS.ink);
-    text(p, `Anticipo ${pct}% al confirmar`, 48, B(484.2), f.regular, 9, COLORS.muted);
+    text(p, 'Condiciones de pago', 48, B(448.65), f.bold, 10.5, COLORS.ink);
+    text(p, `Anticipo ${pct}%`, 48, B(484.2), f.regular, 9, COLORS.muted);
     text(p, formatUsd(anticipo), 301.5, B(484.65), f.bold, 10.5, COLORS.ink, true);
-    text(p, `Saldo ${100 - pct}% contra instalación`, 48, B(505.2), f.regular, 9, COLORS.muted);
+    text(p, `Saldo ${100 - pct}% contra entrega`, 48, B(505.2), f.regular, 9, COLORS.muted);
     text(p, formatUsd(saldo), 301.5, B(505.65), f.bold, 10.5, COLORS.ink, true);
     text(p, 'Subtotal productos', 334.5, B(441.15), f.regular, 10.5, COLORS.muted);
     text(p, formatUsd(subtotal), M.right, B(441.15), f.bold, 10.5, COLORS.ink, true);
     text(p, doc.transportLabel ? `Transporte · ${doc.transportLabel}` : 'Transporte', 334.5, B(465.15), f.regular, 10.5, COLORS.muted);
     text(p, doc.shippingPending ? 'Por confirmar' : formatUsd(doc.transport), M.right, B(465.15), f.bold, 10.5, COLORS.ink, true);
-    if (discount > 0) {
-      // Inside the total box (above the "Total" baseline): no layout shift for quotes without discount.
-      text(p, `Incluye -10% pago con tarjeta: -${formatUsd(discount)}`, 346.5, B(501), f.regular, 8.5, COLORS.muted);
-    }
     text(p, 'Total', 346.5, B(514.5), f.bold, 12, COLORS.ink);
     text(p, formatUsd(doc.total), 547.5, B(514.5), f.display, 21, COLORS.primary, true);
     if (showIva) {
