@@ -18,15 +18,17 @@ test.describe('cotizador shell — desktop rail + aside (sf-cot-shell)', () => {
     await pickProduct(page, 'recta');
   });
 
-  test('desktop rail: kicker, "Paso N de 8" + progress bar, all 8 steps, and the "¿Dudas con tu medida?" WhatsApp block', async ({
+  test('desktop rail: kicker, "Paso N de 5" + progress bar, all 5 steps, and the "¿Dudas con tu medida?" WhatsApp block', async ({
     page,
   }) => {
     const rail = page.locator('.rail-desktop');
     await expect(rail.getByText('COTIZADOR EN LÍNEA')).toBeVisible();
-    await expect(rail.getByText(/^Paso \d de 8$/)).toBeVisible();
-    await expect(rail.locator('.rail-desktop__item')).toHaveCount(8);
-    await expect(rail.getByText('Pago (Wompi)')).toBeVisible();
-    await expect(rail.getByText('Resultado')).toBeVisible();
+    await expect(rail.getByText(/^Paso \d de 5$/)).toBeVisible();
+    await expect(rail.locator('.rail-desktop__item')).toHaveCount(5);
+    await expect(rail.getByText('Resumen', { exact: true })).toBeVisible();
+    // Sin pagos en la web: el flujo termina en el Resumen.
+    await expect(rail.getByText('Pago (Wompi)')).toHaveCount(0);
+    await expect(rail.getByText('Resultado')).toHaveCount(0);
 
     await expect(rail.getByText('¿Dudas con tu medida?')).toBeVisible();
     const dudasLink = rail.getByRole('link', { name: 'Escríbenos por WhatsApp' });
@@ -40,7 +42,7 @@ test.describe('cotizador shell — desktop rail + aside (sf-cot-shell)', () => {
     await expect(bottomBar).toHaveCSS('box-shadow', 'none');
   });
 
-  test('aside: kicker, item summary (current product), WhatsApp + Wompi CTAs with the AMEX note and the lock icon', async ({
+  test('aside: kicker, item summary (current product), WhatsApp CTA and no payment copy', async ({
     page,
   }) => {
     const aside = page.locator('.cotizador-aside');
@@ -53,7 +55,7 @@ test.describe('cotizador shell — desktop rail + aside (sf-cot-shell)', () => {
     await expect(waLink).toBeVisible();
     await expect(waLink).toHaveAttribute('href', /^https:\/\/wa\.me\/50376802410\?text=/);
 
-    await expect(aside.getByText('Pago con tarjeta vía Wompi · excepto American Express')).toBeVisible();
-    await expect(aside.locator('.cotizador-aside__wompi-note svg')).toBeVisible();
+    await expect(aside.getByText(/Wompi|American Express/)).toHaveCount(0);
+    await expect(aside.locator('.cotizador-aside__wompi-note')).toHaveCount(0);
   });
 });

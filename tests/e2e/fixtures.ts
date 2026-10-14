@@ -1,16 +1,15 @@
 import { test as base, expect, type Locator, type Page } from '@playwright/test';
 
 // Safety net (ADR-006): every e2e spec must import `test` from here instead
-// of '@playwright/test' directly. Blocks wa.me, api.whatsapp.com and any
-// *wompi* host so a test can never send a real WhatsApp message or touch
-// real Wompi, even if PUBLIC_COTIZADOR_MODE is misconfigured.
+// of '@playwright/test' directly. Blocks wa.me and api.whatsapp.com so a test
+// can never send a real WhatsApp message.
 //
 // ADR-014 A5: the home refreshes its promos from /api/promotions.json at runtime. The static e2e builds
 // publish nothing there (and a 404/500 would show up as a console error in specs that watch the console),
 // so by default it answers 204 = "nothing published": the script keeps the baked promos. A spec that
 // exercises the runtime path overrides it with its own `page.route` (registered later = wins).
 //
-// R4: `blockQuotePdf` aborts the lazy PDF chunk so "Enviar por WhatsApp (PDF)"
+// R4: `blockQuotePdf` aborts the lazy PDF chunk so "Obtener cotización en PDF"
 // lands in the G error state, where the text-only wa.me link (the pre-R4
 // message, still built by buildQuoteMessage) is exposed. Specs that assert that
 // message use `test.use({ blockQuotePdf: true })` + `textOnlyWaLink(page)`.
@@ -20,7 +19,6 @@ export const test = base.extend<{ blockQuotePdf: boolean }>({
     await page.route('**/api/promotions.json', (route) => route.fulfill({ status: 204 }));
     await page.route('**wa.me/**', (route) => route.abort());
     await page.route('**api.whatsapp.com/**', (route) => route.abort());
-    await page.route('**wompi**/**', (route) => route.abort());
     if (blockQuotePdf) await page.route('**/_astro/render*.js', (route) => route.abort());
     await use(page);
   },

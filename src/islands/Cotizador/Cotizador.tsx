@@ -300,54 +300,52 @@ export default function Cotizador(): ReactElement {
     }
 
     // A restored wizard skips the priced preset (it would reset the product).
-    {
-      // ADR-008 §3: `?producto=<slug>` (leaf, variant or legacy alias). Invalid
-      // slugs are ignored; advisorOnly slugs never enter the wizard.
-      const deepLink = parseDeepLink(window.location.search);
-      if (deepLink.kind === 'priced' && !restoring && !urlPromo) {
-        const { preset, quoterModel } = deepLink;
-        if (preset.cornerFinish) dispatch({ type: 'SET_CORNER_MODEL', model: preset.cornerFinish });
-        if (preset.gardenHojas) dispatch({ type: 'SET_GARDEN_HOJAS', hojas: preset.gardenHojas });
-        if (preset.windowType) dispatch({ type: 'SET_WINDOW_MODEL', model: preset.windowType });
-        // Legacy ids and an explicit `#cotizador/<step>` hash only preselect;
-        // a canonical slug jumps to Medidas.
-        // `?paso=medidas` (configuradores del inicio) avanza a Medidas incluso con slugs legacy.
-        const toMedidas = wantsMedidas(window.location.search);
-        dispatch({
-          type: (deepLink.advance || toMedidas) && !initial ? 'SELECT_PRODUCT' : 'PRESELECT_PRODUCT',
-          productId: quoterModel,
-        });
-        // `?color=`/`?vidrio=` (inicio y promos): por modelo; lo invalido se ignora.
-        const opts = parseDeepLinkOptions(window.location.search, quoterModel);
-        let applied = false;
-        switch (opts.model) {
-          case 'recta':
-          case 'bisagra':
-            if (opts.color) dispatch({ type: 'SET_COLOR', color: opts.color });
-            if (opts.glass) dispatch({ type: 'SET_GLASS', glass: opts.glass });
-            applied = !!(opts.color || opts.glass);
-            break;
-          case 'l':
-            if (opts.color) dispatch({ type: 'SET_COLOR', color: opts.color });
-            applied = !!opts.color;
-            break;
-          case 'jardin':
-            if (opts.color) dispatch({ type: 'SET_GARDEN_COLOR', color: opts.color });
-            if (opts.glass) dispatch({ type: 'SET_GARDEN_GLASS', glass: opts.glass });
-            applied = !!(opts.color || opts.glass);
-            break;
-          case 'ventana':
-            if (opts.color) dispatch({ type: 'SET_WINDOW_FRAME', frame: opts.color });
-            if (opts.glass) dispatch({ type: 'SET_WINDOW_GLASS', glass: opts.glass });
-            applied = !!(opts.color || opts.glass);
-            break;
-          default:
-            break;
-        }
-        if (applied && toMedidas) setHomeOptionsNotice(true);
-      } else if (deepLink.kind === 'advisor') {
-        setAdvisorProduct(deepLink.name);
+    // ADR-008 §3: `?producto=<slug>` (leaf, variant or legacy alias). Invalid
+    // slugs are ignored; advisorOnly slugs never enter the wizard.
+    const deepLink = parseDeepLink(window.location.search);
+    if (deepLink.kind === 'priced' && !restoring && !urlPromo) {
+      const { preset, quoterModel } = deepLink;
+      if (preset.cornerFinish) dispatch({ type: 'SET_CORNER_MODEL', model: preset.cornerFinish });
+      if (preset.gardenHojas) dispatch({ type: 'SET_GARDEN_HOJAS', hojas: preset.gardenHojas });
+      if (preset.windowType) dispatch({ type: 'SET_WINDOW_MODEL', model: preset.windowType });
+      // Legacy ids and an explicit `#cotizador/<step>` hash only preselect;
+      // a canonical slug jumps to Medidas.
+      // `?paso=medidas` (configuradores del inicio) avanza a Medidas incluso con slugs legacy.
+      const toMedidas = wantsMedidas(window.location.search);
+      dispatch({
+        type: (deepLink.advance || toMedidas) && !initial ? 'SELECT_PRODUCT' : 'PRESELECT_PRODUCT',
+        productId: quoterModel,
+      });
+      // `?color=`/`?vidrio=` (inicio y promos): por modelo; lo invalido se ignora.
+      const opts = parseDeepLinkOptions(window.location.search, quoterModel);
+      let applied = false;
+      switch (opts.model) {
+        case 'recta':
+        case 'bisagra':
+          if (opts.color) dispatch({ type: 'SET_COLOR', color: opts.color });
+          if (opts.glass) dispatch({ type: 'SET_GLASS', glass: opts.glass });
+          applied = !!(opts.color || opts.glass);
+          break;
+        case 'l':
+          if (opts.color) dispatch({ type: 'SET_COLOR', color: opts.color });
+          applied = !!opts.color;
+          break;
+        case 'jardin':
+          if (opts.color) dispatch({ type: 'SET_GARDEN_COLOR', color: opts.color });
+          if (opts.glass) dispatch({ type: 'SET_GARDEN_GLASS', glass: opts.glass });
+          applied = !!(opts.color || opts.glass);
+          break;
+        case 'ventana':
+          if (opts.color) dispatch({ type: 'SET_WINDOW_FRAME', frame: opts.color });
+          if (opts.glass) dispatch({ type: 'SET_WINDOW_GLASS', glass: opts.glass });
+          applied = !!(opts.color || opts.glass);
+          break;
+        default:
+          break;
       }
+      if (applied && toMedidas) setHomeOptionsNotice(true);
+    } else if (deepLink.kind === 'advisor') {
+      setAdvisorProduct(deepLink.name);
     }
 
     // ADR-005: browsers won't auto-scroll a compound "#cotizador/<slug>"

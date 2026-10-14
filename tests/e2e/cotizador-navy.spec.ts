@@ -61,7 +61,7 @@ test.describe('cotizador — tema azul noche', () => {
     expect(luminance(await computed(page, '.step-rail__item', 'color'))).toBeGreaterThan(0.5);
   });
 
-  test('axe color-contrast verde en cada paso (0, medidas, precio, zona, resumen, forma de pago)', async ({
+  test('axe color-contrast verde en cada paso (0, medidas, precio, zona, resumen)', async ({
     page,
   }) => {
     await page.goto('/cotizador');
@@ -88,21 +88,21 @@ test.describe('cotizador — tema azul noche', () => {
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
     await expectNoContrastViolations(page);
 
-    await page.getByRole('button', { name: 'Pagar ahora' }).click();
-    await expect(page.getByRole('heading', { name: 'Forma de pago' })).toBeVisible();
-    await expect(page.getByTestId('formapago-discount-value')).toBeVisible(); // 10% tarjeta
-    await expectNoContrastViolations(page);
+    await expect(page.getByTestId('resumen-whatsapp-advisor').locator('visible=true').first()).toBeVisible();
+    await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeVisible();
+    await expectNoContrastViolations(page); // CTA PDF + enlace al asesor
   });
 
-  test('envio por confirmar (zona sin tarifa) sigue legible sobre el tema', async ({ page }) => {
+  test('hint de zona fuera de tabla y retiro en tienda siguen legibles sobre el tema', async ({ page }) => {
     await page.goto('/cotizador');
     await hydrated(page);
     await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await fillAddress(page, 'Santa Ana');
-    await expect(page.getByTestId('zona-envio-pendiente')).toBeVisible();
-    await expectNoContrastViolations(page);
+    await expect(page.getByText(/Si tu zona no aparece, elige «Retiro en tienda»/)).toBeVisible();
+    await expectNoContrastViolations(page); // hint de zona
+    await page.getByRole('button', { name: /Retiro en tienda/ }).first().click();
+    await expectNoContrastViolations(page); // retiro en tienda
   });
 });
 

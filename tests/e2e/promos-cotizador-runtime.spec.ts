@@ -237,7 +237,7 @@ test.describe('cotizador - vencida, ausente o desconocida cae a normal', () => {
   });
 });
 
-test.describe('cotizador - snapshot y retorno de Wompi usan el precio de runtime', () => {
+test.describe('cotizador - snapshot y hash legado de pago usan el precio de runtime', () => {
   test('un snapshot de promo publicada se restaura con el precio editado (sin stash)', async ({ page }) => {
     await publish(page, editedDoc(245));
     await page.goto(NEVADO_URL);
@@ -266,19 +266,16 @@ test.describe('cotizador - snapshot y retorno de Wompi usan el precio de runtime
     await expect(page.getByTestId('promo-banner')).toHaveCount(0);
   });
 
-  test('retorno de Wompi con promoId: espera la hidratacion (1 fetch) y muestra el resultado', async ({ page }) => {
+  test('hash legado de resultado de pago con promoId: espera la hidratacion (1 fetch), sin pantalla de pago ni errores', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
     const pub = await publish(page, editedDoc(245));
-    await page.addInitScript(() => {
-      window.sessionStorage.setItem(
-        'alcusa-wompi-pending',
-        JSON.stringify({ reference: 'ALC-2026-0ABCDE', pct: 100, zone: '', entrega: 'retiro', promoId: 'promo-corrediza-nevado' }),
-      );
-    });
     await page.goto('/cotizador#cotizador/7-resultado?pago=aprobado&ref=ALC-2026-0ABCDE');
     await hydrated(page);
-    // El resultado no pinta banner ni precio de promo sin carrito: se verifica que el retorno espera la hidratacion
-    // (1 fetch, sin errores) y muestra el pedido; el precio de runtime en lookupPromo lo cubre promoRegistry.test.ts.
-    await expect(page.getByText('ALC-2026-0ABCDE').first()).toBeVisible();
+    // Los pagos ya no existen: el hash viejo no pinta resultado ni "Pago completado"; el cotizador arranca normal.
+    await expect(page.getByRole('heading', { name: 'Pago completado' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
+    expect(errors).toEqual([]);
     expect(pub.hits()).toBe(1);
   });
 });

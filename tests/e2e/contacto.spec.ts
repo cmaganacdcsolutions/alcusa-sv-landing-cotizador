@@ -13,7 +13,7 @@ async function waitForFormReady(page: Page): Promise<void> {
 
 // #contacto section (T9.1) + webform (T9.2) + footer (T9.3), slice S9.
 // Never clicks the WhatsApp link — asserts hrefs only (ADR-006);
-// fixtures.ts also aborts wa.me/wompi network routes as an independent guard.
+// fixtures.ts also aborts wa.me network routes as an independent guard.
 test.describe('contacto — info block + socials', () => {
   test('social row links to the exact 3 handles', async ({ page }) => {
     await page.goto('/contacto');

@@ -8,7 +8,7 @@ import { fillAddress } from '../support/address';
 // reload around the geolocation permission prompt) used to wipe everything but the cart and bounce to
 // step 0. The geo matrix below proves the click itself keeps the flow; the reload tests prove a reload does.
 //
-// Never opens a real WhatsApp/Wompi link (fixtures.ts blocks those routes).
+// Never opens a real WhatsApp link (fixtures.ts blocks that route).
 const WIZARD_KEY = 'alcusa-cotizador-wizard';
 const GEO = { latitude: 13.69294, longitude: -89.21819 } as const;
 const MEDIDAS = 'Medidas y acabado';
@@ -137,26 +137,22 @@ test.describe('cotizador — reload mid-flow restores the wizard', () => {
     await expect(page.locator('#ancho')).toHaveValue('135');
   });
 
-  test('the payment method and Wompi data are never restored: a reload at Forma de pago falls back to the default method', async ({ page }) => {
+  test('a reload at the Resumen resumes there and the snapshot carries no payment data', async ({ page }) => {
     await toZona(page);
     await fillAddress(page, 'Soyapango');
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.getByRole('button', { name: 'Pagar ahora' }).click();
-    await expect(page.getByRole('heading', { name: 'Forma de pago' })).toBeVisible();
-    await page.getByRole('radio', { name: /Enviar por WhatsApp/ }).click();
-    await expect(page.getByRole('radio', { name: /Enviar por WhatsApp/ })).toBeChecked();
+    await expect(page.getByRole('heading', { name: RESUMEN })).toBeVisible();
 
+    await expect.poll(() => readSnapshot(page)).toMatchObject({ step: 'resumen' });
     const stored = await readSnapshot(page);
-    expect(stored).toMatchObject({ step: 'formaPago' });
     for (const key of ['payMethod', 'payMethodChosen', 'payAmountPct', 'wompiOutcome', 'wompiOrderNumber']) {
       expect(stored).not.toHaveProperty(key);
     }
 
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Forma de pago' })).toBeVisible();
-    // The WhatsApp pick is not restored: the default method (Wompi) is selected again.
-    await expect(page.getByRole('radio', { name: /Pagar ahora/ })).toBeChecked();
-    await expect(page.getByRole('radio', { name: /Enviar por WhatsApp/ })).not.toBeChecked();
+    await expect(page.getByRole('heading', { name: RESUMEN })).toBeVisible();
+    await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeVisible();
+    await expect(page.getByTestId('resumen-whatsapp-advisor').locator('visible=true').first()).toBeVisible();
   });
 });
 
@@ -229,36 +225,36 @@ test.describe('cotizador — storage blocked', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Completion clears the snapshot (forces PUBLIC_COTIZADOR_MODE=mock, like wompi-mock-flow.spec.ts).
+// Estado viejo (antes del recorte de pagos): un snapshot en formaPago/wompi/resultado migra al Resumen.
 // ---------------------------------------------------------------------------
-async function toWompi(page: Page, outcome: 'approved' | 'declined'): Promise<void> {
-  await page.goto(`/cotizador?wompiOutcome=${outcome}`);
-  await waitForHydration(page);
-  await pickProduct(page, 'recta');
-  await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.getByRole('button', { name: 'Siguiente' }).click();
-  await fillAddress(page, 'Soyapango');
-  await page.getByRole('button', { name: 'Siguiente' }).click();
-  await page.getByRole('button', { name: 'Pagar ahora' }).click();
-  await page.getByRole('radio', { name: /Pagar ahora/ }).click();
-  await expect.poll(() => readSnapshot(page)).toMatchObject({ step: 'formaPago' });
-  await page.getByRole('button', { name: /Pagar \$\d+\.\d{2} con Wompi/ }).click();
-}
+test.describe('cotizador — snapshots de pago legados migran al Resumen', () => {
+  for (const [legacyStep, slug] of [
+    ['formaPago', '5-forma-pago'],
+    ['wompi', '6-pago'],
+    ['resultado', '7-resultado'],
+  ] as const) {
+    test(`step "${legacyStep}" (#cotizador/${slug}) cae en el Resumen, sin errores`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (e) => errors.push(e.message));
+      await toZona(page);
+      await fillAddress(page, 'Soyapango');
+      await page.getByRole('button', { name: 'Siguiente' }).click();
+      await expect(page.getByRole('heading', { name: RESUMEN })).toBeVisible();
+      await expect.poll(() => readSnapshot(page)).toMatchObject({ step: 'resumen' });
 
-test.describe('cotizador — completion clears the snapshot', () => {
-  test('an approved payment clears it, so a reload does not resurrect the finished quote', async ({ page }) => {
-    await toWompi(page, 'approved');
-    await expect(page.getByRole('heading', { name: 'Pago completado' })).toBeVisible();
-    await expect.poll(() => readSnapshot(page)).toBeNull();
-  });
-
-  test('a declined payment keeps the order at Forma de pago: a reload resumes there (never at the payment)', async ({ page }) => {
-    await toWompi(page, 'declined');
-    await expect(page.getByRole('heading', { name: 'Tu pago no se completó.' })).toBeVisible();
-    await expect.poll(() => readSnapshot(page)).toMatchObject({ step: 'formaPago', productId: 'recta' });
-
-    await page.reload();
-    await expect(page.getByRole('heading', { name: 'Forma de pago' })).toBeVisible();
-    await expect(page).toHaveURL(/#cotizador\/5-forma-pago$/);
-  });
+      await page.evaluate(
+        ([key, step]) => {
+          const snap = JSON.parse(window.sessionStorage.getItem(key) ?? '{}') as Record<string, unknown>;
+          window.sessionStorage.setItem(key, JSON.stringify({ ...snap, step, payMethod: 'wompi' }));
+        },
+        [WIZARD_KEY, legacyStep] as const,
+      );
+      await page.goto(`/cotizador#cotizador/${slug}`);
+      await page.reload();
+      await waitForHydration(page);
+      await expect(page.getByRole('heading', { name: RESUMEN })).toBeVisible();
+      await expect(page.getByText('Forma de pago')).toHaveCount(0);
+      expect(errors).toEqual([]);
+    });
+  }
 });

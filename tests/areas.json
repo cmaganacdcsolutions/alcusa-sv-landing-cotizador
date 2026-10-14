@@ -17,8 +17,6 @@
     "cotizador-persist.spec.ts": ["cotizador"],
     "cotizador-promo-context.spec.ts": ["cotizador", "promos"],
     "cotizador-promo-stash.spec.ts": ["cotizador", "promos"],
-    "cotizador-checkout.spec.ts": ["cotizador"],
-    "cotizador-online-discount.spec.ts": ["cotizador"],
     "cotizador-combinaciones.spec.ts": ["cotizador"],
     "cotizador-golden.spec.ts": ["cotizador"],
     "cotizador-jardin.spec.ts": ["cotizador"],
@@ -30,6 +28,7 @@
     "cotizador-mobile.spec.ts": ["cotizador"],
     "cotizador-quote-load.spec.ts": ["cotizador"],
     "cotizador-chunk-error.spec.ts": ["cotizador"],
+    "cotizador-sin-pagos.spec.ts": ["cotizador", "home"],
     "cotizador-shell.spec.ts": ["cotizador"],
     "cotizador-ventana.spec.ts": ["cotizador"],
     "cotizador.spec.ts": ["cotizador", "promos"],
@@ -59,8 +58,7 @@
     "sf-fixes.spec.ts": ["home", "contacto", "cotizador"],
     "visual-cotizador.spec.ts": ["cotizador"],
     "visual-home.spec.ts": ["home", "promos"],
-    "whatsapp-links.spec.ts": ["home", "cotizador", "layout"],
-    "wompi-mock-flow.spec.ts": ["cotizador"]
+    "whatsapp-links.spec.ts": ["home", "cotizador", "layout"]
   },
   "paths": [
     ["src/islands/ContactForm", "contacto"],

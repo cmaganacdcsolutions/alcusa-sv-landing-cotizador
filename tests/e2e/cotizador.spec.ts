@@ -12,7 +12,7 @@ async function waitForHydration(page: Page): Promise<void> {
 
 // Full step 0->5 happy path for "recta" (T1.2/T1.3) + the out-of-range /
 // requiresQuote edge states from prototype-spec.md §2.3. Never opens a real
-// WhatsApp link — fixtures.ts blocks wa.me/wompi routes as a second guard.
+// WhatsApp link — fixtures.ts blocks wa.me routes as a second guard.
 test.describe('cotizador — recta, step 0 to 5', () => {
   test('navbar "Cotizar" navigates to the standalone /cotizador page at step 0', async ({ page }) => {
     await page.goto('/');

@@ -68,7 +68,7 @@ test.describe('cotizador — direccion de entrega', () => {
     await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
   });
 
-  test('dropdown de zonas: cada opcion muestra su precio, en orden de tabla, y Otra zona al final', async ({ page }) => {
+  test('dropdown de zonas: cada opcion muestra su precio, en orden de tabla, sin Otra zona', async ({ page }) => {
     await toEntrega(page);
     // Ya no hay cascada departamento/municipio/distrito.
     await expect(page.locator('#addr-departamento, #addr-municipio, #addr-distrito')).toHaveCount(0);
@@ -80,7 +80,9 @@ test.describe('cotizador — direccion de entrega', () => {
     expect(labels[3]).toBe('San Marcos — $25.00');
     expect(labels).toContain('Soyapango — $40.00');
     expect(labels[labels.length - 2]).toBe('Ciudad Arce — $85.00');
-    expect(labels[labels.length - 1]).toBe('Otra zona — envío por confirmar');
+    expect(labels[labels.length - 1]).toBe('Ciudad Arce — $85.00');
+    expect(labels.join('|')).not.toMatch(/Otra zona/);
+    await expect(page.locator('#addr-zona option[value="otro"]')).toHaveCount(0);
     // 8 zonas que antes eran inalcanzables (colonias/puntos de referencia) ahora se pueden elegir.
     for (const z of ['Planes de Renderos', 'Redondel Integración', 'Paseo del Prado', 'San Bartolo', 'Altavista', 'Ciudad Versalles', 'Lourdes', 'Desvío de Opico']) {
       await expect(page.locator(`#addr-zona option[value="${z}"]`)).toHaveCount(1);
@@ -98,16 +100,12 @@ test.describe('cotizador — direccion de entrega', () => {
     await expect(page.getByTestId('zona-total-value')).toHaveText('$288.00');
   });
 
-  test('"Otra zona" no bloquea: envio por confirmar y el flujo sigue', async ({ page }) => {
+  test('zona fuera de tabla: el hint remite a Retiro en tienda y la entrega con instalacion exige elegir zona', async ({ page }) => {
     await toEntrega(page);
-    await page.locator('#addr-zona').selectOption({ value: 'otro' });
-    await expect(page.getByText('Envío por confirmar: te lo confirmamos por WhatsApp.').first()).toBeVisible();
-    await expect(page.getByTestId('zona-total-value')).toHaveCount(0);
-    await fillAddress(page, 'Santa Ana');
-    await expect(page.getByTestId('zona-envio-pendiente')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
+    await expect(page.getByText(/Si tu zona no aparece, elige «Retiro en tienda» o escríbenos por WhatsApp/)).toBeVisible();
+    await expect(page.getByTestId('zona-envio-pendiente')).toHaveCount(0);
     await page.getByRole('button', { name: 'Siguiente' }).click();
-    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Entrega y zona' })).toBeVisible();
   });
 
   test('campos de texto >= 16px y autocomplete correcto', async ({ page }) => {

@@ -74,7 +74,7 @@ export function QuoteShareButton({ share }: Pick<QuoteShareProps, 'share'>): Rea
       ) : (
         <>
           <WaIcon />
-          Enviar por WhatsApp (PDF)
+          Obtener cotización en PDF
         </>
       )}
     </button>

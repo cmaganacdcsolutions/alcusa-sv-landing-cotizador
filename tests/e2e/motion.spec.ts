@@ -310,7 +310,7 @@ test.describe('motion E5: transicion al cotizador', () => {
 
   test('deep link directo (sin pasar por el home): carga sin transicion', async ({ page }) => {
     await page.addInitScript(trackReveal);
-    await page.goto('/cotizador?oferta=online10');
+    await page.goto('/cotizador?producto=recta');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
     await expect.poll(() => vtState(page)).not.toMatch(/^(running|ran)$/);
   });
