@@ -3,7 +3,6 @@
 // test/contract.test-d.ts). N1 (quote-create) and N2 (quotes/{code}) own the
 // business refinements (limits, normalization, 4 KB config cap) on top of these.
 import { z } from 'zod';
-import { ONLINE_DISCOUNT_CODE } from './discount.ts';
 
 const money = z.number().min(0);
 
@@ -32,9 +31,7 @@ export const QuoteFolioRequestSchema = z.object({
   total: money,
   /** No automatic shipping fee for the distrito: transportFee is 0 and Alcusa confirms shipping by WhatsApp. */
   shippingPending: z.boolean().optional(),
-  /** 10% online-card discount, recomputed and validated server-side (only code `online_card_10`). */
-  discount: z.object({ code: z.literal(ONLINE_DISCOUNT_CODE), amount: money }).optional(),
-  /** Contexto promo (`?promo=<id>`): no admite el 10% de tarjeta (regla en create-request.ts, que lo valida con nullish + max 80). */
+  /** Contexto promo (`?promo=<id>`): se acepta por compatibilidad (create-request.ts lo valida con nullish + max 80). */
   promoId: z.string().optional(),
   consent: z.literal(true),
   privacyNoticeVersion: z.string(),
