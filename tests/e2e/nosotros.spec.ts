@@ -82,4 +82,28 @@ test.describe('nosotros: direccion ejecutiva', () => {
       expect(h[1]).toBeLessThanOrEqual(h[0]); // sin saturar: no mas alta que Valores
     }
   });
+  // BUG-1014-02: los retratos iban centrados verticalmente y, con tarjetas de distinta altura, quedaban a distinto y.
+  for (const width of [390, 800, 1920]) {
+    test(`retratos alineados al tope de su tarjeta, mismo inicio y tamano (${width}px)`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto('/nosotros');
+      const boxes = await page.locator('#direccion .nos__person').evaluateAll((cards) =>
+        cards.map((c) => {
+          const card = c.getBoundingClientRect();
+          const r = (c.querySelector('.nos__portrait img') as HTMLElement).getBoundingClientRect();
+          return { top: r.top, cardTop: card.top, offset: r.top - card.top, w: r.width, h: r.height };
+        }),
+      );
+      expect(boxes).toHaveLength(3);
+      for (const b of boxes) {
+        // en fila (tablet/escritorio) los tres comparten y; apiladas (movil) solo cuenta el offset dentro de la tarjeta
+        if (Math.abs(b.cardTop - boxes[0].cardTop) <= 1) {
+          expect(Math.abs(b.top - boxes[0].top), 'top identico').toBeLessThanOrEqual(1);
+        }
+        expect(Math.abs(b.offset - boxes[0].offset), 'offset interno identico').toBeLessThanOrEqual(1);
+        expect(Math.abs(b.w - boxes[0].w)).toBeLessThanOrEqual(1);
+        expect(Math.abs(b.h - boxes[0].h)).toBeLessThanOrEqual(1);
+      }
+    });
+  }
 });
