@@ -20,7 +20,7 @@ const variants = [
 ];
 
 for (const v of variants) {
-  const env = { ...process.env, ALCUSA_PROMOS_TODAY: TODAY, PUBLIC_COTIZADOR_MODE: 'mock', PUBLIC_QUOTE_API: 'mock' };
+  const env = { ...process.env, ALCUSA_PROMOS_TODAY: TODAY, PUBLIC_QUOTE_API: 'mock' };
   if (v.file) env.ALCUSA_PROMOS_FILE = resolve(v.file);
   const r = spawnSync('npx', ['astro', 'build', '--outDir', `dist-e2e/p${PORT}/${v.name}`], {
     env,

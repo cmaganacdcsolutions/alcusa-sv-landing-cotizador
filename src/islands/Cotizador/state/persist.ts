@@ -6,10 +6,9 @@
 // ver Cotizador.tsx) y NO se duplica aqui.
 //
 // PII: la direccion de entrega queda en sessionStorage (ambito de pestana, se
-// borra al cerrarla), igual que el pago pendiente de Wompi
-// (`@integrations/wompi/client`).
+// borra al cerrarla), igual que el resto del estado del wizard.
 //
-// Para persistir un campo nuevo (como se hizo con `onlineOffer`): agregarlo a
+// Para persistir un campo nuevo : agregarlo a
 // WIZARD_ORDER_KEYS/CotizadorState (cotizadorStore.ts), un guard en
 // `guardWizardFields` y su caso en persist.test.ts. El reducer no cambia.
 import type {
@@ -62,9 +61,6 @@ const STEPS: Record<CotizadorStep, true> = {
   precio: true,
   zonaEntrega: true,
   resumen: true,
-  formaPago: true,
-  wompi: true,
-  resultado: true,
 };
 const ENTREGAS: Record<Entrega, true> = { instalacion: true, retiro: true };
 const PRODUCT_IDS: Record<ProductId, true> = { recta: true, l: true, templado: true, bisagra: true, jardin: true, ventana: true };
@@ -95,6 +91,11 @@ function oneOf<T extends string>(table: Record<T, true>): (v: unknown) => v is T
 }
 
 const isStep = oneOf(STEPS);
+/** Pasos del flujo de pago retirado; un snapshot/hash viejo que los traiga se lleva al Resumen. */
+const LEGACY_PAYMENT_STEPS: Record<string, true> = { formaPago: true, wompi: true, resultado: true };
+const isLegacyPaymentStep = (v: unknown): boolean => typeof v === 'string' && LEGACY_PAYMENT_STEPS[v] === true;
+/** Clave de la zona «Otra zona» retirada; solo se reconoce para migrar estado guardado. */
+const LEGACY_UNMAPPED_ZONE = 'otro';
 const isEntrega = oneOf(ENTREGAS);
 const isProductId = oneOf(PRODUCT_IDS);
 const isAluminumColor = oneOf(ALUMINUM_COLORS);
@@ -136,9 +137,11 @@ function isEditingItem(v: unknown): v is NonNullable<CotizadorState['editingItem
  * (se rechaza el snapshot completo: mejor un wizard limpio que uno a medias).
  */
 function guardWizardFields(o: Record<string, unknown>): WizardFields | null {
-  // La direccion (incluido `geo`) se valida con el mismo parser tolerante que usa el retorno de Wompi.
+  // La direccion (incluido `geo`) se valida con el mismo parser tolerante que el resto de la app.
   if (!isRecord(o.address)) return null;
-  if (!isStep(o.step) || !isEntrega(o.entrega)) return null;
+  // Snapshots viejos (antes del recorte de pagos) pueden traer formaPago/wompi/resultado: caen en el Resumen.
+  const step = isLegacyPaymentStep(o.step) ? 'resumen' : o.step;
+  if (!isStep(step) || !isEntrega(o.entrega)) return null;
   if (typeof o.zone !== 'string' || o.zone.length > MAX_ZONE_CHARS) return null;
   if (!isBoolean(o.addressFromQuote)) return null;
   if (o.editingItem !== null && !isEditingItem(o.editingItem)) return null;
@@ -146,7 +149,7 @@ function guardWizardFields(o: Record<string, unknown>): WizardFields | null {
   const productId = o.productId;
   if (productId !== null && !isProductId(productId)) return null;
   // Un paso intermedio sin producto es un estado roto (la app lo rebotaria a "producto").
-  if (o.step !== 'producto' && productId === null) return null;
+  if (step !== 'producto' && productId === null) return null;
 
   if (!isShortString(o.width) || !isAluminumColor(o.color) || !isStraightGlass(o.glass)) return null;
   if (!isCornerModel(o.cornerModel)) return null;
@@ -157,8 +160,7 @@ function guardWizardFields(o: Record<string, unknown>): WizardFields | null {
   if (!isGardenHojas(o.gardenHojas) || !isShortString(o.gardenWidth) || !isGardenHeightOption(o.gardenHeightOption)) return null;
   if (!isShortString(o.gardenHeightOtra) || !isGardenColor(o.gardenColor) || !isGardenGlass(o.gardenGlass)) return null;
   if (!isShortString(o.gardenQty)) return null;
-  // Oferta 10% en linea (`?oferta=online10`). Un snapshot viejo sin el campo se descarta (aceptado).
-  if (!isBoolean(o.onlineOffer)) return null;
+  // `onlineOffer`, payMethod y demas campos de pago de snapshots viejos se ignoran (ya no existen).
   // Contexto promo (`?promo=<id>`): null = normal. Se restaura solo si coincide con el de la URL (ver Cotizador).
   if (o.promoId !== null && !isShortString(o.promoId)) return null;
 
@@ -166,14 +168,16 @@ function guardWizardFields(o: Record<string, unknown>): WizardFields | null {
   // vacia. `zone` siempre sigue a la zona de la direccion; una cotizacion cargada por folio conserva la suya.
   const parsedAddress = parseStoredAddress(o.address);
   const zona = parsedAddress.zona || (o.addressFromQuote && isKnownZone(o.zone) ? o.zone : '');
+  // Quien eligio la zona retirada «Otra zona» (`otro`) vuelve a Zona para elegir una de cobertura.
+  const hadRetiredZone = o.zone === LEGACY_UNMAPPED_ZONE || o.address.zona === LEGACY_UNMAPPED_ZONE;
+  const needsZone = o.entrega === 'instalacion' && zona === '' && hadRetiredZone && step === 'resumen';
   return {
-    step: o.step,
+    step: needsZone ? 'zonaEntrega' : step,
     entrega: o.entrega,
     zone: zona,
     address: { ...parsedAddress, zona },
     addressFromQuote: o.addressFromQuote,
     editingItem: o.editingItem,
-    onlineOffer: o.onlineOffer,
     promoId: o.promoId,
     productId,
     width: o.width,
@@ -211,11 +215,6 @@ export function parseWizardSnapshot(raw: unknown): WizardSnapshot | null {
 // State <-> snapshot
 // ---------------------------------------------------------------------------
 
-/** Paso a guardar: nunca `wompi` (pago en vuelo) ni un `resultado` que no se pueda reanudar. */
-function clampStep(step: CotizadorStep): CotizadorStep {
-  return step === 'wompi' || step === 'resultado' ? 'formaPago' : step;
-}
-
 function isPristine(state: CotizadorState): boolean {
   const a = state.address;
   return (
@@ -225,7 +224,6 @@ function isPristine(state: CotizadorState): boolean {
     !state.addressFromQuote &&
     state.zone === '' &&
     state.editingItem === null &&
-    !state.onlineOffer &&
     state.promoId === null &&
     !a.zona &&
     !a.colonia &&
@@ -238,18 +236,15 @@ function isPristine(state: CotizadorState): boolean {
 
 /**
  * Snapshot a guardar para `state`, o `null` cuando hay que BORRAR el guardado:
- * - pago aprobado o pendiente (flujo terminado);
  * - estado virgen (nada que recuperar);
  * - estado que no pasaria la validacion de lectura (paso intermedio sin producto).
- * Un pago rechazado deja el snapshot en `formaPago` para reintentar.
  */
 export function snapshotFromState(state: CotizadorState): WizardSnapshot | null {
-  if (state.step === 'resultado' && (state.wompiOutcome === 'approved' || state.wompiOutcome === 'pending')) return null;
   if (isPristine(state)) return null;
   const fields = {} as Record<string, unknown>;
   for (const key of ITEM_FIELD_KEYS) fields[key] = state[key];
   for (const key of WIZARD_ORDER_KEYS) fields[key] = state[key];
-  fields.step = clampStep(state.step);
+  fields.step = state.step;
   // Round-trip por el guard: lo que se escribe es exactamente lo que se podra leer.
   return parseWizardSnapshot({ v: WIZARD_SNAPSHOT_VERSION, ...fields });
 }
@@ -307,7 +302,7 @@ export function persistWizardState(state: CotizadorState, storage: StorageLike |
 // ---------------------------------------------------------------------------
 
 /** Parametros del deep link (`?producto=` de catalogo/inicio/promos y `?oferta=`). */
-export const DEEP_LINK_PARAMS = ['producto', 'paso', 'color', 'vidrio', 'oferta', 'promo'] as const;
+export const DEEP_LINK_PARAMS = ['producto', 'paso', 'color', 'vidrio', 'promo'] as const;
 
 export function hasDeepLinkParams(search: string): boolean {
   const params = new URLSearchParams(search);
@@ -334,8 +329,6 @@ export function readNavigationType(): NavigationKind {
 }
 
 export interface RestoreContext {
-  /** Retorno de Wompi (hash `#cotizador/...pago=`): restaura su propio pago pendiente. */
-  wompiReturn: boolean;
   /** `?folio=`: carga una cotizacion guardada. */
   hasFolio: boolean;
   /** `window.location.search`. */
@@ -347,13 +340,13 @@ export interface RestoreContext {
 
 /**
  * Decide si se restaura el snapshot al montar:
- * - nunca en un retorno de Wompi ni con `?folio=`;
+ * - nunca con `?folio=`;
  * - con parametros de deep link gana el deep link en una llegada nueva; solo un reload / atras
  *   (la misma pagina, ya en curso) restaura;
  * - sin deep link: si el hash resuelve a un paso, o es reload / atras.
  */
 export function shouldRestoreWizard(ctx: RestoreContext): boolean {
-  if (ctx.wompiReturn || ctx.hasFolio) return false;
+  if (ctx.hasFolio) return false;
   const revisit = ctx.navigation === 'reload' || ctx.navigation === 'back_forward';
   if (hasDeepLinkParams(ctx.search)) return revisit;
   return ctx.hashStep !== null || revisit;
@@ -361,24 +354,16 @@ export function shouldRestoreWizard(ctx: RestoreContext): boolean {
 
 /**
  * Paso con el que arranca un wizard restaurado: el del hash si lo hay, si no el del snapshot.
- * `wompi`/`resultado` se llevan a `formaPago` (un hash viejo no puede reabrir un pago ni un resultado vacio).
  */
 export function restoredStep(hashStep: CotizadorStep | null, snapshot: WizardSnapshot): CotizadorStep {
-  return clampStep(hashStep ?? snapshot.step);
+  return hashStep ?? snapshot.step;
 }
 
 /**
  * Campos para `RESTORE_WIZARD`: el snapshot sin `v`, con el paso ya resuelto (`restoredStep`).
- * La oferta del 10% (`onlineOffer`) solo se restaura si la URL actual la trae (`offerParam`, ver
- * `hasOnlineOfferParam`): sin `?oferta=online10` el snapshot NUNCA la enciende por si solo (entrar
- * despues por "Cotizar"/un hash en la misma pestana llega sin oferta ni banner).
  */
-export function restoreFields(
-  snapshot: WizardSnapshot,
-  hashStep: CotizadorStep | null,
-  offerParam: boolean,
-): WizardFields {
+export function restoreFields(snapshot: WizardSnapshot, hashStep: CotizadorStep | null): WizardFields {
   const { v: version, ...fields } = snapshot;
   void version; // el numero de version no es parte del estado
-  return { ...fields, step: restoredStep(hashStep, snapshot), onlineOffer: fields.onlineOffer && offerParam };
+  return { ...fields, step: restoredStep(hashStep, snapshot) };
 }

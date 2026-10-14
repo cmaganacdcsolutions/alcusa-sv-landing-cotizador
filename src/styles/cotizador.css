@@ -14,7 +14,6 @@
   --cotizador-success-border: #cfe9dd;
   --cotizador-success-bg: #e3f5ee;
   --cotizador-success-glow: color-mix(in srgb, var(--color-success) 7%, transparent);
-  --cotizador-cta-loading-bg: #4a6cae;
   --cotizador-shine: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--color-surface) 55%, transparent) 50%, transparent 100%);
   --cotizador-dialog-shadow: 0 -8px 24px color-mix(in srgb, var(--color-ink) 16%, transparent);
   /* Linea de diseno unica (2026-10-06): azul noche + blanco. La pagina es azul (degradado global del
@@ -725,8 +724,8 @@
     display: none;
   }
 
-  /* sf-cot-polish item 1 — formaPago/wompi/resultado render neither the
-     mobile 6-dot stepper nor the (desktop-only) rail-desktop nav; without
+  /* sf-cot-polish item 1 — some steps render neither the
+     mobile stepper nor the (desktop-only) rail-desktop nav; without
      this the now-empty .cotizador__rail-col still took up a `gap` slot in
      .cotizador's flex column, leaving a blank strip above the form. */
   .cotizador__rail-col[data-mobile-empty='true'] {
@@ -1061,34 +1060,14 @@
   width: 100%;
 }
 
-/* sf-cot-polish item 3 — the Step4Resumen/Step5FormaPago-owned `.btn`s
-   portaled in via `asideCtaTarget` (real "Enviar por WhatsApp para
-   confirmar"/"Pagar ahora"/Wompi controls) don't carry the `.cotizador-aside__cta`
+/* sf-cot-polish item 3 — the Step4Resumen-owned `.btn`s
+   portaled in via `asideCtaTarget` (real PDF quote / WhatsApp advisor controls) don't carry the `.cotizador-aside__cta`
    class (that one's reserved for this file's own Siguiente/WhatsApp CTAs on
    medidas/precio/zonaEntrega) — bump them to the board's 56px aside height
    here instead of via inline style, so the *other*, CSS-only copy that stays
    in `.cotizador__mobile-only-ctas` keeps the ordinary 52px `.btn` height. */
 .cotizador-aside__ctas .btn {
   min-height: 56px;
-}
-
-/* sf-cot-polish item 1 — desktop-06's aside while Step6Wompi's mock payment
-   is in flight: a static, non-interactive stand-in for the CTA (board's own
-   "ANOTACIÓN · ESTADO DE CARGA" callout), same pill shape/size as the real
-   buttons above. --cotizador-cta-loading-bg (en :root arriba) es el azul
-   apagado del tablero para este unico estado de carga. */
-.cotizador-aside__cta--loading {
-  min-height: 56px;
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--cotizador-cta-loading-bg);
-  color: var(--color-surface);
-  font-size: 0.9375rem;
-  font-weight: var(--font-weight-body-bold);
 }
 
 /* Board's disabled "Siguiente" (out-of-range measurement) is a plain
@@ -1108,16 +1087,6 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   color: var(--color-whatsapp-strong);
-}
-
-.cotizador-aside__wompi-note {
-  margin: 0;
-  padding: var(--space-4) var(--space-8) 28px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 13px;
-  color: var(--color-ink-muted);
 }
 
 /* R1: advisorOnly deep link notice (final UI arrives with R5). */

@@ -48,9 +48,6 @@ export default defineConfig({
     command: `npm run preview -- --port ${PORT}`,
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
-    env: {
-      PUBLIC_COTIZADOR_MODE: 'mock',
-    },
   },
   projects: VIEWPORTS.map((vp) => ({
     name: `${vp.width}x${vp.height}`,

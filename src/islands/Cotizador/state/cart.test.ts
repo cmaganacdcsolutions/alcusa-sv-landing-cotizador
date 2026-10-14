@@ -25,12 +25,10 @@ describe('cotizadorReducer — S7 cart (ADD_TO_CART)', () => {
       ...recta110,
       zone: 'Soyapango',
       entrega: 'instalacion',
-      payAmountPct: 100,
     };
     const next = cotizadorReducer(state, { type: 'ADD_TO_CART' });
     expect(next.zone).toBe('Soyapango');
     expect(next.entrega).toBe('instalacion');
-    expect(next.payAmountPct).toBe(100);
   });
 
   it('is a no-op without a selected product', () => {

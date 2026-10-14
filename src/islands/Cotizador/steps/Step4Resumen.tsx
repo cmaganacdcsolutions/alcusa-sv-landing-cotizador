@@ -5,37 +5,26 @@ import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
 import { zonaName, formatAddressLine, formatAddressForMessage, isAddressComplete } from '../../../lib/delivery-address';
 import { snapshotCartItem, type CotizadorState } from '../state/cotizadorStore';
-import { buildOrderMessageItems, orderItemsSubtotal, type OrderLineItem } from '../state/order';
-import { depositOf, formatDiscount } from '../state/payable';
-import { ONLINE_DISCOUNT_LABEL, type PayOffer } from '../state/payOffer';
-import OnlineDiscountPreview from './OnlineDiscountPreview';
-import { IconArrowRight, IconPlus, IconWarningTriangle } from '../icons';
-import { IconEdit, IconLocationPin, IconTrash } from '../icons-checkout';
+import { buildOrderMessageItems, depositOf, orderItemsSubtotal, type OrderLineItem } from '../state/order';
+import { IconPlus, IconWarningTriangle, IconWhatsApp, IconEdit, IconLocationPin, IconTrash } from '../icons';
 import { estimateImage, type ImageSelection } from './productImages';
 import QuoteChangeNotice from './quote/QuoteChangeNotice';
 import PhotoFrame from '../../../components/PhotoFrame';
 import { useQuoteShare } from '../share/useQuoteShare';
 import { QuoteShareButton, QuoteShareNotices, QuoteShareToast } from '../share/QuoteShare';
 import { CustomerDialog } from '../share/CustomerDialog';
-import '@styles/cotizador-checkout.css';
+import '@styles/cotizador-entrega-resumen.css';
 
 export interface Step4ResumenProps {
   product: CatalogProduct;
   state: CotizadorState;
   // S7 — one row per cart item (committed) + the current item, in that
   // order; built once in Cotizador.tsx (state/order.ts) so every consumer
-  // (this card, the desktop aside, the WhatsApp/Wompi payloads) agrees on
+  // (this card, the desktop aside, the WhatsApp payload) agrees on
   // the same list.
   items: OrderLineItem[];
   zoneFee: number | undefined;
   total: number | null;
-  /** 10% online-card discount already subtracted from `total` (0 until the customer chose card in Step5). */
-  onlineDiscount: number;
-  /** 'preview' = "Pagando con tarjeta en línea: $X (−10%)" while the discount is not applied; null otherwise. */
-  payOffer: PayOffer | null;
-  /** Distrito sin tarifa: el envio no esta sumado en `total`, se confirma por WhatsApp. */
-  shippingPending: boolean;
-  onNext: () => void;
   // Renders as a real "Cambiar" link/button either way; a no-op if omitted.
   onEditZone?: () => void;
   // S7 — commits the current item into the cart and resets step 0 with a
@@ -52,8 +41,7 @@ export interface Step4ResumenProps {
   onEditItem: (id: string) => void;
   // F4 (ADR-012): dismiss handler for the loaded-quote notice (state.quoteLoad).
   onDismissQuoteNotice?: () => void;
-  // sf-cot-polish item 3 — desktop-05 draws "Enviar por WhatsApp para
-  // confirmar"/"Pagar ahora" ONLY in the "TU COTIZACIÓN" aside (never in the
+  // sf-cot-polish item 3 — desktop-05 draws the CTAs (PDF quote / WhatsApp advisor) ONLY in the "TU COTIZACIÓN" aside (never in the
   // main content column); ios-05/android-05 draw them ONLY in the main
   // content bottom area (the aside is hidden below 1024px). Rather than
   // duplicate the per-product WhatsApp-message logic in Cotizador.tsx, this
@@ -78,10 +66,6 @@ export default function Step4Resumen({
   items,
   zoneFee,
   total,
-  onlineDiscount,
-  payOffer,
-  shippingPending,
-  onNext,
   onEditZone,
   onAddAnother,
   onRemoveItem,
@@ -101,12 +85,9 @@ export default function Step4Resumen({
   const subtotal = orderItemsSubtotal(items);
   const anyRequiresQuote = items.some((i) => i.requiresQuote);
   const grandTotal = total ?? subtotal;
+  // Condiciones de pago: 80% anticipo / 20% contra entrega (Alcusa cobra con sus propios medios, fuera del sitio).
   const anticipo = depositOf(grandTotal);
-  const saldo = grandTotal - anticipo;
-  // WhatsApp / PDF-fallback text is the non-card path: never discounted.
-  const waTotal = Math.round((grandTotal + onlineDiscount) * 100) / 100;
-  const waAnticipo = depositOf(waTotal);
-  const waSaldo = Math.round((waTotal - waAnticipo) * 100) / 100;
+  const saldo = Math.round((grandTotal - anticipo) * 100) / 100;
   const countText = `${items.length} ${items.length === 1 ? 'producto' : 'productos'}`;
 
   const direccionMsg = state.entrega === 'instalacion' && isAddressComplete(state.address) ? formatAddressForMessage(state.address) : '';
@@ -115,10 +96,9 @@ export default function Step4Resumen({
     buildQuoteMessage({
       items: waMsgItems,
       transporte,
-      total: waTotal,
-      anticipo: waAnticipo,
-      saldo: waSaldo,
-      ...(shippingPending ? { shippingPending: true } : {}),
+      total: grandTotal,
+      anticipo,
+      saldo,
       ...(direccionMsg ? { direccion: direccionMsg } : {}),
     }),
   );
@@ -140,9 +120,6 @@ export default function Step4Resumen({
     transport: transporte,
     total: grandTotal,
     ...(state.promoId ? { promoId: state.promoId } : {}),
-    // Folio WITHOUT the card discount unless the customer already chose card in Step5.
-    ...(shippingPending ? { shippingPending: true } : {}),
-    ...(onlineDiscount > 0 ? { discount: { code: 'online_card_10' as const, amount: onlineDiscount } } : {}),
   });
 
   function handleAddAnother(): void {
@@ -163,16 +140,17 @@ export default function Step4Resumen({
     <>
       <QuoteShareNotices share={share} textOnlyHref={waHref} variant="aside" />
       <QuoteShareButton share={share} />
-      <button
-        type="button"
-        className="btn btn-primary"
+      <a
+        className="btn btn-secondary"
         style={{ width: '100%' }}
-        disabled={share.status === 'preparing'}
-        onClick={onNext}
+        href={waHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="resumen-whatsapp-advisor"
       >
-        Pagar ahora
-        <IconArrowRight />
-      </button>
+        <IconWhatsApp />
+        Hablar con un asesor por WhatsApp
+      </a>
     </>
   );
 
@@ -273,21 +251,11 @@ export default function Step4Resumen({
             <dd>${subtotal.toFixed(2)}</dd>
           </div>
           <div className="breakdown__row">
-            <dt>
-              {shippingPending
-                ? 'Envío'
-                : `Transporte${state.entrega === 'instalacion' ? ` · ${state.zone}` : ''}`}
-            </dt>
-            <dd>{shippingPending ? 'Por confirmar' : `$${transporte.toFixed(2)}`}</dd>
+            <dt>{`Transporte${state.entrega === 'instalacion' ? ` · ${state.zone}` : ''}`}</dt>
+            <dd>{`$${transporte.toFixed(2)}`}</dd>
           </div>
-          {onlineDiscount > 0 && (
-            <div className="breakdown__row" data-testid="resumen-discount-row">
-              <dt>{ONLINE_DISCOUNT_LABEL}</dt>
-              <dd data-testid="resumen-discount-value">{formatDiscount(onlineDiscount)}</dd>
-            </div>
-          )}
           <div className="breakdown__row breakdown__row--total">
-            <dt>{shippingPending ? 'Total productos' : 'Total'}</dt>
+            <dt>Total</dt>
             <dd data-testid="resumen-total-value">${grandTotal.toFixed(2)}</dd>
           </div>
           <div className="breakdown__row">
@@ -303,12 +271,6 @@ export default function Step4Resumen({
             <dd>8–10 días hábiles</dd>
           </div>
         </dl>
-        <OnlineDiscountPreview offer={payOffer} />
-        {onlineDiscount > 0 && (
-          <p className="online-discount-wa-note" data-testid="resumen-whatsapp-note">
-            {`Por WhatsApp ${shippingPending ? 'el total de productos' : 'el total'} es $${waTotal.toFixed(2)}: el 10% aplica solo pagando con tarjeta en línea.`}
-          </p>
-        )}
       </div>
 
       <QuoteShareNotices share={share} textOnlyHref={waHref} variant="main" />
