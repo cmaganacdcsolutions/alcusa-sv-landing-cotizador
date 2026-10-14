@@ -2,6 +2,7 @@
   "_doc": "Area tags. specs: each tests/e2e/*.spec.ts -> the areas it protects (verify-area runs a spec if ANY of its areas is selected). Every spec MUST be listed (scripts/verify.mjs fails on an unmapped spec). Areas: cotizador, home, promos, catalogo, contacto, layout. 'layout' = shared header/footer/PhotoFrame/carousel/styles: selecting it runs EVERY area. paths: first matching prefix wins; used by scripts/suggest-areas.mjs. Anything under src/ that matches no rule is treated as 'layout' (shared) on purpose.",
   "areas": ["cotizador", "home", "promos", "catalogo", "contacto", "layout"],
   "specs": {
+    "catalog-upcoming.spec.ts": ["home"],
     "a11y.spec.ts": ["home", "cotizador"],
     "bg-diagonal.spec.ts": ["home", "contacto", "layout"],
     "catalogo-deeplink.spec.ts": ["catalogo", "cotizador"],

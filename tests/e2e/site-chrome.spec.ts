@@ -346,7 +346,7 @@ test.describe('pestanas de categoria', () => {
     test(`a ${width}px: tras el clic el boton queda resaltado al instante y al terminar el scroll`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
-      const tabs = ['puertas-de-bano', 'puertas-de-jardin', 'ventanas'];
+      const tabs = ['puertas-de-bano', 'puertas-de-jardin', 'ventanas', 'espejos', 'zarandas', 'fachadas-comerciales'];
       for (const id of tabs) {
         await page.locator(`[data-tab="${id}"]`).click();
         await expect(page.locator(`[data-tab="${id}"]`)).toHaveAttribute('aria-current', 'true');

@@ -6,6 +6,8 @@ import Navbar from '@components/Navbar.astro';
 import HomeIntro from '@components/home/HomeIntro.astro';
 import CategoryTabs from '@components/home/CategoryTabs.astro';
 import CatalogSection from '@components/home/CatalogSection.astro';
+import UpcomingCategorySection from '@components/home/UpcomingCategorySection.astro';
+import { UPCOMING_CATEGORIES } from '@content/upcomingCategories';
 import ComoFunciona from '@components/ComoFunciona.astro';
 import Promotions from '@components/Promotions.astro';
 import Confianza from '@components/Confianza.astro';
@@ -38,6 +40,7 @@ const sections = ORDER.map((slug) => CATEGORIES.find((c) => c.slug === slug)).fi
       <CategoryTabs />
       <div id="catalogo" class="home-catalogo">
         {sections.map((c, i) => <CatalogSection category={c} firstOfPage={i === 0} />)}
+        {UPCOMING_CATEGORIES.map((c) => <UpcomingCategorySection category={c} />)}
       </div>
     </div>
     <Promotions />
