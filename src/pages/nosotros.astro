@@ -1,19 +1,36 @@
 ---
-// /nosotros (navbar spec 01d §3, §13, §14). Contenido de Alcusa pendiente: placeholders visibles
-// + noindex hasta que el cliente lo complete (no publicar con "[pendiente]").
+// /nosotros (navbar spec 01d §3, §13, §14). Contenido oficial de Alcusa (recibido 2026-10-14), textual.
+// "Quiénes somos" solo usa hechos del material (Alcusa no envió una historia); conserva id="historia" por anclas.
+// Fotos del taller: PhotoFrame estático (foto completa + capa ambiental horneada), sin hidratar islas.
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Navbar from '@components/Navbar.astro';
 import Confianza from '@components/Confianza.astro';
 import Footer from '@components/Footer.astro';
+import PhotoFrame from '@components/PhotoFrame';
 
-const PENDING = '[contenido Alcusa — pendiente]';
-const VALUES = [1, 2, 3, 4] as const;
+const LEMA = 'Más de 39 años transformando espacios con calidad, confianza e innovación.';
+const MISION = [
+  'Brindar soluciones innovadoras, funcionales y de alta calidad en la fabricación e instalación de productos de aluminio y vidrio, transformando los espacios de nuestros clientes con diseños modernos, precios competitivos y un servicio personalizado.',
+  'En ALCUSA, nos comprometemos a ofrecer productos duraderos, instalaciones profesionales y una experiencia de compra confiable, respaldada por más de 39 años de trayectoria, buscando siempre la satisfacción y confianza de nuestros clientes.',
+] as const;
+const VISION = [
+  'Ser la empresa líder y referente en El Salvador en la fabricación, comercialización e instalación de productos de aluminio y vidrio, reconocida por nuestra calidad, innovación, excelencia en el servicio y compromiso con nuestros clientes.',
+  'Aspiramos a expandir nuestra presencia a nivel nacional, incorporando nuevas tecnologías, procesos automatizados y plataformas digitales que faciliten la compra de nuestros productos, llevando las soluciones de ALCUSA a más hogares, empresas y proyectos.',
+] as const;
+const VALUES = [
+  { title: 'Calidad', text: 'Garantizamos productos resistentes, funcionales y con excelentes acabados.' },
+  { title: 'Compromiso', text: 'Trabajamos para cumplir las expectativas de nuestros clientes.' },
+  { title: 'Innovación', text: 'Incorporamos tecnología y nuevos procesos para mejorar nuestros servicios.' },
+  { title: 'Responsabilidad', text: 'Cumplimos nuestros compromisos con profesionalismo.' },
+  { title: 'Honestidad', text: 'Promovemos relaciones comerciales basadas en la transparencia.' },
+  { title: 'Trabajo en equipo', text: 'Valoramos a nuestros colaboradores como parte fundamental de nuestro crecimiento.' },
+  { title: 'Orientación al cliente', text: 'Buscamos brindar una experiencia de compra satisfactoria de principio a fin.' },
+] as const;
 ---
 
 <BaseLayout
   title="Nosotros | ALCUSA"
   description="Conoce a ALCUSA: quiénes somos, nuestra misión, visión y valores en aluminio y vidrio a la medida en El Salvador."
-  noindex
 >
   <Navbar />
 
@@ -21,38 +38,60 @@ const VALUES = [1, 2, 3, 4] as const;
     <section class="nos nos__hero" aria-labelledby="nos-title">
       <p class="nos__kicker">ALCUSA</p>
       <h1 id="nos-title" class="nos__h1">Nosotros</h1>
-      <p class="nos__pending">{PENDING} — línea de presentación</p>
+      <p class="nos__lema">{LEMA}</p>
     </section>
 
     <section id="historia" class="nos nos__split" aria-labelledby="historia-t">
       <div>
-        <h2 id="historia-t" class="nos__h2">Nuestra historia</h2>
-        <p class="nos__pending">{PENDING} — historia (2-3 párrafos)</p>
+        <h2 id="historia-t" class="nos__h2">Quiénes somos</h2>
+        <p class="nos__p">
+          Aluminios Cuscatlán, S.A. de C.V. (ALCUSA) cuenta con más de 39 años de trayectoria en la fabricación,
+          comercialización e instalación de productos de aluminio y vidrio en El Salvador.
+        </p>
       </div>
-      <div class="nos__photo" role="img" aria-label="Foto del taller o equipo, pendiente">
-        <span>[contenido Alcusa — pendiente] foto del taller (4:3)</span>
+      <div class="nos__photo">
+        <PhotoFrame
+          src="/images/fotos/taller-alcusa-aereo-1536.webp"
+          srcSet="/images/fotos/taller-alcusa-aereo-800.webp 800w, /images/fotos/taller-alcusa-aereo-1536.webp 1536w"
+          sizes="(min-width: 1024px) 560px, calc(100vw - 32px)"
+          alt="Vista aérea del taller de ALCUSA en El Salvador"
+          ratio="3/2"
+          width={1536}
+          height={1024}
+        />
       </div>
     </section>
 
-    <section class="nos nos__cards" aria-label="Misión y visión">
-      <article id="mision" class="nos__card" aria-labelledby="mision-t">
+    <section class="nos nos__mv" aria-label="Misión y visión">
+      <article id="mision" class="nos__card nos__mision" aria-labelledby="mision-t">
         <h2 id="mision-t" class="nos__h2">Misión</h2>
-        <p class="nos__pending">{PENDING}</p>
+        {MISION.map((t) => <p class="nos__p">{t}</p>)}
       </article>
-      <article id="vision" class="nos__card" aria-labelledby="vision-t">
+      <article id="vision" class="nos__card nos__vision" aria-labelledby="vision-t">
         <h2 id="vision-t" class="nos__h2">Visión</h2>
-        <p class="nos__pending">{PENDING}</p>
+        {VISION.map((t) => <p class="nos__p">{t}</p>)}
       </article>
+      <div class="nos__photo nos__photo--tall">
+        <PhotoFrame
+          src="/images/fotos/taller-alcusa-aereo-doble-1080.webp"
+          srcSet="/images/fotos/taller-alcusa-aereo-doble-800.webp 800w, /images/fotos/taller-alcusa-aereo-doble-1080.webp 1080w"
+          sizes="(min-width: 1024px) 480px, (min-width: 768px) 420px, calc(100vw - 32px)"
+          alt="Dos tomas aéreas del taller y las instalaciones de ALCUSA en El Salvador"
+          ratio="4/5"
+          width={1080}
+          height={1440}
+        />
+      </div>
     </section>
 
     <section id="valores" class="nos" aria-labelledby="valores-t">
       <h2 id="valores-t" class="nos__h2">Valores</h2>
       <ul class="nos__values">
         {
-          VALUES.map((n) => (
+          VALUES.map((v) => (
             <li class="nos__card">
-              <p class="nos__vt">Valor {n}</p>
-              <p class="nos__pending">{PENDING}</p>
+              <p class="nos__vt">{v.title}</p>
+              <p class="nos__p">{v.text}</p>
             </li>
           ))
         }
@@ -103,17 +142,20 @@ const VALUES = [1, 2, 3, 4] as const;
     font-weight: var(--font-weight-display-bold);
     color: var(--color-text-on-dark);
   }
-  .nos__pending {
+  .nos__lema,
+  .nos__p {
     margin: 0;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-sm);
-    background: var(--color-warning-bg);
-    color: var(--color-warning);
-    font: 600 14px/20px var(--font-family-body);
-    justify-self: start;
+    color: var(--color-text-on-dark-muted);
+    font: 400 16px/26px var(--font-family-body);
+  }
+  .nos__lema {
+    max-width: 60ch;
+    font-size: 18px;
+    line-height: 28px;
+    color: var(--color-text-on-dark);
   }
   .nos__split,
-  .nos__cards {
+  .nos__mv {
     grid-template-columns: minmax(0, 1fr);
   }
   .nos__split > div {
@@ -122,16 +164,14 @@ const VALUES = [1, 2, 3, 4] as const;
     align-content: start;
   }
   .nos__photo {
-    aspect-ratio: 4 / 3;
-    display: grid;
-    place-items: center;
-    padding: var(--space-4);
-    text-align: center;
-    background: var(--color-surface-dark-raised);
-    border: 1px dashed var(--color-line-on-dark);
+    min-width: 0;
     border-radius: var(--radius-lg);
-    color: var(--color-text-on-dark-muted);
-    font-size: 14px;
+    overflow: hidden;
+  }
+  .nos__photo--tall {
+    max-width: 420px;
+    width: 100%;
+    justify-self: center;
   }
   .nos__card {
     display: grid;
@@ -201,8 +241,15 @@ const VALUES = [1, 2, 3, 4] as const;
     .nos__values {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .nos__cards {
+    /* 7 valores: la ultima ocupa el ancho restante (sin fila huerfana). */
+    .nos__values > li:last-child {
+      grid-column: 1 / -1;
+    }
+    .nos__mv {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .nos__photo--tall {
+      grid-column: 1 / -1;
     }
   }
   @media (min-width: 1024px) {
@@ -214,8 +261,33 @@ const VALUES = [1, 2, 3, 4] as const;
       gap: var(--space-8);
       align-items: center;
     }
+    /* 12 columnas: 4 valores (3 cols c/u) + 3 valores (4 cols c/u). */
     .nos__values {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .nos__values > li {
+      grid-column: span 3;
+    }
+    .nos__values > li:nth-child(n + 5) {
+      grid-column: span 4;
+    }
+    /* Foto vertical a la izquierda, Mision y Vision apiladas a la derecha. */
+    .nos__mv {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+      gap: var(--space-4) var(--space-8);
+    }
+    .nos__photo--tall {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+      max-width: none;
+    }
+    .nos__mision {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .nos__vision {
+      grid-column: 2;
+      grid-row: 2;
     }
     .nos__h1 {
       font-size: 44px;
