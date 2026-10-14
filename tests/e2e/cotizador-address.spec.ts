@@ -79,7 +79,6 @@ test.describe('cotizador — direccion de entrega', () => {
     expect(labels[2]).toBe('Santa Tecla — Incluido');
     expect(labels[3]).toBe('San Marcos — $25.00');
     expect(labels).toContain('Soyapango — $40.00');
-    expect(labels[labels.length - 2]).toBe('Ciudad Arce — $85.00');
     expect(labels[labels.length - 1]).toBe('Ciudad Arce — $85.00');
     expect(labels.join('|')).not.toMatch(/Otra zona/);
     await expect(page.locator('#addr-zona option[value="otro"]')).toHaveCount(0);

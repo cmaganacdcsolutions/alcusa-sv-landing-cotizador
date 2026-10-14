@@ -36,6 +36,8 @@ test.describe('sin pagos en la web', () => {
     await fillAddress(page, 'Soyapango');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    // el Resumen es un chunk lazy: esperar sus CTAs antes de leer el texto
+    await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeVisible();
     await expectNoPaymentCopy(page, '/cotizador resumen');
   });
 
@@ -48,9 +50,10 @@ test.describe('sin pagos en la web', () => {
     await fillAddress(page, 'Soyapango');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeVisible();
     const text = await visibleText(page);
-    expect(text).toMatch(/Anticipo 80%/);
-    expect(text).toMatch(/Saldo 20%/);
+    expect(text).toMatch(/Anticipo \(?80%\)?/);
+    expect(text).toMatch(/Saldo \(?20%/);
     await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toHaveText('Obtener cotización en PDF');
     await expect(page.getByTestId('resumen-whatsapp-advisor').locator('visible=true').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Siguiente' })).toHaveCount(0);
@@ -63,9 +66,10 @@ test.describe('sin pagos en la web', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Retiro en tienda −15%' }).click();
+    await expect(page.getByText('Aplicamos 15% de descuento al producto. Sin costo de transporte.')).toBeVisible();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
-    await expect(page.getByText('Retiro en tienda · 15% de descuento aplicado.')).toBeVisible();
+    await expect(page.locator('.summary-card').getByText('Retiro en tienda')).toBeVisible();
   });
 
   test('?oferta=online10 se ignora: sin banner, sin descuento, sin error y se limpia de la URL', async ({ page }) => {

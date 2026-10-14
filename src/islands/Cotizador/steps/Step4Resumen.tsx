@@ -141,7 +141,7 @@ export default function Step4Resumen({
       <QuoteShareNotices share={share} textOnlyHref={waHref} variant="aside" />
       <QuoteShareButton share={share} />
       <a
-        className="btn btn-secondary"
+        className="btn btn-whatsapp-outline"
         style={{ width: '100%' }}
         href={waHref}
         target="_blank"

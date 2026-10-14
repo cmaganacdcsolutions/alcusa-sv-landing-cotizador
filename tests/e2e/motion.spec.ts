@@ -34,7 +34,7 @@ test.describe('motion E1: revelado escalonado', () => {
     await expect(intro).not.toHaveClass(/\brv\b/);
     await expect(first).toHaveClass(/\bin\b/);
     await expect(first).not.toHaveClass(/\brv\b/);
-    const last = page.locator('.pcard').last();
+    const last = page.locator('.pcard:not(.pcard--pending)').last(); // los placeholders (Espejos...) no se revelan
     await expect(last).not.toHaveClass(/\bin\b/);
     expect(await opacity(last)).toBe('0');
     await last.scrollIntoViewIfNeeded();

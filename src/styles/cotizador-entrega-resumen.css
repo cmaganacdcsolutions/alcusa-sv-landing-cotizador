@@ -508,6 +508,10 @@
 /* ---------- Hover de botones (pedido 2026-10-06, 'como el del navbar') ----------
    Color/relleno/borde solamente, sin elevacion ni sombra; no aplica a deshabilitados ni a la opcion elegida. */
 @media (hover: hover) and (pointer: fine) {
+  .select-field:hover:not(:disabled) {
+    border-color: var(--color-accent);
+    background: var(--cotizador-hover-fill);
+  }
   .btn-whatsapp:hover:not(:disabled):not([aria-disabled='true']) {
     background: var(--color-whatsapp-strong-hover);
   }
