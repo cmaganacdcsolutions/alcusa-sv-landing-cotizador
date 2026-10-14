@@ -54,6 +54,7 @@
     "quote-customer.spec.ts": ["cotizador"],
     "quote-share.spec.ts": ["cotizador"],
     "section-titles.spec.ts": ["home"],
+    "nosotros.spec.ts": ["layout"],
     "site-chrome.spec.ts": ["home", "contacto", "layout"],
     "sf-fixes.spec.ts": ["home", "contacto", "cotizador"],
     "visual-cotizador.spec.ts": ["cotizador"],

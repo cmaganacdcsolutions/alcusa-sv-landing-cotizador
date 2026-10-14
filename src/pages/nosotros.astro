@@ -26,6 +26,34 @@ const VALUES = [
   { title: 'Trabajo en equipo', text: 'Valoramos a nuestros colaboradores como parte fundamental de nuestro crecimiento.' },
   { title: 'Orientación al cliente', text: 'Buscamos brindar una experiencia de compra satisfactoria de principio a fin.' },
 ] as const;
+// Dirección ejecutiva (gráfica oficial de Alcusa, 2026-10-14), texto textual. Retratos recortados de la gráfica
+// (solo la foto, sin la onda blanca ni el texto horneado): 456x342 = 4/3, anchos 320 y 456.
+const DIRECCION = [
+  {
+    slug: 'rutilio',
+    name: 'Rutilio Galdámez',
+    role: 'Economista, Fundador y Visionario',
+    roleEn: 'Founder & Visionary',
+    extra: null,
+    alt: 'Retrato de Rutilio Galdámez, fundador de ALCUSA',
+  },
+  {
+    slug: 'francisco',
+    name: 'Francisco Galdámez',
+    role: 'Director de Operaciones y Logística',
+    roleEn: 'COO – Chief Operating Officer',
+    extra: 'Coordinación de Entregas e Instalaciones',
+    alt: 'Retrato de Francisco Galdámez, director de operaciones y logística de ALCUSA',
+  },
+  {
+    slug: 'ricardo',
+    name: 'Ricardo Galdámez',
+    role: 'Director Ejecutivo, Mercadeo y Ventas',
+    roleEn: 'CEO & CMO',
+    extra: 'Community Manager',
+    alt: 'Retrato de Ricardo Galdámez, director ejecutivo de ALCUSA',
+  },
+] as const;
 ---
 
 <BaseLayout
@@ -92,6 +120,35 @@ const VALUES = [
             <li class="nos__card">
               <p class="nos__vt">{v.title}</p>
               <p class="nos__p">{v.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </section>
+
+    <section id="direccion" class="nos" aria-labelledby="direccion-t">
+      <h2 id="direccion-t" class="nos__h2">Nuestra dirección ejecutiva</h2>
+      <ul class="nos__dir">
+        {
+          DIRECCION.map((d) => (
+            <li class="nos__card nos__person">
+              <div class="nos__portrait">
+                <PhotoFrame
+                  src={`/images/fotos/direccion-${d.slug}-456.webp`}
+                  srcSet={`/images/fotos/direccion-${d.slug}-320.webp 320w, /images/fotos/direccion-${d.slug}-456.webp 456w`}
+                  sizes="(min-width: 1280px) 160px, (min-width: 1024px) 120px, (min-width: 768px) 30vw, 120px"
+                  alt={d.alt}
+                  ratio="4/3"
+                  width={456}
+                  height={342}
+                />
+              </div>
+              <div class="nos__who">
+                <h3 class="nos__name">{d.name}</h3>
+                <p class="nos__role">{d.role}</p>
+                <p class="nos__role-en">{d.roleEn}</p>
+                {d.extra && <p class="nos__extra">{d.extra}</p>}
+              </div>
             </li>
           ))
         }
@@ -195,6 +252,54 @@ const VALUES = [
     margin: 0;
     font-weight: var(--font-weight-body-bold);
   }
+  /* Direccion: card horizontal compacta (retrato a la izquierda) en movil y escritorio, para no ser mas alta que Valores; tablet = retrato arriba. */
+  .nos__dir {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nos__person {
+    grid-template-columns: 120px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+  .nos__portrait {
+    min-width: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .nos__who {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+  .nos__name {
+    margin: 0;
+    font: var(--font-weight-body-bold) 17px/24px var(--font-family-body);
+    color: var(--color-text-on-dark);
+  }
+  .nos__role,
+  .nos__role-en,
+  .nos__extra {
+    margin: 0;
+    font: 400 14px/20px var(--font-family-body);
+  }
+  .nos__role {
+    color: var(--color-text-on-dark);
+  }
+  .nos__role-en {
+    color: var(--color-text-on-dark-muted);
+  }
+  .nos__extra {
+    margin-top: var(--space-1);
+    padding-top: var(--space-1);
+    border-top: 1px solid var(--color-line-on-dark);
+    color: var(--color-text-on-dark-muted);
+  }
   /* Confianza no trae aire superior (en el inicio sigue al catalogo): aqui separa de Valores. */
   .nos__trust {
     padding-top: var(--space-10);
@@ -236,6 +341,21 @@ const VALUES = [
   .nos__btn:focus-visible {
     outline: none;
     box-shadow: var(--shadow-focus-on-dark);
+  }
+  /* Tablet: 3 columnas compactas con el retrato arriba (a 768 una card horizontal dejaria el texto muy angosto). */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .nos__dir {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .nos__person {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+  @media (min-width: 1280px) {
+    .nos__person {
+      grid-template-columns: 160px minmax(0, 1fr);
+    }
   }
   @media (min-width: 768px) {
     .nos__values {
@@ -288,6 +408,15 @@ const VALUES = [
     .nos__vision {
       grid-column: 2;
       grid-row: 2;
+    }
+    .nos__dir {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+    .nos__person {
+      grid-template-columns: 120px minmax(0, 1fr);
+      padding: var(--space-4);
+      gap: var(--space-4);
     }
     .nos__h1 {
       font-size: 44px;
