@@ -150,7 +150,7 @@ export default function AddressFields({ address, showAllErrors, onChange, onGeoC
           </select>
           <IconChevronDown />
         </div>
-        <Msg field="zona" error={errorOf('zona')} hint="El envío se cobra una vez por pedido. Si tu zona no aparece, elige «Otra zona»." />
+        <Msg field="zona" error={errorOf('zona')} hint="El envío se cobra una vez por pedido. Si tu zona no aparece, elige «Retiro en tienda» o escríbenos por WhatsApp." />
       </div>
 
       <div className="field addr__field">

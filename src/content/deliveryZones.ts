@@ -5,13 +5,11 @@
 // Zonas de la tabla que NO son un distrito (colonias/puntos de referencia) y por eso no
 // se pueden mapear sin confirmacion del cliente: Planes de Renderos, Redondel Integración,
 // Paseo del Prado, San Bartolo, Altavista, Ciudad Versalles, Lourdes, Desvío de Opico.
-// Un distrito sin mapeo resuelve a ZONE_UNMAPPED y el flujo ofrece cotizar por WhatsApp.
+// Alcusa entrega solo dentro de las zonas de cobertura (sin opcion "Otra zona", retirada 2026-10-14).
 // 2026-10-08: la UI ya NO pide departamento/municipio/distrito; el cliente elige directo una zona de
 // cobertura (ZONE_OPTIONS). ZONE_BY_DISTRITO queda solo para migrar estados guardados antiguos.
 import { DEPARTAMENTOS } from './elSalvadorTerritory';
 import { ZONE_FEES, hasZoneFee } from '../engine/pricing/zoneFee';
-
-export const ZONE_UNMAPPED = 'otro';
 
 /** [departamento, municipio, distrito, zona de ZONE_FEES] */
 const MAP: readonly (readonly [string, string, string, string])[] = [
@@ -45,9 +43,6 @@ function build(): Readonly<Record<string, string>> {
 /** id de distrito -> clave de ZONE_FEES. */
 export const ZONE_BY_DISTRITO: Readonly<Record<string, string>> = build();
 
-/** Texto de la opcion "Otra zona" (sin tarifa automatica; Alcusa confirma por WhatsApp). */
-export const OTHER_ZONE_LABEL = 'Otra zona — envío por confirmar';
-
 const ZONE_DISPLAY_NAME: Readonly<Record<string, string>> = {
   'San Salvador': 'San Salvador (zona metropolitana)',
 };
@@ -67,14 +62,13 @@ export interface ZoneOption {
   label: string;
 }
 
-/** Opciones del dropdown, en el orden de la tabla (precio ascendente) y "Otra zona" al final. */
+/** Opciones del dropdown, en el orden de la tabla (precio ascendente). */
 export const ZONE_OPTIONS: readonly ZoneOption[] = [
   ...Object.keys(ZONE_FEES).map((z) => ({ value: z, label: zoneOptionLabel(z) })),
-  { value: ZONE_UNMAPPED, label: OTHER_ZONE_LABEL },
 ];
 
 export function isKnownZone(zone: string): boolean {
-  return zone === ZONE_UNMAPPED || hasZoneFee(zone);
+  return hasZoneFee(zone);
 }
 
 /** Zona de un estado guardado antiguo (id de distrito) o '' si no se puede migrar limpio. */

@@ -2,7 +2,7 @@
 // resolucion de zona de transporte y formatos de texto. Sin React/window/fetch.
 // PII: este modulo nunca registra en consola ni arma URLs con la direccion; el unico
 // enlace que genera es el de mapa a partir de lat/lng (sin llamadas externas).
-import { ZONE_UNMAPPED, isKnownZone, zoneDisplayName, zoneFromLegacyDistrito } from '@content/deliveryZones';
+import { isKnownZone, zoneDisplayName, zoneFromLegacyDistrito } from '@content/deliveryZones';
 import { formatWhatsappInput, whatsappDigits } from '../quote-customer';
 
 export interface GeoPoint {
@@ -11,7 +11,7 @@ export interface GeoPoint {
 }
 
 export interface DeliveryAddress {
-  /** Zona de cobertura elegida (clave de ZONE_FEES o ZONE_UNMAPPED 'otro'); '' = sin elegir. */
+  /** Zona de cobertura elegida (clave de ZONE_FEES); '' = sin elegir. */
   zona: string;
   colonia: string;
   calle: string;
@@ -124,9 +124,8 @@ export function mapsUrl(g: GeoPoint): string {
   return `https://www.google.com/maps?q=${g.lat},${g.lng}`;
 }
 
-/** Nombre legible de la zona elegida ('' si no hay; "Otra zona" para ZONE_UNMAPPED). */
+/** Nombre legible de la zona elegida ('' si no hay). */
 export function zonaName(a: Pick<DeliveryAddress, 'zona'>): string {
-  if (a.zona === ZONE_UNMAPPED) return 'Otra zona';
   return isKnownZone(a.zona) ? zoneDisplayName(a.zona) : '';
 }
 
@@ -171,7 +170,7 @@ export function toAddressPayload(a: DeliveryAddress): AddressPayload {
   };
 }
 
-/** Valida la forma de un valor restaurado desde sessionStorage (retorno de Wompi). */
+/** Valida la forma de un valor restaurado desde sessionStorage (estado guardado). */
 export function parseStoredAddress(v: unknown): DeliveryAddress {
   if (typeof v !== 'object' || v === null) return EMPTY_ADDRESS;
   const o = v as Record<string, unknown>;
