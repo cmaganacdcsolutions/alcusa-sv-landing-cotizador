@@ -1,9 +1,9 @@
 ---
 // Navbar fijo (spec 02-design/specs/navbar-fijo-estructura-inco-spec.md; boards 01d).
-// Sustituye TopBar + Drawer. variant="full": 4 enlaces + Compra YA! + Cotizar + WhatsApp (el telefono vive en el footer y en /contacto).
+// Sustituye TopBar + Drawer. variant="full": 4 enlaces + Cotizar + WhatsApp (el telefono vive en el footer y en /contacto).
 // variant="compact" (/cotizador): logo, "Volver al catalogo", WhatsApp.
 // Sin JS queda en estado top, fijo, con todos los enlaces funcionando.
-// Sobre azul noche (tokens on-dark). Incluye el item "Compra YA! 10% de descuento" (CTA ambar) hacia /cotizador?oferta=online10.
+// Sobre azul noche (tokens on-dark).
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { getActivePromotions } from '@content/promotions';
 
@@ -14,13 +14,14 @@ const { variant = 'full' } = Astro.props;
 const waHref = buildWaLink();
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const hasPromos = getActivePromotions().length > 0;
-// "Compra YA!" abre el cotizador con el 10% en linea ya aplicado (el cotizador lee ?oferta=online10).
-const DEAL_HREF = '/cotizador?oferta=online10';
 
 const CATALOG_MENU = [
   { label: 'Puertas de baño', href: '/#puertas-de-bano' },
   { label: 'Puertas de jardín', href: '/#puertas-de-jardin' },
   { label: 'Ventanas', href: '/#ventanas' },
+  { label: 'Espejos', href: '/#espejos' },
+  { label: 'Zarandas', href: '/#zarandas' },
+  { label: 'Fachadas comerciales', href: '/#fachadas-comerciales' },
   { label: 'Ver todo el catálogo', href: '/#catalogo' },
 ] as const;
 
@@ -50,15 +51,6 @@ const WA_PATH2 = 'M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4
       variant === 'full' ? (
         <nav class="nav__links" aria-label="Principal" data-nav-links>
           <ul class="nav__list">
-            <li class="nav__item nav__item--deal" data-nav-item="deal">
-              {/* Nombre accesible = texto completo siempre: lo que se acorta por ancho queda solo-lector (sr-only). */}
-              <a href={DEAL_HREF} class="nav__deal" data-nav-deal>
-                <span class="nav__deal-text">
-                  <span class="nav__deal-hot">Compra YA!</span> 10%<span class="nav__deal-x1"> de descuento</span>
-                  <span class="nav__deal-x2"> al hacer tu compra</span> en línea
-                </span>
-              </a>
-            </li>
             {LINKS.map((l) => (
               <li class="nav__item" data-nav-item={l.id}>
                 <a
@@ -415,51 +407,6 @@ const WA_PATH2 = 'M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4
     box-shadow: var(--shadow-focus-on-dark);
   }
 
-  /* CTA "Compra YA!": pastilla ambar (AAA con tinta noche). El texto largo se recorta por ancho; el nombre accesible
-     siempre es el texto completo. <1024: chip compacto "Compra YA! 10% en línea" (primero de la fila de enlaces). */
-  .nav__item--deal {
-    margin-right: var(--space-1);
-  }
-  .nav__deal {
-    display: inline-flex;
-    align-items: center;
-    min-height: 40px;
-    padding: 0 14px;
-    border-radius: var(--radius-full);
-    background: var(--color-deal);
-    color: var(--color-on-deal);
-    font: 800 13px/16px var(--font-family-body);
-    text-decoration: none;
-    white-space: nowrap;
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.12),
-      0 6px 18px rgba(255, 176, 32, 0.28);
-  }
-  .nav__deal:hover {
-    background: var(--color-deal-hover);
-  }
-  .nav__deal:active {
-    background: var(--color-deal-active);
-  }
-  .nav__deal-hot {
-    font-weight: 800;
-    letter-spacing: 0.01em;
-  }
-  .nav__deal-x1,
-  .nav__deal-x2 {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-  }
-  @media (forced-colors: active) {
-    .nav__deal {
-      border: 2px solid ButtonText;
-    }
-  }
-
   @media (min-width: 1024px) {
     .nav__inner,
     .nav[data-scrolled='true'] .nav__inner {
@@ -596,7 +543,6 @@ const WA_PATH2 = 'M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4
     .nav__link,
     .nav__chev,
     .nav__cta,
-    .nav__deal,
     .nav__wa,
     .nav__back,
     .nav__menu-link {
@@ -609,19 +555,13 @@ const WA_PATH2 = 'M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4
     .nav__link,
     .nav__chev,
     .nav__cta,
-    .nav__deal,
     .nav__wa,
     .nav__back,
     .nav__menu-link {
       transition: none;
     }
   }
-  @media (min-width: 1024px) {
-    .nav__item--deal {
-      margin-right: var(--space-3);
-    }
-  }
-  /* 1024-1279: el chip queda corto ("Compra YA! 10% en línea") y la barra se compacta para que nada se solape. */
+  /* 1024-1279: la barra se compacta para que nada se solape. */
   @media (min-width: 1024px) and (max-width: 1279px) {
     .nav__inner,
     .nav[data-scrolled='true'] .nav__inner {
@@ -635,38 +575,6 @@ const WA_PATH2 = 'M9.3 8.7c.4 2.6 3.2 5.4 6 6l1.1-1.4-1.8-1-1 .9c-1-.4-2-1.4-2.4
     .nav__link[aria-current='true']::after {
       left: 11px;
       right: 11px;
-    }
-    .nav__item--deal {
-      margin-right: var(--space-1);
-    }
-  }
-  @media (min-width: 1280px) {
-    .nav__deal-x1 {
-      position: static;
-      width: auto;
-      height: auto;
-      overflow: visible;
-      clip: auto;
-    }
-  }
-  @media (min-width: 1360px) {
-    .nav__deal {
-      white-space: normal;
-      min-height: 44px;
-      font-size: 12px;
-      line-height: 15px;
-    }
-    .nav__deal-text {
-      max-width: 214px;
-      text-wrap: balance;
-    }
-    .nav__deal-x2 {
-      position: static;
-      width: auto;
-      height: auto;
-      overflow: visible;
-      clip: auto;
-      white-space: normal;
     }
   }
   @media (min-width: 1200px) {
