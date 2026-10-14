@@ -269,7 +269,7 @@ test.describe('/nosotros y Visitanos sobre noche', () => {
   test('/nosotros: historia, mision y valores; sin la seccion "Como funciona" (esa va en el inicio)', async ({ page }) => {
     await page.goto('/nosotros');
     for (const id of ['historia', 'mision', 'valores']) await expect(page.locator(`main #${id}`), id).toHaveCount(1);
-    await expect(page.getByRole('heading', { level: 2, name: 'Nuestra historia' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Quiénes somos' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 2, name: 'Misión' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 2, name: 'Valores' })).toBeVisible();
     // ComoFunciona.astro renderiza <section id="proceso" class="proceso">; tambien se descarta un #como-funciona.
@@ -278,6 +278,33 @@ test.describe('/nosotros y Visitanos sobre noche', () => {
     // En el inicio sigue estando.
     await page.goto('/');
     await expect(page.locator('section#proceso')).toHaveCount(1);
+  });
+
+  // Contenido oficial de Alcusa (2026-10-14): textual, sin placeholders, con las 2 fotos del taller y sin noindex.
+  test('/nosotros: contenido oficial (valores, mision, vision, lema), fotos del taller, sin pendiente ni noindex', async ({ page }) => {
+    await page.goto('/nosotros');
+    await expect(page.locator('main')).not.toContainText(/pendiente/i);
+    await expect(page.locator('main')).toContainText('Más de 39 años transformando espacios con calidad, confianza e innovación.');
+    const titles = ['Calidad', 'Compromiso', 'Innovación', 'Responsabilidad', 'Honestidad', 'Trabajo en equipo', 'Orientación al cliente'];
+    await expect(page.locator('#valores .nos__vt')).toHaveText(titles);
+    await expect(page.locator('#mision p.nos__p')).toHaveCount(2);
+    await expect(page.locator('#vision p.nos__p')).toHaveCount(2);
+    await expect(page.locator('#mision')).toContainText('Brindar soluciones innovadoras, funcionales y de alta calidad');
+    await expect(page.locator('#mision')).toContainText('respaldada por más de 39 años de trayectoria');
+    await expect(page.locator('#vision')).toContainText('Ser la empresa líder y referente en El Salvador');
+    await expect(page.locator('#vision')).toContainText('llevando las soluciones de ALCUSA a más hogares, empresas y proyectos');
+    await expect(page.locator('#historia')).toContainText('Aluminios Cuscatlán, S.A. de C.V.');
+    await expect(page.locator('head meta[name="robots"]')).toHaveCount(0);
+    const photos = page.locator('main .nos__photo img.photo-frame__img');
+    await expect(photos).toHaveCount(2);
+    for (let i = 0; i < 2; i++) {
+      const img = photos.nth(i);
+      await img.scrollIntoViewIfNeeded();
+      await expect(img).toHaveAttribute('alt', /\S/);
+      await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    }
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
   });
 
   // Horario confirmado por Alcusa: Visitanos ya no lleva el placeholder "[contenido Alcusa — pendiente]".

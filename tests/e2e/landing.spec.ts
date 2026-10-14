@@ -44,14 +44,14 @@ test.describe('landing — hero, cómo funciona, confianza, info importante (S3)
     await expect(proceso.locator('ol > li')).toHaveCount(7);
   });
 
-  test('confianza shows the official ALCUSA figures (38 años, +10,000 clientes, +10,000 puertas), no placeholders', async ({
+  test('confianza shows the official ALCUSA figures (39 años, +10,000 clientes, +10,000 puertas), no placeholders', async ({
     page,
   }) => {
     await page.goto('/');
     const confianza = page.locator('#confianza');
     await confianza.scrollIntoViewIfNeeded();
     await expect(confianza.locator('li')).toHaveCount(6);
-    await expect(confianza.getByText('Más de 38 años')).toBeVisible();
+    await expect(confianza.getByText('Más de 39 años')).toBeVisible();
     await expect(confianza.getByText('+10,000 clientes')).toBeVisible();
     await expect(confianza.getByText('+10,000 puertas')).toBeVisible();
     await expect(confianza.getByText('instaladas o reemplazadas')).toBeVisible();
