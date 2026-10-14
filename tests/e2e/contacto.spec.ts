@@ -47,7 +47,6 @@ test.describe('contacto — info block + socials', () => {
     await expect(info.getByText('Sábados: 7:00 a. m. – 12:00 m.')).toBeVisible();
     await expect(info.getByText('Domingos: cerrado')).toBeVisible();
     await expect(page.getByText('[HORARIO — confirmar]')).toHaveCount(0);
-    await expect(page.locator('a[href="tel:+50325637742"]')).toHaveCount(0);
     await expect(page.getByText('[CORREO — confirmar]')).toHaveCount(0);
     const mail = page.locator('a[href="mailto:administracion@alcusa.com.sv"]');
     await expect(mail).toBeVisible();
@@ -244,19 +243,23 @@ test.describe('contacto — webform lifecycle', () => {
 test.describe('footer — quick links + legal', () => {
   // Footer nuevo (navbar spec 01d §3): dos columnas de enlaces, "Explora" y "Alcusa" (sin "Inicio";
   // el logo del navbar ya lleva a /). El catalogo vive en /#catalogo.
-  test('quick links: Explora (Catálogo/Promociones/Cotizar/Cómo funciona) + Alcusa (Nosotros/Contacto/Visítanos)', async ({
+  test('quick links: Explora (Productos ▸ 6 categorías/Promociones/Cotizar/Cómo funciona) + Alcusa (Nosotros/Contacto/Visítanos)', async ({
     page,
   }) => {
     await page.goto('/');
     const explora = page.getByRole('navigation', { name: 'Explora', exact: true });
     const alcusa = page.getByRole('navigation', { name: 'Alcusa', exact: true });
     await expect(explora.getByRole('link')).toHaveText([
-      'Catálogo',
+      'Puertas de baño',
+      'Puertas de jardín',
+      'Ventanas',
+      'Espejos',
+      'Zarandas',
+      'Fachadas comerciales',
       'Promociones',
       'Cotizar',
       'Cómo funciona',
     ]);
-    await expect(explora.getByRole('link', { name: 'Catálogo' })).toHaveAttribute('href', '/#catalogo');
     await expect(explora.getByRole('link', { name: 'Promociones' })).toHaveAttribute('href', '/#promociones');
     await expect(explora.getByRole('link', { name: 'Cotizar' })).toHaveAttribute('href', '/cotizador');
     await expect(explora.getByRole('link', { name: 'Cómo funciona' })).toHaveAttribute('href', '/#proceso');

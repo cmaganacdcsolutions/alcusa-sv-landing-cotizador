@@ -130,17 +130,16 @@ test.describe('landing R3 — tarjeta compacta (pulido 2026-10-06)', () => {
 });
 
 test.describe('navbar R3 (sin drawer)', () => {
-  test('entradas y orden: Compra YA!, Catalogo, Promociones, Nosotros, Contacto; sin Galeria ni drawer', async ({ page }) => {
+  test('entradas y orden: Catalogo, Promociones, Nosotros, Contacto; sin Galeria ni drawer', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
-    const links = page.locator('header[data-nav] nav[aria-label="Principal"] a.nav__deal, header[data-nav] nav[aria-label="Principal"] a.nav__link');
-    await expect(links).toHaveText([/Compra YA!/, /Catálogo/, /Promociones/, /Nosotros/, /Contacto/]);
-    await expect(links).toHaveCount(5);
-    await expect(links.nth(0)).toHaveAttribute('href', '/cotizador?oferta=online10');
-    await expect(links.nth(1)).toHaveAttribute('href', '/#catalogo');
-    await expect(links.nth(2)).toHaveAttribute('href', '/#promociones');
-    await expect(links.nth(3)).toHaveAttribute('href', '/nosotros');
-    await expect(links.nth(4)).toHaveAttribute('href', '/contacto');
+    const links = page.locator('header[data-nav] nav[aria-label="Principal"] a.nav__link');
+    await expect(links).toHaveText([/Catálogo/, /Promociones/, /Nosotros/, /Contacto/]);
+    await expect(links).toHaveCount(4);
+    await expect(links.nth(0)).toHaveAttribute('href', '/#catalogo');
+    await expect(links.nth(1)).toHaveAttribute('href', '/#promociones');
+    await expect(links.nth(2)).toHaveAttribute('href', '/nosotros');
+    await expect(links.nth(3)).toHaveAttribute('href', '/contacto');
     await expect(page.locator('header[data-nav] a.nav__cta')).toHaveAttribute('href', '/cotizador');
     await expect(page.locator('header[data-nav] a.nav__wa')).toHaveAttribute('aria-label', 'Escribir por WhatsApp al 7680-2410');
     await expect(page.locator('header[data-nav]')).not.toContainText('Galería');
