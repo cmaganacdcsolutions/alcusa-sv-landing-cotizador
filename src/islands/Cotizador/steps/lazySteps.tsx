@@ -57,18 +57,12 @@ const loaders = {
   precio: () => import('./Step2Precio'),
   zona: () => import('./Step3ZonaEntrega'),
   resumen: () => import('./Step4Resumen'),
-  pago: () => import('./Step5FormaPago'),
-  wompi: () => import('./Step6Wompi'),
-  resultado: () => import('./Step7Resultado'),
 };
 
 export const Step1Medidas = lazyStep('Step1Medidas', loaders.medidas);
 export const Step2Precio = lazyStep('Step2Precio', loaders.precio);
 export const Step3ZonaEntrega = lazyStep('Step3ZonaEntrega', loaders.zona);
 export const Step4Resumen = lazyStep('Step4Resumen', loaders.resumen);
-export const Step5FormaPago = lazyStep('Step5FormaPago', loaders.pago);
-export const Step6Wompi = lazyStep('Step6Wompi', loaders.wompi);
-export const Step7Resultado = lazyStep('Step7Resultado', loaders.resultado);
 
 /** Precarga (sin bloquear) los pasos posteriores; los errores se ignoran (se reintenta al renderizar). */
 function preloadLaterSteps(): void {

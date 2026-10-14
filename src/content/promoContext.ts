@@ -1,6 +1,6 @@
 // Contexto promo del cotizador: una cotizacion vive en UN contexto definido por la URL de entrada
 // (`?promo=<id>`) -> reglaje de ESA promo (producto/acabado/alto fijos, ancho dentro del rango, precio
-// de la promo, sin 10% con tarjeta). Sin param (o id invalido / fuera de vigencia) = contexto normal.
+// de la promo). Sin param (o id invalido / fuera de vigencia) = contexto normal.
 // Puro: sin React/window/node. Los datos salen de promotions.json (ver promoRegistry.ts para el navegador).
 import type { AluminumColor, StraightGlass } from '@engine/pricing';
 import { PROMO_PARAM, isActive, type Promotion } from './promotionsParser';

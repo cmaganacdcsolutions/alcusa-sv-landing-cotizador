@@ -7,7 +7,7 @@ import { expect, test } from './fixtures';
 // Runs across all 3 projects (ios390/android412/desktop1920) unless a test is scoped otherwise.
 
 test.describe('landing5 — footer content parity with the boards', () => {
-  test('footer: 7 nav links in order (Explora + Alcusa), no NIT/handles line; WhatsApp CTA with its icon', async ({
+  test('footer: 12 nav links in order (Productos ▸ 6 + 3 + 3) (Explora + Alcusa), no NIT/handles line; WhatsApp CTA with its icon', async ({
     page,
   }) => {
     await page.goto('/');
@@ -16,7 +16,12 @@ test.describe('landing5 — footer content parity with the boards', () => {
       .locator('.site-footer__nav a:visible')
       .allTextContents();
     expect(navLinks.map((t) => t.trim())).toEqual([
-      'Catálogo',
+      'Puertas de baño',
+      'Puertas de jardín',
+      'Ventanas',
+      'Espejos',
+      'Zarandas',
+      'Fachadas comerciales',
       'Promociones',
       'Cotizar',
       'Cómo funciona',

@@ -5,7 +5,7 @@ import { waitForScrollSettled } from '../support/settle';
 
 // Slice sf-cot-mobile — mobile/tablet fixed action bar, always-reachable back
 // control, Resumen table overflow/fidelity, and step-transition scroll-to-top.
-// Never opens a real WhatsApp/Wompi link — fixtures.ts blocks those routes.
+// Never opens a real WhatsApp link — fixtures.ts blocks those routes.
 async function waitForHydration(page: Page): Promise<void> {
   await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
 }

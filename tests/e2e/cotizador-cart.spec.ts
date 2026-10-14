@@ -4,7 +4,7 @@ import { fillAddress } from '../support/address';
 
 test.use({ blockQuotePdf: true });
 
-// S7 — multi-item cart. Never opens a real WhatsApp/Wompi link (fixtures.ts
+// S7 — multi-item cart. Never opens a real WhatsApp link (fixtures.ts
 // blocks those routes); every assertion decodes the built href instead.
 async function waitForHydration(page: Page): Promise<void> {
   await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');

@@ -224,7 +224,7 @@ export function formatUsd(n: number): string {
 export function promoHref(p: Pick<Promotion, 'productSlug' | 'cotizadorParams'> & { id?: string; quoteRules?: unknown }): string {
   const { color, vidrio } = p.cotizadorParams ?? {};
   const base = !color && !vidrio ? cotizadorHref(p.productSlug) : buildCotizadorHref(p.productSlug, { color, vidrio });
-  // Entrada por promo: `?promo=<id>` fija el contexto (reglaje de ESA promo; sin 10% con tarjeta).
+  // Entrada por promo: `?promo=<id>` fija el contexto (reglaje de ESA promo; sin descuentos en línea).
   // Solo las promos con reglaje (`quote_rules`) abren contexto promo; sin reglaje el param no tendria efecto.
   return p.id && p.quoteRules ? `${base}${base.includes('?') ? '&' : '?'}${PROMO_PARAM}=${encodeURIComponent(p.id)}` : base;
 }

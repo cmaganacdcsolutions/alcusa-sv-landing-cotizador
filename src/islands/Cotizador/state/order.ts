@@ -1,6 +1,6 @@
 // S7 — pure "whole order" aggregator: combines committed `cart` items with
 // the in-progress "current" item into one list for the Resumen card, the
-// desktop aside, and the WhatsApp/Wompi payloads. No React/window/document
+// desktop aside, and the WhatsApp payload. No React/window/document
 // imports — unit-tested directly, same rule as state/quote.ts.
 //
 // Money rule (prototype-spec.md §2.4/§2.5, T7.2): transport (zoneFee) is an
@@ -60,6 +60,11 @@ export function buildOrderItems(state: CotizadorState, products: readonly Catalo
 /** Sum of every priced item's subtotal (requiresQuote items contribute $0, never null-poisoned). */
 export function orderItemsSubtotal(items: readonly OrderLineItem[]): number {
   return Math.round(items.reduce((sum, i) => sum + i.subtotal, 0) * 100) / 100;
+}
+
+/** Anticipo del 80% (el 20% restante se cobra contra entrega). Alcusa cobra con sus propios medios, fuera del sitio. */
+export function depositOf(total: number): number {
+  return Math.round(total * 80) / 100;
 }
 
 /** Total = sum of item subtotals + transport, added exactly once (T7.2). */

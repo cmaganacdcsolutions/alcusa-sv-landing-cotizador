@@ -74,14 +74,14 @@ test.describe('sf-fixes — logo + nav links', () => {
     await expect(page.locator('#proceso')).toBeInViewport();
   });
 
-  test('footer "Catálogo" navigates from /contacto back to /#catalogo', async ({ page }) => {
+  test('footer "Productos > Puertas de baño" navigates from /contacto back to /#puertas-de-bano', async ({ page }) => {
     await page.goto('/contacto');
     await page
       .locator('.site-footer__nav')
-      .getByRole('link', { name: 'Catálogo', exact: true })
+      .getByRole('link', { name: 'Puertas de baño', exact: true })
       .click();
-    await expect(page).toHaveURL(/\/#catalogo$/);
-    await expect(page.locator('#catalogo')).toBeInViewport();
+    await expect(page).toHaveURL(/\/#puertas-de-bano$/);
+    await expect(page.locator('#puertas-de-bano')).toBeInViewport();
   });
 
   test('footer nav links have no underline and a visible focus style', async ({

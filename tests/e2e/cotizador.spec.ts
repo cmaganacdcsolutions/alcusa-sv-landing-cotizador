@@ -12,7 +12,7 @@ async function waitForHydration(page: Page): Promise<void> {
 
 // Full step 0->5 happy path for "recta" (T1.2/T1.3) + the out-of-range /
 // requiresQuote edge states from prototype-spec.md §2.3. Never opens a real
-// WhatsApp link — fixtures.ts blocks wa.me/wompi routes as a second guard.
+// WhatsApp link — fixtures.ts blocks wa.me routes as a second guard.
 test.describe('cotizador — recta, step 0 to 5', () => {
   test('navbar "Cotizar" navigates to the standalone /cotizador page at step 0', async ({ page }) => {
     await page.goto('/');
@@ -130,18 +130,17 @@ test.describe('cotizador — recta, step 0 to 5', () => {
     await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
   });
 
-  // Behaviour change 2026-10-06 (user-requested): a distrito without an automatic rate no longer blocks
-  // the flow. It shows an informative callout + "Envío: por confirmar" and "Siguiente" stays enabled.
-  test('municipio outside the 23-zone list shows "Envío por confirmar" and does NOT block', async ({ page }) => {
+  // Recorte 2026-10-13: ya no hay "Otra zona". Una zona fuera de tabla se resuelve con Retiro en tienda o por WhatsApp.
+  test('zona fuera de la lista: el hint remite a Retiro en tienda, que deja avanzar sin direccion', async ({ page }) => {
     await page.goto('/cotizador');
     await waitForHydration(page);
     await pickProduct(page, 'recta');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
-    await fillAddress(page, 'Santa Ana');
-    await expect(page.getByText('Tu zona aún no tiene tarifa de transporte automática')).toBeVisible();
-    await expect(page.getByText('Envío: por confirmar (te lo confirmamos por WhatsApp)')).toBeVisible();
+    await expect(page.getByText(/Si tu zona no aparece, elige «Retiro en tienda» o escríbenos por WhatsApp/)).toBeVisible();
+    await expect(page.locator('#addr-zona option[value="otro"]')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Retiro en tienda −15%' }).click();
     await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
   });
 

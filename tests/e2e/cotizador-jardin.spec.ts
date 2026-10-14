@@ -10,7 +10,7 @@ async function waitForHydration(page: Page): Promise<void> {
   await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
 }
 
-// "Puerta de jardín" (T6.2). Never opens a real WhatsApp/Wompi link —
+// "Puerta de jardín" (T6.2). Never opens a real WhatsApp link —
 // fixtures.ts blocks those routes. android412 has a hydration race on the
 // first product-card click (per S6 brief), hence the toPass() wrap below.
 test.describe('cotizador — jardín, promo bands + requiresQuote', () => {
@@ -77,7 +77,7 @@ test.describe('cotizador — jardín, promo bands + requiresQuote', () => {
     await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
   });
 
-  test('happy path reaches the summary with a WhatsApp href, "Pagar ahora" still available', async ({ page }) => {
+  test('happy path reaches the summary with a WhatsApp href, the PDF CTA is available', async ({ page }) => {
     await openJardin(page);
 
     await page.getByLabel('Ancho exacto de tu espacio').fill('1.00');
@@ -97,6 +97,6 @@ test.describe('cotizador — jardín, promo bands + requiresQuote', () => {
     expect(decoded).toContain('Puerta de jardín · 1 hoja — 1.00×2.10 m · Color: Blanco · Vidrio: Claro 5 mm');
     expect(decoded).toContain('Subtotal: $410.00');
 
-    await expect(page.getByRole('button', { name: 'Pagar ahora' })).toBeEnabled();
+    await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeEnabled();
   });
 });

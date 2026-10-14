@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { expect, pickProduct, test } from './fixtures';
 import { fillAddress } from '../support/address';
 
-// R4 — "Enviar por WhatsApp (PDF)". Never opens a real wa.me: window.open is
+// R4 — "Obtener cotización en PDF". Never opens a real wa.me: window.open is
 // stubbed and only hrefs / call records are asserted (ADR-006).
 
 type ShareMode = 'none' | 'ok' | 'abort' | 'notallowed';
@@ -75,7 +75,7 @@ test.describe('quote share — desktop (always download + wa.me tab)', () => {
   test('downloads the PDF, opens wa.me (stubbed) and shows the persistent toast; Esc closes it', async ({ page }) => {
     await stubShare(page, 'ok'); // share exists but must NOT be used on desktop
     await gotoResumen(page);
-    await expect(shareButton(page)).toHaveText('Enviar por WhatsApp (PDF)');
+    await expect(shareButton(page)).toHaveText('Obtener cotización en PDF');
 
     const download = page.waitForEvent('download');
     await shareAndSubmit(page);
@@ -134,7 +134,7 @@ test.describe('quote share — mobile (Web Share with files)', () => {
     page.on('download', () => (downloaded = true));
     await shareAndSubmit(page);
     await expect.poll(async () => (await probe(page)).shareCalls.length).toBe(1);
-    await expect(shareButton(page)).toHaveText('Enviar por WhatsApp (PDF)');
+    await expect(shareButton(page)).toHaveText('Obtener cotización en PDF');
     await expect(shareButton(page)).toBeFocused();
     await expect(shown(page, '¿Ya lo enviaste?')).toHaveCount(0);
     await expect(page.getByRole('alert').locator('visible=true')).toHaveCount(0);

@@ -2,6 +2,7 @@
   "_doc": "Area tags. specs: each tests/e2e/*.spec.ts -> the areas it protects (verify-area runs a spec if ANY of its areas is selected). Every spec MUST be listed (scripts/verify.mjs fails on an unmapped spec). Areas: cotizador, home, promos, catalogo, contacto, layout. 'layout' = shared header/footer/PhotoFrame/carousel/styles: selecting it runs EVERY area. paths: first matching prefix wins; used by scripts/suggest-areas.mjs. Anything under src/ that matches no rule is treated as 'layout' (shared) on purpose.",
   "areas": ["cotizador", "home", "promos", "catalogo", "contacto", "layout"],
   "specs": {
+    "catalog-upcoming.spec.ts": ["home"],
     "a11y.spec.ts": ["home", "cotizador"],
     "bg-diagonal.spec.ts": ["home", "contacto", "layout"],
     "catalogo-deeplink.spec.ts": ["catalogo", "cotizador"],
@@ -16,8 +17,6 @@
     "cotizador-persist.spec.ts": ["cotizador"],
     "cotizador-promo-context.spec.ts": ["cotizador", "promos"],
     "cotizador-promo-stash.spec.ts": ["cotizador", "promos"],
-    "cotizador-checkout.spec.ts": ["cotizador"],
-    "cotizador-online-discount.spec.ts": ["cotizador"],
     "cotizador-combinaciones.spec.ts": ["cotizador"],
     "cotizador-golden.spec.ts": ["cotizador"],
     "cotizador-jardin.spec.ts": ["cotizador"],
@@ -29,6 +28,7 @@
     "cotizador-mobile.spec.ts": ["cotizador"],
     "cotizador-quote-load.spec.ts": ["cotizador"],
     "cotizador-chunk-error.spec.ts": ["cotizador"],
+    "cotizador-sin-pagos.spec.ts": ["cotizador", "home"],
     "cotizador-shell.spec.ts": ["cotizador"],
     "cotizador-ventana.spec.ts": ["cotizador"],
     "cotizador.spec.ts": ["cotizador", "promos"],
@@ -53,12 +53,12 @@
     "quote-customer.spec.ts": ["cotizador"],
     "quote-share.spec.ts": ["cotizador"],
     "section-titles.spec.ts": ["home"],
+    "nosotros.spec.ts": ["layout"],
     "site-chrome.spec.ts": ["home", "contacto", "layout"],
     "sf-fixes.spec.ts": ["home", "contacto", "cotizador"],
     "visual-cotizador.spec.ts": ["cotizador"],
     "visual-home.spec.ts": ["home", "promos"],
-    "whatsapp-links.spec.ts": ["home", "cotizador", "layout"],
-    "wompi-mock-flow.spec.ts": ["cotizador"]
+    "whatsapp-links.spec.ts": ["home", "cotizador", "layout"]
   },
   "paths": [
     ["src/islands/ContactForm", "contacto"],

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import raw from '@content/promotions.json';
 import { parsePromotions, PromotionsDataError } from '@content/promotionsParser';
 import { isPromoWidthOk, promoWidthRuleCopy, resolvePromoContext } from '@content/promoContext';
-import { computeOnlineCardDiscount } from '@engine/pricing/onlineDiscount';
 import { cotizadorReducer, initialCotizadorState } from './cotizadorStore';
 import { computeQuote } from './quote';
 import { parseWizardSnapshot, snapshotFromState } from './persist';
@@ -83,19 +82,15 @@ describe('promoContext — computeQuote y reducer', () => {
     expect(computeQuote({ ...base, glass: 'aquafold' }).requiresQuote).toBe(true);
     expect(computeQuote({ ...base, glass: 'claro' })).toEqual({ amount: 258, requiresQuote: false });
   });
-  it('ENTER_PROMO fija config, apaga oferta y vacia carrito; EXIT_PROMO vuelve a normal', () => {
-    const s = cotizadorReducer({ ...initialCotizadorState, onlineOffer: true }, { type: 'ENTER_PROMO', promo: ctx('promo-corrediza-nevado') });
-    expect(s).toMatchObject({ promoId: 'promo-corrediza-nevado', productId: 'recta', color: 'natural', glass: 'nevado', onlineOffer: false, cart: [] });
+  it('ENTER_PROMO fija config y vacia carrito; EXIT_PROMO vuelve a normal', () => {
+    const s = cotizadorReducer(initialCotizadorState, { type: 'ENTER_PROMO', promo: ctx('promo-corrediza-nevado') });
+    expect(s).toMatchObject({ promoId: 'promo-corrediza-nevado', productId: 'recta', color: 'natural', glass: 'nevado', cart: [] });
     expect(s.step).toBe('medidas');
     const w = enter('promo-corrediza-nevado');
     expect(isPromoWidthOk(ctx('promo-corrediza-nevado'), Number(w.width))).toBe(true);
     expect(cotizadorReducer(s, { type: 'SET_ENTREGA', entrega: 'retiro' }).entrega).toBe('instalacion');
     expect(cotizadorReducer(s, { type: 'EXIT_PROMO' })).toEqual(initialCotizadorState);
     expect(cotizadorReducer(initialCotizadorState, { type: 'RESTORE_PROMO', promoId: 'x' }).promoId).toBe('x');
-  });
-  it('10% con tarjeta: NONE en promo, aplica en flujo normal', () => {
-    expect(computeOnlineCardDiscount({ payMethod: 'pay', itemsSubtotal: 222, promo: true }).applies).toBe(false);
-    expect(computeOnlineCardDiscount({ payMethod: 'pay', itemsSubtotal: 258, promo: false })).toMatchObject({ applies: true, amount: 25.8 });
   });
 });
 

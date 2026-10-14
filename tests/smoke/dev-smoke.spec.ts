@@ -171,7 +171,7 @@ test('dev + build en el mismo checkout: el dev server sigue renderizando el coti
   const build = spawnSync('npx astro build --outDir dist-e2e/collision', {
     shell: true,
     encoding: 'utf8',
-    env: { ...process.env, PUBLIC_COTIZADOR_MODE: 'mock', PUBLIC_QUOTE_API: 'mock', ALCUSA_PROMOS_TODAY: '2026-10-15' },
+    env: { ...process.env, PUBLIC_QUOTE_API: 'mock', ALCUSA_PROMOS_TODAY: '2026-10-15' },
   });
   expect(build.status, build.stdout + build.stderr).toBe(0);
 

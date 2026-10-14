@@ -6,8 +6,7 @@ import { fillAddress } from '../support/address';
 
 // qa-cot-resp — full-flow responsive sweep, every product, every viewport in
 // playwright.responsive.config.ts (15 real device sizes). Producto -> Medidas
-// -> Precio -> Zona/Entrega -> Resumen -> Forma de pago -> Wompi (mock) ->
-// Resultado. Read-only assertions only (no product code edited by this spec).
+// -> Precio -> Zona/Entrega -> Resumen (fin del flujo: CTA PDF + asesor). Read-only assertions only (no product code edited by this spec).
 // Run: E2E_PORT=4361 npx playwright test --config=playwright.responsive.config.ts
 
 async function waitForHydration(page: Page): Promise<void> {
@@ -80,18 +79,14 @@ async function selectZonaAndAdvance(page: Page, testInfo: TestInfo, product: str
   await clickSiguiente(page);
 }
 
-async function throughResumenAndPayment(page: Page, testInfo: TestInfo, product: string): Promise<void> {
+async function throughResumen(page: Page, testInfo: TestInfo, product: string): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
   await audit(page, testInfo, { product, step: '4-resumen' });
 
-  await page.getByRole('button', { name: 'Pagar ahora' }).click();
-  await expect(page.getByRole('heading', { name: 'Forma de pago' })).toBeVisible();
-  await page.getByRole('radio', { name: /Pagar ahora/ }).click();
-  await audit(page, testInfo, { product, step: '5-forma-pago' });
-
-  await page.getByRole('button', { name: /Pagar \$\d+\.\d{2} con Wompi/ }).click();
-  await expect(page.getByRole('heading', { name: 'Pago completado' })).toBeVisible({ timeout: 10000 });
-  await audit(page, testInfo, { product, step: '7-resultado' });
+  // Fin del flujo: CTA PDF + enlace al asesor (sin pagos en la web).
+  await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeVisible();
+  await expect(page.getByTestId('resumen-whatsapp-advisor').locator('visible=true').first()).toBeVisible();
+  await audit(page, testInfo, { product, step: '4-resumen-ctas' });
 }
 
 // ---- per-product Medidas fillers (minimal valid data, mirrors tests/e2e) ----
@@ -187,7 +182,7 @@ for (const flow of FLOWS) {
     await clickSiguiente(page);
     await selectZonaAndAdvance(page, testInfo, flow.id);
 
-    await throughResumenAndPayment(page, testInfo, flow.id);
+    await throughResumen(page, testInfo, flow.id);
   });
 }
 

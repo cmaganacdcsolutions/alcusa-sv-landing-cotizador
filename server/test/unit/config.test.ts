@@ -14,7 +14,6 @@ describe('loadConfig', () => {
     expect(c.PORT).toBe(3001);
     expect(c.HOST).toBe('127.0.0.1');
     expect(c.TRUST_PROXY).toBe(false);
-    expect(c.WOMPI_MODE).toBe('mock');
     expect(c.dbName).toBe('alcusa_dev');
   });
 
@@ -51,19 +50,6 @@ describe('loadConfig', () => {
     );
   });
 
-  it('WOMPI_MODE=live needs production; sandbox/live need the Wompi vars', () => {
-    expect(() => loadConfig({ ...base, WOMPI_MODE: 'live' })).toThrowError(/WOMPI_MODE/);
-    expect(() => loadConfig({ ...base, WOMPI_MODE: 'sandbox' })).toThrowError(/WOMPI_API_SECRET/);
-    const ok = loadConfig({
-      ...base,
-      WOMPI_MODE: 'sandbox',
-      WOMPI_APP_ID: 'a',
-      WOMPI_API_SECRET: 'b',
-      WOMPI_API_BASE: 'https://x.test',
-      WOMPI_AUTH_URL: 'https://y.test',
-    });
-    expect(ok.WOMPI_MODE).toBe('sandbox');
-  });
 });
 
 describe('loadMigrateConfig', () => {

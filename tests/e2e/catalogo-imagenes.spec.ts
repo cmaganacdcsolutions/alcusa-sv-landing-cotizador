@@ -34,10 +34,13 @@ test.describe('catálogo del inicio — imágenes', () => {
 
   test('cada tarjeta del catálogo muestra su render: una foto, nunca el cuadro "Foto próximamente"', async ({ page }) => {
     await page.goto('/');
-    const cards = page.locator('#catalogo article.pcard');
+    // Las 9 tarjetas de las categorias placeholder (Espejos, Zarandas, Fachadas; data-pending-card) NO llevan foto
+    // por diseno ("Imagen pendiente"): se excluyen del conteo de renders reales y se afirman aparte.
+    const cards = page.locator('#catalogo article.pcard:not([data-pending-card])');
     await expect(cards).toHaveCount(CARD_COUNT);
-    await expect(page.locator('#catalogo .pcard__nophoto')).toHaveCount(0);
-    await expect(page.locator('#catalogo .pcard img.photo-frame__img')).toHaveCount(CARD_COUNT);
+    await expect(page.locator('#catalogo article.pcard[data-pending-card]')).toHaveCount(9);
+    await expect(page.locator('#catalogo article.pcard:not([data-pending-card]) .pcard__nophoto')).toHaveCount(0);
+    await expect(page.locator('#catalogo article.pcard:not([data-pending-card]) img.photo-frame__img')).toHaveCount(CARD_COUNT);
     for (let i = 0; i < CARD_COUNT; i += 1) {
       await expect(cards.nth(i).locator('img.photo-frame__img')).toHaveCount(1);
     }

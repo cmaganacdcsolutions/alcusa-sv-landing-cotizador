@@ -25,7 +25,7 @@ async function clickSiguienteOnMedidas(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Siguiente' }).click({ force: true });
 }
 
-// "Ventana Francesa/Bilbao" (T6.1). Never opens a real WhatsApp/Wompi link —
+// "Ventana Francesa/Bilbao" (T6.1). Never opens a real WhatsApp link —
 // fixtures.ts blocks those routes. android412 has a hydration race on the
 // first product-card click (per S6 brief), hence the toPass() wrap below.
 test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
@@ -172,7 +172,7 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     expect(decoded).toContain('Ventana Francesa — 1.20×1.00 m · Color: Blanco · Vidrio: Claro');
     expect(decoded).toContain('Subtotal: $162.00');
 
-    // "Pagar ahora" must also remain available — never a hard block.
-    await expect(page.getByRole('button', { name: 'Pagar ahora' })).toBeEnabled();
+    // The PDF CTA must also remain available — never a hard block.
+    await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeEnabled();
   });
 });

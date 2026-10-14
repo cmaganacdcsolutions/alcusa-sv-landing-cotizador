@@ -121,7 +121,7 @@ test.describe('hover de botones — cotizador (1440)', () => {
     await expectHoverChanges(page, page.locator('.btn-whatsapp-outline').first(), 'backgroundColor');
   });
 
-  test('entrega y zona, resumen y forma de pago: opciones, selects, enlaces y WhatsApp', async ({ page }) => {
+  test('entrega y zona y resumen (CTA PDF + asesor): opciones, selects, enlaces y WhatsApp', async ({ page }) => {
     await page.goto('/cotizador');
     await hydrated(page);
     await pickProduct(page, 'recta');
@@ -139,15 +139,13 @@ test.describe('hover de botones — cotizador (1440)', () => {
     await expectHoverChanges(page, page.locator('.summary-add').first(), 'backgroundColor');
     await expectHoverChanges(page, page.locator('.summary-card__zone-change').first(), 'backgroundColor');
 
-    await page.getByRole('button', { name: 'Pagar ahora' }).click();
-    await expect(page.getByRole('heading', { name: 'Forma de pago' })).toBeVisible();
-    const unchecked = page.locator('.payment-option[data-checked="false"]').first();
-    await expectHoverChanges(page, unchecked, 'borderColor'); // hover sobre la tarjeta entera
-    await expectHoverUnchanged(page, page.locator('.payment-option[data-checked="true"]').first());
-    await page.locator('.payment-option__head').first().click(); // WhatsApp elegido -> boton verde
-    const wa = page.locator('.btn-whatsapp:visible').first();
-    await expect(wa).toBeVisible();
-    await expectHoverChanges(page, wa, 'backgroundColor');
+    // El flujo termina aqui: CTA primario (PDF) y enlace secundario al asesor por WhatsApp.
+    const pdf = page.getByTestId('quote-share-button').locator('visible=true').first();
+    await expect(pdf).toBeVisible();
+    await expectHoverChanges(page, pdf, 'backgroundColor');
+    const advisor = page.getByTestId('resumen-whatsapp-advisor').locator('visible=true').first();
+    await expect(advisor).toBeVisible();
+    await expectHoverChanges(page, advisor, 'backgroundColor');
   });
 });
 

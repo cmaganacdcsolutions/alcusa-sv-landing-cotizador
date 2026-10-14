@@ -22,8 +22,6 @@ export interface QuoteDocument {
   total: number;
   /** Distrito sin tarifa: the transport row prints "Por confirmar" instead of $0.00. */
   shippingPending?: boolean;
-  /** Positive 10% online-card discount already subtracted from `total` (printed inside the total box). */
-  discount?: number;
 }
 
 export interface QuoteFontBytes {

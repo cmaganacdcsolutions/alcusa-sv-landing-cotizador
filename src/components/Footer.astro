@@ -1,12 +1,19 @@
 ---
 // Footer (navbar spec 01d §1, §3): 3 columnas (marca + WhatsApp + telefonos | Explora | Alcusa)
-// + formas de pago + redes + legal. >=1024 en 3 columnas, <1024 apilado.
+// + redes + legal. >=1024 en 3 columnas, <1024 apilado.
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 
 const waHref = buildWaLink();
 
+const PRODUCTOS = [
+  { label: 'Puertas de baño', href: '/#puertas-de-bano' },
+  { label: 'Puertas de jardín', href: '/#puertas-de-jardin' },
+  { label: 'Ventanas', href: '/#ventanas' },
+  { label: 'Espejos', href: '/#espejos' },
+  { label: 'Zarandas', href: '/#zarandas' },
+  { label: 'Fachadas comerciales', href: '/#fachadas-comerciales' },
+] as const;
 const EXPLORA = [
-  { label: 'Catálogo', href: '/#catalogo' },
   { label: 'Promociones', href: '/#promociones' },
   { label: 'Cotizar', href: '/cotizador' },
   { label: 'Cómo funciona', href: '/#proceso' },
@@ -37,12 +44,26 @@ const ALCUSA = [
           Cotizar por WhatsApp · 7680-2410
         </a>
         <p class="site-footer__phones">
-          Teléfono <a href="tel:+50322782460">2278-2460</a>
+          <span class="site-footer__phones-label">Teléfonos</span>
+          <a href="tel:+50322782460">2278-2460</a>
+          <a href="tel:+50325637742">2563-7742</a>
+          <a href="tel:+50322084101">2208-4101</a>
         </p>
       </div>
 
       <nav aria-label="Explora" class="site-footer__col site-footer__nav">
         <p class="site-footer__head">Explora</p>
+        <details class="site-footer__acc" open>
+          <summary>
+            Productos
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" class="site-footer__chev">
+              <path d="M6 9l6 6 6-6"></path>
+            </svg>
+          </summary>
+          <div class="site-footer__acc-list">
+            {PRODUCTOS.map((l) => <a href={l.href}>{l.label}</a>)}
+          </div>
+        </details>
         {EXPLORA.map((l) => <a href={l.href}>{l.label}</a>)}
       </nav>
 
@@ -53,10 +74,6 @@ const ALCUSA = [
     </div>
 
     <div class="site-footer__meta">
-      <p class="site-footer__pay">
-        <span class="site-footer__head">Formas de pago</span>
-        Tarjeta de crédito o débito (Wompi) · [contenido Alcusa — pendiente: otras formas de pago]
-      </p>
       <div class="site-footer__social">
         <a href="https://instagram.com/alcusasv" aria-label="Instagram @alcusasv" rel="noopener" class="site-footer__social-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
@@ -172,9 +189,70 @@ const ALCUSA = [
   .site-footer__phones {
     margin: 0;
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--space-4);
+    font-size: 0.9375rem;
+  }
+  .site-footer__phones-label {
+    flex-basis: 100%;
+    font-weight: 700;
+  }
+  .site-footer__phones a {
+    padding-inline: var(--space-2);
+    margin-inline: calc(-1 * var(--space-2));
+  }
+  /* Acordeon "Productos" (details nativo, abierto por defecto): mismo lenguaje que los enlaces del pie. */
+  .site-footer__acc summary {
+    min-height: 44px;
+    display: flex;
     align-items: center;
     gap: var(--space-2);
+    align-self: flex-start;
+    padding-inline: var(--space-3);
+    margin-inline: calc(-1 * var(--space-3));
+    border-radius: var(--radius-full);
+    color: var(--color-text-on-dark);
     font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+  .site-footer__acc summary::-webkit-details-marker {
+    display: none;
+  }
+  .site-footer__acc {
+    display: flex;
+    flex-direction: column;
+  }
+  .site-footer__chev {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform var(--hover-dur) var(--hover-ease);
+  }
+  .site-footer__acc[open] .site-footer__chev {
+    transform: rotate(180deg);
+  }
+  .site-footer__acc-list {
+    display: flex;
+    flex-direction: column;
+    padding-left: var(--space-4);
+  }
+  .site-footer__acc-list a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    align-self: flex-start;
+    padding-inline: var(--space-3);
+    margin-inline: calc(-1 * var(--space-3));
+    border-radius: var(--radius-full);
+    color: var(--color-text-on-dark);
+    text-decoration: none;
+    font-size: 0.9375rem;
+    font-weight: 500;
   }
   .site-footer__whatsapp {
     min-height: 48px;
@@ -201,6 +279,8 @@ const ALCUSA = [
         color var(--hover-dur) var(--hover-ease);
     }
     .site-footer__nav a:hover,
+    .site-footer__acc summary:hover,
+    .site-footer__acc-list a:hover,
     .site-footer__phones a:hover,
     .site-footer__social-icon:hover {
       background: var(--color-surface-dark-raised);
@@ -214,7 +294,8 @@ const ALCUSA = [
     .site-footer__nav a,
     .site-footer__phones a,
     .site-footer__social-icon,
-    .site-footer__whatsapp {
+    .site-footer__whatsapp,
+    .site-footer__chev {
       transition: none;
     }
   }
@@ -224,13 +305,6 @@ const ALCUSA = [
     gap: var(--space-4);
     padding-top: var(--space-6);
     border-top: 1px solid var(--color-line-on-dark);
-  }
-  .site-footer__pay {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    font-size: 0.875rem;
   }
   .site-footer__social {
     display: flex;
@@ -270,6 +344,8 @@ const ALCUSA = [
     color: var(--color-footer-muted);
   }
   .site-footer__nav a:focus-visible,
+  .site-footer__acc summary:focus-visible,
+  .site-footer__acc-list a:focus-visible,
   .site-footer__phones a:focus-visible,
   .site-footer__social-icon:focus-visible,
   .site-footer__whatsapp:focus-visible {
@@ -294,11 +370,6 @@ const ALCUSA = [
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
-    }
-    .site-footer__pay {
-      flex-direction: row;
-      gap: var(--space-3);
-      align-items: baseline;
     }
     .site-footer__bottom {
       flex-direction: row;

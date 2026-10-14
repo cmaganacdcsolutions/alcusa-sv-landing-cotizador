@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getZoneFee } from '@engine/pricing/zoneFee';
 import { DEPARTAMENTOS } from '@content/elSalvadorTerritory';
-import { OTHER_ZONE_LABEL, ZONE_OPTIONS, zoneOptionLabel } from '@content/deliveryZones';
+import { ZONE_OPTIONS, zoneOptionLabel } from '@content/deliveryZones';
 import {
   ADDRESS_MSG,
   applyAddressField,
@@ -63,8 +63,8 @@ describe('validateAddress', () => {
     expect(isAddressComplete({ ...textOnly, zona: 'Soyapango' })).toBe(true);
   });
 
-  it('"Otra zona" (otro) cuenta como zona elegida: no bloquea', () => {
-    expect(isAddressComplete({ ...complete, zona: 'otro' })).toBe(true);
+  it('la retirada "Otra zona" (otro) ya no cuenta como zona elegida', () => {
+    expect(isAddressComplete({ ...complete, zona: 'otro' })).toBe(false);
   });
 
   it('telefono: 8 digitos, acepta +503 y guion, rechaza el resto', () => {
@@ -82,14 +82,14 @@ describe('validateAddress', () => {
 });
 
 describe('dropdown de zonas', () => {
-  it('opciones en orden de la tabla, con precio, y "Otra zona" al final', () => {
+  it('opciones en orden de la tabla, con precio, sin "Otra zona"', () => {
     const labels = ZONE_OPTIONS.map((o) => o.label);
     expect(labels[0]).toBe('San Salvador (zona metropolitana) — Incluido');
     expect(labels[1]).toBe('Santa Tecla — Incluido');
     expect(labels[2]).toBe('San Marcos — $25.00');
-    expect(labels[labels.length - 2]).toBe('Ciudad Arce — $85.00');
-    expect(labels[labels.length - 1]).toBe(OTHER_ZONE_LABEL);
-    expect(ZONE_OPTIONS).toHaveLength(24);
+    expect(labels[labels.length - 1]).toBe('Ciudad Arce — $85.00');
+    expect(labels).not.toContain('Otra zona — envío por confirmar');
+    expect(ZONE_OPTIONS).toHaveLength(23);
   });
 
   it('cada opcion con tarifa trae el monto exacto de la tabla', () => {
@@ -103,7 +103,7 @@ describe('dropdown de zonas', () => {
 
   it('la zona elegida es la zona; vacia o desconocida = sin zona; el telefono se enmascara', () => {
     expect(zoneOf(applyAddressField(EMPTY_ADDRESS, 'zona', 'Apopa'))).toBe('Apopa');
-    expect(zoneOf(applyAddressField(EMPTY_ADDRESS, 'zona', 'otro'))).toBe('otro');
+    expect(zoneOf(applyAddressField(EMPTY_ADDRESS, 'zona', 'otro'))).toBe('');
     expect(zoneOf(EMPTY_ADDRESS)).toBe('');
     expect(zoneOf({ zona: 'zzz' })).toBe('');
     expect(applyAddressField(EMPTY_ADDRESS, 'telefono', '71234567').telefono).toBe('7123-4567');
