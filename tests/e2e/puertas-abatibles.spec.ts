@@ -23,7 +23,7 @@ test.describe('abatibles dentro de Puertas de jardín', () => {
     await page.goto('/');
     await expect(page.locator('#puertas-abatibles')).toHaveCount(0);
     const ids = await page.locator('#catalogo .csec').evaluateAll((els) => els.map((e) => e.id));
-    expect(ids).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas']);
+    expect(ids).toEqual(['puertas-de-bano', 'puertas-de-jardin', 'ventanas', 'espejos', 'zarandas', 'fachadas-comerciales']);
     await expect(page.getByRole('navigation', { name: 'Categorías' }).getByRole('link', { name: /abatibles/i })).toHaveCount(0);
     await expect(page.locator('header a[href="/#puertas-abatibles"]')).toHaveCount(0);
 

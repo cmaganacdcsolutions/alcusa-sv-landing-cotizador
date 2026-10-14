@@ -60,14 +60,15 @@ test.describe('landing — hero, cómo funciona, confianza, info importante (S3)
     await expect(confianza.getByText('confirmar', { exact: false })).toHaveCount(0);
   });
 
-  test('info importante: AMEX-exclusion and 80/20 copy match the cotizador payment step wording exactly', async ({
+  test('info importante: 80/20 copy is a condition (no AMEX / online payment wording after the 2026-10-13 scope cut)', async ({
     page,
   }) => {
     await page.goto('/');
     const info = page.locator('#info');
     await info.scrollIntoViewIfNeeded();
     await expect(info.getByText('Anticipo 80% · saldo 20%')).toBeVisible();
-    await expect(info.getByText('Crédito y débito, excepto American Express.')).toBeVisible();
+    await expect(info.getByText('Pagas el 20% restante al recibir tu producto.')).toBeVisible();
+    await expect(info.getByText(/American Express|Wompi|tarjeta/i)).toHaveCount(0);
     // r01 dibuja 4 items; la fila placeholder "Tasa 0%" ya no esta en la UI.
     await expect(info.getByText('Tasa 0%', { exact: false })).toHaveCount(0);
     await expect(info.locator('li')).toHaveCount(4);

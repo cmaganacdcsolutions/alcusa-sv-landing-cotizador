@@ -55,7 +55,7 @@ test.describe('inicio — catálogo completo', () => {
   test('cada tarjeta lleva a SU producto del cotizador, directo a Medidas, sin destinos repetidos', async ({ page }) => {
     await page.goto('/');
     // Destino real de cada tarjeta: el href del enlace (sin opciones) o la URL que arma el formulario GET (con opciones).
-    const destinations = await page.locator('#catalogo article.pcard:not(.pcard--advisor)').evaluateAll((cards) =>
+    const destinations = await page.locator('#catalogo article.pcard:not(.pcard--advisor):not(.pcard--pending)').evaluateAll((cards) =>
       cards.map((card) => {
         const form = card.querySelector('form');
         if (form) {
