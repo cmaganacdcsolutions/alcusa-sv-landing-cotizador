@@ -292,7 +292,7 @@ test.describe('/nosotros y Visitanos sobre noche', () => {
     await expect(page.locator('#vision')).toContainText('llevando las soluciones de ALCUSA a más hogares, empresas y proyectos');
     await expect(page.locator('#historia')).toContainText('Aluminios Cuscatlán, S.A. de C.V.');
     await expect(page.locator('head meta[name="robots"]')).toHaveCount(0);
-    const photos = page.locator('main .nos__photo img.photo-frame__img');
+    const photos = page.locator('main .nos__photo img');
     await expect(photos).toHaveCount(2);
     for (let i = 0; i < 2; i++) {
       const img = photos.nth(i);

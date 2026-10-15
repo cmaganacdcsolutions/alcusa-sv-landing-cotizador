@@ -84,45 +84,65 @@ test.describe('nosotros: direccion ejecutiva (grafica completa)', () => {
 });
 
 test.describe('nosotros: fotos del taller y Misión/Visión', () => {
-  test('dos fotos del taller cargadas; a la par (mismo top y alto) desde 768', async ({ page }) => {
+  test('dos fotos del taller: fila justificada, sin bandas ni recorte, llenan el contenedor', async ({ page }) => {
     await page.goto('/nosotros');
-    const shots = page.locator('#historia .nos__photo');
-    await expect(shots).toHaveCount(2);
+    const cards = page.locator('#historia .nos__photo');
+    await expect(cards).toHaveCount(2);
+    const ratios = [3 / 2, 3 / 4];
     for (let i = 0; i < 2; i++) {
-      const img = shots.nth(i).locator('img.photo-frame__img');
+      const img = cards.nth(i).locator('img');
       await img.scrollIntoViewIfNeeded();
       await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
-      expect(await img.evaluate((el) => getComputedStyle(el).objectFit)).toBe('contain');
+      const natural = await img.evaluate((el: HTMLImageElement) => el.naturalWidth / el.naturalHeight);
+      expect(Math.abs(natural / ratios[i] - 1)).toBeLessThanOrEqual(0.02);
+      const ib = await img.boundingBox();
+      const cb = await cards.nth(i).boundingBox();
+      if (!ib || !cb) throw new Error('sin caja de foto');
+      expect(Math.abs(ib.width / ib.height / ratios[i] - 1)).toBeLessThanOrEqual(0.02);
+      // Sin bandas: la imagen ocupa la tarjeta (menos el borde de 1px).
+      expect(Math.abs(cb.width - ib.width)).toBeLessThanOrEqual(2);
+      expect(Math.abs(cb.height - ib.height)).toBeLessThanOrEqual(2);
     }
-    const a = await shots.nth(0).boundingBox();
-    const b = await shots.nth(1).boundingBox();
+    const a = await cards.nth(0).boundingBox();
+    const b = await cards.nth(1).boundingBox();
+    const box = await page.locator('#historia').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return { left: r.left + parseFloat(cs.paddingLeft), right: r.right - parseFloat(cs.paddingRight) };
+    });
     if (!a || !b) throw new Error('sin caja de foto');
     const vw = page.viewportSize()?.width ?? 0;
     if (vw >= 768) {
       expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
       expect(Math.abs(a.height - b.height)).toBeLessThanOrEqual(1);
       expect(a.x).toBeLessThan(b.x);
+      expect(Math.abs(a.x - box.left)).toBeLessThanOrEqual(2);
+      expect(Math.abs(b.x + b.width - box.right)).toBeLessThanOrEqual(2);
     } else {
       expect(b.y).toBeGreaterThanOrEqual(a.y + a.height - 1);
     }
   });
 
-  test('Misión y Visión: misma fila y misma altura desde 768; a 1920 son verticales', async ({ page }) => {
+  test('Misión y Visión: misma fila, misma altura y llenan el contenedor desde 768', async ({ page }) => {
     await page.goto('/nosotros');
     const m = await page.locator('#mision').boundingBox();
     const v = await page.locator('#vision').boundingBox();
     if (!m || !v) throw new Error('sin caja de Misión/Visión');
+    const box = await page.locator('.nos__mv').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return { left: r.left + parseFloat(cs.paddingLeft), right: r.right - parseFloat(cs.paddingRight) };
+    });
     const vw = page.viewportSize()?.width ?? 0;
     if (vw >= 768) {
       expect(Math.abs(m.y - v.y)).toBeLessThanOrEqual(1);
       expect(Math.abs(m.height - v.height)).toBeLessThanOrEqual(1);
       expect(m.x).toBeLessThan(v.x);
+      expect(Math.abs(m.x - box.left)).toBeLessThanOrEqual(2);
+      expect(Math.abs(v.x + v.width - box.right)).toBeLessThanOrEqual(2);
+      expect(m.width).toBeLessThanOrEqual((box.right - box.left) * 0.52);
     } else {
       expect(v.y).toBeGreaterThanOrEqual(m.y + m.height - 1);
-    }
-    if (vw >= 1920) {
-      expect(m.height).toBeGreaterThanOrEqual(m.width);
-      expect(v.height).toBeGreaterThanOrEqual(v.width);
     }
   });
 
