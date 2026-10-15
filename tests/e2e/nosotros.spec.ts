@@ -1,60 +1,60 @@
 import { expect, test } from './fixtures';
 
-// /nosotros: seccion "Nuestra direccion ejecutiva" (gráfica oficial de Alcusa, 2026-10-14), texto textual.
-const DIRECCION = [
-  { name: 'Rutilio Galdámez', role: 'Economista, Fundador y Visionario' },
-  { name: 'Francisco Galdámez', role: 'Director de Operaciones y Logística' },
-  { name: 'Ricardo Galdámez', role: 'Director Ejecutivo, Mercadeo y Ventas' },
-];
+// /nosotros: gráfica oficial de la dirección ejecutiva (2026-10-14), mostrada completa dentro de "Quiénes somos".
+const NOMBRES = ['Rutilio Galdámez', 'Francisco Galdámez', 'Ricardo Galdámez'];
 
-test.describe('nosotros: direccion ejecutiva', () => {
-  test('#direccion va entre Valores y Confianza, con H2, nombres y cargos en orden', async ({
-    page,
-  }) => {
+test.describe('nosotros: direccion ejecutiva (grafica completa)', () => {
+  test('#direccion vive dentro de #historia, antes de Misión/Visión, con h3 accesible', async ({ page }) => {
     await page.goto('/nosotros');
-    const section = page.locator('#direccion');
+    await expect(page.locator('#historia #direccion')).toHaveCount(1);
+    await expect(page.locator('section.nos__split ~ section #direccion')).toHaveCount(0);
     await expect(
-      section.getByRole('heading', { level: 2, name: 'Nuestra dirección ejecutiva' }),
-    ).toBeVisible();
-    await expect(section.getByRole('heading', { level: 3 })).toHaveText(
-      DIRECCION.map((d) => d.name),
-    );
-    await expect(section.locator('.nos__role')).toHaveText(DIRECCION.map((d) => d.role));
+      page.locator('#direccion').getByRole('heading', { level: 3, name: 'Nuestra dirección ejecutiva' }),
+    ).toHaveCount(1);
     const order = await page.evaluate(() => {
       const pos = (sel: string) => {
         const el = document.querySelector(sel);
         return el ? el.getBoundingClientRect().top + window.scrollY : -1;
       };
-      return [pos('#valores'), pos('#direccion'), pos('.nos__trust')];
+      return [pos('#historia'), pos('#direccion'), pos('#mision')];
     });
     expect(order[0]).toBeGreaterThan(0);
     expect(order[1]).toBeGreaterThan(order[0]);
     expect(order[2]).toBeGreaterThan(order[1]);
-  });
-
-  test('3 retratos cargan, con alt, y la pagina conserva sus invariantes', async ({
-    page,
-  }) => {
-    await page.goto('/nosotros');
-    const imgs = page.locator('#direccion img:not([aria-hidden="true"])');
-    await expect(imgs).toHaveCount(3);
-    for (let i = 0; i < 3; i++) {
-      const img = imgs.nth(i);
-      await img.scrollIntoViewIfNeeded();
-      await expect
-        .poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth))
-        .toBeGreaterThan(0);
-      expect(((await img.getAttribute('alt')) ?? '').trim().length).toBeGreaterThan(0);
-      expect(await img.getAttribute('width')).toBe('456');
-      expect(await img.getAttribute('height')).toBe('342');
-    }
     await expect(page.locator('main')).not.toContainText(/pendiente/i);
-    await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
   });
 
-  test('sin overflow horizontal; en movil la card es horizontal (retrato a la izquierda del texto)', async ({
-    page,
-  }) => {
+  test('la grafica carga, se muestra completa en 16:9 y el alt nombra a los tres', async ({ page }) => {
+    await page.goto('/nosotros');
+    const img = page.locator('#direccion img');
+    await img.scrollIntoViewIfNeeded();
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+    expect(await img.getAttribute('width')).toBe('1600');
+    expect(await img.getAttribute('height')).toBe('900');
+    const natural = await img.evaluate((el: HTMLImageElement) => el.naturalWidth / el.naturalHeight);
+    expect(Math.abs(natural / (16 / 9) - 1)).toBeLessThanOrEqual(0.02);
+    const box = await img.boundingBox();
+    if (!box) throw new Error('sin caja de imagen');
+    expect(Math.abs(box.width / box.height / (16 / 9) - 1)).toBeLessThanOrEqual(0.02);
+    expect(await img.evaluate((el) => getComputedStyle(el).objectFit)).not.toBe('cover');
+    const alt = (await img.getAttribute('alt')) ?? '';
+    for (const n of ['Rutilio', 'Francisco', 'Ricardo']) expect(alt).toContain(n);
+  });
+
+  test('lista accesible con nombres y cargos; enlace a la version grande', async ({ page }) => {
+    await page.goto('/nosotros');
+    const items = page.locator('#direccion figcaption li');
+    await expect(items).toHaveCount(3);
+    for (let i = 0; i < 3; i++) await expect(items.nth(i)).toContainText(NOMBRES[i]);
+    await expect(items.nth(1)).toContainText('Director de Operaciones y Logística');
+    await expect(items.nth(2)).toContainText('Director Ejecutivo, Mercadeo y Ventas');
+    const link = page.locator('#direccion a');
+    await expect(link).toHaveAttribute('href', /direccion-ejecutiva-1600\.webp$/);
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', /noopener/);
+  });
+
+  test('sin overflow horizontal; el hint solo se ve en movil', async ({ page }) => {
     await page.goto('/nosotros');
     await page.locator('#direccion').scrollIntoViewIfNeeded();
     const overflow = await page.evaluate(
@@ -62,48 +62,26 @@ test.describe('nosotros: direccion ejecutiva', () => {
     );
     expect(overflow).toBeLessThanOrEqual(0);
     const vw = page.viewportSize()?.width ?? 0;
-    const card = page.locator('#direccion .nos__person').first();
-    const photo = await card.locator('.nos__portrait').boundingBox();
-    const text = await card.locator('.nos__who').boundingBox();
-    if (!photo || !text) throw new Error('sin caja de retrato/texto');
-    if (vw < 768) {
-      expect(photo.x + photo.width).toBeLessThanOrEqual(text.x + 1);
-      expect(photo.width).toBeLessThanOrEqual(130);
-      expect(
-        Math.abs(photo.y + photo.height / 2 - (text.y + text.height / 2)),
-      ).toBeLessThan(photo.height);
-    } else if (vw >= 1024) {
-      expect(photo.x + photo.width).toBeLessThanOrEqual(text.x + 1); // escritorio: tambien horizontal
-      const h = await page.evaluate(() =>
-        ['#valores', '#direccion'].map(
-          (s) => document.querySelector(s)?.getBoundingClientRect().height ?? 0,
-        ),
+    const hint = page.locator('#direccion .nos__dir-hint');
+    if (vw < 768) await expect(hint).toBeVisible();
+    else await expect(hint).toBeHidden();
+  });
+
+  test('#historia: una columna (texto, grafica, foto) o dos columnas balanceadas en escritorio', async ({ page }) => {
+    const vw = page.viewportSize()?.width ?? 0;
+    await page.goto('/nosotros');
+    await page.locator('#direccion img').scrollIntoViewIfNeeded();
+    const h = await page.evaluate(() => {
+      const [l, r] = Array.from(document.querySelectorAll('#historia > *')).map((el) =>
+        el.getBoundingClientRect(),
       );
-      expect(h[1]).toBeLessThanOrEqual(h[0]); // sin saturar: no mas alta que Valores
+      return { left: l.height, right: r.height, stacked: r.top >= l.bottom - 1 };
+    });
+    if (vw >= 1024) {
+      expect(h.stacked).toBe(false);
+      expect(Math.abs(h.left - h.right)).toBeLessThanOrEqual(24);
+    } else {
+      expect(h.stacked).toBe(true);
     }
   });
-  // BUG-1014-02: los retratos iban centrados verticalmente y, con tarjetas de distinta altura, quedaban a distinto y.
-  for (const width of [390, 800, 1920]) {
-    test(`retratos alineados al tope de su tarjeta, mismo inicio y tamano (${width}px)`, async ({ page }) => {
-      await page.setViewportSize({ width, height: 1000 });
-      await page.goto('/nosotros');
-      const boxes = await page.locator('#direccion .nos__person').evaluateAll((cards) =>
-        cards.map((c) => {
-          const card = c.getBoundingClientRect();
-          const r = (c.querySelector('.nos__portrait img') as HTMLElement).getBoundingClientRect();
-          return { top: r.top, cardTop: card.top, offset: r.top - card.top, w: r.width, h: r.height };
-        }),
-      );
-      expect(boxes).toHaveLength(3);
-      for (const b of boxes) {
-        // en fila (tablet/escritorio) los tres comparten y; apiladas (movil) solo cuenta el offset dentro de la tarjeta
-        if (Math.abs(b.cardTop - boxes[0].cardTop) <= 1) {
-          expect(Math.abs(b.top - boxes[0].top), 'top identico').toBeLessThanOrEqual(1);
-        }
-        expect(Math.abs(b.offset - boxes[0].offset), 'offset interno identico').toBeLessThanOrEqual(1);
-        expect(Math.abs(b.w - boxes[0].w)).toBeLessThanOrEqual(1);
-        expect(Math.abs(b.h - boxes[0].h)).toBeLessThanOrEqual(1);
-      }
-    });
-  }
 });
