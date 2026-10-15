@@ -57,83 +57,86 @@ const DIRECCION_IMG = '/images/direccion/direccion-ejecutiva';
     <section class="nos nos__hero" aria-labelledby="nos-title">
       <p class="nos__kicker">ALCUSA</p>
       <h1 id="nos-title" class="nos__h1">Nosotros</h1>
-      <p class="nos__lema">{LEMA}</p>
     </section>
 
-    <section id="historia" class="nos nos__split" aria-labelledby="historia-t">
-      <div>
-        <h2 id="historia-t" class="nos__h2">Quiénes somos</h2>
-        <p class="nos__p">
-          Aluminios Cuscatlán, S.A. de C.V. (ALCUSA) cuenta con más de 39 años de trayectoria en la fabricación,
-          comercialización e instalación de productos de aluminio y vidrio en El Salvador.
-        </p>
-        <figure id="direccion" class="nos__dir">
-          <h3 class="sr-only">Nuestra dirección ejecutiva</h3>
-          <a
-            class="nos__dir-link"
-            href={`${DIRECCION_IMG}-1600.webp`}
-            target="_blank"
-            rel="noopener"
-            aria-label="Abrir la gráfica de la dirección ejecutiva en tamaño completo (se abre en una pestaña nueva)"
-          >
-            <img
-              src={`${DIRECCION_IMG}-1200.webp`}
-              srcset={`${DIRECCION_IMG}-800.webp 800w, ${DIRECCION_IMG}-1200.webp 1200w, ${DIRECCION_IMG}-1600.webp 1600w`}
-              sizes="(min-width: 1024px) 570px, calc(100vw - 32px)"
-              alt={DIRECCION_ALT}
-              width="1600"
-              height="900"
-              loading="lazy"
-              decoding="async"
-            />
-          </a>
-          <figcaption class="sr-only">
-            <ul>
-              {
-                DIRECCION.map((d) => (
-                  <li>
-                    {d.name}: {d.role} ({d.roleEn}){d.extra ? `; ${d.extra}` : ''}
-                  </li>
-                ))
-              }
-            </ul>
-          </figcaption>
-          <p class="nos__dir-hint">Toca la imagen para verla en grande</p>
-        </figure>
-      </div>
-      <div class="nos__photo">
-        <PhotoFrame
-          src="/images/fotos/taller-alcusa-aereo-1536.webp"
-          srcSet="/images/fotos/taller-alcusa-aereo-800.webp 800w, /images/fotos/taller-alcusa-aereo-1536.webp 1536w"
-          sizes="(min-width: 1024px) 560px, calc(100vw - 32px)"
-          alt="Vista aérea del taller de ALCUSA en El Salvador"
-          ratio="3/2"
-          width={1536}
-          height={1024}
-        />
+    <section id="direccion" class="nos nos__dirsec" aria-labelledby="direccion-t">
+      <h2 id="direccion-t" class="nos__h2">Dirección Ejecutiva</h2>
+      <figure class="nos__dir">
+        <a
+          class="nos__dir-link"
+          href={`${DIRECCION_IMG}-1600.webp`}
+          target="_blank"
+          rel="noopener"
+          aria-label="Abrir la gráfica de la dirección ejecutiva en tamaño completo (se abre en una pestaña nueva)"
+        >
+          <img
+            src={`${DIRECCION_IMG}-1200.webp`}
+            srcset={`${DIRECCION_IMG}-800.webp 800w, ${DIRECCION_IMG}-1200.webp 1200w, ${DIRECCION_IMG}-1600.webp 1600w`}
+            sizes="(min-width: 1312px) 1240px, (min-width: 1024px) calc(100vw - 64px), calc(100vw - 32px)"
+            alt={DIRECCION_ALT}
+            width="1600"
+            height="900"
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+        <figcaption class="sr-only">
+          <ul>
+            {
+              DIRECCION.map((d) => (
+                <li>
+                  {d.name}: {d.role} ({d.roleEn}){d.extra ? `; ${d.extra}` : ''}
+                </li>
+              ))
+            }
+          </ul>
+        </figcaption>
+        <p class="nos__dir-hint">Toca la imagen para verla en grande</p>
+      </figure>
+    </section>
+
+    <section id="historia" class="nos" aria-labelledby="historia-t">
+      <h2 id="historia-t" class="nos__h2">Quiénes somos</h2>
+      <p class="nos__lema">{LEMA}</p>
+      <p class="nos__p nos__historia-p">
+        Aluminios Cuscatlán, S.A. de C.V. (ALCUSA) cuenta con más de 39 años de trayectoria en la fabricación,
+        comercialización e instalación de productos de aluminio y vidrio en El Salvador.
+      </p>
+      <div class="nos__shots">
+        <div class="nos__photo">
+          <PhotoFrame
+            src="/images/fotos/taller-alcusa-aereo-1536.webp"
+            srcSet="/images/fotos/taller-alcusa-aereo-800.webp 800w, /images/fotos/taller-alcusa-aereo-1536.webp 1536w"
+            sizes="(min-width: 1312px) 612px, (min-width: 768px) calc(50vw - 40px), calc(100vw - 32px)"
+            alt="Vista aérea del taller de ALCUSA en El Salvador"
+            ratio="1/1"
+            width={1536}
+            height={1024}
+          />
+        </div>
+        <div class="nos__photo">
+          <PhotoFrame
+            src="/images/fotos/taller-alcusa-aereo-doble-1080.webp"
+            srcSet="/images/fotos/taller-alcusa-aereo-doble-800.webp 800w, /images/fotos/taller-alcusa-aereo-doble-1080.webp 1080w"
+            sizes="(min-width: 1312px) 612px, (min-width: 768px) calc(50vw - 40px), calc(100vw - 32px)"
+            alt="Dos tomas aéreas del taller y las instalaciones de ALCUSA en El Salvador"
+            ratio="1/1"
+            width={1080}
+            height={1440}
+          />
+        </div>
       </div>
     </section>
 
     <section class="nos nos__mv" aria-label="Misión y visión">
-      <article id="mision" class="nos__card nos__mision" aria-labelledby="mision-t">
+      <article id="mision" class="nos__card nos__mvcard" aria-labelledby="mision-t">
         <h2 id="mision-t" class="nos__h2">Misión</h2>
         {MISION.map((t) => <p class="nos__p">{t}</p>)}
       </article>
-      <article id="vision" class="nos__card nos__vision" aria-labelledby="vision-t">
+      <article id="vision" class="nos__card nos__mvcard" aria-labelledby="vision-t">
         <h2 id="vision-t" class="nos__h2">Visión</h2>
         {VISION.map((t) => <p class="nos__p">{t}</p>)}
       </article>
-      <div class="nos__photo nos__photo--tall">
-        <PhotoFrame
-          src="/images/fotos/taller-alcusa-aereo-doble-1080.webp"
-          srcSet="/images/fotos/taller-alcusa-aereo-doble-800.webp 800w, /images/fotos/taller-alcusa-aereo-doble-1080.webp 1080w"
-          sizes="(min-width: 1024px) 480px, (min-width: 768px) 420px, calc(100vw - 32px)"
-          alt="Dos tomas aéreas del taller y las instalaciones de ALCUSA en El Salvador"
-          ratio="4/5"
-          width={1080}
-          height={1440}
-        />
-      </div>
     </section>
 
     <section id="valores" class="nos" aria-labelledby="valores-t">
@@ -206,24 +209,20 @@ const DIRECCION_IMG = '/images/direccion/direccion-ejecutiva';
     line-height: 28px;
     color: var(--color-text-on-dark);
   }
-  .nos__split,
   .nos__mv {
     grid-template-columns: minmax(0, 1fr);
   }
-  .nos__split > div {
+  .nos__shots {
     display: grid;
-    gap: var(--space-3);
-    align-content: start;
+    gap: var(--space-4);
+    grid-template-columns: minmax(0, 1fr);
   }
+  /* Tarjeta de foto: mismo marco 1:1 para ambas (foto completa sobre su capa ambiental, sin recorte). */
   .nos__photo {
     min-width: 0;
     border-radius: var(--radius-lg);
+    border: 1px solid var(--color-line-on-dark);
     overflow: hidden;
-  }
-  .nos__photo--tall {
-    max-width: 420px;
-    width: 100%;
-    justify-self: center;
   }
   .nos__card {
     display: grid;
@@ -249,7 +248,7 @@ const DIRECCION_IMG = '/images/direccion/direccion-ejecutiva';
   }
   /* Grafica oficial completa (16:9, sin recorte, sin filtros); marco sobrio como las fotos de la pagina. */
   .nos__dir {
-    margin: var(--space-2) 0 0;
+    margin: 0;
     min-width: 0;
     display: grid;
     gap: var(--space-2);
@@ -328,31 +327,27 @@ const DIRECCION_IMG = '/images/direccion/direccion-ejecutiva';
     .nos__values > li:last-child {
       grid-column: 1 / -1;
     }
-    .nos__mv {
+    .nos__shots {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    .nos__photo--tall {
-      grid-column: 1 / -1;
+    /* Mision y Vision en la misma fila (768: ~350px por tarjeta, 30-40 caracteres por linea, legible).
+       Columnas acotadas y centradas: la tarjeta queda vertical (alto > ancho) sin rellenos artificiales. */
+    .nos__mv {
+      grid-template-columns: repeat(2, minmax(0, 380px));
+      justify-content: center;
+    }
+    .nos__mvcard {
+      padding: var(--space-6);
+      gap: var(--space-3);
+    }
+    /* El hint "toca para ampliar" solo aplica en movil (desde 768 la grafica ya se lee). */
+    .nos__dir-hint {
+      display: none;
     }
   }
   @media (min-width: 1024px) {
     .nos {
       padding: var(--space-12) var(--space-8) 0;
-    }
-    .nos__split {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: var(--space-8);
-      align-items: stretch;
-    }
-    /* Columna izquierda (texto + grafica) manda la altura; la foto aerea la acompana: el marco se estira y la foto
-       sigue completa (contain) sobre su capa ambiental, sin recorte ni huecos. */
-    .nos__split > .nos__photo {
-      position: relative;
-    }
-    .nos__split > .nos__photo :global(.photo-frame) {
-      position: absolute;
-      inset: 0;
-      aspect-ratio: auto !important;
     }
     /* 12 columnas: 4 valores (3 cols c/u) + 3 valores (4 cols c/u). */
     .nos__values {
@@ -364,27 +359,11 @@ const DIRECCION_IMG = '/images/direccion/direccion-ejecutiva';
     .nos__values > li:nth-child(n + 5) {
       grid-column: span 4;
     }
-    /* Foto vertical a la izquierda, Mision y Vision apiladas a la derecha. */
     .nos__mv {
-      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-      gap: var(--space-4) var(--space-8);
+      gap: var(--space-8);
     }
-    .nos__photo--tall {
-      grid-column: 1;
-      grid-row: 1 / span 2;
-      max-width: none;
-    }
-    .nos__mision {
-      grid-column: 2;
-      grid-row: 1;
-    }
-    .nos__vision {
-      grid-column: 2;
-      grid-row: 2;
-    }
-    /* El hint "toca para ampliar" solo aplica en movil (a partir de 768 la grafica ya se lee). */
-    .nos__dir-hint {
-      display: none;
+    .nos__mvcard {
+      padding: var(--space-8);
     }
     .nos__h1 {
       font-size: 44px;
