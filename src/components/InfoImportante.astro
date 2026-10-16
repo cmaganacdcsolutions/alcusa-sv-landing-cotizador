@@ -57,9 +57,9 @@ const ITEMS = [
         ))
       }
     </ul>
-    <ul class="info__notes">
-      {NOTES.map((note) => <li>{note}</li>)}
-    </ul>
+    <div class="info__notes">
+      {NOTES.map((note) => <p>{note}</p>)}
+    </div>
   </div>
 </section>
 
@@ -151,11 +151,13 @@ const ITEMS = [
   .info__notes {
     margin: var(--space-4) 0 0;
     padding: 0;
-    list-style: none;
     display: grid;
     gap: var(--space-2);
     font-size: 14px;
     color: var(--color-text-on-dark-muted);
+  }
+  .info__notes p {
+    margin: 0;
   }
   .info__detail {
     font-size: 14px;
