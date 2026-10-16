@@ -1,7 +1,7 @@
 {
   "leaf": "puertas-de-bano/recta",
   "thumb": "/images/fotos/recta-800.webp",
-  "step2Image": "/images/fotos/recta-800.webp",
+  "step2Image": "/images/fotos/recta-galeria-800.webp",
   "step2Alt": "Puerta de baño recta",
   "rows": [
     {
@@ -37,7 +37,7 @@
       "glass": "mallado",
       "price": "$400.00",
       "colorLabel": "Natural",
-      "glassLabel": "Mallado"
+      "glassLabel": "Mallado claro 6 mm"
     },
     {
       "color": "natural",
@@ -79,7 +79,7 @@
       "glass": "mallado",
       "price": "$468.00",
       "colorLabel": "Blanco",
-      "glassLabel": "Mallado"
+      "glassLabel": "Mallado claro 6 mm"
     },
     {
       "color": "blanco",
@@ -121,7 +121,7 @@
       "glass": "mallado",
       "price": "$468.00",
       "colorLabel": "Bronce",
-      "glassLabel": "Mallado"
+      "glassLabel": "Mallado claro 6 mm"
     },
     {
       "color": "bronce",
@@ -133,21 +133,21 @@
     {
       "color": "negro",
       "glass": "claro",
-      "price": "Por WhatsApp",
+      "price": "$384.00",
       "colorLabel": "Negro",
       "glassLabel": "Claro 5 mm"
     },
     {
       "color": "negro",
       "glass": "nevado",
-      "price": "Por WhatsApp",
+      "price": "$442.00",
       "colorLabel": "Negro",
       "glassLabel": "Nevado 5 mm"
     },
     {
       "color": "negro",
       "glass": "decorado",
-      "price": "Por WhatsApp",
+      "price": "$459.00",
       "colorLabel": "Negro",
       "glassLabel": "Decorado"
     },
@@ -161,14 +161,14 @@
     {
       "color": "negro",
       "glass": "mallado",
-      "price": "Por WhatsApp",
+      "price": "$468.00",
       "colorLabel": "Negro",
-      "glassLabel": "Mallado"
+      "glassLabel": "Mallado claro 6 mm"
     },
     {
       "color": "negro",
       "glass": "duplex",
-      "price": "Por WhatsApp",
+      "price": "$533.00",
       "colorLabel": "Negro",
       "glassLabel": "Dúplex"
     }

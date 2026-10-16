@@ -1,7 +1,7 @@
 {
   "leaf": "puertas-de-bano/bisagra",
   "thumb": "/images/fotos/bisagra-800.webp",
-  "step2Image": "/images/fotos/bisagra-800.webp",
+  "step2Image": "/images/fotos/bisagra-decorado-800.webp",
   "step2Alt": "Puerta con bisagra",
   "rows": [
     {
@@ -30,7 +30,7 @@
       "glass": "mallado",
       "price": "$343.00",
       "colorLabel": "Natural",
-      "glassLabel": "Mallado"
+      "glassLabel": "Mallado claro 6 mm"
     },
     {
       "color": "natural",
@@ -65,7 +65,7 @@
       "glass": "mallado",
       "price": "$395.00",
       "colorLabel": "Blanco",
-      "glassLabel": "Mallado"
+      "glassLabel": "Mallado claro 6 mm"
     },
     {
       "color": "blanco",
@@ -100,7 +100,7 @@
       "glass": "mallado",
       "price": "$395.00",
       "colorLabel": "Bronce",
-      "glassLabel": "Mallado"
+      "glassLabel": "Mallado claro 6 mm"
     },
     {
       "color": "bronce",
@@ -112,35 +112,35 @@
     {
       "color": "negro",
       "glass": "nevado",
-      "price": "Por WhatsApp",
+      "price": "$336.00",
       "colorLabel": "Negro",
       "glassLabel": "Nevado 5 mm"
     },
     {
       "color": "negro",
       "glass": "claro",
-      "price": "Por WhatsApp",
+      "price": "$291.00",
       "colorLabel": "Negro",
       "glassLabel": "Claro 5 mm"
     },
     {
       "color": "negro",
       "glass": "decorado",
-      "price": "Por WhatsApp",
+      "price": "$366.00",
       "colorLabel": "Negro",
       "glassLabel": "Decorado"
     },
     {
       "color": "negro",
       "glass": "mallado",
-      "price": "Por WhatsApp",
+      "price": "$395.00",
       "colorLabel": "Negro",
-      "glassLabel": "Mallado"
+      "glassLabel": "Mallado claro 6 mm"
     },
     {
       "color": "negro",
       "glass": "duplex",
-      "price": "Por WhatsApp",
+      "price": "$419.00",
       "colorLabel": "Negro",
       "glassLabel": "Dúplex"
     }
