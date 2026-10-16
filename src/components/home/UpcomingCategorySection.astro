@@ -129,7 +129,8 @@ const PRODUCT_SIZES = '(min-width: 768px) 400px, 92vw';
     line-height: 20px;
   }
   /* Galeria de orientaciones mixtas: filas justificadas (flex-wrap). Cada foto crece segun su proporcion (--ar = ancho/alto)
-     y todas las de una fila quedan a la misma altura: sin recortes ni huecos; solo la ultima fila queda corta. */
+     y todas las de una fila quedan a la misma altura: sin recortes ni huecos. La ultima fila tambien se estira hasta
+     completar el ancho (sin relleno `::after`); el orden de las fotos en upcomingCategories.ts garantiza 2+ en ella. */
   .ugal {
     --ugal-row: 150px;
     --ugal-gap: var(--space-2);
@@ -139,10 +140,6 @@ const PRODUCT_SIZES = '(min-width: 768px) 400px, 92vw';
     display: flex;
     flex-wrap: wrap;
     gap: var(--ugal-gap);
-  }
-  .ugal::after {
-    content: '';
-    flex-grow: 1000;
   }
   .ugal__item {
     flex: var(--ar) 1 calc(var(--ar) * var(--ugal-row));

@@ -79,6 +79,24 @@ test.describe('categorias sin cotizador del catalogo', () => {
     await expect(sec.locator('[data-upcoming-gallery] a, [data-upcoming-gallery] button')).toHaveCount(0);
   });
 
+  // Fila final completa: la foto 10 ya no queda sola y chica; la ultima fila llega al borde derecho con 2+ fotos.
+  for (const width of [1920, 1280, 768, 390]) {
+    test(`galeria de fachadas: la ultima fila queda completa a ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/#fachadas-comerciales');
+      const g = await page.locator('[data-upcoming-gallery]').evaluate((ul) => {
+        const box = ul.getBoundingClientRect();
+        const items = [...ul.children].map((li) => li.getBoundingClientRect());
+        const lastTop = Math.max(...items.map((r) => Math.round(r.top)));
+        const last = items.filter((r) => Math.round(r.top) === lastTop);
+        return { right: box.right, lastRight: Math.max(...last.map((r) => r.right)), lastCount: last.length, scrollW: document.documentElement.scrollWidth, vw: window.innerWidth };
+      });
+      expect(g.lastCount).toBeGreaterThanOrEqual(2);
+      expect(Math.abs(g.right - g.lastRight)).toBeLessThanOrEqual(1);
+      expect(g.scrollW).toBeLessThanOrEqual(g.vw);
+    });
+  }
+
   for (const id of ['espejos', 'zarandas', 'fachadas-comerciales']) {
     test(`/#${id} hace scroll a la seccion`, async ({ page }) => {
       await page.goto(`/#${id}`);

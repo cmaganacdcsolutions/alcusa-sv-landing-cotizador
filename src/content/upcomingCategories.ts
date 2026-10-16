@@ -49,17 +49,22 @@ const fachada = (n: string, width: number, height: number, alt: string): Categor
   alt,
 });
 
-/** Fachadas 01-03 y 05-07: cerramientos y terrazas residenciales; 04 y 08-10: locales comerciales. */
+/**
+ * Fachadas 01-03 y 05-07: cerramientos y terrazas residenciales; 04 y 08-10: locales comerciales.
+ * El ORDEN no es el del archivo: esta pensado para las filas justificadas de la galeria (la ultima fila se estira
+ * y debe quedar con 2+ fotos a 1920/1280/768/390; el orden anterior dejaba la 10 sola). Si agregas fotos, vuelve a
+ * revisar la ultima fila en esos anchos.
+ */
 export const FACHADAS_PHOTOS: readonly CategoryPhoto[] = [
   fachada('01', 800, 600, 'Cerramiento de vidrio con marco de aluminio negro y hojas corredizas en un pasillo techado'),
   fachada('02', 800, 599, 'Interior amplio visto a través de un cerramiento de vidrio con marcos de aluminio negro y puertas corredizas'),
-  fachada('03', 800, 1066, 'Terraza con cerramiento de vidrio y marcos de aluminio negro, con sillas blancas al frente'),
-  fachada('04', 800, 1067, 'Fachada de un local con puerta y paños de vidrio con marco de aluminio negro bajo un rótulo rojo que dice «¡Bienvenido!»'),
   fachada('05', 800, 600, 'Terraza techada cerrada con ventanales de vidrio y marcos de aluminio oscuro'),
+  fachada('04', 800, 1067, 'Fachada de un local con puerta y paños de vidrio con marco de aluminio negro bajo un rótulo rojo que dice «¡Bienvenido!»'),
+  fachada('03', 800, 1066, 'Terraza con cerramiento de vidrio y marcos de aluminio negro, con sillas blancas al frente'),
   fachada('06', 800, 1067, 'Corredor con ventanales de vidrio de piso a techo y vista a un jardín'),
   fachada('07', 800, 600, 'Cerramiento de vidrio con marcos de aluminio negro frente a un jardín con plantas'),
-  fachada('08', 800, 600, 'Fachada de un local con puerta corrediza de vidrio y ventana fija con marcos de aluminio negro'),
   fachada('09', 800, 1067, 'Entrada de un local con ventanal de vidrio y hojas corredizas con marco de aluminio'),
+  fachada('08', 800, 600, 'Fachada de un local con puerta corrediza de vidrio y ventana fija con marcos de aluminio negro'),
   fachada('10', 708, 944, 'Puerta doble de vidrio con marco de aluminio blanco en la fachada de un local'),
 ];
 
