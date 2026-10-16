@@ -1,6 +1,6 @@
 import { useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
-import { CATALOG_PRODUCTS, type CatalogProduct } from '@content/catalog';
+import { CATALOG_PRODUCTS, QUOTE_ONLY_NOTE, isQuoteOnlyModel, type CatalogProduct } from '@content/catalog';
 import { buildWaLink } from '@integrations/whatsapp/waLink';
 import { buildQuoteMessage } from '@integrations/whatsapp/buildMessage';
 import { zonaName, formatAddressLine, formatAddressForMessage, isAddressComplete } from '../../../lib/delivery-address';
@@ -84,6 +84,9 @@ export default function Step4Resumen({
   const transporte = zoneFee ?? 0;
   const subtotal = orderItemsSubtotal(items);
   const anyRequiresQuote = items.some((i) => i.requiresQuote);
+  // Pedido 100% solo-asesor: sin total, anticipo ni saldo (el total sería solo transporte).
+  const allRequireQuote = items.length > 0 && items.every((i) => i.requiresQuote);
+  const hasQuoteOnlyProduct = items.some((i) => isQuoteOnlyModel(i.productId));
   const grandTotal = total ?? subtotal;
   // Condiciones de pago: 80% anticipo / 20% contra entrega (Alcusa cobra con sus propios medios, fuera del sitio).
   const anticipo = depositOf(grandTotal);
@@ -239,8 +242,11 @@ export default function Step4Resumen({
               Cotización personalizada por WhatsApp
             </span>
             <p className="callout__body">
-              Al menos un acabado elegido requiere cotización manual. Puedes enviarlo por WhatsApp junto con el
-              resto, o quitarlo y confirmar solo lo que ya tiene precio.
+              {hasQuoteOnlyProduct ? `${QUOTE_ONLY_NOTE} ` : ''}Los productos marcados “Por WhatsApp” los cotiza un
+              asesor y no se suman al subtotal ni al total.{' '}
+              {allRequireQuote
+                ? 'Envía tu configuración por WhatsApp y te respondemos con el precio.'
+                : 'Puedes enviarlos por WhatsApp junto con el resto, o quitarlos y confirmar solo lo que ya tiene precio.'}
             </p>
           </div>
         )}
@@ -248,7 +254,7 @@ export default function Step4Resumen({
         <dl className="breakdown" style={{ marginTop: 8 }}>
           <div className="breakdown__row">
             <dt>Subtotal productos</dt>
-            <dd>${subtotal.toFixed(2)}</dd>
+            <dd>{allRequireQuote ? 'Por WhatsApp' : `$${subtotal.toFixed(2)}`}</dd>
           </div>
           <div className="breakdown__row">
             <dt>{`Transporte${state.entrega === 'instalacion' ? ` · ${state.zone}` : ''}`}</dt>
@@ -256,16 +262,20 @@ export default function Step4Resumen({
           </div>
           <div className="breakdown__row breakdown__row--total">
             <dt>Total</dt>
-            <dd data-testid="resumen-total-value">${grandTotal.toFixed(2)}</dd>
+            <dd data-testid="resumen-total-value">{allRequireQuote ? 'Por WhatsApp' : `$${grandTotal.toFixed(2)}`}</dd>
           </div>
-          <div className="breakdown__row">
-            <dt>Anticipo (80%)</dt>
-            <dd>${anticipo.toFixed(2)}</dd>
-          </div>
-          <div className="breakdown__row">
-            <dt>Saldo (20%, al entregar)</dt>
-            <dd>${saldo.toFixed(2)}</dd>
-          </div>
+          {!allRequireQuote && (
+            <>
+              <div className="breakdown__row">
+                <dt>Anticipo (80%)</dt>
+                <dd>${anticipo.toFixed(2)}</dd>
+              </div>
+              <div className="breakdown__row">
+                <dt>Saldo (20%, al entregar)</dt>
+                <dd>${saldo.toFixed(2)}</dd>
+              </div>
+            </>
+          )}
           <div className="breakdown__row">
             <dt>Entrega estimada</dt>
             <dd>8–10 días hábiles</dd>

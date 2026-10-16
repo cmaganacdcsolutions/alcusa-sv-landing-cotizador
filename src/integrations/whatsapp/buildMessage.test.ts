@@ -149,3 +149,35 @@ describe('integrations/whatsapp buildMessage', () => {
     expect(plain).not.toContain('confirmar\n');
   });
 });
+
+describe('buildQuoteMessage — items solo-asesor (2026-10-16)', () => {
+  const base = { zona: 'Soyapango', entrega: 'con instalación' as const, anchoM: 1, altoM: 2.1, color: 'Blanco', vidrio: 'Claro 5 mm' };
+
+  it('un item porCotizar imprime "por cotizar con un asesor" en vez de $0.00', () => {
+    const msg = buildQuoteMessage({
+      items: [
+        { ...base, producto: 'Puerta de baño recta', subtotal: 258 },
+        { ...base, producto: 'Puerta de jardín · 1 hoja', subtotal: 0, porCotizar: true },
+      ],
+      transporte: 40,
+      total: 298,
+      anticipo: 238.4,
+      saldo: 59.6,
+    });
+    expect(msg).toContain('Subtotal: $258.00');
+    expect(msg).toContain('Subtotal: por cotizar con un asesor');
+    expect(msg).not.toContain('$0.00');
+  });
+
+  it('pedido 100% solo-asesor: sin total ni anticipo', () => {
+    const msg = buildQuoteMessage({
+      items: [{ ...base, producto: 'Ventana Francesa', subtotal: 0, porCotizar: true }],
+      transporte: 40,
+      total: 40,
+      anticipo: 32,
+      saldo: 8,
+    });
+    expect(msg).toContain('quiero cotizar con un asesor');
+    expect(msg).not.toMatch(/Total estimado|Anticipo/);
+  });
+});

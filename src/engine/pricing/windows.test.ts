@@ -1,104 +1,49 @@
 import { describe, expect, it } from 'vitest';
-import { priceWindow } from './windows';
+import { priceWindow, windowZarandaCost } from './windows';
+import { WINDOW_ZARANDA_MIN_AREA_M2, WINDOW_ZARANDA_RATE_PER_M2 } from '@content/pricingTables';
+import type { WindowPriceInput } from './types';
 
-// Fixture values from exploratory-report.md §3.3, expressed as the S2
-// product-cost subtotal (zone fee excluded, see S2-pricing-engine.md T2.3).
-describe('engine/pricing/windows — priceWindow', () => {
-  it('prices 1.20x1.00 Francesa blanco claro qty1, no extras (AC: $162)', () => {
-    const result = priceWindow({
-      widthM: 1.2,
-      heightM: 1.0,
-      model: 'francesa',
-      frame: 'blanco',
-      glass: 'claro',
-      zaranda: false,
-      desmontaje: false,
-      qty: 1,
-    });
-    expect(result).toEqual({ subtotal: 162, requiresQuote: false });
+const base: WindowPriceInput = {
+  widthM: 1.2,
+  heightM: 1.0,
+  model: 'francesa',
+  frame: 'blanco',
+  glass: 'claro',
+  zaranda: false,
+  desmontaje: false,
+  qty: 1,
+};
+
+// Decision 2026-10-16 (client): ventanas francesas/bilbao se cotizan SOLO con asesor
+// ("solo con las puertas de ducha se puede dar una cotizacion certera").
+describe('engine/pricing/windows — priceWindow (solo asesor)', () => {
+  it.each([
+    ['francesa blanco claro', base],
+    ['bilbao bronce super_gris con extras', { ...base, model: 'bilbao', frame: 'bronce', glass: 'super_gris', zaranda: true, desmontaje: true, qty: 3 }],
+    ['medida minima', { ...base, widthM: 0.6, heightM: 0.6 }],
+    ['marco natural', { ...base, frame: 'natural' }],
+    ['marco negro', { ...base, frame: 'negro' }],
+    ['reflectivo bronce', { ...base, glass: 'reflectivo_bronce' }],
+  ] as const)('%s => sin precio, requiresQuote', (_name, input) => {
+    expect(priceWindow(input)).toEqual({ subtotal: null, requiresQuote: true });
+  });
+});
+
+describe('engine/pricing/windows — windowZarandaCost', () => {
+  it('tarifa $25/m2 (2026-10-16)', () => {
+    expect(WINDOW_ZARANDA_RATE_PER_M2).toBe(25);
+    expect(windowZarandaCost(1.2, 1.0)).toBe(30);
   });
 
-  it('adds zaranda at $30/m2 (AC: $198)', () => {
-    const result = priceWindow({
-      widthM: 1.2,
-      heightM: 1.0,
-      model: 'francesa',
-      frame: 'blanco',
-      glass: 'claro',
-      zaranda: true,
-      desmontaje: false,
-      qty: 1,
-    });
-    expect(result).toEqual({ subtotal: 198, requiresQuote: false });
+  it('area minima facturable 0.80 m2 por ventana', () => {
+    expect(WINDOW_ZARANDA_MIN_AREA_M2).toBe(0.8);
+    expect(windowZarandaCost(0.6, 0.6)).toBe(20); // 0.36 m2 -> 0.80 * 25
+    expect(windowZarandaCost(1.0, 0.8)).toBe(20); // justo el minimo
+    expect(windowZarandaCost(1.0, 0.9)).toBe(22.5);
   });
 
-  it('multiplies by qty (AC: $486 subtotal, legacy $606 with zone x qty)', () => {
-    const result = priceWindow({
-      widthM: 1.2,
-      heightM: 1.0,
-      model: 'francesa',
-      frame: 'blanco',
-      glass: 'claro',
-      zaranda: false,
-      desmontaje: false,
-      qty: 3,
-    });
-    expect(result).toEqual({ subtotal: 486, requiresQuote: false });
-  });
-
-  it('prices Bilbao 1.5x1.2 bronce/super_gris + zaranda + desmontaje (AC: $459.16)', () => {
-    const result = priceWindow({
-      widthM: 1.5,
-      heightM: 1.2,
-      model: 'bilbao',
-      frame: 'bronce',
-      glass: 'super_gris',
-      zaranda: true,
-      desmontaje: true,
-      qty: 1,
-    });
-    expect(result).toEqual({ subtotal: 459.16, requiresQuote: false });
-  });
-
-  it('applies the 0.8m2 minimum area (0.6x0.6 Francesa, AC: $108)', () => {
-    const result = priceWindow({
-      widthM: 0.6,
-      heightM: 0.6,
-      model: 'francesa',
-      frame: 'blanco',
-      glass: 'claro',
-      zaranda: false,
-      desmontaje: false,
-      qty: 1,
-    });
-    expect(result).toEqual({ subtotal: 108, requiresQuote: false });
-  });
-
-  it('flags requiresQuote for Natural frame', () => {
-    const result = priceWindow({
-      widthM: 1.2,
-      heightM: 1.0,
-      model: 'francesa',
-      frame: 'natural',
-      glass: 'claro',
-      zaranda: false,
-      desmontaje: false,
-      qty: 1,
-    });
-    expect(result).toEqual({ subtotal: null, requiresQuote: true });
-  });
-
-  it('flags requiresQuote for Reflectivo bronce glass', () => {
-    const result = priceWindow({
-      widthM: 1.2,
-      heightM: 1.0,
-      model: 'francesa',
-      frame: 'blanco',
-      glass: 'reflectivo_bronce',
-      zaranda: false,
-      desmontaje: false,
-      qty: 1,
-    });
-    expect(result).toEqual({ subtotal: null, requiresQuote: true });
+  it('medida invalida => 0', () => {
+    expect(windowZarandaCost(0, 1)).toBe(0);
+    expect(windowZarandaCost(Number.NaN, 1)).toBe(0);
   });
 });

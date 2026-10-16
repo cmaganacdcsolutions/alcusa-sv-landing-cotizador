@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { QUOTE_ONLY_NOTE } from '@content/catalog';
 import { GARDEN_PROMO_BANDS } from '@content/pricingTables';
 import { GLASS_LABELS, COLOR_LABELS, type CotizadorAction, type CotizadorState, type GardenHeightOption } from '../../state/cotizadorStore';
 import { GARDEN_HOJAS_LABELS } from '../../state/labels';
@@ -28,9 +29,8 @@ export interface GardenFormProps {
   onNext: () => void;
 }
 
-// New file (S6, T6.2) — "Puerta de jardín". Only Blanco/Claro are priced;
-// any other color/vidrio is labeled requiresQuote at selection time and,
-// per T6.3, never hard-blocks "Siguiente" — only invalid measurements do.
+// New file (S6, T6.2) — "Puerta de jardín". Solo con asesor (2026-10-16,
+// requiresQuote siempre); nunca bloquea "Siguiente" — only invalid measurements do.
 export default function GardenForm({ state, dispatch, onNext }: GardenFormProps): ReactElement {
   const quote = computeGardenQuote(state);
   const widthNum = parseFloat(state.gardenWidth.replace(',', '.'));
@@ -39,8 +39,6 @@ export default function GardenForm({ state, dispatch, onNext }: GardenFormProps)
   const heightValid = state.gardenHeightOption !== 'otra' || (Number.isFinite(otraNum) && otraNum > 0);
   const allValid =
     Number.isFinite(widthNum) && widthNum > 0 && heightValid && Number.isFinite(qtyNum) && qtyNum >= 1 && qtyNum <= 50;
-  const colorRequiresQuote = state.gardenColor !== 'blanco';
-  const glassRequiresQuote = state.gardenGlass !== 'claro';
 
   return (
     <section aria-labelledby="step1-heading">
@@ -129,7 +127,6 @@ export default function GardenForm({ state, dispatch, onNext }: GardenFormProps)
             >
               <ColorSwatch color={c} />
               {COLOR_LABELS[c]}
-              {c !== 'blanco' && <span className="chip__badge">Cotización personalizada</span>}
             </button>
           ))}
         </div>
@@ -148,7 +145,6 @@ export default function GardenForm({ state, dispatch, onNext }: GardenFormProps)
             >
               <GlassSwatch glass={g} />
               {GLASS_LABELS[g]}
-              {g !== 'claro' && <span className="chip__badge">Cotización personalizada</span>}
             </button>
           ))}
         </div>
@@ -170,18 +166,13 @@ export default function GardenForm({ state, dispatch, onNext }: GardenFormProps)
         <span className="field__helper">Ingresa una cantidad entre 1 y 50.</span>
       </div>
 
-      {(colorRequiresQuote || glassRequiresQuote) && (
-        <div className="callout" role="status" style={{ marginTop: 20 }}>
-          <span className="callout__title">
-            <IconWarningTriangle />
-            Cotización personalizada por WhatsApp
-          </span>
-          <p className="callout__body">
-            Solo Blanco/Claro tienen precio automático; otros acabados se cotizan a la medida. Puedes seguir y
-            confirmar por WhatsApp.
-          </p>
-        </div>
-      )}
+      <div className="callout" role="status" style={{ marginTop: 20 }}>
+        <span className="callout__title">
+          <IconWarningTriangle />
+          Cotización con un asesor
+        </span>
+        <p className="callout__body">{QUOTE_ONLY_NOTE} Arma tu configuración y te la enviamos por WhatsApp.</p>
+      </div>
 
       <div className="bottom-bar" style={{ marginTop: 24 }}>
         <div className="bottom-bar__price">

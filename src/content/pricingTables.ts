@@ -90,7 +90,9 @@ export const WINDOW_RATE: Record<'francesa' | 'bilbao', number> = {
   bilbao: 192,
 };
 export const WINDOW_MIN_AREA_M2 = 0.8;
-export const WINDOW_ZARANDA_RATE_PER_M2 = 30;
+// Zaranda (2026-10-16): $25/m2 con area minima facturable de 0.80 m2 por ventana.
+export const WINDOW_ZARANDA_RATE_PER_M2 = 25;
+export const WINDOW_ZARANDA_MIN_AREA_M2 = 0.8;
 export const WINDOW_DESMONTAJE_FLAT = 25;
 export const WINDOW_GLASS_FACTOR_CLEAR = 1.0;
 export const WINDOW_GLASS_FACTOR_OTHER = 1.1;

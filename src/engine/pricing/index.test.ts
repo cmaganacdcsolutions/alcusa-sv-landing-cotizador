@@ -17,6 +17,7 @@ describe('engine/pricing barrel', () => {
     expect(priceCorner({ color: 'natural', model: 'aquaclara' }).price).toBe(444);
     expect(priceTempered({ widthCm: 120 }).price).toBe(672);
     expect(priceHinged({ widthCm: 70, color: 'natural', glass: 'claro', qty: 1 }).subtotal).toBe(270);
+    // ventanas y jardin: solo asesor (2026-10-16)
     expect(
       priceWindow({
         widthM: 1.2,
@@ -27,11 +28,12 @@ describe('engine/pricing barrel', () => {
         zaranda: false,
         desmontaje: false,
         qty: 1,
-      }).subtotal
-    ).toBe(162);
-    expect(priceGarden({ widthM: 1.0, heightM: 2.1, hojas: 1, color: 'blanco', glass: 'claro', qty: 1 }).subtotal).toBe(
-      410
-    );
+      })
+    ).toEqual({ subtotal: null, requiresQuote: true });
+    expect(priceGarden({ widthM: 1.0, heightM: 2.1, hojas: 1, color: 'blanco', glass: 'claro', qty: 1 })).toEqual({
+      subtotal: null,
+      requiresQuote: true,
+    });
     expect(getZoneFee('Soyapango')).toBe(40);
   });
 });

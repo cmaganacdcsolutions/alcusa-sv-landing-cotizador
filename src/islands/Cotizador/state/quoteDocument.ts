@@ -38,7 +38,14 @@ export function toQuoteDocumentItem(item: OrderLineItem): QuoteDocumentItem {
     parts.pop();
   }
   if (item.requiresQuote) parts.push('Por cotizar');
-  return { name: item.name, variant: parts.join(SEP), measures, qty, price: item.requiresQuote ? 0 : item.subtotal };
+  return {
+    name: item.name,
+    variant: parts.join(SEP),
+    measures,
+    qty,
+    price: item.requiresQuote ? 0 : item.subtotal,
+    ...(item.requiresQuote ? { pending: true } : {}),
+  };
 }
 
 export interface QuoteDocumentInput {
@@ -74,6 +81,7 @@ export function toQuoteDocument(i: QuoteDocumentInput): QuoteDocument {
     transport: i.transport,
     total: i.total,
     ...(i.shippingPending ? { shippingPending: true } : {}),
+    ...(i.items.length > 0 && i.items.every((x) => x.requiresQuote) ? { allPending: true } : {}),
   };
 }
 

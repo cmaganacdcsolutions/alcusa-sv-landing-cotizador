@@ -12,7 +12,7 @@ import { priceHinged } from '@engine/pricing/hinged';
 import { priceWindow } from '@engine/pricing/windows';
 import { priceGarden } from '@engine/pricing/garden';
 
-function fromPriceOf(id: string): number {
+function fromPriceOf(id: string): number | null {
   const product = CATALOG_PRODUCTS.find((p) => p.id === id);
   if (!product) throw new Error(`catalog product not found: ${id}`);
   return product.fromPrice;
@@ -43,13 +43,15 @@ describe('content/catalog — fromPrice matches engine/pricing minimum', () => {
     expect(result.subtotal).toBe(fromPriceOf('bisagra'));
   });
 
-  it('jardin: promo band 1 (blanco/claro, 1 hoja, 0.80x2.10m, qty 1)', () => {
+  // 2026-10-16: jardin y ventanas son solo-asesor: el catalogo no anuncia "Desde $X" y el motor no da precio.
+  it('jardin: sin "desde" en el catalogo y el motor exige asesor', () => {
     const result = priceGarden({ widthM: 0.8, heightM: 2.1, hojas: 1, color: 'blanco', glass: 'claro', qty: 1 });
-    expect(result.requiresQuote).toBe(false);
-    expect(result.subtotal).toBe(fromPriceOf('jardin'));
+    expect(result.requiresQuote).toBe(true);
+    expect(result.subtotal).toBeNull();
+    expect(fromPriceOf('jardin')).toBeNull();
   });
 
-  it('ventana: francesa/claro at the minimum billable area (0.8 m2), no extras', () => {
+  it('ventana: sin "desde" en el catalogo y el motor exige asesor', () => {
     const result = priceWindow({
       widthM: 0.8,
       heightM: 1,
@@ -60,7 +62,8 @@ describe('content/catalog — fromPrice matches engine/pricing minimum', () => {
       desmontaje: false,
       qty: 1,
     });
-    expect(result.requiresQuote).toBe(false);
-    expect(result.subtotal).toBe(fromPriceOf('ventana'));
+    expect(result.requiresQuote).toBe(true);
+    expect(result.subtotal).toBeNull();
+    expect(fromPriceOf('ventana')).toBeNull();
   });
 });

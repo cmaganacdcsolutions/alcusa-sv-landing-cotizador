@@ -27,6 +27,7 @@ export function buildWindowMessageItems(rows: WindowRowQuote[], ctx: WindowMessa
     zona: ctx.zona,
     entrega: ctx.entrega,
     subtotal: row.subtotal ?? 0,
+    ...(row.requiresQuote ? { porCotizar: true } : {}),
   }));
 }
 
@@ -52,5 +53,6 @@ export function buildGardenMessageItem(input: GardenMessageInput): QuoteMessageI
     zona: input.zona,
     entrega: input.entrega,
     subtotal: input.subtotal ?? 0,
+    ...(input.requiresQuote ? { porCotizar: true } : {}),
   };
 }
