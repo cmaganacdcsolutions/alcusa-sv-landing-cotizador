@@ -54,6 +54,7 @@ export function buildQuoteMessage(input: QuoteMessageInput): string {
     return (
       'Hola ALCUSA, quiero cotizar con un asesor:\n\n' +
       `${lines}\n\n` +
+      `Transporte · ${input.items[0]?.zona}: ${input.shippingPending ? 'Envío por confirmar' : money(input.transporte)}\n` +
       `Dirección: ${input.direccion ?? '[dirección]'}\n\n` +
       'Por favor confirmen medidas, disponibilidad, modalidad y precio. ¡Gracias!'
     );

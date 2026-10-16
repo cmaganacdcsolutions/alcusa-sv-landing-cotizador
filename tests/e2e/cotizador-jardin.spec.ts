@@ -63,6 +63,11 @@ test.describe('cotizador — jardín, solo con asesor', () => {
     expect(decoded).toContain('Puerta de jardín · 1 hoja — 1.00×2.10 m · Color: Blanco · Vidrio: Claro 5 mm');
     expect(decoded).toContain('Subtotal: por cotizar con un asesor');
     expect(decoded).not.toMatch(/Total estimado|Anticipo/);
+    // BUG-1016-01: el Resumen muestra el transporte, así que el mensaje también lo lleva (zona + monto).
+    const transportRow = await page.getByText(/^Transporte · Apopa/).first().locator('xpath=..').innerText();
+    const amount = transportRow.match(/\$\d+\.\d{2}/)?.[0];
+    expect(amount).toBeTruthy();
+    expect(decoded).toContain(`Transporte · Apopa: ${amount}`);
 
     await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeEnabled();
   });

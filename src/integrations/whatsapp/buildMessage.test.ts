@@ -180,4 +180,28 @@ describe('buildQuoteMessage — items solo-asesor (2026-10-16)', () => {
     expect(msg).toContain('quiero cotizar con un asesor');
     expect(msg).not.toMatch(/Total estimado|Anticipo/);
   });
+
+  it('pedido 100% solo-asesor: incluye el transporte con zona y monto (BUG-1016-01)', () => {
+    const msg = buildQuoteMessage({
+      items: [{ ...base, zona: 'Apopa', producto: 'Ventana Francesa', subtotal: 0, porCotizar: true }],
+      transporte: 60,
+      total: 60,
+      anticipo: 48,
+      saldo: 12,
+    });
+    expect(msg).toContain('Transporte · Apopa: $60.00');
+    expect(msg).not.toMatch(/Total estimado|Anticipo/);
+  });
+
+  it('pedido 100% solo-asesor con envio por confirmar: lo indica sin monto', () => {
+    const msg = buildQuoteMessage({
+      items: [{ ...base, zona: 'Otra', producto: 'Ventana Francesa', subtotal: 0, porCotizar: true }],
+      transporte: 0,
+      total: 0,
+      anticipo: 0,
+      saldo: 0,
+      shippingPending: true,
+    });
+    expect(msg).toContain('Transporte · Otra: Envío por confirmar');
+  });
 });
