@@ -198,20 +198,20 @@ test.describe('motion E4: cambio de acabado', () => {
 });
 
 test.describe('motion E6: realce del precio en el cotizador', () => {
-  const openVentana = async (page: import('@playwright/test').Page) => {
+  // 2026-10-16: las ventanas ya no tienen precio en linea (solo asesor): el realce se prueba con la puerta recta.
+  const openRecta = async (page: import('@playwright/test').Page) => {
     await page.goto('/cotizador#cotizador/0-producto');
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await pickProduct(page, 'ventana');
-    await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
-    await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
+    await pickProduct(page, 'recta');
+    await page.locator('#ancho').fill('100');
   };
 
   test('al cambiar el valor el total se marca y termina asentado, con el texto definitivo (sin contar digitos)', async ({ page }) => {
-    await openVentana(page);
+    await openRecta(page);
     const price = page.getByTestId('summary-price-value');
     await expect(price).toHaveText(/^\$\d/);
     const first = (await price.textContent()) ?? '';
-    await page.getByLabel('Ancho en metros, ventana 1').fill('1.80');
+    await page.locator('#ancho').fill('160');
     await expect(price).not.toHaveText(first);
     await expect(price).toHaveAttribute('data-tick', /^[ab]$/);
     // el texto cambia de una vez al valor final (nunca pasa por valores intermedios) y la animacion termina visible
@@ -224,10 +224,10 @@ test.describe('motion E6: realce del precio en el cotizador', () => {
 
   test('reduced-motion: el precio cambia sin marca de animacion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await openVentana(page);
+    await openRecta(page);
     const price = page.getByTestId('summary-price-value');
     const first = (await price.textContent()) ?? '';
-    await page.getByLabel('Ancho en metros, ventana 1').fill('1.80');
+    await page.locator('#ancho').fill('160');
     await expect(price).not.toHaveText(first);
     await expect(price).not.toHaveAttribute('data-tick', /.*/);
   });
@@ -383,22 +383,21 @@ test.describe('motion: apagado total con ?motion=off', () => {
     expect(await anim(last)).toBe('none');
   });
 
-  const openVentana = async (page: import('@playwright/test').Page, url: string) => {
+  const openRecta = async (page: import('@playwright/test').Page, url: string) => {
     await page.goto(url);
     await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
-    await pickProduct(page, 'ventana');
-    await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
-    await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
+    await pickProduct(page, 'recta');
+    await page.locator('#ancho').fill('100');
     const price = page.getByTestId('summary-price-value');
     await expect(price).toHaveText(/^\$\d/);
     const first = (await price.textContent()) ?? '';
-    await page.getByLabel('Ancho en metros, ventana 1').fill('1.80');
+    await page.locator('#ancho').fill('160');
     await expect(price).not.toHaveText(first);
     return price;
   };
 
   test('E6 precio: con ?motion=off el total cambia sin data-tick, sin animacion y sin linea', async ({ page }) => {
-    const price = await openVentana(page, '/cotizador?motion=off#cotizador/0-producto');
+    const price = await openRecta(page, '/cotizador?motion=off#cotizador/0-producto');
     await expect(price).not.toHaveAttribute('data-tick', /.*/);
     expect(await anim(price)).toBe('none');
     expect(await anim(price, '::after')).toBe('none');
@@ -406,7 +405,7 @@ test.describe('motion: apagado total con ?motion=off', () => {
   });
 
   test('E6 precio: con motion el total lleva animacion de asentado y linea (contraste del caso off)', async ({ page }) => {
-    const price = await openVentana(page, '/cotizador#cotizador/0-producto');
+    const price = await openRecta(page, '/cotizador#cotizador/0-producto');
     await expect(price).toHaveAttribute('data-tick', /^[ab]$/);
     expect(await anim(price)).toMatch(/^cm-tick-[ab]$/);
     expect(await anim(price, '::after')).toMatch(/^cm-line-[ab]$/);
