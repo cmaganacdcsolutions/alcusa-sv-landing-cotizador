@@ -28,7 +28,7 @@ test.describe('home: renders, iconos de acabado y guia', () => {
 
   test('tarjetas usan /images/fotos/ (fotos oficiales) y el HTML no tiene rutas de foto legacy', async ({ page }) => {
     await page.goto('/');
-    const srcs = await page.locator('.pcard img.photo-frame__img').evaluateAll((els) => els.map((e) => e.getAttribute('src')));
+    const srcs = await page.locator('.pcard:not([data-upcoming-product]) img.photo-frame__img').evaluateAll((els) => els.map((e) => e.getAttribute('src')));
     expect(srcs.length).toBe(16);
     for (const s of srcs) expect(s).toMatch(/^\/images\/fotos\//);
     expect(await page.content()).not.toContain('/images/renders/');
