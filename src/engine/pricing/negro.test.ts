@@ -1,27 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { priceStraight, priceHinged, priceGarden, priceWindow, priceCorner } from './index';
 
-// Aluminio NEGRO (decision 2026-10-08): no hay precio oficial; toda seleccion negro se cotiza con asesor.
-describe('engine/pricing — aluminio negro => requiresQuote', () => {
-  it('recta: negro en toda medida y vidrio', () => {
+// Aluminio NEGRO (decision 2026-10-16): en puertas de ducha recta/bisagra se cobra igual que blanco/bronce
+// ("puerta pesada"). Jardin y ventanas se cotizan siempre con asesor. En L: negro no se ofrece.
+describe('engine/pricing — aluminio negro', () => {
+  it('recta: negro = tabla de color (igual que blanco/bronce) en todo vidrio', () => {
     for (const glass of ['claro', 'nevado', 'decorado', 'mallado', 'duplex'] as const) {
-      expect(priceStraight({ widthCm: 110, color: 'negro', glass, pickup: false })).toEqual({
-        price: null,
-        transportIncluded: false,
-        requiresQuote: true,
-      });
+      const negro = priceStraight({ widthCm: 110, color: 'negro', glass, pickup: false });
+      expect(negro.requiresQuote).toBe(false);
+      expect(negro.price).not.toBeNull();
+      expect(negro).toEqual(priceStraight({ widthCm: 110, color: 'bronce', glass, pickup: false }));
+      expect(negro).toEqual(priceStraight({ widthCm: 110, color: 'blanco', glass, pickup: false }));
     }
+  });
+
+  it('recta: negro con retiro en tienda aplica el mismo descuento', () => {
+    expect(priceStraight({ widthCm: 110, color: 'negro', glass: 'claro', pickup: true })).toEqual(
+      priceStraight({ widthCm: 110, color: 'blanco', glass: 'claro', pickup: true }),
+    );
   });
 
   it('recta: los otros colores siguen con precio (no regresion)', () => {
     expect(priceStraight({ widthCm: 110, color: 'natural', glass: 'claro', pickup: false }).price).toBe(258);
   });
 
-  it('bisagra: negro => asesor', () => {
-    expect(priceHinged({ widthCm: 80, color: 'negro', glass: 'nevado', qty: 1 })).toEqual({
-      subtotal: null,
-      requiresQuote: true,
-    });
+  it('bisagra: negro = tabla de color (igual que blanco/bronce)', () => {
+    const negro = priceHinged({ widthCm: 80, color: 'negro', glass: 'nevado', qty: 2 });
+    expect(negro.requiresQuote).toBe(false);
+    expect(negro.subtotal).not.toBeNull();
+    expect(negro).toEqual(priceHinged({ widthCm: 80, color: 'bronce', glass: 'nevado', qty: 2 }));
   });
 
   it('jardin: negro => asesor', () => {

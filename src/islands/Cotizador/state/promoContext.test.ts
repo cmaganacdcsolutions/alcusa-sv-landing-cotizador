@@ -21,9 +21,9 @@ const enter = (id: string, width?: string) => {
 
 describe('promoContext — resolvePromoContext', () => {
   it('las 3 promos del seed resuelven con su reglaje', () => {
-    expect(ctx('promo-puerta-aquaclara')).toMatchObject({ price: 222, widthMinCm: 100, widthMaxCm: 120, altoM: 1.85, glass: 'claro' });
+    expect(ctx('promo-puerta-aquaclara')).toMatchObject({ price: 222, widthMinCm: 90, widthMaxCm: 120, altoM: 1.85, glass: 'claro' });
     expect(ctx('promo-corrediza-nevado')).toMatchObject({ price: 260, widthMinCm: 90, widthMaxCm: 120, glass: 'nevado' });
-    expect(ctx('promo-aquafold')).toMatchObject({ price: 279.99, widthMinCm: 100, widthMaxCm: 120, glass: 'aquafold' });
+    expect(ctx('promo-aquafold')).toMatchObject({ price: 279.99, widthMinCm: 90, widthMaxCm: 120, glass: 'aquafold' });
   });
   it('id inexistente, vacio o nulo => null', () => {
     expect(resolvePromoContext('nope', PROMOS, TODAY)).toBeNull();
@@ -68,11 +68,14 @@ describe('promoContext — parser quote_rules', () => {
 describe('promoContext — computeQuote y reducer', () => {
   it('precio plano de la promo dentro del rango (sin envio: lo suma la zona)', () => {
     expect(computeQuote(enter('promo-puerta-aquaclara', '110'))).toEqual({ amount: 222, requiresQuote: false });
+    expect(computeQuote(enter('promo-puerta-aquaclara', '90'))).toEqual({ amount: 222, requiresQuote: false });
+    expect(computeQuote(enter('promo-aquafold', '90'))).toEqual({ amount: 279.99, requiresQuote: false });
     expect(computeQuote(enter('promo-corrediza-nevado', '90'))).toEqual({ amount: 260, requiresQuote: false });
     expect(computeQuote(enter('promo-aquafold', '120'))).toEqual({ amount: 279.99, requiresQuote: false });
   });
   it('fuera de rango => requiresQuote', () => {
-    expect(computeQuote(enter('promo-puerta-aquaclara', '99')).requiresQuote).toBe(true);
+    expect(computeQuote(enter('promo-aquafold', '89')).requiresQuote).toBe(true);
+    expect(computeQuote(enter('promo-puerta-aquaclara', '89')).requiresQuote).toBe(true);
     expect(computeQuote(enter('promo-corrediza-nevado', '89')).requiresQuote).toBe(true);
     expect(computeQuote(enter('promo-corrediza-nevado', '121')).requiresQuote).toBe(true);
     expect(computeQuote(enter('promo-aquafold', '121')).requiresQuote).toBe(true);

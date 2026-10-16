@@ -47,11 +47,7 @@ export function priceHinged(input: HingedPriceInput): HingedPriceResult {
     return { subtotal: null, requiresQuote: true };
   }
 
-  // Aluminio NEGRO (2026-10-08): sin precio oficial; siempre se cotiza con asesor (WhatsApp).
-  if (color === 'negro') {
-    return { subtotal: null, requiresQuote: true };
-  }
-
+  // Aluminio NEGRO (2026-10-16): mismo precio que blanco/bronce ("puerta pesada"), tabla de color.
   const tier = hingedTierKey(widthCm);
   const table = color === 'natural' ? HINGED_TABLE_NATURAL : HINGED_TABLE_COLOR;
   // ASSUMPTION(q17): 40cm decorado (color table) is encoded as $449, matching

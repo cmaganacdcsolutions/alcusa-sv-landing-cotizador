@@ -45,7 +45,7 @@ const GLASS_LABELS: Record<string, string> = {
   nevado: 'Nevado 5 mm',
   decorado: 'Decorado',
   aquafold: 'Aquafold',
-  mallado: 'Mallado',
+  mallado: 'Mallado claro 6 mm',
   duplex: 'Dúplex',
   bronce: 'Bronce 5 mm',
   super_gris: 'Súper gris',
@@ -60,16 +60,16 @@ const glasses = (order: readonly string[], custom: readonly string[] = []): read
   }));
 
 const windowGroups = (frames: readonly string[] = ['blanco', 'bronce', 'natural']): OptionGroup[] => [
-  { name: 'color', legend: 'Marco', options: colors(frames, ['natural']), defaultValue: 'blanco' },
+  { name: 'color', legend: 'Marco', options: colors(frames), defaultValue: 'blanco' },
   {
     name: 'vidrio',
     legend: 'Vidrio',
-    options: glasses(['claro', 'bronce', 'super_gris', 'reflectivo_azul', 'reflectivo_bronce'], ['reflectivo_bronce']),
+    options: glasses(['claro', 'bronce', 'super_gris', 'reflectivo_azul', 'reflectivo_bronce']),
     defaultValue: 'claro',
   },
 ];
 const gardenGroups = (): OptionGroup[] => [
-  { name: 'color', legend: 'Color', options: colors(['blanco', 'bronce', 'natural', 'negro'], ['bronce', 'natural', 'negro']), defaultValue: 'blanco' },
+  { name: 'color', legend: 'Color', options: colors(['blanco', 'bronce', 'natural', 'negro']), defaultValue: 'blanco' },
   { name: 'vidrio', legend: 'Vidrio', options: glasses(['claro', 'nevado', 'decorado', 'mallado', 'duplex']), defaultValue: 'claro' },
 ];
 
@@ -84,7 +84,7 @@ export const PRODUCT_CONFIGS: Readonly<Record<string, ProductConfig>> = {
     cardSlug: 'recta',
     productSlug: 'recta',
     groups: [
-      { name: 'color', legend: 'Color', options: colors(['natural', 'blanco', 'bronce', 'negro'], ['negro']), defaultValue: 'natural' },
+      { name: 'color', legend: 'Color', options: colors(['natural', 'blanco', 'bronce', 'negro']), defaultValue: 'natural' },
       {
         name: 'vidrio',
         legend: 'Vidrio',
@@ -114,7 +114,7 @@ export const PRODUCT_CONFIGS: Readonly<Record<string, ProductConfig>> = {
     cardSlug: 'bisagra',
     productSlug: 'bisagra',
     groups: [
-      { name: 'color', legend: 'Color', options: colors(['natural', 'blanco', 'bronce', 'negro'], ['negro']), defaultValue: 'natural' },
+      { name: 'color', legend: 'Color', options: colors(['natural', 'blanco', 'bronce', 'negro']), defaultValue: 'natural' },
       { name: 'vidrio', legend: 'Vidrio', options: glasses(['nevado', 'claro', 'decorado', 'mallado', 'duplex']), defaultValue: 'claro' },
     ],
   },

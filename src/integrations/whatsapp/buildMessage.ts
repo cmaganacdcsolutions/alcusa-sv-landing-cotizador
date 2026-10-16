@@ -14,6 +14,8 @@ export interface QuoteMessageItem {
   subtotal: number;
   /** S5 (hinged, cart-aware qty 1-50): shown only when > 1, keeps the S1 template byte-for-byte for qty-1 items. */
   cantidad?: number;
+  /** El item se cotiza con un asesor (sin precio en linea): no suma al total y no imprime $. */
+  porCotizar?: boolean;
 }
 
 export interface QuoteMessageInput {
@@ -41,10 +43,21 @@ export function buildQuoteMessage(input: QuoteMessageInput): string {
         `${index + 1}. ${item.producto} — ${item.anchoM.toFixed(2)}×${item.altoM.toFixed(2)} m · ` +
         `Color: ${item.color} · Vidrio: ${item.vidrio}${discountSuffix}${cantidadSuffix}\n` +
         `   Zona: ${item.zona} · Entrega: ${item.entrega}\n` +
-        `   Subtotal: ${money(item.subtotal)}`
+        `   Subtotal: ${item.porCotizar ? 'por cotizar con un asesor' : money(item.subtotal)}`
       );
     })
     .join('\n');
+
+  // Todo el pedido es solo-asesor: no hay total ni anticipo que mostrar.
+  const soloAsesor = input.items.length > 0 && input.items.every((i) => i.porCotizar);
+  if (soloAsesor) {
+    return (
+      'Hola ALCUSA, quiero cotizar con un asesor:\n\n' +
+      `${lines}\n\n` +
+      `Dirección: ${input.direccion ?? '[dirección]'}\n\n` +
+      'Por favor confirmen medidas, disponibilidad, modalidad y precio. ¡Gracias!'
+    );
+  }
 
   return (
     'Hola ALCUSA, quiero confirmar esta cotización:\n\n' +

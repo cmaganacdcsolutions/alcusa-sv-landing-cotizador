@@ -64,7 +64,7 @@ export const GLASS_LABELS: Readonly<Record<StraightGlass, string>> = {
   nevado: 'Nevado 5 mm',
   decorado: 'Decorado',
   aquafold: 'Aquafold',
-  mallado: 'Mallado',
+  mallado: 'Mallado claro 6 mm',
   duplex: 'Dúplex',
 };
 

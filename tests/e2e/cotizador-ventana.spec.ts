@@ -35,77 +35,42 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await pickProduct(page, 'ventana');
   }
 
-  // sf-cot-models — Modelo (Francesa/Bilbao) option cards now render a real
-  // photo per 02-design/specs/ventana-modelo-selector.md, replacing the old
-  // text-only chip row. Guards: both cards load an <img> regardless of
-  // selection, aria-pressed follows the click per card (not a chip-row
-  // shared state), and switching model still re-prices (francesa
-  // 135/m² vs bilbao 192/m² — @content/pricingTables.ts).
-  test('Modelo cards render photos, toggle aria-pressed, and switching model re-prices', async ({ page }) => {
+
+  // 2026-10-16: ventanas SOLO con asesor. Se sigue recogiendo modelo, medidas, cantidad y extras, pero nunca hay precio.
+  test('Modelo cards render photos and toggle aria-pressed', async ({ page }) => {
     await openVentana(page);
 
     const francesaCard = page.getByRole('button', { name: 'Francesa', exact: true });
     const bilbaoCard = page.getByRole('button', { name: 'Bilbao', exact: true });
 
-    // Both option photos load, not just the selected one.
     await expect(francesaCard.locator('img')).toHaveJSProperty('complete', true);
     await expect(bilbaoCard.locator('img')).toHaveJSProperty('complete', true);
     expect(await francesaCard.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
-    expect(await bilbaoCard.locator('img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    await expect(bilbaoCard.locator('img')).toBeVisible();
 
-    // Francesa is the default model.
     await expect(francesaCard).toHaveAttribute('aria-pressed', 'true');
     await expect(bilbaoCard).toHaveAttribute('aria-pressed', 'false');
-
-    await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
-    await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
-    await page.getByRole('button', { name: 'Blanco', exact: true }).click();
-    await page.getByRole('button', { name: 'Claro', exact: true }).click();
-    await clickSiguienteOnMedidas(page);
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$162.00');
-
-    await page.getByRole('button', { name: 'Medidas', exact: true }).click();
     await bilbaoCard.click();
     await expect(bilbaoCard).toHaveAttribute('aria-pressed', 'true');
     await expect(francesaCard).toHaveAttribute('aria-pressed', 'false');
-    await clickSiguienteOnMedidas(page);
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$230.40');
   });
 
-  test('1.20x1.00 Francesa blanco/claro qty1 → $162; + zaranda → $198', async ({ page }) => {
+  test('1.20x1.00 Francesa blanco/claro: sin precio en línea, aviso de asesor y se puede continuar', async ({ page }) => {
     await openVentana(page);
 
     await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
     await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
     await page.getByRole('button', { name: 'Blanco', exact: true }).click();
     await page.getByRole('button', { name: 'Claro', exact: true }).click();
+    await expect(page.getByText('se cotizan con un asesor para definir la modalidad').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
     await clickSiguienteOnMedidas(page);
 
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$162.00');
-
-    // exact: true — sf-cot-polish's new "Editar medidas" link (Step2Precio's
-    // estimate card) would otherwise fuzzy-match this same locator.
-    await page.getByRole('button', { name: 'Medidas', exact: true }).click();
-    await page.getByRole('checkbox', { name: /Zaranda/ }).check();
-    await clickSiguienteOnMedidas(page);
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$198.00');
+    await expect(page.getByTestId('step2-price-value')).toHaveText('Por WhatsApp');
   });
 
-  test('qty3, same row → $486 subtotal (zone fee applies once at order level in S7, not here)', async ({ page }) => {
-    await openVentana(page);
-
-    await page.getByLabel('Cantidad, ventana 1').fill('3');
-    await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
-    await page.getByLabel('Alto en metros, ventana 1').fill('1.00');
-    await page.getByRole('button', { name: 'Blanco', exact: true }).click();
-    await page.getByRole('button', { name: 'Claro', exact: true }).click();
-    await clickSiguienteOnMedidas(page);
-
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$486.00');
-  });
-
-  test('Bilbao 1.5x1.2 bronce/super gris + zaranda + desmontaje qty1 → $459.16', async ({ page }) => {
+  test('Bilbao con zaranda y desmontaje: sin precio ni cargos visibles', async ({ page }) => {
     await openVentana(page);
 
     await page.getByRole('button', { name: 'Bilbao', exact: true }).click();
@@ -113,44 +78,14 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await page.getByLabel('Alto en metros, ventana 1').fill('1.2');
     await page.getByRole('button', { name: 'Bronce', exact: true }).click();
     await page.getByRole('button', { name: 'Súper gris', exact: true }).click();
-    await page.getByRole('checkbox', { name: /Zaranda/ }).check();
-    await page.getByRole('radio', { name: /Desmontaje/ }).check();
+    await page.getByRole('checkbox', { name: 'Zaranda' }).check();
+    await page.getByRole('radio', { name: 'Desmontaje' }).check();
     await clickSiguienteOnMedidas(page);
 
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$459.16');
-  });
-
-  test('Natural frame shows the "Cotización personalizada" chip at selection time and never hard-blocks checkout', async ({
-    page,
-  }) => {
-    await openVentana(page);
-
-    const naturalChip = page.getByRole('button', { name: /^Natural/ });
-    await expect(naturalChip.getByText('Cotización personalizada')).toBeVisible();
-    await naturalChip.click();
-    await expect(naturalChip).toHaveAttribute('aria-pressed', 'true');
-
-    // T6.3: requiresQuote never hard-blocks — Siguiente stays enabled and the
-    // row is still added (still tracked with requiresQuote: true downstream).
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
-    await clickSiguienteOnMedidas(page);
-
-    await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await expect(page.getByTestId('step2-price-value')).toHaveText('Por WhatsApp');
-    await expect(page.getByText('requieren cotización personalizada')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
   });
 
-  test('Reflectivo bronce glass shows the chip too, still lets the row through', async ({ page }) => {
-    await openVentana(page);
-
-    const chip = page.getByRole('button', { name: /^Reflectivo bronce/ });
-    await expect(chip.getByText('Cotización personalizada')).toBeVisible();
-    await chip.click();
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
-  });
-
-  test('happy path reaches the summary with a WhatsApp href that is never hard-blocked', async ({ page }) => {
+  test('happy path: Resumen sin total y mensaje de WhatsApp "por cotizar con un asesor"', async ({ page }) => {
     await openVentana(page);
 
     await page.getByLabel('Ancho en metros, ventana 1').fill('1.20');
@@ -165,12 +100,13 @@ test.describe('cotizador — ventana, repeatable rows + requiresQuote', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
-    const waLink = (await textOnlyWaLink(page));
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('Por WhatsApp');
+    const waLink = await textOnlyWaLink(page);
     const href = await waLink.getAttribute('href');
     expect(href).toMatch(/^https:\/\/wa\.me\/50376802410\?text=/);
     const decoded = decodeURIComponent(href!.split('?text=')[1]);
     expect(decoded).toContain('Ventana Francesa — 1.20×1.00 m · Color: Blanco · Vidrio: Claro');
-    expect(decoded).toContain('Subtotal: $162.00');
+    expect(decoded).toContain('Subtotal: por cotizar con un asesor');
 
     // The PDF CTA must also remain available — never a hard block.
     await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeEnabled();

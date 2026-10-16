@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import {
   CATEGORIES,
   formatFromPrice,
+  isQuoteOnlyModel,
+  QUOTE_ONLY_NOTE,
   hasVariants,
   subFromPrice,
   type Category,
@@ -174,10 +176,14 @@ export default function Step0Producto({ asideTarget, selectedId, current, onSele
     : advisor || summaryPrice === null
       ? summaryName
       : `${summaryName} · desde`;
-  const asideTotal = advisor ? 'Con asesor' : summaryName && summaryPrice !== null ? formatFromPrice(summaryPrice) : '—';
+  // Jardín y ventanas: solo con asesor (2026-10-16). Se arma la configuración, sin precio en línea.
+  const quoteOnly = !advisor && isQuoteOnlyModel(leaf?.model);
+  const asideTotal = advisor || quoteOnly ? 'Con asesor' : summaryName && summaryPrice !== null ? formatFromPrice(summaryPrice) : '—';
   const asideNote = advisor
     ? 'Este producto no continúa en el cotizador en línea.'
-    : 'El precio final depende de tus medidas.';
+    : quoteOnly
+      ? QUOTE_ONLY_NOTE
+      : 'El precio final depende de tus medidas.';
   const asideWa = buildWaLink(summaryName ? `Hola ALCUSA, quiero cotizar: ${summaryName}.` : undefined);
 
   return (
@@ -308,7 +314,7 @@ export default function Step0Producto({ asideTarget, selectedId, current, onSele
               </div>
               <span className="cotizador-aside__total-label">{asideLabel}</span>
               <span
-                className={`cotizador-aside__total-value${advisor ? ' cotizador-aside__total-value--sm' : ''}`}
+                className={`cotizador-aside__total-value${advisor || quoteOnly ? ' cotizador-aside__total-value--sm' : ''}`}
                 aria-live="polite"
                 data-testid="summary-price-value"
               >

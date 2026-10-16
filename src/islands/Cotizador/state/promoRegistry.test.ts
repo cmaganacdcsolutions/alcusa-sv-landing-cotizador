@@ -47,7 +47,7 @@ describe('promoRegistry — hidratacion', () => {
   it('un id que solo existe en runtime resuelve con su reglaje', async () => {
     const novel = { ...live(first), id: 'promo-solo-runtime', price_promo: 150 };
     await hydratePromoRegistry(fx(() => Promise.resolve(reply(doc([novel])))));
-    expect(lookupActivePromo('promo-solo-runtime')).toMatchObject({ id: 'promo-solo-runtime', price: 150, widthMinCm: 100, widthMaxCm: 120 });
+    expect(lookupActivePromo('promo-solo-runtime')).toMatchObject({ id: 'promo-solo-runtime', price: 150, widthMinCm: 90, widthMaxCm: 120 });
   });
 
   it('memoiza: un solo fetch aunque se llame varias veces', async () => {

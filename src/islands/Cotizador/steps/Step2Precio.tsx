@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import type { CatalogProduct } from '@content/catalog';
+import { QUOTE_ONLY_NOTE, type CatalogProduct } from '@content/catalog';
 import type { CotizadorState } from '../state/cotizadorStore';
 import { buildLineItem, outOfRangeCopy, type QuoteResult } from '../state/quote';
 import { IconArrowRight, IconWarningTriangle } from '../icons';
@@ -72,8 +72,7 @@ export default function Step2Precio({ product, state, quote, onNext, onEditMedid
           </p>
           {requiresQuote && (
             <p className="estimate-card__note" style={{ color: 'var(--color-warning)' }}>
-              Algunos acabados elegidos requieren cotización personalizada — puedes continuar y confirmarlos por
-              WhatsApp.
+              {QUOTE_ONLY_NOTE} Puedes continuar y confirmarlo por WhatsApp.
             </p>
           )}
         </div>

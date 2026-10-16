@@ -35,10 +35,7 @@ export function priceStraight(input: StraightPriceInput): StraightPriceResult {
   if (glass === 'aquafold') {
     return { price: null, transportIncluded: false, requiresQuote: true };
   }
-  // Aluminio NEGRO (2026-10-08): sin precio oficial; siempre se cotiza con asesor (WhatsApp).
-  if (color === 'negro') {
-    return { price: null, transportIncluded: false, requiresQuote: true };
-  }
+  // Aluminio NEGRO (2026-10-16): mismo precio que blanco/bronce ("puerta pesada"), tabla de color.
   const tier = straightTierMeters(widthCm);
   const table = color === 'natural' ? STRAIGHT_TABLE_NATURAL : STRAIGHT_TABLE_COLOR;
   const row = table[tier.toFixed(1)];

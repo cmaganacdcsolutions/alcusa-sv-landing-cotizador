@@ -6,6 +6,14 @@
 // cliente confirme. El bloque "¿Tienes dudas...?" es una seccion aparte (ContactoTeaser,
 // solo movil en los boards).
 // Pulido 2026-10-06: tarjetas azul noche translucidas con icono en azul claro (sin texto nuevo).
+import { QUOTE_ONLY_NOTE } from '@content/catalog';
+
+// Notas 2026-10-16: desmonte/albañilería (cliente) y jardín/ventanas solo con asesor.
+const NOTES = [
+  'El desmonte de puertas existentes tiene un costo adicional. No realizamos trabajos de albañilería; si la puerta existente está empotrada, no podemos retirarla.',
+  QUOTE_ONLY_NOTE,
+] as const;
+
 const ITEMS = [
   {
     icon: '<circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5M12 12l6 6"/>',
@@ -49,6 +57,9 @@ const ITEMS = [
         ))
       }
     </ul>
+    <div class="info__notes">
+      {NOTES.map((note) => <p>{note}</p>)}
+    </div>
   </div>
 </section>
 
@@ -136,6 +147,17 @@ const ITEMS = [
     font-size: 16px;
     font-weight: var(--font-weight-body-bold);
     color: var(--color-text-on-dark);
+  }
+  .info__notes {
+    margin: var(--space-4) 0 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+    font-size: 14px;
+    color: var(--color-text-on-dark-muted);
+  }
+  .info__notes p {
+    margin: 0;
   }
   .info__detail {
     font-size: 14px;

@@ -7,6 +7,8 @@ export interface QuoteDocumentItem {
   qty: number;
   /** Line price in USD (E33). */
   price: number;
+  /** Se cotiza con un asesor: la columna de precio imprime "Por cotizar" y no suma al total. */
+  pending?: boolean;
 }
 
 export interface QuoteDocument {
@@ -22,6 +24,8 @@ export interface QuoteDocument {
   total: number;
   /** Distrito sin tarifa: the transport row prints "Por confirmar" instead of $0.00. */
   shippingPending?: boolean;
+  /** Todos los items son solo-asesor: subtotal/total/anticipo/saldo imprimen "Por cotizar". */
+  allPending?: boolean;
 }
 
 export interface QuoteFontBytes {
