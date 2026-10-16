@@ -18,16 +18,23 @@ test.describe('cotizador — desktop layout', () => {
     // aside se pega bajo la barra y su `y` deja de ser el de su fila del grid. Eso mediria la animacion de
     // scroll, no la colocacion en el grid. Con scrollY=0 el aside esta en su posicion natural (misma fila que
     // el titulo).
-    await waitForScrollSettled(page);
-    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-    await waitForScrollSettled(page);
-
-    const header = await page.locator('.cotizador__header').boundingBox();
-    const form = await page.locator('.cotizador__form-col').boundingBox();
-    const aside = await page.locator('.cotizador-aside').boundingBox();
-    expect(header && form && aside).toBeTruthy();
-    expect(form!.y - (header!.y + header!.height)).toBeLessThanOrEqual(48);
-    expect(aside!.x).toBeGreaterThanOrEqual(form!.x + form!.width);
-    expect(Math.abs(aside!.y - header!.y)).toBeLessThanOrEqual(2);
+    // El efecto de Cotizador.tsx puede desplazar la ventana al encabezado DESPUES de nuestro scrollTo (bajo carga
+    // llega tarde: scrollY>0 y el aside sticky queda pegado unos px mas abajo). Se mide en un solo evaluate, con
+    // scrollY=0, y se reintenta si la medicion cayo en una ventana desplazada.
+    await expect(async () => {
+      await waitForScrollSettled(page);
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+      const m = await page.evaluate(() => {
+        const r = (sel: string) => document.querySelector(sel)!.getBoundingClientRect();
+        const h = r('.cotizador__header');
+        const f = r('.cotizador__form-col');
+        const a = r('.cotizador-aside');
+        return { scrollY: window.scrollY, h: { y: h.y, bottom: h.bottom }, f: { y: f.y, right: f.right }, a: { x: a.x, y: a.y } };
+      });
+      expect(m.scrollY).toBe(0);
+      expect(m.f.y - m.h.bottom).toBeLessThanOrEqual(48);
+      expect(m.a.x).toBeGreaterThanOrEqual(m.f.right);
+      expect(Math.abs(m.a.y - m.h.y)).toBeLessThanOrEqual(2);
+    }).toPass();
   });
 });

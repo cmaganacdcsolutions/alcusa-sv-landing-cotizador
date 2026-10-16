@@ -12,6 +12,7 @@ import { expect, test } from './fixtures';
 // cotizador.spec.ts (the 3 promo prices via `?promo=<id>` + CTA locks the promo config),
 // cotizador-combinaciones.spec.ts (WhatsApp "Más opciones" advisor tile).
 
+const ASESOR_ONLY = new Set(['jardin', 'ventana']);
 const PRICE_RE = /^\$[\d,]+\.\d{2}$/;
 const MID: Record<string, number> = {
   recta: Math.round((STRAIGHT_WIDTH_MIN_CM + STRAIGHT_WIDTH_MAX_CM) / 2),
@@ -42,8 +43,15 @@ test.describe('critical - cada familia llega a un precio con foto en el paso 2',
       await expect(page.locator('#step2-heading')).toBeVisible();
 
       const price = (await page.getByTestId('step2-price-value').innerText()).trim();
-      expect(price).toMatch(PRICE_RE);
-      expect(price).not.toBe('$0.00');
+      if (ASESOR_ONLY.has(fam.model)) {
+        // 2026-10-16: jardin y ventanas no tienen precio en linea: solo asesor, sin monto ni suma.
+        expect(price).toBe('Por WhatsApp');
+        await expect(page.locator('.estimate-card')).toContainText('se cotizan con un asesor');
+        await expect(page.locator('.estimate-card__price')).not.toContainText('$');
+      } else {
+        expect(price).toMatch(PRICE_RE);
+        expect(price).not.toBe('$0.00');
+      }
 
       const photo = page.locator('.estimate-card__preview img.photo-frame__img');
       await expect(async () => {
