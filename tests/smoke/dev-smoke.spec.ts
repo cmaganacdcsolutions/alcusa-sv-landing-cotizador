@@ -90,6 +90,7 @@ if (want('cotizador')) {
   for (const fam of FAMILIES) {
     test(`cotizador (dev): ${fam.model} llega hasta el resumen`, async ({ page }) => {
       const problems = watch(page);
+      const asesor = ['jardin', 'ventana'].includes(fam.model);
       await page.goto('/cotizador#cotizador/0-producto', { waitUntil: 'networkidle' });
       await expectWizardRendered(page);
       const types = page.getByRole('group', { name: /^(Tipo de|Hojas de la)/ });
@@ -105,14 +106,16 @@ if (want('cotizador')) {
       if (MID[fam.model]) await page.locator('#ancho').fill(String(MID[fam.model]));
       await next.click({ force: true });
       await expect(page.locator('#step2-heading')).toBeVisible();
-      expect((await page.getByTestId('step2-price-value').innerText()).trim()).toMatch(/^\$[\d,]+\.\d{2}$/);
+      // 2026-10-16: jardin y ventanas son solo asesor (sin monto): "Por WhatsApp" exacto, no un precio.
+      const PRICE = asesor ? /^Por WhatsApp$/ : /^\$[\d,]+\.\d{2}$/;
+      expect((await page.getByTestId('step2-price-value').innerText()).trim()).toMatch(PRICE);
       expect(await findBrokenImages(page), 'imagenes del paso 2').toEqual([]);
       await next.click({ force: true });
       await expect(page.locator('#step3-heading')).toBeVisible();
       await fillAddress(page, 'Soyapango');
       await next.click({ force: true });
       await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
-      await expect(page.getByTestId('resumen-total-value')).toHaveText(/^\$[\d,]+\.\d{2}$/);
+      await expect(page.getByTestId('resumen-total-value')).toHaveText(PRICE);
       expect(problems, 'errores de consola / red').toEqual([]);
     });
   }
