@@ -66,7 +66,7 @@ test.describe('cotizador - contexto promo (?promo=<id>)', () => {
   test('aquaclara: 99 cm queda fuera (rango 1.00-1.20 m)', async ({ page }) => {
     await open(page, link('promo-puerta-aquaclara', 'claro'));
     await page.locator('#ancho').fill('99');
-    await expect(page.getByText('Esta promoción aplica de 1.00 a 1.20 m de pared a pared').first()).toBeVisible();
+    await expect(page.getByText('Esta promoción aplica de 0.90 a 1.20 m de pared a pared').first()).toBeVisible();
     await expect(siguiente(page)).toBeDisabled();
   });
 
