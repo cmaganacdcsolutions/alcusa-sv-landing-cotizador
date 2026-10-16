@@ -45,7 +45,7 @@ const GLASS_LABELS: Record<string, string> = {
   nevado: 'Nevado 5 mm',
   decorado: 'Decorado',
   aquafold: 'Aquafold',
-  mallado: 'Mallado',
+  mallado: 'Mallado claro 6 mm',
   duplex: 'Dúplex',
   bronce: 'Bronce 5 mm',
   super_gris: 'Súper gris',

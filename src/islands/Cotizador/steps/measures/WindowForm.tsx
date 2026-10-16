@@ -207,7 +207,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
             checked={state.windowZaranda}
             onChange={(e) => dispatch({ type: 'SET_WINDOW_ZARANDA', value: e.target.checked })}
           />
-          Zaranda (+$30/m²)
+          Zaranda
         </label>
         <label className="extras-row">
           <input
@@ -216,7 +216,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
             checked={state.windowDesmontaje}
             onChange={() => dispatch({ type: 'SET_WINDOW_DESMONTAJE', value: !state.windowDesmontaje })}
           />
-          Desmontaje (+$25)
+          Desmontaje
         </label>
       </div>
 
