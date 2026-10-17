@@ -9,7 +9,7 @@ import { join } from 'node:path';
 const CROPS = {
   mallado: { file: 'mallado-claro-6mm.jpeg', left: 470, top: 250, size: 150 },
   nevado: { file: 'promo-nevado-instalada.png', left: 98, top: 200, size: 100 },
-  aquafold: { file: 'promo-aquafold-instalada.png', left: 245, top: 215, size: 120 },
+  aquafold: { file: 'promo-aquafold-instalada.png', left: 70, top: 200, size: 340 },
 };
 const src = process.argv[2];
 const out = join(process.cwd(), 'public', 'images', 'vidrios');
