@@ -44,8 +44,12 @@ describe.skipIf(!env)('persistence across restart (MariaDB)', () => {
     };
     return { ...rt, auth, promos };
   }
-  const login = (password: string) =>
-    app.inject({ method: 'POST', url: `${BASE}/login`, payload: new URLSearchParams({ username: 'carlos', password }).toString(), headers: { 'content-type': 'application/x-www-form-urlencoded' } });
+  const login = async (password: string) => {
+    const g = await app.inject({ url: `${BASE}/login` });
+    const token = /name="_csrf" value="([0-9a-f]{64})"/.exec(g.body)?.[1] as string;
+    const lc = ([] as string[]).concat(g.headers['set-cookie'] as string[]).find((c) => c.startsWith('__Host-alcusa_login'))?.split(';')[0] as string;
+    return app.inject({ method: 'POST', url: `${BASE}/login`, payload: new URLSearchParams({ username: 'carlos', password, _csrf: token }).toString(), headers: { 'content-type': 'application/x-www-form-urlencoded', 'sec-fetch-site': 'same-origin', cookie: lc } });
+  };
 
   beforeAll(async () => {
     if (!env) return;
@@ -118,13 +122,12 @@ describe.skipIf(!env)('persistence across restart (MariaDB)', () => {
     await close();
   });
 
-  it('lockout survives a restart: 5 bad passwords lock the account, even for the right password', async () => {
+  it('failed logins never hard-lock the account (SEC-007): the right password still works afterwards', async () => {
     await boot();
-    for (let i = 0; i < 4; i += 1) expect((await login('wrong password here')).statusCode).toBe(401);
-    expect((await login('wrong password here')).statusCode).toBe(429);
+    for (let i = 0; i < 6; i += 1) expect((await login('wrong password here')).statusCode).toBe(401);
     await close();
-    await boot();
-    expect((await login(PW)).statusCode).toBe(429);
+    await boot(); // the throttle is process-local: a restart clears it, and nothing durable blocks the admin
+    expect((await login(PW)).statusCode).toBe(303);
     await close();
   });
 });

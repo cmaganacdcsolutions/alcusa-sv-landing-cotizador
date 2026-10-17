@@ -22,7 +22,7 @@ export { CSS, JS } from './theme.ts';
 export function page(title: string, body: Raw, nonce?: string): string {
   void nonce;
   return html`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow"><title>${title} · ALCUSA Admin</title><meta name="theme-color" content="#0f1c2b"><link rel="icon" href="__BASE__/admin-assets/mark.webp" type="image/webp"><link rel="stylesheet" href="__BASE__/admin.css"></head><body>${body}<script src="__BASE__/admin.js" defer></script></body></html>`.s;
+<meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><title>${title} · ALCUSA Admin</title><meta name="theme-color" content="#0f1c2b"><link rel="icon" href="__BASE__/admin-assets/mark.webp" type="image/webp"><link rel="stylesheet" href="__BASE__/admin.css"></head><body>${body}<script src="__BASE__/admin.js" defer></script></body></html>`.s;
 }
 
 export function shell(base: string, active: 'promos' | 'cuenta', csrf: string, content: Raw, flash?: string): Raw {
@@ -34,14 +34,13 @@ export function shell(base: string, active: 'promos' | 'cuenta', csrf: string, c
 <main>${flash ? html`<div class="card toast" role="status">${flash}</div>` : ''}${content}</main></div>`;
 }
 
-export function loginView(base: string, opts: { error?: string; locked?: string; username?: string }): Raw {
+export function loginView(base: string, opts: { error?: string; username?: string; csrf?: string }): Raw {
   return html`<main class="auth"><div class="auth-box">
 <div class="auth-brand"><img src="${base}/admin-assets/mark.webp" alt="" width="56" height="56"><div><b>ALCUSA</b><span>Disfrutar con calidad</span></div></div>
 <h1>Iniciar sesión</h1><p class="lead">Panel de administración · ALCUSA</p>
 <div class="card">
-${opts.locked ? html`<div class="err" role="alert"><strong>Demasiados intentos.</strong> Por seguridad, intenta de nuevo en ${opts.locked}.</div>` : ''}
 ${opts.error ? html`<div class="err" role="alert"><strong>Credenciales inválidas.</strong> Revisa tu usuario y contraseña e inténtalo otra vez.</div>` : ''}
-<form method="post" action="${base}/login" data-login><label for="u">Usuario</label><input id="u" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required value="${opts.username ?? ''}">
+<form method="post" action="${base}/login" data-login><input type="hidden" name="_csrf" value="${opts.csrf ?? ''}"><label for="u">Usuario</label><input id="u" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required value="${opts.username ?? ''}">
 <label for="p">Contraseña</label><div class="pw"><input id="p" name="password" type="password" autocomplete="current-password" required><button type="button" class="sec" data-toggle aria-controls="p" aria-pressed="false" hidden>Mostrar</button></div>
 <button type="submit">Continuar</button></form></div>
 <p class="auth-foot">¿Sin acceso o olvidaste tu contraseña? Pide a soporte que la restablezca.</p></div></main>`;
