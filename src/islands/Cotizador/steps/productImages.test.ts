@@ -111,10 +111,15 @@ describe('cotizador: imagenes solo desde las fotos oficiales de home-media', () 
     });
   });
 
-  it('las muestras de vidrio son CSS (sin fotos)', () => {
-    for (const def of Object.values(GLASS_SWATCHES)) {
-      expect(def.css).toMatch(/gradient/);
-      expect(def.css).not.toMatch(/url\(/);
+  it('las muestras de vidrio: recortes de foto solo en mallado/nevado/aquafold (2026-10-17), el resto CSS', () => {
+    const photo = new Set<string>(['mallado', 'nevado', 'aquafold']);
+    for (const [key, def] of Object.entries(GLASS_SWATCHES)) {
+      if (photo.has(key)) {
+        expect(def.css.startsWith('image-set(url(/images/vidrios/glass-')).toBe(true);
+      } else {
+        expect(def.css).toMatch(/gradient/);
+        expect(def.css).not.toContain('url(');
+      }
     }
   });
 });
