@@ -36,7 +36,8 @@ export const CATEGORY_TEASERS: readonly CategoryTeaser[] = [
 ] as const;
 
 export interface CategoryTeaserWithPrice extends CategoryTeaser {
-  fromPrice: number;
+  /** null = solo con asesor (jardin/ventanas): nunca se muestra precio. */
+  fromPrice: number | null;
 }
 
 export function getCategoryTeasers(): CategoryTeaserWithPrice[] {

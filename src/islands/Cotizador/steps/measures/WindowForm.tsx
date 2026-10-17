@@ -6,6 +6,7 @@ import { computeWindowQuote } from '../../state/quoteWindowGarden';
 import { IconArrowRight, IconCheck, IconWarningTriangle, IconWindow } from '../../icons';
 import { modelImage, type WindowModelImage } from './windowModelImages';
 import { ColorSwatch, WindowGlassSwatch } from './glassSwatches';
+import { QUOTE_ONLY_NOTE } from '@content/catalog';
 import { WINDOW_FRAMES, WINDOW_FRAMES_FRANCESA, WINDOW_GLASSES } from './finishOptions';
 
 const MODELS: WindowModel[] = ['francesa', 'bilbao'];
@@ -56,17 +57,13 @@ export interface WindowFormProps {
 }
 
 // New file (S6, T6.1) — "Ventana Francesa/Bilbao", repeatable rows
-// (cantidad/ancho/alto), shared modelo/color/vidrio/extras. Natural frame and
-// Reflectivo bronce glass are labeled requiresQuote AT SELECTION TIME
-// (prototype-spec.md §2.3) and never hard-block "Siguiente" (T6.3) — only
+// (cantidad/ancho/alto), shared modelo/color/vidrio/extras. Ventanas: solo con asesor
+// (2026-10-16, requiresQuote siempre); nunca bloquean "Siguiente" (T6.3) — only
 // missing/invalid row measurements do.
 export default function WindowForm({ state, dispatch, onNext }: WindowFormProps): ReactElement {
   const quote = computeWindowQuote(state);
   const allRowsValid = state.windowRows.every((r) => isRowValid(r.qty, r.widthM, r.heightM));
-  const frameRequiresQuote = state.windowFrame === 'natural' || state.windowFrame === 'negro';
-  const frameLabel = state.windowFrame === 'negro' ? 'Negro' : 'Natural';
   const frames = state.windowModel === 'francesa' ? WINDOW_FRAMES_FRANCESA : WINDOW_FRAMES;
-  const glassRequiresQuote = state.windowGlass === 'reflectivo_bronce';
 
   return (
     <section aria-labelledby="step1-heading">
@@ -179,7 +176,6 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
             >
               <ColorSwatch color={f} />
               {COLOR_LABELS[f]}
-              {(f === 'natural' || f === 'negro') && <span className="chip__badge">Cotización personalizada</span>}
             </button>
           ))}
         </div>
@@ -198,7 +194,6 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
             >
               <WindowGlassSwatch glass={g} />
               {WINDOW_GLASS_LABELS[g]}
-              {g === 'reflectivo_bronce' && <span className="chip__badge">Cotización personalizada</span>}
             </button>
           ))}
         </div>
@@ -212,7 +207,7 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
             checked={state.windowZaranda}
             onChange={(e) => dispatch({ type: 'SET_WINDOW_ZARANDA', value: e.target.checked })}
           />
-          Zaranda (+$30/m²)
+          Zaranda
         </label>
         <label className="extras-row">
           <input
@@ -221,26 +216,17 @@ export default function WindowForm({ state, dispatch, onNext }: WindowFormProps)
             checked={state.windowDesmontaje}
             onChange={() => dispatch({ type: 'SET_WINDOW_DESMONTAJE', value: !state.windowDesmontaje })}
           />
-          Desmontaje (+$25)
+          Desmontaje
         </label>
       </div>
 
-      {(frameRequiresQuote || glassRequiresQuote) && (
-        <div className="callout" role="status" style={{ marginTop: 20 }}>
-          <span className="callout__title">
-            <IconWarningTriangle />
-            Cotización personalizada por WhatsApp
-          </span>
-          <p className="callout__body">
-            {frameRequiresQuote && glassRequiresQuote
-              ? `El marco ${frameLabel} y el vidrio Reflectivo bronce se cotizan a la medida.`
-              : frameRequiresQuote
-                ? `El marco ${frameLabel} se cotiza a la medida.`
-                : 'El vidrio Reflectivo bronce se cotiza a la medida.'}{' '}
-            Puedes seguir y confirmar por WhatsApp.
-          </p>
-        </div>
-      )}
+      <div className="callout" role="status" style={{ marginTop: 20 }}>
+        <span className="callout__title">
+          <IconWarningTriangle />
+          Cotización con un asesor
+        </span>
+        <p className="callout__body">{QUOTE_ONLY_NOTE} Arma tu configuración y te la enviamos por WhatsApp.</p>
+      </div>
 
       <div className="bottom-bar" style={{ marginTop: 24 }}>
         <div className="bottom-bar__price">

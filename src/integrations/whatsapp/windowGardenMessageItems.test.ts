@@ -31,6 +31,7 @@ describe('integrations/whatsapp windowGardenMessageItems', () => {
         zona: 'Soyapango',
         entrega: 'con instalación',
         subtotal: 0,
+        porCotizar: true,
       },
     ]);
   });
@@ -57,6 +58,7 @@ describe('integrations/whatsapp windowGardenMessageItems', () => {
       zona: 'Apopa',
       entrega: 'con instalación',
       subtotal: 0,
+      porCotizar: true,
     });
   });
 });

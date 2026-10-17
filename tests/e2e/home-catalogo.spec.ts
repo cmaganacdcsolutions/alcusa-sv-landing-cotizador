@@ -24,16 +24,16 @@ const SECTIONS = [
   {
     id: 'puertas-de-jardin',
     cards: [
-      ['jardin-1-hoja', '1 hoja corrediza', 'Desde $410', 'jardin-1-hoja'],
-      ['jardin-2-hojas', '2 hojas corredizas', 'Desde $819', 'jardin-2-hojas'],
-      ['jardin-3-hojas', '3 hojas corredizas', 'Desde $1229', 'jardin-3-hojas'],
+      ['jardin-1-hoja', '1 hoja corrediza', 'Cotización personalizada', 'jardin-1-hoja'],
+      ['jardin-2-hojas', '2 hojas corredizas', 'Cotización personalizada', 'jardin-2-hojas'],
+      ['jardin-3-hojas', '3 hojas corredizas', 'Cotización personalizada', 'jardin-3-hojas'],
     ],
   },
   {
     id: 'ventanas',
     cards: [
-      ['ventana-francesa', 'Francesa', 'Desde $108', 'ventana-francesa'],
-      ['ventana-bilbao', 'Bilbao', 'Desde $153.60', 'ventana-bilbao'],
+      ['ventana-francesa', 'Francesa', 'Cotización personalizada', 'ventana-francesa'],
+      ['ventana-bilbao', 'Bilbao', 'Cotización personalizada', 'ventana-bilbao'],
     ],
   },
 ] as const;
@@ -55,7 +55,7 @@ test.describe('inicio — catálogo completo', () => {
   test('cada tarjeta lleva a SU producto del cotizador, directo a Medidas, sin destinos repetidos', async ({ page }) => {
     await page.goto('/');
     // Destino real de cada tarjeta: el href del enlace (sin opciones) o la URL que arma el formulario GET (con opciones).
-    const destinations = await page.locator('#catalogo article.pcard:not(.pcard--advisor):not(.pcard--pending)').evaluateAll((cards) =>
+    const destinations = await page.locator('#catalogo article.pcard:not(.pcard--advisor):not(.pcard--pending):not([data-upcoming-product])').evaluateAll((cards) =>
       cards.map((card) => {
         const form = card.querySelector('form');
         if (form) {

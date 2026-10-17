@@ -187,10 +187,15 @@ async function backToMedidas(page: Page): Promise<void> {
 function expectedMoney(n: number | null): string {
   return n === null ? 'Por WhatsApp' : `$${n.toFixed(2)}`;
 }
-function expectSanePrice(text: string): void {
+/** 2026-10-16: puertas de jardin y ventanas no tienen precio en linea (solo asesor): "Por WhatsApp", sin monto. */
+function isAsesorOnly(combo: { model: ProductId }): boolean {
+  return combo.model === 'jardin' || combo.model === 'ventana';
+}
+function expectSanePrice(text: string, asesorOnly = false): void {
   expect(text).not.toMatch(/NaN|undefined|null/);
   expect(text).not.toBe('$0.00');
-  expect(text).toMatch(PRICE_RE);
+  if (asesorOnly) expect(text).toBe('Por WhatsApp');
+  else expect(text).toMatch(PRICE_RE);
 }
 
 // ---------------------------------------------------------------- step 1 thumbs
@@ -290,10 +295,6 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
             } else if (combo.model === 'ventana') {
               const exp = priceWindow({ widthM: 1.2, heightM: 1.0, model: combo.preset.windowType ?? 'francesa', frame: c as 'blanco', glass: g as 'claro', zaranda: false, desmontaje: false, qty: 1 }).subtotal;
               await expect(page.locator('.bottom-bar__price-value').first()).toHaveText(expectedMoney(exp));
-            } else if ((combo.model === 'recta' || combo.model === 'bisagra') && c === 'negro') {
-              // 2026-10-08: aluminio negro sin precio oficial: se cotiza con asesor (Siguiente bloqueado).
-              await expect(page.getByText(/El aluminio negro se cotiza con un asesor/)).toBeVisible();
-              await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
             } else if (combo.model === 'recta' && g === 'aquafold') {
               // 2026-10-08: sin `?promo=<id>` el Aquafold recta no tiene precio web: se cotiza con asesor.
               await expect(page.getByText(/Aquafold se cotiza con un asesor/)).toBeVisible();
@@ -335,7 +336,7 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
           await field.fill(String(w));
           const exp = priceGarden({ widthM: w, heightM: 2.1, hojas, color: 'blanco', glass: 'claro', qty: 1 }).subtotal;
           await expect(page.locator('.bottom-bar__price-value').first()).toHaveText(expectedMoney(exp));
-          expectSanePrice(await readBottomBarPrice(page));
+          expectSanePrice(await readBottomBarPrice(page), isAsesorOnly(combo));
           combos++;
         }
         await field.fill('0');
@@ -349,7 +350,7 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
           await page.getByLabel('Alto en metros, ventana 1').fill(String(h));
           const exp = priceWindow({ widthM: w, heightM: h, model, frame: 'blanco', glass: 'claro', zaranda: false, desmontaje: false, qty: 1 }).subtotal;
           await expect(page.locator('.bottom-bar__price-value').first()).toHaveText(expectedMoney(exp));
-          expectSanePrice(await readBottomBarPrice(page));
+          expectSanePrice(await readBottomBarPrice(page), isAsesorOnly(combo));
           combos++;
         }
         await page.getByLabel('Ancho en metros, ventana 1').fill('0');
@@ -363,7 +364,12 @@ test.describe('cotizador - todas las combinaciones categoria x tipo', () => {
       }
 
       // --- step 2: the larger image is the same product as the step-1 thumbnail
-      expectSanePrice(await priceViaPrecio(page));
+      expectSanePrice(await priceViaPrecio(page), isAsesorOnly(combo));
+      if (isAsesorOnly(combo)) {
+        // Solo asesor: sin monto en la tarjeta, con la nota del asesor, y nada que sumar.
+        await expect(page.locator('.estimate-card__price')).not.toContainText('$');
+        await expect(page.locator('.estimate-card')).toContainText('se cotizan con un asesor');
+      }
       const bigFrame = page.locator('.estimate-card__preview');
       const big = bigFrame.locator('img.photo-frame__img');
       await expect(async () => {

@@ -629,8 +629,12 @@ export default function Cotizador(): ReactElement {
   const amountText = quote.requiresQuote
     ? 'Por WhatsApp'
     : `$${(quote.amount ?? 0).toFixed(2)}`;
+  // Pedido 100% solo-asesor (jardín/ventanas): el total sería solo el transporte, no se muestra.
+  const allQuote = orderItems.length > 0 && orderItems.every((i) => i.requiresQuote);
   const totalText =
-    total !== null
+    isOrderPhase && allQuote
+      ? 'Por WhatsApp'
+      : total !== null
       ? `$${total.toFixed(2)}`
       : quote.requiresQuote
         ? 'Por WhatsApp'
@@ -746,7 +750,7 @@ export default function Cotizador(): ReactElement {
           })),
           { name: 'Transporte', detail: transporteDetail, price: transportePrice },
         ],
-        showDeposit: total !== null,
+        showDeposit: total !== null && !allQuote,
         ctas: null, // resumen: the real CTAs portal in from Step4Resumen — see the AsideView.ctas comment above.
       };
     }

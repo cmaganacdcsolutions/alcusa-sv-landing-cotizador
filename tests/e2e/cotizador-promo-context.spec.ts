@@ -7,9 +7,9 @@ import { expect, test } from './fixtures';
 // de zona, SIN 10% con tarjeta, sin retiro en tienda). Sin `?promo` -> precios normales (Aquafold -> asesor).
 // Si llegan `?promo` y `?oferta` gana la promo.
 const PROMOS = [
-  { id: 'promo-puerta-aquaclara', glass: 'claro', label: 'Claro 5 mm', price: '$222.00', total: '$262.00', min: 100 },
+  { id: 'promo-puerta-aquaclara', glass: 'claro', label: 'Claro 5 mm', price: '$222.00', total: '$262.00', min: 90 },
   { id: 'promo-corrediza-nevado', glass: 'nevado', label: 'Nevado 5 mm', price: '$260.00', total: '$300.00', min: 90 },
-  { id: 'promo-aquafold', glass: 'aquafold', label: 'Aquafold', price: '$279.99', total: '$319.99', min: 100 },
+  { id: 'promo-aquafold', glass: 'aquafold', label: 'Aquafold', price: '$279.99', total: '$319.99', min: 90 },
 ] as const;
 const link = (id: string, glass: string, extra = ''): string =>
   `/cotizador?producto=recta&paso=medidas&color=natural&vidrio=${glass}&promo=${id}${extra}`;
@@ -63,10 +63,10 @@ test.describe('cotizador - contexto promo (?promo=<id>)', () => {
     }
   });
 
-  test('aquaclara: 99 cm queda fuera (rango 1.00-1.20 m)', async ({ page }) => {
+  test('aquaclara: 89 cm queda fuera (rango 0.90-1.20 m)', async ({ page }) => {
     await open(page, link('promo-puerta-aquaclara', 'claro'));
-    await page.locator('#ancho').fill('99');
-    await expect(page.getByText('Esta promoción aplica de 1.00 a 1.20 m de pared a pared').first()).toBeVisible();
+    await page.locator('#ancho').fill('89');
+    await expect(page.getByText('Esta promoción aplica de 0.90 a 1.20 m de pared a pared').first()).toBeVisible();
     await expect(siguiente(page)).toBeDisabled();
   });
 

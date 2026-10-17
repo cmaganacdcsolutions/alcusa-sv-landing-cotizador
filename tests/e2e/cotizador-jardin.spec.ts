@@ -10,74 +10,39 @@ async function waitForHydration(page: Page): Promise<void> {
   await expect(page.getByTestId('cotizador-root')).toHaveAttribute('data-hydrated', 'true');
 }
 
-// "Puerta de jardín" (T6.2). Never opens a real WhatsApp link —
-// fixtures.ts blocks those routes. android412 has a hydration race on the
-// first product-card click (per S6 brief), hence the toPass() wrap below.
-test.describe('cotizador — jardín, promo bands + requiresQuote', () => {
+// "Puerta de jardín" (T6.2). 2026-10-16: SOLO con asesor — la configuración se recoge pero nunca hay precio en línea.
+// Never opens a real WhatsApp link — fixtures.ts blocks those routes.
+test.describe('cotizador — jardín, solo con asesor', () => {
   async function openJardin(page: Page) {
     await page.goto('/cotizador#cotizador/0-producto');
     await waitForHydration(page);
     await pickProduct(page, 'jardin');
   }
 
-  test('1 hoja 1.00x2.10 qty1 → $410 (promo band)', async ({ page }) => {
+  test('1 hoja 1.00x2.10: sin precio en línea (antes $410), aviso de asesor y se puede continuar', async ({ page }) => {
     await openJardin(page);
 
     await page.getByLabel('Ancho exacto de tu espacio').fill('1.00');
     await page.getByRole('button', { name: '2.10 m', exact: true }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$410.00');
-  });
-
-  test('1 hoja 1.00x2.40 qty1 → $410 too (same promo band, height-independent)', async ({ page }) => {
-    await openJardin(page);
-
-    await page.getByLabel('Ancho exacto de tu espacio').fill('1.00');
-    await page.getByRole('button', { name: '2.40 m', exact: true }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$410.00');
-  });
-
-  test('custom ("A la medida") 1.00x2.10 → $399 (flagged quirk, not silently corrected)', async ({ page }) => {
-    await openJardin(page);
-
-    await page.getByRole('button', { name: 'A la medida', exact: true }).click();
-    await page.getByLabel('Ancho exacto de tu espacio').fill('1.00');
-    await page.getByRole('button', { name: '2.10 m', exact: true }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-
-    await expect(page.getByTestId('step2-price-value')).toHaveText('$399.00');
-  });
-
-  test('any non-Blanco color shows the chip at selection time and never hard-blocks checkout', async ({ page }) => {
-    await openJardin(page);
-
-    await page.getByLabel('Ancho exacto de tu espacio').fill('1.00');
-    const bronceChip = page.getByRole('button', { name: /^Bronce/ });
-    await expect(bronceChip.getByText('Cotización personalizada')).toBeVisible();
-    await bronceChip.click();
-
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
+    await expect(page.getByText('se cotizan con un asesor para definir la modalidad').first()).toBeVisible();
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByTestId('step2-price-value')).toHaveText('Por WhatsApp');
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
   });
 
-  test('any non-Claro glass shows the chip at selection time too', async ({ page }) => {
+  test('otros colores y vidrios tampoco muestran precio ni bloquean "Siguiente"', async ({ page }) => {
     await openJardin(page);
 
     await page.getByLabel('Ancho exacto de tu espacio').fill('1.00');
-    const nevadoChip = page.getByRole('button', { name: /^Nevado/ });
-    await expect(nevadoChip.getByText('Cotización personalizada')).toBeVisible();
-    await nevadoChip.click();
+    await page.getByRole('button', { name: '2.10 m', exact: true }).click();
+    await page.getByRole('button', { name: 'Negro' }).click();
+    await page.getByRole('button', { name: /^Nevado/ }).click();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
 
-    await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
+    await expect(page.getByTestId('step2-price-value')).toHaveText('Por WhatsApp');
   });
 
-  test('happy path reaches the summary with a WhatsApp href, the PDF CTA is available', async ({ page }) => {
+  test('happy path: el Resumen no suma el jardín, el total no existe y el mensaje de WhatsApp lo marca por cotizar', async ({ page }) => {
     await openJardin(page);
 
     await page.getByLabel('Ancho exacto de tu espacio').fill('1.00');
@@ -90,12 +55,19 @@ test.describe('cotizador — jardín, promo bands + requiresQuote', () => {
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
-    const waLink = (await textOnlyWaLink(page));
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('Por WhatsApp');
+    const waLink = await textOnlyWaLink(page);
     const href = await waLink.getAttribute('href');
     expect(href).toMatch(/^https:\/\/wa\.me\/50376802410\?text=/);
     const decoded = decodeURIComponent(href!.split('?text=')[1]);
     expect(decoded).toContain('Puerta de jardín · 1 hoja — 1.00×2.10 m · Color: Blanco · Vidrio: Claro 5 mm');
-    expect(decoded).toContain('Subtotal: $410.00');
+    expect(decoded).toContain('Subtotal: por cotizar con un asesor');
+    expect(decoded).not.toMatch(/Total estimado|Anticipo/);
+    // BUG-1016-01: el Resumen muestra el transporte, así que el mensaje también lo lleva (zona + monto).
+    const transportRow = await page.getByText(/^Transporte · Apopa/).first().locator('xpath=..').innerText();
+    const amount = transportRow.match(/\$\d+\.\d{2}/)?.[0];
+    expect(amount).toBeTruthy();
+    expect(decoded).toContain(`Transporte · Apopa: ${amount}`);
 
     await expect(page.getByTestId('quote-share-button').locator('visible=true').first()).toBeEnabled();
   });

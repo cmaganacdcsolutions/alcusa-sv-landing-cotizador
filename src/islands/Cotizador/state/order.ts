@@ -127,6 +127,7 @@ export function buildOrderMessageItems(
             zona: ctx.zona,
             entrega: ctx.entrega,
             subtotal: quote.amount ?? 0,
+            ...(quote.requiresQuote ? { porCotizar: true } : {}),
           },
         ];
       }

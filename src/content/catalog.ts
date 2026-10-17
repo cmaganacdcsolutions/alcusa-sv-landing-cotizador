@@ -16,6 +16,11 @@ export interface QuoterPreset {
   windowType?: 'francesa' | 'bilbao'; // model 'ventana'
 }
 
+/**
+ * Quote-only (2026-10-16): the cotizador collects the configuration but there is NO online price —
+ * puertas de jardin y ventanas se cotizan con un asesor (engine returns requiresQuote). No `fromPrice`.
+ */
+type QuoteOnly = { quoterModel: QuoterModel; preset?: QuoterPreset; quoteOnly: true; fromPrice?: never; advisorOnly?: false };
 type Priced = { quoterModel: QuoterModel; preset?: QuoterPreset; fromPrice: number; advisorOnly?: false };
 // XOR enforced by the type: an advisor leaf has no price field at all.
 type Advisor = { advisorOnly: true; quoterModel?: never; preset?: never; fromPrice?: never };
@@ -27,7 +32,7 @@ type WithVariants = {
   fromPrice?: never;
 };
 
-export type Variant = { slug: string; name: string; photo?: string } & (Priced | Advisor);
+export type Variant = { slug: string; name: string; photo?: string } & (Priced | QuoteOnly | Advisor);
 export type Subcategory = {
   slug: string;
   name: string;
@@ -35,7 +40,7 @@ export type Subcategory = {
   photo?: string;
   altoText?: string;
   group?: string; // UI grouping only, e.g. 'mas-opciones'
-} & (Priced | Advisor | WithVariants);
+} & (Priced | QuoteOnly | Advisor | WithVariants);
 export interface Category {
   slug: CategorySlug;
   name: string;
@@ -69,9 +74,9 @@ export const CATEGORIES: readonly Category[] = [
     slug: 'puertas-de-jardin',
     name: 'Puertas de jardín',
     subcategories: [
-      { slug: 'jardin-1-hoja', name: '1 hoja corrediza', quoterModel: 'jardin', preset: { gardenHojas: 1 }, fromPrice: 410, altoText: 'Alto 2.10 o 2.40 m' },
-      { slug: 'jardin-2-hojas', name: '2 hojas corredizas', quoterModel: 'jardin', preset: { gardenHojas: 2 }, fromPrice: 819, altoText: 'Alto 2.10 o 2.40 m' },
-      { slug: 'jardin-3-hojas', name: '3 hojas corredizas', quoterModel: 'jardin', preset: { gardenHojas: 3 }, fromPrice: 1229, altoText: 'Alto 2.10 o 2.40 m' },
+      { slug: 'jardin-1-hoja', name: '1 hoja corrediza', quoterModel: 'jardin', preset: { gardenHojas: 1 }, quoteOnly: true, altoText: 'Alto 2.10 o 2.40 m' },
+      { slug: 'jardin-2-hojas', name: '2 hojas corredizas', quoterModel: 'jardin', preset: { gardenHojas: 2 }, quoteOnly: true, altoText: 'Alto 2.10 o 2.40 m' },
+      { slug: 'jardin-3-hojas', name: '3 hojas corredizas', quoterModel: 'jardin', preset: { gardenHojas: 3 }, quoteOnly: true, altoText: 'Alto 2.10 o 2.40 m' },
       { slug: 'jardin-2-fijas-2-corredizas', name: '2 fijas + 2 corredizas', advisorOnly: true, group: 'mas-opciones', altoText: 'Alto 2.10 o 2.40 m' },
       { slug: 'jardin-1-fijo-3-corredizas', name: '1 fijo + 3 corredizas', advisorOnly: true, group: 'mas-opciones', altoText: 'Alto 2.10 o 2.40 m' },
       { slug: 'abatible-interior-exterior', name: 'Abatible chapa doble manija', advisorOnly: true, group: 'mas-opciones' },
@@ -83,8 +88,8 @@ export const CATEGORIES: readonly Category[] = [
     slug: 'ventanas',
     name: 'Ventanas',
     subcategories: [
-      { slug: 'ventana-francesa', name: 'Francesa', quoterModel: 'ventana', preset: { windowType: 'francesa' }, fromPrice: 108, altoText: 'Alto a tu medida' },
-      { slug: 'ventana-bilbao', name: 'Bilbao', quoterModel: 'ventana', preset: { windowType: 'bilbao' }, fromPrice: 153.6, altoText: 'Alto a tu medida' },
+      { slug: 'ventana-francesa', name: 'Francesa', quoterModel: 'ventana', preset: { windowType: 'francesa' }, quoteOnly: true, altoText: 'Alto a tu medida' },
+      { slug: 'ventana-bilbao', name: 'Bilbao', quoterModel: 'ventana', preset: { windowType: 'bilbao' }, quoteOnly: true, altoText: 'Alto a tu medida' },
       { slug: 'ventana-bilbao-medio-punto', name: 'Bilbao con medio punto', advisorOnly: true, group: 'mas-opciones', altoText: 'Alto a tu medida' },
     ],
   },
@@ -205,7 +210,8 @@ export function resolveDeepLink(raw: string | null | undefined): DeepLinkResolut
 export interface CatalogProduct {
   id: ProductId;
   name: string;
-  fromPrice: number;
+  /** null = quote-only (jardin/ventanas): never show a price. */
+  fromPrice: number | null;
   altoText: string;
   enabled: boolean;
 }
@@ -219,9 +225,9 @@ const PRODUCT_CARD_META: ReadonlyArray<{ id: ProductId; name: string; altoText: 
   { id: 'ventana', name: 'Ventana Francesa o Bilbao', altoText: 'Alto a tu medida' },
 ];
 
-function minPriceOfModel(model: ProductId): number {
-  const prices = allLeaves().flatMap((l) => (l.quoterModel === model ? [l.fromPrice] : []));
-  return Math.min(...prices);
+function minPriceOfModel(model: ProductId): number | null {
+  const prices = allLeaves().flatMap((l) => (l.quoterModel === model && typeof l.fromPrice === 'number' ? [l.fromPrice] : []));
+  return prices.length ? Math.min(...prices) : null;
 }
 
 export const CATALOG_PRODUCTS: readonly CatalogProduct[] = PRODUCT_CARD_META.map((m) => ({
@@ -234,3 +240,12 @@ export const CATALOG_PRODUCTS: readonly CatalogProduct[] = PRODUCT_CARD_META.map
 export function formatFromPrice(price: number): string {
   return Number.isInteger(price) ? `$${price}` : `$${price.toFixed(2)}`;
 }
+
+/** Quote-only models (jardin/ventana): collected in the cotizador, priced only by an advisor. */
+export function isQuoteOnlyModel(model: ProductId | null | undefined): boolean {
+  return model === 'jardin' || model === 'ventana';
+}
+
+/** Short disclosure shown wherever a quote-only product appears (2026-10-16). */
+export const QUOTE_ONLY_NOTE =
+  'Las puertas de jardín y las ventanas se cotizan con un asesor para definir la modalidad. Restricciones aplican.';

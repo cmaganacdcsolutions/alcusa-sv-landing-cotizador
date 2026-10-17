@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
 // Aluminio NEGRO (decision del usuario 2026-10-08): solo recta, bisagra, jardin x3 y ventana francesa.
-// Sin precio oficial: toda seleccion negro se cotiza con asesor (WhatsApp). La foto cambia por color
+// 2026-10-16: en recta y bisagra negro cuesta lo mismo que bronce; jardin y ventanas se cotizan con asesor. La foto cambia por color
 // (regla vidrio -> color -> portada de src/content/home-media.ts).
 const WITH_NEGRO: ReadonlyArray<{ slug: string; group: string }> = [
   { slug: 'recta', group: 'Color del aluminio' },
@@ -26,16 +26,19 @@ async function openMedidas(page: Page, slug: string): Promise<void> {
 
 test.describe('aluminio negro: cotizador', () => {
   for (const { slug, group } of WITH_NEGRO) {
-    test(`${slug}: ofrece Negro y lo cotiza con asesor`, async ({ page }) => {
+    test(`${slug}: ofrece Negro`, async ({ page }) => {
       await openMedidas(page, slug);
       const negro = page.getByRole('group', { name: group, exact: true }).getByRole('button', { name: 'Negro' });
       await expect(negro).toBeVisible();
       await negro.click();
       await expect(negro).toHaveAttribute('aria-pressed', 'true');
-      await expect(page.getByText('Cotización personalizada por WhatsApp')).toBeVisible();
       if (slug === 'recta' || slug === 'bisagra') {
-        await expect(page.getByText(/El aluminio negro se cotiza con un asesor/)).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+        // 2026-10-16: negro se cobra como bronce ("puerta pesada"): sin aviso de asesor y se puede continuar.
+        await expect(page.getByText(/El aluminio negro se cotiza con un asesor/)).toHaveCount(0);
+        await expect(page.getByRole('button', { name: 'Siguiente' })).toBeEnabled();
+      } else {
+        // Jardin y ventanas: siempre con asesor.
+        await expect(page.getByText('Cotización con un asesor')).toBeVisible();
       }
     });
   }

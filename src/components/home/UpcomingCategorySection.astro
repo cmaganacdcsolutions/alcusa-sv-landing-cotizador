@@ -1,6 +1,8 @@
 ---
-// Seccion placeholder de categorias sin fotos/precios (Espejos, Zarandas, Fachadas comerciales). Reusa .csec/.csec__grid
-// de CatalogSection y la superficie de .pcard; sin enlaces al cotizador: el CTA abre WhatsApp con un asesor.
+// Secciones de categorias sin cotizador en linea: placeholder (Espejos), producto con foto y precio (Zarandas) o galeria
+// de fotos sin precio (Fachadas comerciales). Reusa .csec/.csec__grid de CatalogSection y la superficie de .pcard; sin
+// enlaces al cotizador: el CTA abre WhatsApp con un asesor.
+import PhotoFrame from '@components/PhotoFrame';
 import {
   UPCOMING_PLACEHOLDER_COPY as COPY,
   UPCOMING_PLACEHOLDER_COUNT,
@@ -13,16 +15,68 @@ interface Props {
 }
 const { category } = Astro.props;
 const headingId = `${category.slug}-t`;
-const cards = Array.from({ length: UPCOMING_PLACEHOLDER_COUNT }, (_, i) => i);
+const { content } = category;
+const cards = Array.from({ length: content.kind === 'placeholder' ? UPCOMING_PLACEHOLDER_COUNT : 0 }, (_, i) => i);
+const GALLERY_SIZES = '(min-width: 1024px) 380px, (min-width: 768px) 32vw, 48vw';
+const PRODUCT_SIZES = '(min-width: 768px) 400px, 92vw';
 ---
 
 <section id={category.slug} class="csec" aria-labelledby={headingId}>
   <header class="csec__head" data-reveal>
     <h2 id={headingId} class="csec__title" tabindex="-1">{category.name}</h2>
+    {content.kind === 'gallery' && <p class="csec__lead csec__lead--strong">{content.gallery.heading}</p>}
+    {content.kind === 'gallery' && <p class="csec__lead">{content.gallery.body}</p>}
   </header>
-  <div class="csec__grid">
-    {
-      cards.map(() => (
+  {
+    content.kind === 'product' && (
+      <div class="csec__grid csec__grid--single">
+        <article class="pcard" aria-labelledby={`${category.slug}-p`} data-upcoming-product data-reveal>
+          <div class="pcard__media">
+            <PhotoFrame
+              src={content.product.photo.src}
+              alt={content.product.photo.alt}
+              width={content.product.photo.width}
+              height={content.product.photo.height}
+              sizes={PRODUCT_SIZES}
+              ratio="4/5"
+              className="pcard__photo"
+            />
+          </div>
+          <div class="pcard__body">
+            <h3 id={`${category.slug}-p`} class="pcard__title">{content.product.title}</h3>
+            <p class="pcard__price">{content.product.price}</p>
+            <ul class="pcard__facts">
+              {content.product.details.map((d) => <li>{d}</li>)}
+            </ul>
+          </div>
+        </article>
+      </div>
+    )
+  }
+  {
+    content.kind === 'gallery' && (
+      <ul class="ugal" aria-label={`Fotos de ${category.name.toLowerCase()}`} data-upcoming-gallery>
+        {content.gallery.photos.map((p) => (
+          <li class="ugal__item" style={`--ar:${(p.width / p.height).toFixed(4)}`}>
+            <img
+              class="ugal__img"
+              src={p.src}
+              alt={p.alt}
+              width={p.width}
+              height={p.height}
+              sizes={GALLERY_SIZES}
+              loading="lazy"
+              decoding="async"
+            />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+  {
+    cards.length > 0 && (
+      <div class="csec__grid">
+        {cards.map(() => (
         <article class="pcard pcard--pending" data-pending-card>
           <div class="pcard__media">
             <div class="pcard__nophoto pcard__nophoto--pending">
@@ -39,9 +93,10 @@ const cards = Array.from({ length: UPCOMING_PLACEHOLDER_COUNT }, (_, i) => i);
             <p class="pcard__price pcard__price--pending">{COPY.price}</p>
           </div>
         </article>
-      ))
-    }
-  </div>
+      ))}
+      </div>
+    )
+  }
   <p class="csec__cta">
     <a class="pcard__go" href={buildWaLink(category.waMessage)} target="_blank" rel="noopener noreferrer" data-upcoming-cta>
       {COPY.cta}
@@ -50,6 +105,67 @@ const cards = Array.from({ length: UPCOMING_PLACEHOLDER_COUNT }, (_, i) => i);
 </section>
 
 <style is:global>
+  .csec__lead--strong {
+    font-weight: var(--font-weight-display-bold);
+    color: var(--color-text-on-dark);
+  }
+  .csec__grid--single {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 420px;
+  }
+  @media (min-width: 1024px) {
+    /* La tarjeta pasa a horizontal (foto 232px + texto): necesita mas ancho que la vertical. */
+    .csec__grid--single {
+      max-width: 640px;
+    }
+  }
+  .pcard__facts {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-1);
+    font-size: 14px;
+    line-height: 20px;
+  }
+  /* Galeria de orientaciones mixtas: filas justificadas (flex-wrap). Cada foto crece segun su proporcion (--ar = ancho/alto)
+     y todas las de una fila quedan a la misma altura: sin recortes ni huecos. La ultima fila tambien se estira hasta
+     completar el ancho (sin relleno `::after`); el orden de las fotos en upcomingCategories.ts garantiza 2+ en ella. */
+  .ugal {
+    --ugal-row: 150px;
+    --ugal-gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ugal-gap);
+  }
+  .ugal__item {
+    flex: var(--ar) 1 calc(var(--ar) * var(--ugal-row));
+    min-width: 0;
+    margin: 0;
+  }
+  .ugal__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    object-position: 50% 50%;
+    border-radius: var(--radius-md);
+    background: var(--photo-frame-bg);
+  }
+  @media (min-width: 768px) {
+    .ugal {
+      --ugal-row: 220px;
+      --ugal-gap: var(--space-3);
+    }
+  }
+  @media (min-width: 1024px) {
+    .ugal {
+      --ugal-row: 280px;
+    }
+  }
   .pcard--pending {
     border-style: dashed;
     border-color: var(--color-warning);

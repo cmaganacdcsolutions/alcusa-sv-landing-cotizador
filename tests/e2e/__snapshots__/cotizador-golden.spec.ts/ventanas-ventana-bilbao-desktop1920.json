@@ -7,28 +7,28 @@
     {
       "color": "blanco",
       "glass": "claro",
-      "price": "$230.40",
+      "price": "Por WhatsApp",
       "colorLabel": "Blanco",
       "glassLabel": "Claro"
     },
     {
       "color": "blanco",
       "glass": "bronce",
-      "price": "$253.44",
+      "price": "Por WhatsApp",
       "colorLabel": "Blanco",
       "glassLabel": "Bronce 5 mm"
     },
     {
       "color": "blanco",
       "glass": "super_gris",
-      "price": "$253.44",
+      "price": "Por WhatsApp",
       "colorLabel": "Blanco",
       "glassLabel": "Súper gris"
     },
     {
       "color": "blanco",
       "glass": "reflectivo_azul",
-      "price": "$253.44",
+      "price": "Por WhatsApp",
       "colorLabel": "Blanco",
       "glassLabel": "Reflectivo azul"
     },
@@ -37,33 +37,33 @@
       "glass": "reflectivo_bronce",
       "price": "Por WhatsApp",
       "colorLabel": "Blanco",
-      "glassLabel": "Reflectivo bronce Cotización personalizada"
+      "glassLabel": "Reflectivo bronce"
     },
     {
       "color": "bronce",
       "glass": "claro",
-      "price": "$230.40",
+      "price": "Por WhatsApp",
       "colorLabel": "Bronce",
       "glassLabel": "Claro"
     },
     {
       "color": "bronce",
       "glass": "bronce",
-      "price": "$253.44",
+      "price": "Por WhatsApp",
       "colorLabel": "Bronce",
       "glassLabel": "Bronce 5 mm"
     },
     {
       "color": "bronce",
       "glass": "super_gris",
-      "price": "$253.44",
+      "price": "Por WhatsApp",
       "colorLabel": "Bronce",
       "glassLabel": "Súper gris"
     },
     {
       "color": "bronce",
       "glass": "reflectivo_azul",
-      "price": "$253.44",
+      "price": "Por WhatsApp",
       "colorLabel": "Bronce",
       "glassLabel": "Reflectivo azul"
     },
@@ -72,42 +72,42 @@
       "glass": "reflectivo_bronce",
       "price": "Por WhatsApp",
       "colorLabel": "Bronce",
-      "glassLabel": "Reflectivo bronce Cotización personalizada"
+      "glassLabel": "Reflectivo bronce"
     },
     {
       "color": "natural",
       "glass": "claro",
       "price": "Por WhatsApp",
-      "colorLabel": "Natural Cotización personalizada",
+      "colorLabel": "Natural",
       "glassLabel": "Claro"
     },
     {
       "color": "natural",
       "glass": "bronce",
       "price": "Por WhatsApp",
-      "colorLabel": "Natural Cotización personalizada",
+      "colorLabel": "Natural",
       "glassLabel": "Bronce 5 mm"
     },
     {
       "color": "natural",
       "glass": "super_gris",
       "price": "Por WhatsApp",
-      "colorLabel": "Natural Cotización personalizada",
+      "colorLabel": "Natural",
       "glassLabel": "Súper gris"
     },
     {
       "color": "natural",
       "glass": "reflectivo_azul",
       "price": "Por WhatsApp",
-      "colorLabel": "Natural Cotización personalizada",
+      "colorLabel": "Natural",
       "glassLabel": "Reflectivo azul"
     },
     {
       "color": "natural",
       "glass": "reflectivo_bronce",
       "price": "Por WhatsApp",
-      "colorLabel": "Natural Cotización personalizada",
-      "glassLabel": "Reflectivo bronce Cotización personalizada"
+      "colorLabel": "Natural",
+      "glassLabel": "Reflectivo bronce"
     }
   ]
 }

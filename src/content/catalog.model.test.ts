@@ -12,13 +12,10 @@ import {
   subFromPrice,
   type Leaf,
 } from './catalog';
-import { GARDEN_PROMO_BANDS } from './pricingTables';
 import { priceStraight } from '@engine/pricing/straight';
 import { priceCorner } from '@engine/pricing/corner';
 import { priceTempered } from '@engine/pricing/tempered';
 import { priceHinged } from '@engine/pricing/hinged';
-import { priceWindow } from '@engine/pricing/windows';
-import { priceGarden } from '@engine/pricing/garden';
 
 const CATEGORY_NAMES = ['Puertas de baño', 'Puertas de jardín', 'Ventanas'];
 const ADVISOR_SLUGS = [
@@ -42,17 +39,6 @@ function allSlugs(): string[] {
   ]);
 }
 
-const windowInput = (model: 'francesa' | 'bilbao') => ({
-  widthM: 0.8,
-  heightM: 1,
-  model,
-  frame: 'blanco' as const,
-  glass: 'claro' as const,
-  zaranda: false,
-  desmontaje: false,
-  qty: 1,
-});
-
 // Engine output at the minimum valid measures with default color/glass.
 function enginePrice(leaf: Leaf): number {
   const preset = leaf.preset ?? {};
@@ -65,17 +51,12 @@ function enginePrice(leaf: Leaf): number {
       return priceHinged({ widthCm: 40, color: 'natural', glass: 'claro', qty: 1 }).subtotal ?? NaN;
     case 'l':
       return priceCorner({ color: 'natural', model: preset.cornerFinish ?? 'aquaclara' }).price ?? NaN;
-    case 'jardin': {
-      const hojas = preset.gardenHojas ?? 1;
-      const widthM = GARDEN_PROMO_BANDS[hojas].minWidthM;
-      return priceGarden({ widthM, heightM: 2.1, hojas, color: 'blanco', glass: 'claro', qty: 1 }).subtotal ?? NaN;
-    }
-    case 'ventana':
-      return priceWindow(windowInput(preset.windowType ?? 'francesa')).subtotal ?? NaN;
     default:
       throw new Error(`leaf ${leaf.slug} has no quoterModel`);
   }
 }
+
+const QUOTE_ONLY_SLUGS = ['jardin-1-hoja', 'jardin-2-hojas', 'jardin-3-hojas', 'ventana-francesa', 'ventana-bilbao'];
 
 describe('content/catalog: R1 model integrity', () => {
   it('has the 3 categories with their exact names, in order', () => {
@@ -93,7 +74,7 @@ describe('content/catalog: R1 model integrity', () => {
       const priced = leaf.quoterModel !== undefined;
       const advisor = leaf.advisorOnly === true;
       expect(priced !== advisor, leaf.slug).toBe(true);
-      if (advisor) expect(leaf.fromPrice, leaf.slug).toBeUndefined();
+      if (advisor || QUOTE_ONLY_SLUGS.includes(leaf.slug)) expect(leaf.fromPrice, leaf.slug).toBeUndefined();
       else expect(typeof leaf.fromPrice, leaf.slug).toBe('number');
     }
   });
@@ -118,8 +99,12 @@ describe('content/catalog: R1 model integrity', () => {
     for (const target of Object.values(SLUG_ALIASES)) expect(findBySlug(target), target).not.toBeNull();
   });
 
-  it('Francesa (135/m2) and Bilbao (192/m2) never share a copied price', () => {
-    expect(enginePrice(findLeaf('ventana-francesa'))).not.toBe(enginePrice(findLeaf('ventana-bilbao')));
+  it('jardin y ventanas son solo-asesor (2026-10-16): quoteOnly, sin precio en el modelo', () => {
+    for (const slug of QUOTE_ONLY_SLUGS) {
+      const leaf = findLeaf(slug);
+      expect('quoteOnly' in leaf && leaf.quoteOnly, slug).toBe(true);
+      expect(leaf.fromPrice, slug).toBeUndefined();
+    }
   });
 });
 
@@ -130,7 +115,7 @@ function findLeaf(slug: string): Leaf {
 }
 
 describe('content/catalog: fromPrice per priced leaf == engine at minimum measures', () => {
-  const priced = allLeaves().filter((l) => !l.advisorOnly);
+  const priced = allLeaves().filter((l) => !l.advisorOnly && !QUOTE_ONLY_SLUGS.includes(l.slug));
   it.each(priced.map((l) => [l.slug, l] as const))('%s', (_slug, leaf) => {
     expect(leaf.fromPrice).toBe(enginePrice(leaf));
   });
@@ -148,8 +133,8 @@ describe('content/catalog: fromPrice per priced leaf == engine at minimum measur
       ['l', 444],
       ['templado', 672],
       ['bisagra', 253],
-      ['jardin', 410],
-      ['ventana', 108],
+      ['jardin', null],
+      ['ventana', null],
     ]);
   });
 });
