@@ -1,17 +1,16 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { hashPassword, passwordProblems, verifyPassword, type Argon2Params, DEFAULT_PARAMS } from './password.ts';
+import { LoginThrottle } from './login-throttle.ts';
 import { type MfaMode, nextStage, type Stage } from './stage.ts';
 import type { AdminRepo, AdminUser, SessionRow } from './store.ts';
 
 export const IDLE_MS = 30 * 60_000;
 export const ABSOLUTE_MS = 8 * 60 * 60_000;
-const LOCK_MINUTES = [1, 5, 15, 60];
 const sha256 = (s: string): string => createHash('sha256').update(s).digest('hex');
 
 export type LoginResult =
   | { kind: 'ok'; sessionId: string; csrf: string; stage: Stage; mustChange: boolean }
-  | { kind: 'invalid' }
-  | { kind: 'locked'; until: Date };
+  | { kind: 'invalid' };
 
 export interface SessionInfo {
   session: SessionRow;
@@ -31,18 +30,13 @@ export class AuthService {
   private readonly now: () => Date;
   private readonly params: Argon2Params;
   private dummy: Promise<string> | null = null;
+  private readonly throttle = new LoginThrottle();
 
   constructor(o: AuthOptions) {
     this.repo = o.repo;
     this.mfaMode = o.mfaMode ?? 'off';
     this.now = o.now ?? (() => new Date());
     this.params = o.params ?? DEFAULT_PARAMS;
-  }
-
-  /** Lock duration after the Nth failure: every 5th failure locks 1, 5, 15, then 60 min. */
-  static lockMinutes(failedAttempts: number): number | null {
-    if (failedAttempts === 0 || failedAttempts % 5 !== 0) return null;
-    return LOCK_MINUTES[Math.min(failedAttempts / 5, LOCK_MINUTES.length) - 1] ?? 60;
   }
 
   async createAdmin(username: string, password: string, mustChange = true): Promise<AdminUser> {
@@ -57,29 +51,39 @@ export class AuthService {
     return user;
   }
 
-  async login(username: string, password: string): Promise<LoginResult> {
+  /**
+   * Throttled and unknown-user attempts are indistinguishable from a wrong password (same result, same cost, SEC-007).
+   * `ip` is the client address the HTTP edge resolved; the throttle key is (ip, username).
+   */
+  async login(username: string, password: string, ip = 'unknown'): Promise<LoginResult> {
     const now = this.now();
     const user = await this.repo.findUserByUsername(username);
-    if (!user || !user.isActive) {
-      // Dummy verification so unknown users cost the same as wrong passwords.
-      this.dummy ??= hashPassword('dummy-password-for-timing', this.params);
-      await verifyPassword(password, await this.dummy);
-      await this.repo.audit({ at: now, actor: 'anon', action: 'admin.login_failed' });
+    const blocked = this.throttle.isBlocked(ip, username, now);
+    // Always pay one argon2 verification (dummy hash for unknown/inactive/throttled) so timing does not leak the state.
+    const target = user && user.isActive && !blocked ? user.passwordHash : await (this.dummy ??= hashPassword('dummy-password-for-timing', this.params));
+    const good = await verifyPassword(password, target);
+    if (!user || !user.isActive || blocked || !good) {
+      const started = blocked ? false : this.throttle.fail(ip, username, now);
+      await this.repo.audit({ at: now, actor: user && user.isActive ? user.username : 'anon', action: started ? 'admin.locked' : 'admin.login_failed' });
       return { kind: 'invalid' };
     }
-    if (user.lockedUntil && user.lockedUntil > now) return { kind: 'locked', until: user.lockedUntil };
-    if (!(await verifyPassword(password, user.passwordHash))) {
-      const failed = await this.repo.incrementFailedAttempts(user.id);
-      const mins = AuthService.lockMinutes(failed);
-      const lockedUntil = mins ? new Date(now.getTime() + mins * 60_000) : null;
-      if (lockedUntil) await this.repo.saveUser({ ...user, failedAttempts: failed, lockedUntil });
-      await this.repo.audit({ at: now, actor: user.username, action: lockedUntil ? 'admin.locked' : 'admin.login_failed' });
-      return lockedUntil ? { kind: 'locked', until: lockedUntil } : { kind: 'invalid' };
-    }
+    this.throttle.success(ip, username);
     await this.repo.saveUser({ ...user, failedAttempts: 0, lockedUntil: null, lastLoginAt: now });
     await this.repo.audit({ at: now, actor: user.username, action: 'admin.login_ok' });
     const stage = nextStage(user, this.mfaMode);
     return { kind: 'ok', ...(await this.openSession(user.id, stage)), stage, mustChange: user.mustChangePassword };
+  }
+
+  /** CLI rotation (SEC-010): new hash, must_change_password, every session of that admin killed, audit row. */
+  async rotatePassword(username: string, password: string): Promise<AdminUser> {
+    const user = await this.repo.findUserByUsername(username);
+    if (!user) throw new Error('No existe ese usuario admin.');
+    const problems = passwordProblems(password, user.username);
+    if (problems.length) throw new Error(problems.join(' '));
+    const saved = await this.repo.saveUser({ ...user, passwordHash: await hashPassword(password, this.params), mustChangePassword: true, failedAttempts: 0, lockedUntil: null, isActive: true });
+    await this.repo.deleteUserSessions(user.id);
+    await this.repo.audit({ at: this.now(), actor: 'cli', action: 'admin.password_rotated', detail: { username: user.username } });
+    return saved;
   }
 
   private async openSession(adminId: number, stage: Stage): Promise<{ sessionId: string; csrf: string }> {
@@ -134,20 +138,22 @@ export function csrfValid(expected: string, given: unknown): boolean {
   return timingSafeEqual(Buffer.from(expected), Buffer.from(given));
 }
 
-/** Origin / Sec-Fetch-Site check for state-changing requests. */
+/**
+ * Origin / Sec-Fetch-Site check for state-changing requests (SEC-008). Browsers always send at least one of the two on a
+ * POST, so a request with neither is not a browser and is refused; `Origin: null` (sandboxed/no-referrer contexts) is
+ * refused too. The admin pages set `Referrer-Policy: same-origin` so legitimate form posts carry the real Origin.
+ */
 export function sameOrigin(headers: Record<string, string | string[] | undefined>, host: string | undefined): boolean {
   const site = headers['sec-fetch-site'];
   if (typeof site === 'string' && site !== 'same-origin' && site !== 'none') return false;
   const origin = headers['origin'];
   if (typeof origin === 'string') {
-    // `Origin: null` is what browsers send on a form POST under `Referrer-Policy: no-referrer` (found in the real-browser
-    // smoke). Accept it only when the browser itself vouches for same-origin via Sec-Fetch-Site; the CSRF token still applies.
-    if (origin === 'null') return site === 'same-origin';
+    if (origin === 'null') return false;
     try {
       return new URL(origin).host === host;
     } catch {
       return false;
     }
   }
-  return true;
+  return typeof site === 'string';
 }

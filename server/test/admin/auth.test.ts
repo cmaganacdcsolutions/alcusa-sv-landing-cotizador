@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AuthService, ABSOLUTE_MS, csrfValid, IDLE_MS, sameOrigin } from '../../src/modules/admin/auth-service.ts';
+import { parseCreateAdminArgs } from '../../src/cli/create-admin-args.ts';
+import { LoginThrottle } from '../../src/modules/admin/login-throttle.ts';
 import { hashPassword, passwordProblems, verifyPassword } from '../../src/modules/admin/password.ts';
 import { nextStage } from '../../src/modules/admin/stage.ts';
 import { MemoryAdminStore } from '../../src/modules/admin/store.ts';
@@ -31,23 +33,60 @@ describe('password hashing', () => {
   });
 });
 
-describe('login lockout', () => {
-  it('locks after 5 failures with 1/5/15/60 min steps, and never verifies while locked', async () => {
-    expect([1, 4, 5, 9, 10, 15, 20, 25].map((n) => AuthService.lockMinutes(n))).toEqual([null, null, 1, null, 5, 15, 60, 60]);
+describe('login throttle (per IP + user, SEC-007)', () => {
+  it('backs off every 5th failure with 1/5/15/60 min steps, and never verifies a blocked pair', async () => {
+    expect([1, 4, 5, 9, 10, 15, 20, 25].map((n) => LoginThrottle.backoffMinutes(n))).toEqual([null, null, 1, null, 5, 15, 60, 60]);
     const { t, auth, store } = await setup();
-    for (let i = 0; i < 4; i++) expect((await auth.login('carlos', 'nope-nope-nope-1')).kind).toBe('invalid');
-    expect((await auth.login('carlos', 'nope-nope-nope-1')).kind).toBe('locked');
-    // correct password during the lock is refused
-    expect((await auth.login('carlos', PW)).kind).toBe('locked');
+    for (let i = 0; i < 5; i++) expect((await auth.login('carlos', 'nope-nope-nope-1', '203.0.113.9')).kind).toBe('invalid');
+    // the right password from the throttled pair is refused with the same generic result
+    expect((await auth.login('carlos', PW, '203.0.113.9')).kind).toBe('invalid');
     t.v = new Date(t.v.getTime() + 61_000);
-    const ok = await auth.login('carlos', PW);
-    expect(ok.kind).toBe('ok');
-    expect((await store.findUserByUsername('carlos'))?.failedAttempts).toBe(0);
+    expect((await auth.login('carlos', PW, '203.0.113.9')).kind).toBe('ok');
     expect(store.auditLog.some((e) => e.action === 'admin.locked')).toBe(true);
   });
-  it('unknown user is the same generic failure', async () => {
+  it('an attacker cannot lock the admin out: another IP still logs in, and the account is never hard-locked', async () => {
+    const { auth, store } = await setup();
+    for (let i = 0; i < 30; i++) await auth.login('carlos', 'nope-nope-nope-1', '203.0.113.9');
+    expect((await auth.login('carlos', PW, '198.51.100.7')).kind).toBe('ok');
+    expect((await store.findUserByUsername('carlos'))?.lockedUntil).toBeNull();
+  });
+  it('unknown users are throttled exactly like existing ones (same result kind)', async () => {
     const { auth } = await setup();
-    expect((await auth.login('ghost', PW)).kind).toBe('invalid');
+    const known: string[] = [];
+    const unknown: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      known.push((await auth.login('carlos', 'nope-nope-nope-1', '203.0.113.9')).kind);
+      unknown.push((await auth.login('ghost', 'nope-nope-nope-1', '203.0.113.9')).kind);
+    }
+    expect(unknown).toEqual(known);
+  });
+});
+
+describe('password rotation (SEC-010)', () => {
+  it('replaces the hash, forces a change, kills every session and audits', async () => {
+    const { auth, store } = await setup();
+    const r = await auth.login('carlos', PW);
+    if (r.kind !== 'ok') throw new Error('login');
+    const NEW = 'a brand new long passphrase';
+    await auth.rotatePassword('carlos', NEW);
+    expect(await auth.resolve(r.sessionId)).toBeNull();
+    expect((await auth.login('carlos', PW, 'x')).kind).toBe('invalid');
+    const ok = await auth.login('carlos', NEW, 'y');
+    expect(ok.kind === 'ok' && ok.mustChange).toBe(true);
+    const e = store.auditLog.find((x) => x.action === 'admin.password_rotated');
+    expect(e).toMatchObject({ actor: 'cli', detail: { username: 'carlos' } });
+    expect(JSON.stringify(store.auditLog)).not.toContain(NEW);
+  });
+  it('enforces the password policy and requires an existing user', async () => {
+    const { auth } = await setup();
+    await expect(auth.rotatePassword('carlos', 'short')).rejects.toThrow();
+    await expect(auth.rotatePassword('ghost', PW)).rejects.toThrow();
+  });
+  it('CLI args carry only the username and a mode flag (never a password)', () => {
+    expect(parseCreateAdminArgs(['alcusa', '--rotate'])).toEqual({ username: 'alcusa', mode: 'rotate' });
+    expect(parseCreateAdminArgs(['alcusa', '--prompt'])).toEqual({ username: 'alcusa', mode: 'create' });
+    expect(() => parseCreateAdminArgs(['alcusa', '--rotate', 'hunter2hunter2hunter2'])).toThrow();
+    expect(() => parseCreateAdminArgs(['alcusa'])).toThrow();
   });
 });
 
@@ -120,9 +159,10 @@ describe('CSRF / origin helpers', () => {
     expect(sameOrigin({ 'sec-fetch-site': 'cross-site' }, 'localhost:4500')).toBe(false);
     expect(sameOrigin({ origin: 'https://evil.example' }, 'localhost:4500')).toBe(false);
     expect(sameOrigin({ origin: 'http://localhost:4500' }, 'localhost:4500')).toBe(true);
-    expect(sameOrigin({}, 'localhost:4500')).toBe(true);
-    // browsers send Origin: null under Referrer-Policy: no-referrer; only trusted with Sec-Fetch-Site: same-origin
-    expect(sameOrigin({ origin: 'null', 'sec-fetch-site': 'same-origin' }, 'localhost:4500')).toBe(true);
+    expect(sameOrigin({ 'sec-fetch-site': 'same-origin' }, 'localhost:4500')).toBe(true);
+    // SEC-008: neither header -> not a browser; Origin: null is refused even when Sec-Fetch-Site says same-origin
+    expect(sameOrigin({}, 'localhost:4500')).toBe(false);
+    expect(sameOrigin({ origin: 'null', 'sec-fetch-site': 'same-origin' }, 'localhost:4500')).toBe(false);
     expect(sameOrigin({ origin: 'null' }, 'localhost:4500')).toBe(false);
     expect(sameOrigin({ origin: 'null', 'sec-fetch-site': 'cross-site' }, 'localhost:4500')).toBe(false);
   });
