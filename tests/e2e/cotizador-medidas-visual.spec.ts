@@ -37,11 +37,11 @@ test.describe('cotizador — Step0/1/2 board pass (sf-cot-medidas)', () => {
     const glassGroup = page.getByRole('group', { name: 'Tipo de vidrio' }).first();
     await expect(glassGroup).toBeVisible();
     const nevadoBtn = page.getByRole('button', { name: 'Nevado 5 mm' });
-    await expect(nevadoBtn.locator('.glass-chip__swatch')).toBeVisible();
+    // 2026-10-06: glass swatches are CSS circles (no <img>). 2026-10-17: nevado/mallado/aquafold use a real-photo crop as a CSS background-image (still no <img>).
     // 2026-10-06: every glass swatch is a CSS circle (no <img>): same look as the home's chips.
     await expect(nevadoBtn.locator('.glass-chip__swatch img')).toHaveCount(0);
     await expect(nevadoBtn.locator('.glass-chip__swatch')).toHaveAttribute('data-swatch', 'glass:nevado');
-    await expect(nevadoBtn.locator('.glass-chip__swatch')).toHaveCSS('background-image', /radial-gradient/);
+    await expect(nevadoBtn.locator('.glass-chip__swatch')).toHaveCSS('background-image', /\/images\/vidrios\/glass-nevado-(64|128)\.webp/);
 
     await page.getByRole('button', { name: 'Natural' }).click();
     await nevadoBtn.click();
