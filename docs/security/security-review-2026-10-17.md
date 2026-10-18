@@ -63,7 +63,7 @@ No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below 
 - Acceptance: old credential returns 401 on dev; new one never appears in repo/transcripts.
 - Owner: senior-infrastructure. NEEDS USER APPROVAL (server). Pre-cutover gate.
 
-### SEC-005 - CI hardening and missing security stage - Medium - Fixed (awaiting re-test) [f4d620f]
+### SEC-005 - CI hardening and missing security stage - Medium - Verified (static re-test 2026-10-17; first live CI run pending)
 - Evidence: `.github/workflows/ci.yml` has no `permissions:` block (default token scope; `visual-baselines.yml:16` correctly sets `contents: read`); actions pinned to major tags (`actions/checkout@v7`, `setup-node@v7`, `upload-artifact@v7`), not SHAs; no `npm audit`, secret-scan or SAST step; no secrets used in either workflow (good).
 - Impact: a retagged/compromised action runs with a broad token; vulnerable deps or committed secrets are not caught automatically.
 - Fix: top-level `permissions: contents: read`; pin actions by SHA (+ Dependabot); add `npm audit --omit=dev --audit-level=high` (root and `server/`), gitleaks, semgrep; branch protection on `main` requiring CI.
@@ -114,7 +114,7 @@ No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below 
 - Owner: senior-be.
 - **Fix applied.** `create-admin <usuario> --rotate` (TTY only, hidden prompt twice, policy check) calls `AuthService.rotatePassword`: new argon2id hash, `must_change_password = true`, counters cleared, every session of that admin deleted, audit row `admin.password_rotated` (actor `cli`, username only, never the password). Argv carries only the username and the flag (the parser rejects extra arguments); no env or file path for the password. No migration. Runbook section 11.4 updated with the exact `ssh -t` command. Tests: `auth.test.ts`.
 
-### SEC-011 - Audit/monitoring gaps on admin login - Low - Fixed (awaiting re-test) [32c6c55]
+### SEC-011 - Audit/monitoring gaps on admin login - Low - Verified (static re-test 2026-10-17; dynamic check pending senior-qa)
 - Evidence: audit rows for failed/unknown logins have no source IP or username (`actor: 'anon'`); no fail2ban jail for the admin; no alert on lockouts. App runs with `TRUST_PROXY: false` (`admin-server.ts`), so the IP is not available to it.
 - Fix: enable trustProxy for 127.0.0.1, record IP (per privacy decision), alert on `admin.locked`.
 - Acceptance: audit row has IP; lockout triggers a notification.
@@ -124,7 +124,7 @@ No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below 
 - **Infrastructure handoff:** the admin unit's environment now needs `IP_HASH_PEPPER` (same value as the public server); the admin server refuses to start in production without it (CLIs do not require it), dev/test fall back to a fixed non-secret pepper. Still open for senior-infrastructure: the fail2ban jail and any notification beyond journald.
 - Tests: `server/test/admin/audit-ip.test.ts` (fails before the fix, passes after).
 
-### SEC-012 - Scripts use `StrictHostKeyChecking=accept-new` - Low - Fixed (awaiting re-test) [c2629c9]
+### SEC-012 - Scripts use `StrictHostKeyChecking=accept-new` - Low - Verified (static re-test 2026-10-17)
 - Evidence: `deploy.sh:30`, `admin-dev.sh:40` (trust on first use).
 - Fix: pin the VPS host-key fingerprint and use `StrictHostKeyChecking=yes`.
 - Fix applied (c2629c9): `docs/ops/known_hosts` (ed25519/ecdsa/rsa, cross-checked with the operator's known_hosts) + `UserKnownHostsFile` + `StrictHostKeyChecking=yes` in deploy.sh and admin-dev.sh.
@@ -149,7 +149,7 @@ No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below 
 ### SEC-016 - Customer PII handling - Info - Residual
 - Delivery address/name live in tab-scoped sessionStorage (`persist.ts:8`, `stash.ts`), no server transmission in current scope; they leave only through the user's own PDF/wa.me action. Needs a legal/privacy decision (not legal advice) on a privacy notice under El Salvador data-protection requirements, and on retention if quote folios are ever stored server-side.
 
-### SEC-017 - Stale payment docs - Info - Fixed (awaiting re-test) [a9e6f12]
+### SEC-017 - Stale payment docs - Info - Verified (static re-test 2026-10-17)
 - `docs/ops/wompi-go-live.md`, ADR-003 and slice S8 describe removed payment code; mark superseded so nobody re-enables a payment path without a review.
 - Fix applied (a9e6f12): banners + ADR-003 status set to Superseded (2026-10-13 scope cut). Other docs mentioning Wompi are historical context.
 
@@ -182,3 +182,7 @@ SEC-001 (nginx header), SEC-002 (sudoers/deploy key), SEC-003 (prod nginx/fail2b
 - SEC-008 Verified. csrfValid length check + timingSafeEqual; token is 32 random bytes hex; cookie __Host-, HttpOnly, Secure, SameSite=Strict. Referrer-Policy same-origin leaks nothing cross-origin. Browser smoke (Origin on POST) pending QA. UX follow-up: GET /login reuses a well-formed `__Host-alcusa_login` cookie (only mints when absent/malformed) so a second tab or back button does not invalidate the first form; a failed login CSRF re-renders the form (403, fresh token, generic message, username-independent).
 - SEC-009 Verified. Anchored regex without m flag, charset [A-Za-z0-9_-] only (no dots, encoding, backslash, //host, query, unicode); prefix check at routes.ts:182 plus schema. Legacy public/images/promos/promo-N-* match. QA: confirm every live promo image edits without error.
 - SEC-010 Verified. Password only from hidden TTY prompt, policy applied, must_change, sessions deleted, audit without password. Note (Low/Info): rotatePassword sets isActive true (also reactivates a disabled admin) and does not reset the in-memory throttle.
+- SEC-005 Verified. Top-level `permissions: contents: read` in ci.yml and visual-baselines.yml, no job-level widening. SHAs match tags via git ls-remote (checkout 3d3c42e=v7.0.1, setup-node 949feb2=v7.1.0, upload-artifact cf430e0=v7.0.2). gitleaks v8.30.1 sha256 551f6fc8... equals the upstream checksums.txt; `sha256sum -c` runs before `tar`, and nothing executes the archive earlier. fetch-depth 0. `.gitleaksignore` is one fingerprint pinned to commit+file+rule+line (MariaDB public key fingerprint), narrow. `npm audit --omit=dev --audit-level=high` passes at root and server/ locally. Notes (Info): the checksum is hard-coded in the same repo as the workflow (acceptable, matches upstream); semgrep, Dependabot and branch protection on main remain recommended, not done; the secret-scan job has no job-level permissions block (inherits read-only, fine). Pending: first green run on GitHub.
+- SEC-012 Verified. known_hosts has ed25519/ecdsa/rsa for 179.236.251.239 and srv2021291.hstgr.cloud; deploy.sh and admin-dev.sh use `UserKnownHostsFile="<path>"` (inner quotes, cygpath for Windows) with `StrictHostKeyChecking=yes`; `ALCUSA_KNOWN_HOSTS` overrides. No `accept-new` or `=no` anywhere in docs/ops/scripts. Info: bootstrap script line 472 prints a bare `ssh` hint using the default known_hosts (harmless); rsync receives the options as one `-e` string, which relies on rsync honoring the inner quotes (fine unless the path has a literal quote; spaces work). The key fingerprints were cross-checked by the builder against the operator's own known_hosts, not independently (no VPS access in this re-test).
+- SEC-011 Verified. ip_hash = hmacHex(pepper, "ip:"+ip) (same scheme as quotes); raw IP is not stored or logged; the `<4>` alert on admin.locked carries only a 12-hex prefix of the hash, never username or password; password_rotated carries only the username, no password. Production: admin-server.ts throws without IP_HASH_PEPPER when NODE_ENV=production; the runtime fallback `dev-only-pepper-not-for-production` can only apply in the CLIs (create-admin, promos-status, import-cli), which write no login/IP data (changePassword/login IPs come only from routes), so no weak hash reaches production audit rows via that path. Residual (Low/Info, accept): the 12-hex prefix is 48 bits, larger than the IPv4 space, so if the pepper leaks every IP is recoverable with or without the prefix; without the pepper it is not brute-forceable. Protect the pepper (0600 env file, not in journald). Recommend (Info): fail closed in production inside createAdminRuntime itself, so a future entry point cannot silently use the fallback.
+- SEC-017 Verified. Only docs changed (wompi-go-live.md, ADR-003, S8 slice); no code touched in src/ or server/ for this finding.
