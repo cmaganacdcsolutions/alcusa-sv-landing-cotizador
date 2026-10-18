@@ -35,14 +35,16 @@ Reviewer: senior-cyber-security (audit-only). Commit reviewed: `dev` @ `fcd4ac9`
 ## 4. Findings
 No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below as SEC-001..SEC-017; two numbers are Info/Low notes).
 
-### SEC-001 - No Content-Security-Policy on the public site - Medium - Open
+### SEC-001 - No Content-Security-Policy on the public site - Medium - Partially fixed (Report-Only on dev; enforce at cutover)
+- Status 2026-10-17: Report-Only CSP live on dev.alcusasv.com HTML pages (script hashes, style `'unsafe-inline'` because of 137 style attributes, no report endpoint). Policy and caveats: runbook 6.1 (e630ebf). Prod still needs the header, enforced after a clean console pass.
 - Evidence: `nginx -T` security headers are nosniff/X-Frame/Referrer/Permissions/HSTS only; no `content-security-policy` string in `src/`, `astro.config.mjs`, `public/`, `docs/ops`. The admin has a strict CSP; the public site (Astro inline scripts, e.g. `BaseLayout.astro:43`) has none.
 - Impact: any future XSS or injected third-party script is unconstrained; the site handles customer PII in the cotizador.
 - Fix: add CSP (start Report-Only) with hashes/nonces for Astro inline scripts, `connect-src 'self'`, `img-src 'self' data:`, `frame-ancestors 'none'`, `base-uri 'none'`, `form-action 'self'`.
 - Acceptance: curl of `/` and `/cotizador` shows CSP; Playwright e2e shows zero CSP violations across catalog + cotizador + PDF download; a test asserts the header.
 - Owner: fe-senior-react (policy/hashes) + senior-infrastructure (header). NEEDS USER APPROVAL (nginx).
 
-### SEC-002 - `deploy` has passwordless full sudo (key theft = root) - Medium - Open
+### SEC-002 - `deploy` has passwordless full sudo (key theft = root) - Medium - Fixed (awaiting re-test)
+- Status 2026-10-17: allowlist in `/etc/sudoers.d/91-deploy-allowlist`, `NOPASSWD: ALL` removed from `90-deploy` (deleted) and `90-cloud-init-users`; `sudo -n id` refused; `deploy.sh dev --list` works. Allowlist, procedure and what now needs a root session: runbook 2.1 (e630ebf). Backup: `/var/backups/alcusa/sudoers-20261017/`.
 - Evidence: `sudo -n -l` as deploy shows `(ALL) NOPASSWD: ALL`. The deploy key lives on the developer workstation (`deploy.sh:15` default `~/.ssh/id_ed25519`).
 - Impact: one stolen/phished laptop key = root on the VPS (DB, env files, prod docroot).
 - Fix: restrict sudo to an allowlist (systemctl restart alcusa-admin-*, nginx -t/reload) or use a forced-command deploy key limited to the release dirs; passphrase/hardware-back the key; keep a separate key for root tasks.
