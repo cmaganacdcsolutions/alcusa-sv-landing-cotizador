@@ -37,7 +37,10 @@ ADMIN_PORT=4500
 API_ENV=/etc/alcusa/dev-api.env
 MIGRATE_ENV=/etc/alcusa/dev-migrate.env
 
-SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=accept-new)
+# Pinned host keys (SEC-012): never trust-on-first-use.
+KNOWN_HOSTS="${ALCUSA_KNOWN_HOSTS:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/known_hosts}"
+command -v cygpath >/dev/null 2>&1 && KNOWN_HOSTS="$(cygpath -m "$KNOWN_HOSTS")"  # native Windows ssh needs a Windows path
+SSH_OPTS=(-o BatchMode=yes -o "UserKnownHostsFile=\"$KNOWN_HOSTS\"" -o StrictHostKeyChecking=yes)
 if [[ -f $KEY ]]; then SSH_OPTS+=(-i "$KEY"); fi
 
 log() { printf '==> %s\n' "$*"; }

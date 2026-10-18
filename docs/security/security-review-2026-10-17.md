@@ -63,12 +63,13 @@ No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below 
 - Acceptance: old credential returns 401 on dev; new one never appears in repo/transcripts.
 - Owner: senior-infrastructure. NEEDS USER APPROVAL (server). Pre-cutover gate.
 
-### SEC-005 - CI hardening and missing security stage - Medium - Open
+### SEC-005 - CI hardening and missing security stage - Medium - Fixed (awaiting re-test) [f4d620f]
 - Evidence: `.github/workflows/ci.yml` has no `permissions:` block (default token scope; `visual-baselines.yml:16` correctly sets `contents: read`); actions pinned to major tags (`actions/checkout@v7`, `setup-node@v7`, `upload-artifact@v7`), not SHAs; no `npm audit`, secret-scan or SAST step; no secrets used in either workflow (good).
 - Impact: a retagged/compromised action runs with a broad token; vulnerable deps or committed secrets are not caught automatically.
 - Fix: top-level `permissions: contents: read`; pin actions by SHA (+ Dependabot); add `npm audit --omit=dev --audit-level=high` (root and `server/`), gitleaks, semgrep; branch protection on `main` requiring CI.
 - Acceptance: workflow shows `permissions` and SHA pins; a seeded fake secret / vulnerable dep on a test branch fails the job.
 - Owner: senior-devops. NEEDS USER APPROVAL (pipeline).
+- Fix applied (f4d620f): top-level `permissions: contents: read`; actions pinned to SHAs; `npm audit --omit=dev --audit-level=high` (root + server) and a history-wide gitleaks job (pinned binary + sha256, `.gitleaksignore` has 1 false positive: public MariaDB key fingerprint). The 2 prod-chain highs were cleared by a lockfile-only bump. Not done: semgrep/SAST, Dependabot, branch protection (needs repo settings).
 
 ### SEC-006 - No SPF/DKIM/DMARC (known) - Medium - Open
 - Evidence: user-confirmed; DNS not touched by this review.
@@ -119,9 +120,10 @@ No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below 
 - Acceptance: audit row has IP; lockout triggers a notification.
 - Owner: senior-be + senior-infrastructure.
 
-### SEC-012 - Scripts use `StrictHostKeyChecking=accept-new` - Low - Open
+### SEC-012 - Scripts use `StrictHostKeyChecking=accept-new` - Low - Fixed (awaiting re-test) [c2629c9]
 - Evidence: `deploy.sh:30`, `admin-dev.sh:40` (trust on first use).
 - Fix: pin the VPS host-key fingerprint and use `StrictHostKeyChecking=yes`.
+- Fix applied (c2629c9): `docs/ops/known_hosts` (ed25519/ecdsa/rsa, cross-checked with the operator's known_hosts) + `UserKnownHostsFile` + `StrictHostKeyChecking=yes` in deploy.sh and admin-dev.sh.
 - Owner: senior-devops.
 
 ### SEC-013 - Build-time dependency advisories - Low - Open
@@ -143,8 +145,9 @@ No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below 
 ### SEC-016 - Customer PII handling - Info - Residual
 - Delivery address/name live in tab-scoped sessionStorage (`persist.ts:8`, `stash.ts`), no server transmission in current scope; they leave only through the user's own PDF/wa.me action. Needs a legal/privacy decision (not legal advice) on a privacy notice under El Salvador data-protection requirements, and on retention if quote folios are ever stored server-side.
 
-### SEC-017 - Stale payment docs - Info
+### SEC-017 - Stale payment docs - Info - Fixed (awaiting re-test) [a9e6f12]
 - `docs/ops/wompi-go-live.md`, ADR-003 and slice S8 describe removed payment code; mark superseded so nobody re-enables a payment path without a review.
+- Fix applied (a9e6f12): banners + ADR-003 status set to Superseded (2026-10-13 scope cut). Other docs mentioning Wompi are historical context.
 
 ## 5. Residual risks for user acceptance
 1. No 2FA in admin v1.0 (SEC-015).

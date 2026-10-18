@@ -21,7 +21,10 @@ usage() { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 [[ -n "$ARG" ]] || usage
 
 BASE="/var/www/alcusa/$ENV_NAME"
-SSH_OPTS=(-i "$KEY" -o BatchMode=yes -o StrictHostKeyChecking=accept-new)
+# Pinned host keys (SEC-012): never trust-on-first-use.
+KNOWN_HOSTS="${ALCUSA_KNOWN_HOSTS:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/known_hosts}"
+command -v cygpath >/dev/null 2>&1 && KNOWN_HOSTS="$(cygpath -m "$KNOWN_HOSTS")"  # native Windows ssh needs a Windows path
+SSH_OPTS=(-i "$KEY" -o BatchMode=yes -o "UserKnownHostsFile=\"$KNOWN_HOSTS\"" -o StrictHostKeyChecking=yes)
 remote() { ssh "${SSH_OPTS[@]}" "$REMOTE_USER@$HOST" "$@"; }
 
 # Atomic switch: new symlink next to `current`, then rename over it (mv -T is atomic).
