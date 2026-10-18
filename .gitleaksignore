@@ -1,0 +1,2 @@
+# False positive: public MariaDB apt signing-key fingerprint (not a secret), SEC-005.
+ad11b0cadf56989ea202b4dff30a94f2807f7ee1:docs/ops/scripts/alcusa-admin-bootstrap.sh:generic-api-key:44
