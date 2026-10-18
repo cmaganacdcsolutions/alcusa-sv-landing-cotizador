@@ -139,7 +139,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         const info = await guardPost(req, reply, { allowMustChange: true });
         if (!info) return reply;
         const b = req.body as Body;
-        const res = await d.auth.changePassword(info, str(b, 'current'), str(b, 'next'), str(b, 'confirm'));
+        const res = await d.auth.changePassword(info, str(b, 'current'), str(b, 'next'), str(b, 'confirm'), clientIp(req));
         if (!res.ok) return send(reply, 'Contraseña', shell(d.base, 'cuenta', info.session.csrfToken, passwordView(d.base, info.session.csrfToken, res.problems, info.user.mustChangePassword)), 422);
         setCookie(reply, res.sessionId);
         return reply.redirect(`${d.base}/promociones`, 303);
@@ -211,7 +211,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         const publish = str(b, 'intent') === 'publish';
         if (problems.length === 0) {
           try {
-            const res = id ? await d.promos.update(info.user.username, id, input, publish) : await d.promos.create(info.user.username, input, publish);
+            const res = id ? await d.promos.update(info.user.username, id, input, publish, d.auth.hashIp(clientIp(req))) : await d.promos.create(info.user.username, input, publish, d.auth.hashIp(clientIp(req)));
             if (res.ok) return reply.redirect(`${d.base}/promociones`, 303);
             problems.push(...res.problems);
           } catch (err) {
@@ -228,7 +228,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         r.post<{ Params: { id: string } }>(`/promociones/:id/${action}`, async (req, reply) => {
           const info = await guardPost(req, reply);
           if (!info) return reply;
-          const res = await d.promos.setStatus(info.user.username, req.params.id, action === 'publicar');
+          const res = await d.promos.setStatus(info.user.username, req.params.id, action === 'publicar', d.auth.hashIp(clientIp(req)));
           if (!res.ok) return send(reply, 'Promociones', shell(d.base, 'promos', info.session.csrfToken, listView(d.base, info.session.csrfToken, await d.promos.list(), today()), res.problems.join(' ')), 422);
           return reply.redirect(`${d.base}/promociones`, 303);
         });
@@ -237,7 +237,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         r.post<{ Params: { id: string } }>(`/promociones/:id/${action}`, async (req, reply) => {
           const info = await guardPost(req, reply);
           if (!info) return reply;
-          const res = action === 'archivar' ? await d.promos.archive(info.user.username, req.params.id) : await d.promos.reactivate(info.user.username, req.params.id);
+          const res = action === 'archivar' ? await d.promos.archive(info.user.username, req.params.id, d.auth.hashIp(clientIp(req))) : await d.promos.reactivate(info.user.username, req.params.id, d.auth.hashIp(clientIp(req)));
           if (!res.ok) return send(reply, 'Promociones', shell(d.base, 'promos', info.session.csrfToken, listView(d.base, info.session.csrfToken, await d.promos.list(), today()), res.problems.join(' ')), 422);
           return reply.redirect(`${d.base}/promociones`, 303);
         });

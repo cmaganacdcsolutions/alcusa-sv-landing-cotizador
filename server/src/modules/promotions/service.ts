@@ -64,41 +64,41 @@ export class PromoService {
     return others.length >= MAX_ACTIVE ? [`Ya hay ${MAX_ACTIVE} promociones publicadas en esas fechas. Despublica una o cambia la vigencia.`] : [];
   }
 
-  async create(actor: string, input: PromoInput, publish: boolean): Promise<Result<StoredPromo>> {
+  async create(actor: string, input: PromoInput, publish: boolean, ipHash?: string): Promise<Result<StoredPromo>> {
     const id = `promo-${slugify(input.title) || 'sin-titulo'}-${randomBytes(2).toString('hex')}`;
     const rec = this.toRecord(id, input);
-    return this.persist(actor, rec, publish, null);
+    return this.persist(actor, rec, publish, null, ipHash);
   }
 
-  async update(actor: string, id: string, input: PromoInput, publish?: boolean): Promise<Result<StoredPromo>> {
+  async update(actor: string, id: string, input: PromoInput, publish?: boolean, ipHash?: string): Promise<Result<StoredPromo>> {
     const prev = await this.o.repo.get(id);
     if (!prev) return { ok: false, problems: ['La promoción no existe.'] };
     const color = input.color === undefined ? (prev.cotizador_params?.color ?? null) : input.color;
-    return this.persist(actor, this.toRecord(id, { ...input, color }), publish ?? prev.status === 'published', prev);
+    return this.persist(actor, this.toRecord(id, { ...input, color }), publish ?? prev.status === 'published', prev, ipHash);
   }
 
-  private persist(actor: string, rec: PromoRecord, publish: boolean, prev: StoredPromo | null): Promise<Result<StoredPromo>> {
+  private persist(actor: string, rec: PromoRecord, publish: boolean, prev: StoredPromo | null, ipHash?: string): Promise<Result<StoredPromo>> {
     // The cap is a check-then-write: serialize it so two concurrent publishes cannot both pass (ADR-011 §4).
-    return publish ? this.o.repo.withPublishLock(() => this.persistInner(actor, rec, publish, prev)) : this.persistInner(actor, rec, publish, prev);
+    return publish ? this.o.repo.withPublishLock(() => this.persistInner(actor, rec, publish, prev, ipHash)) : this.persistInner(actor, rec, publish, prev, ipHash);
   }
 
-  private async persistInner(actor: string, rec: PromoRecord, publish: boolean, prev: StoredPromo | null): Promise<Result<StoredPromo>> {
+  private async persistInner(actor: string, rec: PromoRecord, publish: boolean, prev: StoredPromo | null, ipHash?: string): Promise<Result<StoredPromo>> {
     const problems = [...validatePromo(rec), ...(publish ? await this.capProblem(rec) : [])];
     if (problems.length) return { ok: false, problems };
     const stamp = this.now.toISOString();
     if (prev?.status === 'archived') return { ok: false, problems: ['La promoción está archivada. Reactívala primero.'] };
     const stored: StoredPromo = { ...rec, status: publish ? 'published' : 'draft', sort_order: prev?.sort_order ?? 0, created_at: prev?.created_at ?? stamp, updated_at: stamp };
     await this.o.repo.save(stored);
-    await this.o.audit({ at: this.now, actor, action: prev ? 'promo.updated' : 'promo.created', detail: { id: rec.id, status: stored.status } });
+    await this.o.audit({ at: this.now, actor, action: prev ? 'promo.updated' : 'promo.created', detail: { id: rec.id, status: stored.status }, ...(ipHash ? { ipHash } : {}) });
     await this.republish();
     return { ok: true, value: stored };
   }
 
-  setStatus(actor: string, id: string, publish: boolean): Promise<Result<StoredPromo>> {
-    return publish ? this.o.repo.withPublishLock(() => this.setStatusInner(actor, id, publish)) : this.setStatusInner(actor, id, publish);
+  setStatus(actor: string, id: string, publish: boolean, ipHash?: string): Promise<Result<StoredPromo>> {
+    return publish ? this.o.repo.withPublishLock(() => this.setStatusInner(actor, id, publish, ipHash)) : this.setStatusInner(actor, id, publish, ipHash);
   }
 
-  private async setStatusInner(actor: string, id: string, publish: boolean): Promise<Result<StoredPromo>> {
+  private async setStatusInner(actor: string, id: string, publish: boolean, ipHash?: string): Promise<Result<StoredPromo>> {
     const prev = await this.o.repo.get(id);
     if (!prev) return { ok: false, problems: ['La promoción no existe.'] };
     if (prev.status === 'archived') return { ok: false, problems: ['La promoción está archivada. Reactívala primero.'] };
@@ -106,31 +106,31 @@ export class PromoService {
     if (problems.length) return { ok: false, problems };
     const stored: StoredPromo = { ...prev, status: publish ? 'published' : 'draft', updated_at: this.now.toISOString() };
     await this.o.repo.save(stored);
-    await this.o.audit({ at: this.now, actor, action: publish ? 'promo.published' : 'promo.unpublished', detail: { id } });
+    await this.o.audit({ at: this.now, actor, action: publish ? 'promo.published' : 'promo.unpublished', detail: { id }, ...(ipHash ? { ipHash } : {}) });
     await this.republish();
     return { ok: true, value: stored };
   }
 
   /** Archive (replaces delete): leaves promotions.json and the active list, keeps the row and history. */
-  async archive(actor: string, id: string): Promise<Result<StoredPromo>> {
+  async archive(actor: string, id: string, ipHash?: string): Promise<Result<StoredPromo>> {
     const prev = await this.o.repo.get(id);
     if (!prev) return { ok: false, problems: ['La promoción no existe.'] };
     if (prev.status === 'archived') return { ok: true, value: prev };
     const stored: StoredPromo = { ...prev, status: 'archived', updated_at: this.now.toISOString() };
     await this.o.repo.save(stored);
-    await this.o.audit({ at: this.now, actor, action: 'promo.archived', detail: { id, from: prev.status } });
+    await this.o.audit({ at: this.now, actor, action: 'promo.archived', detail: { id, from: prev.status }, ...(ipHash ? { ipHash } : {}) });
     await this.republish();
     return { ok: true, value: stored };
   }
 
   /** Reactivate: archived -> draft only. Publishing again goes through setStatus, so the 3-active cap applies. */
-  async reactivate(actor: string, id: string): Promise<Result<StoredPromo>> {
+  async reactivate(actor: string, id: string, ipHash?: string): Promise<Result<StoredPromo>> {
     const prev = await this.o.repo.get(id);
     if (!prev) return { ok: false, problems: ['La promoción no existe.'] };
     if (prev.status !== 'archived') return { ok: false, problems: ['La promoción no está archivada.'] };
     const stored: StoredPromo = { ...prev, status: 'draft', updated_at: this.now.toISOString() };
     await this.o.repo.save(stored);
-    await this.o.audit({ at: this.now, actor, action: 'promo.reactivated', detail: { id } });
+    await this.o.audit({ at: this.now, actor, action: 'promo.reactivated', detail: { id }, ...(ipHash ? { ipHash } : {}) });
     return { ok: true, value: stored };
   }
 

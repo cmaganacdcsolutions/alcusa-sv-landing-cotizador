@@ -33,6 +33,8 @@ export interface AuditEntry {
   actor: string;
   action: string;
   detail?: Record<string, unknown>;
+  /** HMAC-SHA256(ip, IP_HASH_PEPPER), same scheme as quotes (SEC-011). Never the raw address. */
+  ipHash?: string;
 }
 
 export type PromoStatus = 'draft' | 'published' | 'archived';

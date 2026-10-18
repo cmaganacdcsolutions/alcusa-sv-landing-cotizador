@@ -133,9 +133,9 @@ export class MariaDbAdminStore implements AdminRepo, PromoRepo {
     const entityType = e.action.startsWith('promo.') ? 'promotion' : e.action.startsWith('admin.') ? 'admin' : null;
     // actor_id is resolved from the username; the name itself is also kept in diff (history survives user changes).
     await this.pool.execute(
-      `INSERT INTO audit_log (at, actor_type, actor_id, action, entity_type, entity_id, diff)
-       VALUES (?, ?, (SELECT id FROM admin_users WHERE username = ? LIMIT 1), ?, ?, ?, ?)`,
-      [toSql(e.at), actorType, actorType === 'admin' ? e.actor : null, e.action.slice(0, 60), entityType, entityId, JSON.stringify({ actor: e.actor, ...detail })],
+      `INSERT INTO audit_log (at, actor_type, actor_id, action, entity_type, entity_id, diff, ip_hash)
+       VALUES (?, ?, (SELECT id FROM admin_users WHERE username = ? LIMIT 1), ?, ?, ?, ?, ?)`,
+      [toSql(e.at), actorType, actorType === 'admin' ? e.actor : null, e.action.slice(0, 60), entityType, entityId, JSON.stringify({ actor: e.actor, ...detail }), e.ipHash ?? null],
     );
   }
 
