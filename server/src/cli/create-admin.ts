@@ -1,4 +1,7 @@
-// Usage: npm run admin:create -- <usuario> --prompt   (hidden interactive input, TTY only; never argv/env/file)
+// Usage: npm run admin:create -- <usuario> --prompt   (create)
+//        npm run admin:create -- <usuario> --rotate   (reset the password of the existing admin)
+// Hidden interactive input, TTY only; the password never travels in argv/env/file/logs.
+import { parseCreateAdminArgs } from './create-admin-args.ts';
 import { createAdminRuntime, loadAdminConfig } from '../modules/admin/runtime.ts';
 
 function promptHidden(question: string): Promise<string> {
@@ -29,18 +32,32 @@ function promptHidden(question: string): Promise<string> {
 }
 
 async function main(): Promise<void> {
-  const [username, flag] = process.argv.slice(2);
-  if (!username || flag !== '--prompt') throw new Error('Uso: create-admin <usuario> --prompt');
+  const { username, mode } = parseCreateAdminArgs(process.argv.slice(2));
   if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('Se requiere una terminal interactiva (TTY). No se acepta la contraseña por argv, env ni archivo.');
   const { auth, store, close } = createAdminRuntime(loadAdminConfig());
-  if ((await store.countUsers()) > 0 && !(await store.findUserByUsername(username))) throw new Error('Ya existe una cuenta admin (v1.0 admite una sola).');
-  if (await store.findUserByUsername(username)) throw new Error('Ese usuario ya existe (rotación: pendiente, ver HANDOFF).');
-  const p1 = await promptHidden('Contraseña inicial (min. 14): ');
-  const p2 = await promptHidden('Repite la contraseña: ');
-  if (p1 !== p2) throw new Error('Las contraseñas no coinciden.');
-  await auth.createAdmin(username, p1, true);
-  await close();
-  process.stdout.write(`Admin "${username}" creado. Deberá cambiar la contraseña en el primer ingreso.\n`);
+  try {
+    const existing = await store.findUserByUsername(username);
+    if (mode === 'rotate') {
+      if (!existing) throw new Error('No existe ese usuario admin.');
+      const p1 = await promptHidden('Nueva contraseña (min. 14): ');
+      const p2 = await promptHidden('Repite la contraseña: ');
+      if (p1 !== p2) throw new Error('Las contraseñas no coinciden.');
+      await auth.rotatePassword(username, p1);
+      process.stdout.write(`Contraseña de "${username}" restablecida. Sus sesiones abiertas fueron cerradas; deberá cambiarla en el próximo ingreso.
+`);
+      return;
+    }
+    if ((await store.countUsers()) > 0 && !existing) throw new Error('Ya existe una cuenta admin (v1.0 admite una sola).');
+    if (existing) throw new Error('Ese usuario ya existe. Para restablecer su contraseña usa --rotate.');
+    const p1 = await promptHidden('Contraseña inicial (min. 14): ');
+    const p2 = await promptHidden('Repite la contraseña: ');
+    if (p1 !== p2) throw new Error('Las contraseñas no coinciden.');
+    await auth.createAdmin(username, p1, true);
+    process.stdout.write(`Admin "${username}" creado. Deberá cambiar la contraseña en el primer ingreso.
+`);
+  } finally {
+    await close();
+  }
 }
 
 main().catch((e: unknown) => {

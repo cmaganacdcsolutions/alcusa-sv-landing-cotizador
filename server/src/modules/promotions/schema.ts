@@ -100,6 +100,13 @@ export function validatePromotions(input: unknown, slugExists: (s: string) => bo
   return errors;
 }
 
+/**
+ * Promo image path (SEC-009): only the media files this system generates (promo-<16 hex>-600|900.webp from the upload
+ * ingest) or the legacy numbered ones (promo-N-600|900.webp), under a plain directory path (no dots, so no `..`; the HTTP edge also pins it to the configured URL prefix). No traversal, no absolute or
+ * external URLs; the fixed directory + filename charset keep the resolved path inside the media dir.
+ */
+export const ADMIN_PROMO_IMAGE = /^(?:\/[A-Za-z0-9_-]+)+\/promo-(?:[0-9a-f]{16}|\d{1,3})-(?:600|900)\.webp$/;
+
 /** Admin-only limits on top of the loader contract (plain text, bounded). */
 export function validateAdminLimits(p: PromoRecord): string[] {
   const e: string[] = [];
@@ -108,6 +115,7 @@ export function validateAdminLimits(p: PromoRecord): string[] {
   if (p.image_alt.length > 300) e.push('El texto alternativo admite hasta 300 caracteres.');
   if (p.rules.length > MAX_RULES) e.push(`Máximo ${MAX_RULES} reglas.`);
   if (p.rules.some((r) => r.length > MAX_RULE_LEN)) e.push(`Cada regla admite hasta ${MAX_RULE_LEN} caracteres.`);
+  if (!ADMIN_PROMO_IMAGE.test(p.image)) e.push('La imagen no es válida: sube un archivo desde el panel.');
   if (/[<>]/.test([p.title, p.description, p.image_alt, ...p.rules].join(''))) e.push('No se permite HTML (< o >) en los textos.');
   return e;
 }

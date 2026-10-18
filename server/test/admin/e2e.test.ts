@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from '../../src/http/app.ts';
 import { AuthService } from '../../src/modules/admin/auth-service.ts';
-import { COOKIE } from '../../src/modules/admin/routes.ts';
+import { COOKIE, LOGIN_COOKIE } from '../../src/modules/admin/routes.ts';
 import { MemoryAdminStore } from '../../src/modules/admin/store.ts';
 import { PromoService } from '../../src/modules/promotions/service.ts';
 
@@ -33,10 +33,17 @@ const form = (over: Record<string, string> = {}): Record<string, string> => ({
 });
 const published = (): { promotions: Array<Record<string, unknown>> } => JSON.parse(readFileSync(join(out, 'promotions.json'), 'utf8'));
 const post = (url: string, fields: Record<string, string>, extra: Record<string, string> = {}) =>
-  app.inject({ method: 'POST', url: `${BASE}${url}`, payload: urlenc(fields), headers: { 'content-type': 'application/x-www-form-urlencoded', cookie, ...extra } });
-const cookieFrom = (r: { headers: Record<string, unknown> }): string => {
-  const sc = ([] as string[]).concat((r.headers['set-cookie'] as string | string[] | undefined) ?? []).find((c) => c.startsWith(COOKIE));
+  app.inject({ method: 'POST', url: `${BASE}${url}`, payload: urlenc(fields), headers: { 'content-type': 'application/x-www-form-urlencoded', 'sec-fetch-site': 'same-origin', cookie, ...extra } });
+const cookieFrom = (r: { headers: Record<string, unknown> }, name: string = COOKIE): string => {
+  const sc = ([] as string[]).concat((r.headers['set-cookie'] as string | string[] | undefined) ?? []).find((c) => c.startsWith(name));
   return sc ? sc.split(';')[0]! : '';
+};
+
+/** The login form carries a pre-session CSRF token (cookie + hidden field): fetch the form first, like a browser. */
+const loginPost = async (fields: Record<string, string>) => {
+  const g = await app.inject({ url: `${BASE}/login` });
+  const token = /name="_csrf" value="([0-9a-f]{64})"/.exec(g.body)![1]!;
+  return post('/login', { ...fields, _csrf: token }, { cookie: cookieFrom(g, LOGIN_COOKIE) });
 };
 
 beforeAll(async () => {
@@ -74,12 +81,12 @@ describe('admin e2e: login -> create -> edit -> archive/reactivate -> promotions
     expect((await app.inject({ url: `${BASE}/login` })).body).not.toMatch(/<style|style=/);
   });
   it('bad credentials -> 401 single generic message', async () => {
-    const r = await post('/login', { username: 'carlos', password: 'wrong' });
+    const r = await loginPost({ username: 'carlos', password: 'wrong' });
     expect(r.statusCode).toBe(401);
     expect(r.body).toContain('Credenciales inválidas');
   });
   it('good login sets a __Host- cookie (Secure, HttpOnly, Strict, Path=/, no Domain)', async () => {
-    const r = await post('/login', { username: 'carlos', password: PW });
+    const r = await loginPost({ username: 'carlos', password: PW });
     expect(r.statusCode).toBe(303);
     const sc = String(([] as string[]).concat(r.headers['set-cookie'] as string)[0]);
     expect(sc).toMatch(/^__Host-alcusa_admin=[0-9a-f]{64}/);
@@ -103,7 +110,7 @@ describe('admin e2e: login -> create -> edit -> archive/reactivate -> promotions
   let id = '';
   it('create (publish) writes promotions.json with the exact site contract', async () => {
     const m = multipart(form());
-    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, cookie } });
+    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, 'sec-fetch-site': 'same-origin', cookie } });
     expect(r.statusCode).toBe(303);
     const p = published().promotions;
     expect(p).toHaveLength(1);
@@ -113,21 +120,21 @@ describe('admin e2e: login -> create -> edit -> archive/reactivate -> promotions
   it('invalid input -> 422 with the form re-rendered, file untouched', async () => {
     const before = readFileSync(join(out, 'promotions.json'), 'utf8');
     const m = multipart(form({ price_before: '100', price_promo: '150' }));
-    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, cookie } });
+    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, 'sec-fetch-site': 'same-origin', cookie } });
     expect(r.statusCode).toBe(422);
     expect(r.body).toContain('menor que');
     expect(readFileSync(join(out, 'promotions.json'), 'utf8')).toBe(before);
   });
   it('edit changes the published file; price_before accepted', async () => {
     const m = multipart(form({ title: 'Puerta Aquaclara PLUS', price_before: '260' }));
-    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones/${id}`, payload: m.body, headers: { ...m.headers, cookie } });
+    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones/${id}`, payload: m.body, headers: { ...m.headers, 'sec-fetch-site': 'same-origin', cookie } });
     expect(r.statusCode).toBe(303);
     expect(published().promotions[0]).toMatchObject({ id, title: 'Puerta Aquaclara PLUS', price_before: 260 });
   });
   it('image upload: same webp sizes (600/900), never enlarges, rejects non-images', async () => {
     const png = await sharp({ create: { width: 1000, height: 700, channels: 3, background: '#3366aa' } }).png().toBuffer();
     const m = multipart(form({ title: 'Con imagen', image: '' }), { name: 'x.png', data: png });
-    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, cookie } });
+    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, 'sec-fetch-site': 'same-origin', cookie } });
     expect(r.statusCode).toBe(303);
     const img = String(published().promotions.find((x) => x['title'] === 'Con imagen')!['image']);
     expect(img).toMatch(/^\/images\/promos\/promo-[0-9a-f]{16}-900\.webp$/);
@@ -136,7 +143,7 @@ describe('admin e2e: login -> create -> edit -> archive/reactivate -> promotions
     const m600 = await sharp(join(images, `${key}-600.webp`)).metadata();
     expect([m600.width, m600.height, m600.format]).toEqual([600, 420, 'webp']);
     const bad = multipart(form({ title: 'Mala', image: '' }), { name: 'x.png', data: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>') });
-    const rb = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: bad.body, headers: { ...bad.headers, cookie } });
+    const rb = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: bad.body, headers: { ...bad.headers, 'sec-fetch-site': 'same-origin', cookie } });
     expect(rb.statusCode).toBe(422);
   });
   it('unpublish removes it from the file, publish brings it back', async () => {
@@ -179,11 +186,11 @@ describe('admin e2e: login -> create -> edit -> archive/reactivate -> promotions
   it('cap of 3 overlapping published promos', async () => {
     for (const t of ['A uno', 'B dos']) {
       const m = multipart(form({ title: t }));
-      await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, cookie } });
+      await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, 'sec-fetch-site': 'same-origin', cookie } });
     }
     // "Con imagen" + A + B = 3 published in October; a 4th must be refused
     const m = multipart(form({ title: 'C tres' }));
-    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, cookie } });
+    const r = await app.inject({ method: 'POST', url: `${BASE}/promociones`, payload: m.body, headers: { ...m.headers, 'sec-fetch-site': 'same-origin', cookie } });
     expect(r.statusCode).toBe(422);
     expect(r.body).toContain('Ya hay 3');
   });

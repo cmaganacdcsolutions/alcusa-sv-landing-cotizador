@@ -1,24 +1,22 @@
 import type { ReactElement } from 'react';
+import { glassPhotoCss } from '@content/glassSwatchPhotos';
 import type { AluminumColor, CornerModel, StraightGlass, WindowGlass } from '@engine/pricing';
 
-// "Tipo de vidrio" swatches. 2026-10-06: ya NO hay fotos (ni de Alcusa ni recortes): son
-// circulos CSS puros con los mismos fondos que las fichas del inicio
-// (`.pcard__sw[data-sw='glass:*']` en components/home/ProductCard.astro), para que el vidrio
-// se vea igual en el inicio y en el cotizador.
+// "Tipo de vidrio" swatches. 2026-10-06: circulos CSS puros con los mismos fondos que las fichas del
+// inicio (`.pcard__sw[data-sw='glass:*']` en components/home/ProductCard.astro), para que el vidrio se
+// vea igual en el inicio y en el cotizador. 2026-10-17: mallado, nevado y aquafold pasan a recortes de
+// foto real (content/glassSwatchPhotos.ts, webp 64/128 px via CSS background; cero JS); claro, duplex y
+// decorado siguen en CSS hasta que Alcusa envie fotos. Inicio y cotizador usan el mismo archivo.
 interface GlassSwatchDef {
   css: string;
 }
 
 export const GLASS_SWATCHES: Readonly<Record<StraightGlass, GlassSwatchDef>> = {
   claro: { css: 'linear-gradient(135deg, #f3f8fc 0%, #cfe2f0 100%)' },
-  nevado: {
-    css: 'radial-gradient(circle at 30% 30%, #ffffff 0 12%, transparent 13%), radial-gradient(circle at 70% 60%, #fff 0 10%, transparent 11%), linear-gradient(135deg, #e9eef3, #cdd6df)',
-  },
+  nevado: { css: glassPhotoCss('nevado') },
   decorado: { css: 'repeating-linear-gradient(90deg, #dfe8f1 0 3px, #f7fafc 3px 6px)' },
-  aquafold: { css: 'radial-gradient(circle, #cfe2f0 0 28%, transparent 30%) 0 0 / 10px 10px, #f3f8fc' },
-  mallado: {
-    css: 'repeating-linear-gradient(45deg, #c9d3e3 0 1px, transparent 1px 7px), repeating-linear-gradient(-45deg, #c9d3e3 0 1px, #f4f7fb 1px 7px)',
-  },
+  aquafold: { css: glassPhotoCss('aquafold') },
+  mallado: { css: glassPhotoCss('mallado') },
   duplex: { css: 'linear-gradient(135deg, #eef3f8 0 50%, #c7d2e0 50% 100%)' },
 };
 

@@ -1,4 +1,5 @@
 // HTTP edge of the admin: parse, authenticate, CSRF, call services, render. No business rules here.
+import { randomBytes } from 'node:crypto';
 import { createReadStream, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import multipart from '@fastify/multipart';
@@ -11,6 +12,8 @@ import { MARK_WEBP, RENDER_WEBP } from './theme-assets.ts';
 import { CSS, editorView, JS, type FormValues, listView, loginView, page, passwordView, shell } from './views.ts';
 
 export const COOKIE = '__Host-alcusa_admin';
+/** Pre-session cookie for the login form's CSRF token (double submit; __Host- + SameSite=Strict). */
+export const LOGIN_COOKIE = '__Host-alcusa_login';
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-ancestors 'none'; form-action 'self'; base-uri 'none'";
 
 export interface AdminRouteDeps {
@@ -35,7 +38,7 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
       void r.register(multipart, { attachFieldsToBody: 'keyValues', limits: { fileSize: MAX_UPLOAD_BYTES, files: 1, fields: 20 } });
 
       r.addHook('onRequest', (_req, reply, hookDone) => {
-        void reply.header('content-security-policy', CSP).header('cache-control', 'no-store').header('x-robots-tag', 'noindex, nofollow');
+        void reply.header('content-security-policy', CSP).header('referrer-policy', 'same-origin').header('cache-control', 'no-store').header('x-robots-tag', 'noindex, nofollow');
         hookDone();
       });
 
@@ -80,20 +83,34 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
       r.get('/admin-assets/render.webp', asset(RENDER_WEBP));
       r.get('/', (_req, reply) => reply.redirect(`${d.base}/promociones`, 303));
 
-      r.get('/login', (_req, reply) => send(reply, 'Iniciar sesión', loginView(d.base, {})));
+      const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+      /** Client address for the login throttle. X-Forwarded-For is honoured only from the local nginx (it overwrites the header). */
+      const clientIp = (req: FastifyRequest): string => {
+        const remote = req.socket.remoteAddress ?? 'unknown';
+        const xff = req.headers['x-forwarded-for'];
+        return LOOPBACK.has(remote) && typeof xff === 'string' && xff.trim() ? (xff.split(',').pop() ?? '').trim().slice(0, 64) || remote : remote;
+      };
+      /** Returns the pre-session login CSRF token, issuing the cookie when absent/malformed. */
+      const loginToken = (req: FastifyRequest, reply: FastifyReply): string => {
+        const have = req.cookies[LOGIN_COOKIE];
+        if (typeof have === 'string' && /^[0-9a-f]{64}$/.test(have)) return have;
+        const t = randomBytes(32).toString('hex');
+        void reply.setCookie(LOGIN_COOKIE, t, { httpOnly: true, secure: true, sameSite: 'strict', path: '/' });
+        return t;
+      };
+
+      r.get('/login', (req, reply) => send(reply, 'Iniciar sesión', loginView(d.base, { csrf: loginToken(req, reply) })));
       r.post('/login', async (req, reply) => {
         const b = (req.body ?? {}) as Body;
-        if (!sameOrigin(req.headers, req.headers.host)) return reply.code(403).type('text/plain').send('Solicitud rechazada.');
-        const res = await d.auth.login(str(b, 'username').slice(0, 40), str(b, 'password').slice(0, 200));
+        const lc = req.cookies[LOGIN_COOKIE];
+        if (!sameOrigin(req.headers, req.headers.host) || typeof lc !== 'string' || !csrfValid(lc, b['_csrf'])) return reply.code(403).type('text/plain').send('Solicitud rechazada.');
+        const res = await d.auth.login(str(b, 'username').slice(0, 40), str(b, 'password').slice(0, 200), clientIp(req));
         if (res.kind === 'ok') {
           setCookie(reply, res.sessionId);
+          void reply.clearCookie(LOGIN_COOKIE, { path: '/' });
           return reply.redirect(res.stage === 'active' ? `${d.base}/promociones` : `${d.base}/login/mfa`, 303);
         }
-        if (res.kind === 'locked') {
-          const mins = Math.max(1, Math.ceil((res.until.getTime() - (d.now ?? (() => new Date()))().getTime()) / 60_000));
-          return send(reply, 'Iniciar sesión', loginView(d.base, { locked: `${mins} min` }), 429);
-        }
-        return send(reply, 'Iniciar sesión', loginView(d.base, { error: 'x', username: str(b, 'username') }), 401);
+        return send(reply, 'Iniciar sesión', loginView(d.base, { error: 'x', username: str(b, 'username'), csrf: lc }), 401);
       });
       // Reserved 2FA routes: uniform 404 while ADMIN_MFA_MODE=off (ADR-014 §3.4).
       r.get('/login/mfa', (_q, reply) => notFound(reply));
@@ -161,6 +178,8 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
             problems.push(err instanceof ImageError ? err.message : 'No se pudo procesar la imagen.');
           }
         }
+        // SEC-009: a hand-posted `image` must live under the configured media URL prefix (the schema checks the filename).
+        if (!file && !image.startsWith(`${d.imageUrlPrefix.replace(/\/$/, '')}/`)) problems.push('La imagen no es válida: sube un archivo desde el panel.');
         const values: FormValues = {
           title: str(b, 'title'), description: str(b, 'description'), price_before: str(b, 'price_before'), price_promo: str(b, 'price_promo'),
           product_slug: str(b, 'product_slug'), color: str(b, 'color'), vidrio: str(b, 'vidrio'), starts_on: str(b, 'starts_on'), ends_on: str(b, 'ends_on'),

@@ -238,6 +238,16 @@ ssh -t deploy@179.236.251.239 'cd /opt/alcusa/dev/current && sudo -u alcusa /usr
 
 Minimum 14 characters; the first login forces a password change. Then sign in at `https://dev.alcusasv.com/ops-dev/login` (the browser asks for the dev basic auth first, then the admin form).
 
+#### Recover or rotate the admin password (forgotten or compromised)
+
+Run the same CLI with `--rotate`, in a TTY. It prompts twice (hidden), checks the 14-character policy, replaces the password, **closes every open session of that admin**, forces a password change on the next login and writes an `admin.password_rotated` audit row. The password never goes through argv, env, a file or chat; type it yourself or hand it over out of band, and it is changed at the first login.
+
+```bash
+ssh -t deploy@179.236.251.239 'cd /opt/alcusa/dev/current && sudo -u alcusa /usr/local/bin/node --env-file=/etc/alcusa/dev-api.env dist/cli/create-admin.js <usuario> --rotate'
+```
+
+The single dev account is `alcusa`. Failed logins no longer lock the account (they throttle the attacker's IP + username pair for 1/5/15/60 min), so there is nothing to unlock; restarting `alcusa-admin-dev` also clears any throttle.
+
 ### 11.5 Rollback
 
 ```bash
@@ -271,8 +281,8 @@ Restore (DB): `zcat /var/backups/alcusa/alcusa_dev-<ts>.sql.gz | sudo mariadb --
 
 ### 11.8 Open points from ADR-014 Addendum 1
 
-- Item 5 (section 3.5): `Origin: null` is accepted only with `Sec-Fetch-Site: same-origin`. The review accepted it; the hardening (also reject when the header is absent, as defence in depth) is still open.
-- Item 8 (section 3.8): during a per-user lockout the app answers 429, which tells an attacker which usernames exist. Close it by answering a generic 401 during the lockout. The nginx half of the gate (`limit_req` 5/min/IP on login, 60/min/IP on the route) has been in place since 2026-10-07; the optional IP allowlist and the fail2ban jail are not.
+- Item 5 (section 3.5): closed (SEC-008, awaiting re-test): `Origin: null` and requests with neither `Origin` nor `Sec-Fetch-Site` are rejected, the login form has a CSRF token, admin pages send `Referrer-Policy: same-origin`.
+- Item 8 (section 3.8): closed (SEC-007, awaiting re-test): generic 401 always, per-(IP, user) backoff instead of a per-account lock. The nginx half of the gate (`limit_req` 5/min/IP on login, 60/min/IP on the route) has been in place since 2026-10-07; the optional IP allowlist and the fail2ban jail are not.
 - 3-active rule: enforced by `PromoService` (`MAX_ACTIVE = 3`). A 4th overlapping publish must answer 422 "Ya hay 3 promociones publicadas en esas fechas". Check it by hand in the panel once the admin account exists (the seed leaves exactly 3 published).
 
 > **2026-10-14: Wompi retired.** No payments on the web (scope cut). `api/wompi-*.php`, the Wompi env vars and key files are removed from the repo; the VPS dev cleanup is tracked in the scope-cut-pagos handoff. `docs/ops/wompi-go-live.md` is historical only.
