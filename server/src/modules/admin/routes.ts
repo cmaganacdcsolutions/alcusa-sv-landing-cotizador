@@ -91,19 +91,25 @@ export function registerAdmin(app: FastifyInstance, d: AdminRouteDeps): void {
         return LOOPBACK.has(remote) && typeof xff === 'string' && xff.trim() ? (xff.split(',').pop() ?? '').trim().slice(0, 64) || remote : remote;
       };
       /** Returns the pre-session login CSRF token, issuing the cookie when absent/malformed. */
-      const loginToken = (req: FastifyRequest, reply: FastifyReply): string => {
-        const have = req.cookies[LOGIN_COOKIE];
-        if (typeof have === 'string' && /^[0-9a-f]{64}$/.test(have)) return have;
+      const mintLoginToken = (reply: FastifyReply): string => {
         const t = randomBytes(32).toString('hex');
         void reply.setCookie(LOGIN_COOKIE, t, { httpOnly: true, secure: true, sameSite: 'strict', path: '/' });
         return t;
+      };
+      /** Reuses a well-formed existing token (a second tab / back button must not invalidate the first form). */
+      const loginToken = (req: FastifyRequest, reply: FastifyReply): string => {
+        const have = req.cookies[LOGIN_COOKIE];
+        return typeof have === 'string' && /^[0-9a-f]{64}$/.test(have) ? have : mintLoginToken(reply);
       };
 
       r.get('/login', (req, reply) => send(reply, 'Iniciar sesión', loginView(d.base, { csrf: loginToken(req, reply) })));
       r.post('/login', async (req, reply) => {
         const b = (req.body ?? {}) as Body;
         const lc = req.cookies[LOGIN_COOKIE];
-        if (!sameOrigin(req.headers, req.headers.host) || typeof lc !== 'string' || !csrfValid(lc, b['_csrf'])) return reply.code(403).type('text/plain').send('Solicitud rechazada.');
+        if (!sameOrigin(req.headers, req.headers.host) || typeof lc !== 'string' || !csrfValid(lc, b['_csrf'])) {
+          // Same body whatever the username: re-render with a fresh token instead of a bare 403.
+          return send(reply, 'Iniciar sesión', loginView(d.base, { expired: true, csrf: mintLoginToken(reply) }), 403);
+        }
         const res = await d.auth.login(str(b, 'username').slice(0, 40), str(b, 'password').slice(0, 200), clientIp(req));
         if (res.kind === 'ok') {
           setCookie(reply, res.sessionId);

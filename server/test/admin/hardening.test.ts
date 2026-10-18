@@ -95,6 +95,40 @@ describe('SEC-008 CSRF / origin', () => {
     expect((await mk({ ...base, _csrf: tokenOf(g.body) }, '')).statusCode).toBe(403);
     expect((await mk({ ...base, _csrf: tokenOf(g.body) }, lc)).statusCode).toBe(303);
   });
+  it('two GETs then a POST with the first form token succeeds (second tab does not invalidate the first)', async () => {
+    const a = await app.inject({ url: `${BASE}/login` });
+    const lc = named(a, LOGIN_COOKIE);
+    const b = await app.inject({ url: `${BASE}/login`, headers: { cookie: lc } });
+    expect(setCookies(b).some((c) => c.startsWith(LOGIN_COOKIE))).toBe(false);
+    expect(tokenOf(b.body)).toBe(tokenOf(a.body));
+    const r = await app.inject({
+      method: 'POST', url: `${BASE}/login`, payload: new URLSearchParams({ username: 'alcusa', password: PW, _csrf: tokenOf(a.body) }).toString(),
+      headers: { ...FORM, 'sec-fetch-site': 'same-origin', cookie: lc },
+    });
+    expect(r.statusCode).toBe(303);
+  });
+  it('a malformed login cookie is replaced by a fresh well-formed one', async () => {
+    const g = await app.inject({ url: `${BASE}/login`, headers: { cookie: `${LOGIN_COOKIE}=nothex` } });
+    const fresh = named(g, LOGIN_COOKIE);
+    expect(fresh).toMatch(/=[0-9a-f]{64}$/);
+    expect(tokenOf(g.body)).toBe(fresh.split('=')[1]);
+  });
+  it('a login CSRF failure re-renders the form (403) with a new token and a friendly message, identical for any username', async () => {
+    const g = await app.inject({ url: `${BASE}/login` });
+    const lc = named(g, LOGIN_COOKIE);
+    const bad = (username: string) => app.inject({
+      method: 'POST', url: `${BASE}/login`, payload: new URLSearchParams({ username, password: PW, _csrf: 'f'.repeat(64) }).toString(),
+      headers: { ...FORM, 'sec-fetch-site': 'same-origin', cookie: lc },
+    });
+    const r1 = await bad('alcusa');
+    const r2 = await bad('nobody');
+    expect(r1.statusCode).toBe(403);
+    expect(r1.body).toContain('La sesión del formulario expiró. Intenta de nuevo.');
+    expect(named(r1, LOGIN_COOKIE)).toMatch(/=[0-9a-f]{64}$/);
+    expect(tokenOf(r1.body)).toBe(named(r1, LOGIN_COOKIE).split('=')[1]);
+    expect(scrub(r1.body)).toBe(scrub(r2.body));
+    expect(r1.body).not.toContain('value="nobody"');
+  });
   it('admin pages pin Referrer-Policy to same-origin so form posts carry a real Origin', async () => {
     const r = await app.inject({ url: `${BASE}/login` });
     expect(r.headers['referrer-policy']).toBe('same-origin');
