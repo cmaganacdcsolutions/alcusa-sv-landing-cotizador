@@ -114,11 +114,15 @@ No Critical. No High. Counts: Medium 5, Low 7, Info 3 (15 findings listed below 
 - Owner: senior-be.
 - **Fix applied.** `create-admin <usuario> --rotate` (TTY only, hidden prompt twice, policy check) calls `AuthService.rotatePassword`: new argon2id hash, `must_change_password = true`, counters cleared, every session of that admin deleted, audit row `admin.password_rotated` (actor `cli`, username only, never the password). Argv carries only the username and the flag (the parser rejects extra arguments); no env or file path for the password. No migration. Runbook section 11.4 updated with the exact `ssh -t` command. Tests: `auth.test.ts`.
 
-### SEC-011 - Audit/monitoring gaps on admin login - Low - Open
+### SEC-011 - Audit/monitoring gaps on admin login - Low - Fixed (awaiting re-test) [32c6c55]
 - Evidence: audit rows for failed/unknown logins have no source IP or username (`actor: 'anon'`); no fail2ban jail for the admin; no alert on lockouts. App runs with `TRUST_PROXY: false` (`admin-server.ts`), so the IP is not available to it.
 - Fix: enable trustProxy for 127.0.0.1, record IP (per privacy decision), alert on `admin.locked`.
 - Acceptance: audit row has IP; lockout triggers a notification.
 - Owner: senior-be + senior-infrastructure.
+- **Fix applied (32c6c55).** Admin audit rows now fill the existing `audit_log.ip_hash` column (CHAR(64), NULL; created in 0001, so **no migration**) for login ok/failed, `admin.locked`, `admin.password_changed` and every promo create/update/publish/unpublish/archive/reactivate (image upload travels with create/update). Privacy rule = the house rule from quotes: `HMAC-SHA256(IP_HASH_PEPPER, "ip:" + ip)`, never the raw address (the public server hashes the same way, so one IP correlates across both). The IP is the existing `clientIp` (last X-Forwarded-For entry, only from a loopback peer), so TRUST_PROXY stays false. `admin.password_rotated` is a CLI action with no remote peer: no IP is recorded (actor `cli`); it is still alerted.
+- Alerting (local only): `stderrAlert` writes one JSON line on stderr prefixed `<4>` (systemd warning priority) when an (ip, username) pair enters backoff (`event: admin.locked`, 12-char ip hash prefix, no username, so no enumeration) and on `admin.password_rotated` (username). Watch: `journalctl -u <admin-unit> -p warning -f`, or `journalctl -u <admin-unit> -p warning --since today -o cat | grep admin_security_alert`. To map a hash to an IP, compute the HMAC with the pepper. fail2ban's systemd backend can match `admin_security_alert` (hash only, so banning by IP still comes from the nginx access log).
+- **Infrastructure handoff:** the admin unit's environment now needs `IP_HASH_PEPPER` (same value as the public server); production refuses to start without it, dev/test fall back to a fixed non-secret pepper. Still open for senior-infrastructure: the fail2ban jail and any notification beyond journald.
+- Tests: `server/test/admin/audit-ip.test.ts` (fails before the fix, passes after).
 
 ### SEC-012 - Scripts use `StrictHostKeyChecking=accept-new` - Low - Fixed (awaiting re-test) [c2629c9]
 - Evidence: `deploy.sh:30`, `admin-dev.sh:40` (trust on first use).
