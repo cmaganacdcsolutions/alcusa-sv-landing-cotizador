@@ -113,7 +113,7 @@ describe.skipIf(!env)('persistence across restart (MariaDB)', () => {
     const csrf = /name="_csrf" value="([0-9a-f]{64})"/.exec((await app.inject({ url: `${BASE}/promociones`, headers: { cookie } })).body)?.[1] as string;
     const r = await app.inject({
       method: 'POST', url: `${BASE}/logout`, payload: new URLSearchParams({ _csrf: csrf }).toString(),
-      headers: { 'content-type': 'application/x-www-form-urlencoded', cookie },
+      headers: { 'content-type': 'application/x-www-form-urlencoded', 'sec-fetch-site': 'same-origin', cookie },
     });
     expect(r.statusCode).toBe(303);
     await close();
