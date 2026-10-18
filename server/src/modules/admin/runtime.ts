@@ -37,7 +37,6 @@ export function loadAdminConfig(env: NodeJS.ProcessEnv = process.env): AdminConf
   const parsed = schema.safeParse(env);
   if (!parsed.success) throw new Error(`Invalid environment (invalid: ${[...new Set(parsed.error.issues.map((i) => String(i.path[0])))].join(', ')})`);
   if (parsed.data.ADMIN_STORE === 'mariadb' && !parsed.data.DB_APP_PASSWORD) throw new Error('Invalid environment (invalid: DB_APP_PASSWORD)');
-  if (parsed.data.NODE_ENV === 'production' && !parsed.data.IP_HASH_PEPPER) throw new Error('Invalid environment (invalid: IP_HASH_PEPPER)');
   return parsed.data;
 }
 

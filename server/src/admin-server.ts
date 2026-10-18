@@ -3,6 +3,8 @@ import { buildApp } from './http/app.ts';
 import { createAdminRuntime, loadAdminConfig } from './modules/admin/runtime.ts';
 
 const cfg = loadAdminConfig();
+// The server (not the CLIs) must hash audit IPs with the real pepper in production.
+if (cfg.NODE_ENV === 'production' && !cfg.IP_HASH_PEPPER) throw new Error('Invalid environment (invalid: IP_HASH_PEPPER)');
 const { deps } = createAdminRuntime(cfg);
 const app = await buildApp({
   config: { LOG_LEVEL: cfg.LOG_LEVEL, TRUST_PROXY: false, NODE_ENV: cfg.NODE_ENV, SERVE_STATIC_DIR: undefined },
