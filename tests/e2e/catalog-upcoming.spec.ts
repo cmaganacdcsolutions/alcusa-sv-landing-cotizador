@@ -1,9 +1,9 @@
 import { expect, test } from './fixtures';
 
-// Categorias sin cotizador en linea: Espejos (placeholders, 2026-10-14), Zarandas (producto real) y Fachadas comerciales
+// Categorias sin cotizador en linea: Espejos (producto sin precio, 2026-10-20), Zarandas (producto real) y Fachadas comerciales
 // (galeria real, sin precio; 2026-10-16). Todas con CTA a WhatsApp y sin enlaces al cotizador.
 const SECTIONS = [
-  { id: 'espejos', msg: 'Hola, quiero cotizar espejos.' },
+  { id: 'espejos', msg: 'Hola, quiero cotizar un espejo de 5 mm con chapetones.' },
   { id: 'zarandas', msg: 'Hola, quiero cotizar zarandas para ventanas francesas y celosías.' },
   { id: 'fachadas-comerciales', msg: 'Hola, quiero cotizar una fachada comercial.' },
 ] as const;
@@ -28,17 +28,22 @@ test.describe('categorias sin cotizador del catalogo', () => {
     });
   }
 
-  test('#espejos: 3 tarjetas pendientes sin imagen', async ({ page }) => {
+  test('#espejos: producto con foto, sin precio ni "$" y CTA de asesor', async ({ page }) => {
     await page.goto('/');
-    const cards = page.locator('section#espejos .pcard');
-    await expect(cards).toHaveCount(3);
-    for (let i = 0; i < 3; i++) {
-      const card = cards.nth(i);
-      await expect(card).toContainText('Imagen pendiente');
-      await expect(card).toContainText('Modelo por confirmar');
-      await expect(card).toContainText('Precio pendiente');
-      await expect(card.locator('img')).toHaveCount(0);
-    }
+    const sec = page.locator('section#espejos');
+    await expect(sec.locator('.pcard')).toHaveCount(1);
+    await expect(sec.locator('[data-pending-card]')).toHaveCount(0);
+    await expect(sec.getByRole('heading', { level: 3, name: 'Espejo de 5 mm con chapetones' })).toBeVisible();
+    await expect(sec).toContainText('Cotización con asesor');
+    await expect(sec).toContainText('Fijación con chapetones');
+    await expect(sec).not.toContainText('$');
+    await expect(sec).not.toContainText('pendiente');
+    const img = sec.locator('img.photo-frame__img');
+    await expect(img).toHaveCount(1);
+    await expect(img).toHaveAttribute('alt', /espejo/i);
+    await img.scrollIntoViewIfNeeded();
+    await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0)).toBe(true);
+    await expect(sec.getByRole('link', { name: 'Cotizar con un asesor' })).toHaveAttribute('href', /wa\.me|api\.whatsapp\.com/);
   });
 
   test('#zarandas: producto real con foto, precio y datos del cliente', async ({ page }) => {
