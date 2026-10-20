@@ -80,12 +80,12 @@ export const ZARANDA_PRODUCT: ProductPresentation = {
   details: ['Aluminio negro o blanco', 'Área mínima: 0.80 m²'],
 };
 
-/** Espejo (cliente, 2026-10-20): una foto y sin precio. Se corto el borde derecho (248 de 320 px) para sacar al fotografo del reflejo. */
+/** Espejo (cliente, 2026-10-20): una foto y sin precio. Retocada (mano/telefono del fotografo en el reflejo); sin recorte. */
 export const ESPEJO_PRODUCT: ProductPresentation = {
   title: 'Espejo de 5 mm con chapetones',
   photo: {
-    src: `${FOTOS}/espejo-5mm-chapetones-248.webp`,
-    width: 248,
+    src: `${FOTOS}/espejo-5mm-chapetones-320.webp`,
+    width: 320,
     height: 426,
     alt: 'Espejo rectangular sin marco sobre un lavamanos, fijado a la pared con chapetones metálicos',
   },
