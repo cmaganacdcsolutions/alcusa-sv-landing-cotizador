@@ -27,6 +27,8 @@ const schema = z.object({
   PROMOTIONS_OUT_DIR: z.string().default('../public/data'),
   PROMO_IMAGES_DIR: z.string().default('../public/images/promos'),
   PROMO_IMAGE_URL_PREFIX: z.string().default('/images/promos'),
+  /** HMAC pepper for the audit ip_hash (same as the public server). Required in production. */
+  IP_HASH_PEPPER: z.string().min(1).optional(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 export type AdminConfig = z.infer<typeof schema>;
@@ -36,6 +38,12 @@ export function loadAdminConfig(env: NodeJS.ProcessEnv = process.env): AdminConf
   if (!parsed.success) throw new Error(`Invalid environment (invalid: ${[...new Set(parsed.error.issues.map((i) => String(i.path[0])))].join(', ')})`);
   if (parsed.data.ADMIN_STORE === 'mariadb' && !parsed.data.DB_APP_PASSWORD) throw new Error('Invalid environment (invalid: DB_APP_PASSWORD)');
   return parsed.data;
+}
+
+/** Warn-level alert as one JSON line on stderr with the systemd `<4>` (warning) prefix: `journalctl -p warning` and fail2ban's systemd backend see it. */
+export function stderrAlert(event: Record<string, unknown>): void {
+  process.stderr.write(`<4>${JSON.stringify({ level: 'warn', time: new Date().toISOString(), msg: 'admin_security_alert', ...event })}
+`);
 }
 
 export interface AdminRuntime {
@@ -70,7 +78,7 @@ export function createAdminRuntime(cfg: AdminConfig, store?: AdminStore): AdminR
     }
   }
   const repo = s;
-  const auth = new AuthService({ repo, mfaMode: cfg.ADMIN_MFA_MODE });
+  const auth = new AuthService({ repo, mfaMode: cfg.ADMIN_MFA_MODE, ipHashPepper: cfg.IP_HASH_PEPPER ?? 'dev-only-pepper-not-for-production', alert: stderrAlert });
   const promos = new PromoService({ repo, outDir: resolve(cfg.PROMOTIONS_OUT_DIR), audit: (e) => repo.audit(e) });
   const deps: AdminRouteDeps = { base: cfg.ADMIN_BASE_PATH, auth, promos, imagesDir: resolve(cfg.PROMO_IMAGES_DIR), imageUrlPrefix: cfg.PROMO_IMAGE_URL_PREFIX };
   return { deps, store: repo, auth, promos, close };

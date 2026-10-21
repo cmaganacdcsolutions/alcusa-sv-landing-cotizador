@@ -1,8 +1,9 @@
 # ADR-003: Wompi El Salvador integration boundary + mock mode
+> **Superseded (2026-10-13 scope cut): online payment (Wompi) was removed from the product.** Historical only. Do not re-enable or re-implement a payment path without a new security review (SEC-017).
 > **Amended by ADR-013 (2026-10-01):** the contract, HMAC verification, error envelope and mock mode stand; the PHP implementation (api/wompi-*.php) is superseded by a Node port (ADR-013 §2.4) and endpoints lose the `.php` suffix (`/api/wompi-create-link`, `/api/wompi-webhook`, `/api/wompi-return`).
 
 Date: 2026-09-28
-Status: accepted
+Status: Superseded (2026-10-13 scope cut)
 
 ## Context
 Wompi SV docs (docs.wompi.sv, checked 2026-09-28): API auth uses

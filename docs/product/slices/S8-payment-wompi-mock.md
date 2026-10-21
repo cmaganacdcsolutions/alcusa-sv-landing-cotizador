@@ -1,4 +1,5 @@
 # S8 — Payment: forma de pago + Wompi mock + resultado
+> **Superseded (2026-10-13 scope cut): online payment (Wompi) was removed from the product.** Historical only. Do not re-enable or re-implement a payment path without a new security review (SEC-017).
 
 Goal: step 5–7 of the cotizador — WhatsApp handoff (already done, S1/S7)
 vs. "Pagar ahora" against a **local mock/sandbox Wompi**, plus the two

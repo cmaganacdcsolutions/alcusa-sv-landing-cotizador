@@ -1,8 +1,8 @@
-> **RETIRED 2026-10-14**: Wompi was removed from the project (scope cut, no web payments). Historical document, do not follow.
+> **Superseded (2026-10-13 scope cut), RETIRED 2026-10-14**: Wompi was removed (no web payments). Historical document, do not follow. Do not re-enable a payment path without a new security review (SEC-017).
 
 # Wompi El Salvador: go-live runbook (mock -> modo desarrollo -> producción)
 
-Status: code ready, credentials pending. Confirmed against docs.wompi.sv on 2026-09-29 (see ADR-003).
+Status: Superseded (2026-10-13 scope cut). Was: code ready, credentials pending. Confirmed against docs.wompi.sv on 2026-09-29 (see ADR-003).
 
 ## 1. How it fits together
 

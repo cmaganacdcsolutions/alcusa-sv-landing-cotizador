@@ -34,11 +34,11 @@ test.describe('catálogo del inicio — imágenes', () => {
 
   test('cada tarjeta del catálogo muestra su render: una foto, nunca el cuadro "Foto próximamente"', async ({ page }) => {
     await page.goto('/');
-    // Las 3 tarjetas de la unica categoria placeholder (Espejos; data-pending-card) NO llevan foto
-    // por diseno ("Imagen pendiente"): se excluyen del conteo de renders reales y se afirman aparte.
+    // Ya no queda ninguna categoria placeholder (Espejos paso a producto con foto 2026-10-20): data-pending-card = 0.
+    // Los productos sin cotizador (data-upcoming-product) se excluyen del conteo de tarjetas del catalogo.
     const cards = page.locator('#catalogo article.pcard:not([data-pending-card]):not([data-upcoming-product])');
     await expect(cards).toHaveCount(CARD_COUNT);
-    await expect(page.locator('#catalogo article.pcard[data-pending-card]')).toHaveCount(3);
+    await expect(page.locator('#catalogo article.pcard[data-pending-card]')).toHaveCount(0);
     await expect(page.locator('#catalogo article.pcard:not([data-pending-card]):not([data-upcoming-product]) .pcard__nophoto')).toHaveCount(0);
     await expect(page.locator('#catalogo article.pcard:not([data-pending-card]):not([data-upcoming-product]) img.photo-frame__img')).toHaveCount(CARD_COUNT);
     for (let i = 0; i < CARD_COUNT; i += 1) {

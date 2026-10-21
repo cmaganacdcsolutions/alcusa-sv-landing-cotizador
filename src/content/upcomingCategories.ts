@@ -80,6 +80,19 @@ export const ZARANDA_PRODUCT: ProductPresentation = {
   details: ['Aluminio negro o blanco', 'Área mínima: 0.80 m²'],
 };
 
+/** Espejo (cliente, 2026-10-20): una foto y sin precio. Retocada (mano/telefono del fotografo en el reflejo); sin recorte. */
+export const ESPEJO_PRODUCT: ProductPresentation = {
+  title: 'Espejo de 5 mm con chapetones',
+  photo: {
+    src: `${FOTOS}/espejo-5mm-chapetones-320.webp`,
+    width: 320,
+    height: 426,
+    alt: 'Espejo rectangular sin marco sobre un lavamanos, fijado a la pared con chapetones metálicos',
+  },
+  price: 'Cotización con asesor',
+  details: ['Espejo de 5 mm', 'Fijación con chapetones'],
+};
+
 export const FACHADAS_GALLERY: GalleryPresentation = {
   heading: 'Cotización con asesor.',
   body: 'Con tus medidas te damos una cotización aproximada; la modalidad y los detalles se definen con un asesor. Restricciones aplican.',
@@ -88,7 +101,12 @@ export const FACHADAS_GALLERY: GalleryPresentation = {
 
 /** Orden de aparicion en el inicio: despues de Ventanas. */
 export const UPCOMING_CATEGORIES: readonly UpcomingCategory[] = [
-  { slug: 'espejos', name: 'Espejos', waMessage: 'Hola, quiero cotizar espejos.', content: { kind: 'placeholder' } },
+  {
+    slug: 'espejos',
+    name: 'Espejos',
+    waMessage: 'Hola, quiero cotizar un espejo de 5 mm con chapetones.',
+    content: { kind: 'product', product: ESPEJO_PRODUCT },
+  },
   {
     slug: 'zarandas',
     name: 'Zarandas',
@@ -103,7 +121,7 @@ export const UPCOMING_CATEGORIES: readonly UpcomingCategory[] = [
   },
 ];
 
-/** Tarjetas placeholder por seccion (solo las categorias con content.kind === 'placeholder'). */
+/** Tarjetas placeholder por seccion (hoy ninguna categoria usa content.kind === 'placeholder'; Espejos paso a producto 2026-10-20). */
 export const UPCOMING_PLACEHOLDER_COUNT = 3;
 export const UPCOMING_PLACEHOLDER_COPY = {
   image: 'Imagen pendiente',

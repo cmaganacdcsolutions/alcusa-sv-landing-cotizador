@@ -1,0 +1,5 @@
+# Pinned SSH host keys for the Alcusa VPS (srv2021291.hstgr.cloud). Public keys, safe to commit.
+# Verified 2026-10-17 against ~/.ssh/known_hosts. If the VPS is rebuilt, re-verify out of band and update.
+179.236.251.239,srv2021291.hstgr.cloud ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCkEoJjMgtIBGhPh0SO7BIw1qY1r+UlqAuymtl4U1kJI4ksCTIdXu7E2K321p8p+UhNuB3Ej8XBYOzPlxhesdrZj0NhT3uqB5O5bid3guARthNQjZdSkGeY5/ChGm+hkaVMEANO4rEvK5fxfC3kaNrhG4rO7jBjih0WH5ipzPcV23r3p/P1AyjE/GGxkDmGohwGZeuUdWk3SzZyy/msJ3+E5AidusZj6zF0336IiXp6C7Y325PNk3QEzX1EM0bcVTcMXT5LJ+A8s8EG40N8vEZgIZ83txYmO8yweBj/+yvrmrA4hZmL/zDdzgq9tZTxQ6XllUroFqc/5tV5zaLYxq6c0St3hDZ0BB5P7CMWc3JouwpPmqrb10gTM99TqvLGKybRY6TUUqoV/COAgbqVdAeqJkG5SHh5Onhtyn2UJKmVj0XIcieWwZEtq3LdjmAXMmBrjLy6EvtE4ikYo0p+NSg9aRek5tRZluIdq0qpEhmSigGbaNGCY5Dn+TUyrnMsUX0=
+179.236.251.239,srv2021291.hstgr.cloud ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJByerfCTxAwXmSJK9JoaB/n9s7OyQaQqxq0sYvVY6mlvSgrVLR5hTnGfKuV/7HOs5WvQ/Hvq/AJdoFPkuSRPxM=
+179.236.251.239,srv2021291.hstgr.cloud ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINdfOzUU0Ypay5R+DkWagTgT/4BXCzhyRVI94ysSurUK

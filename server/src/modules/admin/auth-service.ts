@@ -1,5 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { hashPassword, passwordProblems, verifyPassword, type Argon2Params, DEFAULT_PARAMS } from './password.ts';
+import { hmacHex } from '../../http/rate-limit-db.ts';
 import { LoginThrottle } from './login-throttle.ts';
 import { type MfaMode, nextStage, type Stage } from './stage.ts';
 import type { AdminRepo, AdminUser, SessionRow } from './store.ts';
@@ -22,6 +23,10 @@ export interface AuthOptions {
   mfaMode?: MfaMode;
   now?: () => Date;
   params?: Argon2Params;
+  /** Pepper for the audit ip_hash (same HMAC scheme as quotes). Without it no IP is recorded. */
+  ipHashPepper?: string;
+  /** Security alert sink (SEC-011): a structured warn event, e.g. a JSON line for journald. Default: no-op. */
+  alert?: (event: Record<string, unknown>) => void;
 }
 
 export class AuthService {
@@ -29,6 +34,8 @@ export class AuthService {
   private readonly mfaMode: MfaMode;
   private readonly now: () => Date;
   private readonly params: Argon2Params;
+  private readonly pepper: string | undefined;
+  private readonly alert: (event: Record<string, unknown>) => void;
   private dummy: Promise<string> | null = null;
   private readonly throttle = new LoginThrottle();
 
@@ -37,6 +44,18 @@ export class AuthService {
     this.mfaMode = o.mfaMode ?? 'off';
     this.now = o.now ?? (() => new Date());
     this.params = o.params ?? DEFAULT_PARAMS;
+    this.pepper = o.ipHashPepper;
+    this.alert = o.alert ?? (() => undefined);
+  }
+
+  /** HMAC-SHA256(ip, pepper) hex, identical to the quotes ip_hash; undefined when no pepper is configured. */
+  hashIp(ip: string): string | undefined {
+    return this.pepper ? hmacHex(this.pepper, `ip:${ip}`) : undefined;
+  }
+
+  private ipField(ip: string): { ipHash?: string } {
+    const h = this.hashIp(ip);
+    return h ? { ipHash: h } : {};
   }
 
   async createAdmin(username: string, password: string, mustChange = true): Promise<AdminUser> {
@@ -64,12 +83,14 @@ export class AuthService {
     const good = await verifyPassword(password, target);
     if (!user || !user.isActive || blocked || !good) {
       const started = blocked ? false : this.throttle.fail(ip, username, now);
-      await this.repo.audit({ at: now, actor: user && user.isActive ? user.username : 'anon', action: started ? 'admin.locked' : 'admin.login_failed' });
+      await this.repo.audit({ at: now, actor: user && user.isActive ? user.username : 'anon', action: started ? 'admin.locked' : 'admin.login_failed', ...this.ipField(ip) });
+      // Same event whether or not the username exists (no enumeration); hash only, never the address or the password.
+      if (started) this.alert({ event: 'admin.locked', ipHash: this.hashIp(ip)?.slice(0, 12) ?? null });
       return { kind: 'invalid' };
     }
     this.throttle.success(ip, username);
     await this.repo.saveUser({ ...user, failedAttempts: 0, lockedUntil: null, lastLoginAt: now });
-    await this.repo.audit({ at: now, actor: user.username, action: 'admin.login_ok' });
+    await this.repo.audit({ at: now, actor: user.username, action: 'admin.login_ok', ...this.ipField(ip) });
     const stage = nextStage(user, this.mfaMode);
     return { kind: 'ok', ...(await this.openSession(user.id, stage)), stage, mustChange: user.mustChangePassword };
   }
@@ -83,6 +104,7 @@ export class AuthService {
     const saved = await this.repo.saveUser({ ...user, passwordHash: await hashPassword(password, this.params), mustChangePassword: true, failedAttempts: 0, lockedUntil: null, isActive: true });
     await this.repo.deleteUserSessions(user.id);
     await this.repo.audit({ at: this.now(), actor: 'cli', action: 'admin.password_rotated', detail: { username: user.username } });
+    this.alert({ event: 'admin.password_rotated', username: user.username });
     return saved;
   }
 
@@ -119,7 +141,7 @@ export class AuthService {
   }
 
   /** Changes the password, kills every session of the user and opens a fresh one (id rotation). */
-  async changePassword(info: SessionInfo, current: string, next: string, confirm: string): Promise<{ ok: true; sessionId: string; csrf: string } | { ok: false; problems: string[] }> {
+  async changePassword(info: SessionInfo, current: string, next: string, confirm: string, ip?: string): Promise<{ ok: true; sessionId: string; csrf: string } | { ok: false; problems: string[] }> {
     if (!(await verifyPassword(current, info.user.passwordHash))) return { ok: false, problems: ['La contraseña actual no es correcta.'] };
     const problems = passwordProblems(next, info.user.username);
     if (next !== confirm) problems.push('Las contraseñas nuevas no coinciden.');
@@ -127,7 +149,7 @@ export class AuthService {
     if (problems.length) return { ok: false, problems };
     await this.repo.saveUser({ ...info.user, passwordHash: await hashPassword(next, this.params), mustChangePassword: false });
     await this.repo.deleteUserSessions(info.user.id);
-    await this.repo.audit({ at: this.now(), actor: info.user.username, action: 'admin.password_changed' });
+    await this.repo.audit({ at: this.now(), actor: info.user.username, action: 'admin.password_changed', ...(ip ? this.ipField(ip) : {}) });
     return { ok: true, ...(await this.openSession(info.user.id, 'active')) };
   }
 }

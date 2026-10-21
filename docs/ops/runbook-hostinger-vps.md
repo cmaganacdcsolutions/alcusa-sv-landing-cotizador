@@ -26,13 +26,43 @@ Added on 2026-10-07 for the admin panel (dev only): Node.js 24, MariaDB 11.4 (lo
 
 ```bash
 ssh -i ~/.ssh/id_ed25519 deploy@179.236.251.239      # the only login
-sudo -i                                              # deploy has passwordless sudo
+sudo -n <allowlisted command>                        # deploy has an sudo ALLOWLIST, not root (2.1)
 ```
 
 - `root` SSH login is **disabled** (`PermitRootLogin no`), password/keyboard-interactive auth are **disabled**. The config is in `/etc/ssh/sshd_config.d/00-alcusa-hardening.conf`. It is the first file in the directory, so it wins over `50-cloud-init.conf`.
 - fail2ban bans an IP for 1 h after 5 failures in 10 min. To unban yourself: `sudo fail2ban-client set sshd unbanip <ip>`.
 - Break-glass access, if the key is lost or sshd is broken: use the hPanel → VPS → Browser terminal. That needs a root password, and none was set by us; Hostinger generated a random one and we never saw it. Set one in hPanel, or with the `vps_virtual-machines_set-root-password` API. Store it only in `C:\Users\carlo\.alcusa\vps-root.txt`. The console is not SSH, so `PasswordAuthentication no` doesn't block it.
 - To add another dev's key, append it to `/home/deploy/.ssh/authorized_keys`. Don't create password users.
+
+### 2.1 sudo allowlist for `deploy` (SEC-002, since 2026-10-17)
+
+`deploy` no longer has `NOPASSWD: ALL`. `/etc/sudoers.d/91-deploy-allowlist` (root:root 440) lists the exact commands below; `/etc/sudoers.d/90-cloud-init-users` keeps only the `root` line. The `deploy` account has a locked password, so the `%sudo` group rule is inert. Anything else answers `sudo: a password is required`.
+
+| Runs as | Allowed (exact arguments; `*` only where shown) |
+|---|---|
+| root | `systemctl restart\|start\|stop alcusa-admin-dev`, `systemctl status alcusa-admin-dev --no-pager`, `systemctl reload nginx` |
+| root | `nginx -t`, `nginx -T`, `tee /etc/nginx/htpasswd/alcusa-dev` (dev basic-auth hash, via stdin) |
+| root | `certbot renew`, `certbot renew --dry-run`, `certbot certificates`, and the exact cutover `certbot --nginx -d alcusasv.com -d www.alcusasv.com --redirect --non-interactive --agree-tos --register-unsafely-without-email` |
+| root | `journalctl -u alcusa-admin-dev -n 25 --no-pager`, `... -u alcusa-admin-dev --since today --no-pager`, `... -u nginx -u ssh -u fail2ban --since today --no-pager` (always with `--no-pager`: a pager is a shell escape) |
+| root | `ufw status [verbose]`, `fail2ban-client status [sshd]`, `fail2ban-client set sshd unbanip *` |
+| root | `/usr/local/sbin/alcusa-backup.sh`, `ls -l /var/backups/alcusa`, `/usr/local/sbin/alcusa-admin-bootstrap` (root-owned copy, no arguments) |
+| alcusa | `/usr/local/bin/node --env-file=/etc/alcusa/dev-api.env dist/cli/create-admin.js *`, `.../import-promos.js *`, `.../promos-status.js` (run from `/opt/alcusa/dev/current`) |
+
+Release dirs, `current` symlinks and `/var/www/alcusa` are owned by `deploy`, so `deploy.sh` needs no sudo at all. `admin-dev.sh` needs only the `systemctl restart`, `journalctl -n 25` and `sudo -u alcusa node ...` lines above.
+
+What changed for operations:
+- `admin-dev.sh bootstrap` and `sudo -n bash -s < alcusa-admin-bootstrap.sh` no longer work (`bash -s` would be root). Run `ssh -t deploy@... 'sudo /usr/local/sbin/alcusa-admin-bootstrap'`. The root-owned copy is refreshed only from a root session (hPanel Browser terminal, section 2): copy the script over it, `chmod 755`. `NODE_UPGRADE=1` also needs a root session.
+- Editing nginx vhosts/snippets (for example the noindex removal in section 9), restoring the DB (11.6) and changing sudoers need a **root session** through the hPanel Browser terminal (set a root password first, see Break-glass). This is deliberate: write access to nginx config or `mariadb -uroot` is root-equivalent.
+- Residual risk: `deploy` can still run JS as the unprivileged `alcusa` user (it owns the release dirs), which gives the app's DB account. It cannot reach root, the MariaDB root account or the nginx config.
+
+Changing the allowlist (always with a net):
+1. Back up: `cp -p /etc/sudoers.d/9* /var/backups/alcusa/sudoers-<date>/` (root session).
+2. Arm the dead-man switch: a root-only restore script (`/var/backups/alcusa/sudoers-restore.sh`, copies the backup back and removes the new drop-in unless the flag `/var/tmp/sudoers-ok` exists) started by `systemd-run --on-active=15min --unit=sudoers-restore /var/backups/alcusa/sudoers-restore.sh`.
+3. Write the new file to a temp path, `visudo -cf <tmp>`, then `install -m 440 -o root -g root <tmp> /etc/sudoers.d/91-deploy-allowlist`.
+4. In a NEW SSH session test every command (`sudo -n -l <cmd>` for the disruptive ones), test that `sudo -n id` is refused, run `deploy.sh dev --list`.
+5. Cancel the switch with `touch /var/tmp/sudoers-ok` (the user can do it without sudo; the timer then fires and does nothing). If anything fails, do not touch the flag: the timer restores the old rules.
+
+Applied 2026-10-17. Backup of the previous rules: `/var/backups/alcusa/sudoers-20261017/` (`90-deploy`, `90-cloud-init-users`). The old `90-deploy` file was removed.
 
 ## 3. Paths on the server
 
@@ -92,6 +122,21 @@ This is instant: only the symlink changes, and nginx follows it on the next requ
   f=~/.alcusa/dev-basic-auth.txt; h=$(cut -d: -f2- "$f" | tr -d '\r\n' | openssl passwd -6 -stdin)
   printf 'alcusa:%s\n' "$h" | ssh deploy@179.236.251.239 'sudo tee /etc/nginx/htpasswd/alcusa-dev >/dev/null && sudo systemctl reload nginx'
   ```
+
+### 6.1 CSP in Report-Only mode on dev (SEC-001)
+
+`/etc/nginx/snippets/alcusa-csp-report-only.conf` is included at server level of `alcusa-dev.conf` (backup: `/root/alcusa-srv/backup/alcusa-dev.conf.20261017-csp`). It only covers the HTML pages. Locations with their own `add_header` do not inherit it: `/_astro/`, `/api/promotions.json`, `/media/promos/` and `/ops-dev*` (that one has its own enforced CSP). Policy:
+
+```
+default-src 'self'; script-src 'self' <sha256 of each Astro inline script>; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src https://www.google.com blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
+```
+
+- Scripts use hashes (7 distinct inline scripts in the 28 pages). The hashes change when an inline script changes, so regenerate the snippet after a build that changes them, or the console shows violations.
+- `style-src 'unsafe-inline'` is unavoidable today: the build has 137 `style=""` attributes and 5 `<style>` tags (attributes cannot be hashed without `unsafe-hashes`).
+- `frame-src google.com` is the Maps embed in `/nosotros`; `blob:`/`data:` are for the client-side quote PDF. `wa.me`, YouTube, TikTok and Instagram are plain links (navigation), so they need nothing.
+- No `report-uri`: violations show only in the browser console. Trade-off: nobody sees violations from real users; fine for dev, where we browse the pages ourselves.
+- **Report-Only on dev; enforce at cutover** (rename the header to `Content-Security-Policy` after a clean pass in the browser console, and add it to `alcusa-prod.conf` with the same hashes).
+- The vhost is not versioned in this repo; this section and the snippet text on the server are the record.
 
 ## 7. DNS (zone `alcusasv.com`, Hostinger nameservers)
 
@@ -168,7 +213,7 @@ Production is currently `noindex` because prices are not yet approved.
 - [ ] Alcusa has approved prices and promotions in writing.
 - [ ] The prod build's `robots.txt` allows crawling and references the sitemap (`Sitemap: https://alcusasv.com/sitemap-index.xml`); the build has no `<meta name="robots" content="noindex">`.
 - [ ] Canonical URLs in the build use `https://alcusasv.com` (no www).
-- [ ] On the server, remove **both** `include snippets/alcusa-noindex.conf;` lines from `/etc/nginx/sites-available/alcusa-prod.conf` (server block and `/_astro/` location). Then run `sudo nginx -t && sudo systemctl reload nginx`. Do **not** edit the snippet itself, because dev uses it too.
+- [ ] On the server, remove **both** `include snippets/alcusa-noindex.conf;` lines from `/etc/nginx/sites-available/alcusa-prod.conf` (server block and `/_astro/` location). Needs a root session (2.1). Then run `nginx -t && systemctl reload nginx`. Do **not** edit the snippet itself, because dev uses it too.
 - [ ] `curl -sI https://alcusasv.com | grep -i x-robots` returns nothing; `curl -sI https://dev.alcusasv.com | grep -i x-robots` still shows noindex.
 - [ ] Google Search Console: add the domain property. The verification TXT goes in with `overwrite=false`, which keeps SPF. Then submit the sitemap.
 - [ ] Optional: add a CSP header and consider HSTS `includeSubDomains; preload` once every subdomain is on HTTPS.
@@ -176,7 +221,7 @@ Production is currently `noindex` because prices are not yet approved.
 ## 10. Routine operations
 
 - Certificates: `systemctl list-timers certbot.timer`; `sudo certbot certificates`.
-- Logs: `/var/log/nginx/access.log`, `/var/log/nginx/error.log`; `sudo journalctl -u nginx -u ssh -u fail2ban --since today`.
+- Logs: `/var/log/nginx/access.log`, `/var/log/nginx/error.log`; `sudo journalctl -u nginx -u ssh -u fail2ban --since today --no-pager`.
 - Firewall: `sudo ufw status verbose`; Hostinger side via `vps_firewall_get` (id 372986). After editing Hostinger rules, run `vps_firewall_sync-to-all-assigned-v-ms`.
 - Updates: unattended-upgrades applies security updates daily. Check reboot-required with `cat /var/run/reboot-required 2>/dev/null` and reboot in a quiet window.
 
@@ -206,13 +251,13 @@ nginx specifics of the admin locations: `Host` is forwarded untouched (the app's
 ```bash
 bash 03-dev/docs/ops/scripts/admin-dev.sh bootstrap
 # same thing without the wrapper:
-ssh deploy@179.236.251.239 'sudo -n bash -s' < 03-dev/docs/ops/scripts/alcusa-admin-bootstrap.sh
+ssh deploy@179.236.251.239 'sudo -n /usr/local/sbin/alcusa-admin-bootstrap'   # root-owned copy, see 2.1
 ```
 
 Idempotent: existing env files and passwords are kept, config files are rewritten only when their content changes, nginx is reloaded only after `nginx -t` passes (if it fails, the vhost is restored from the backup and the script stops). It also installs the daily backup (11.6). It never touches DNS, the prod vhost, basic auth or noindex.
 
 - Rotate the DB passwords: delete both files in `/etc/alcusa/`, re-run bootstrap (it runs `ALTER USER` and writes new files), then `admin-dev.sh release` or `sudo systemctl restart alcusa-admin-dev`.
-- Move to a newer Node 24: `ssh deploy@... 'sudo -n env NODE_UPGRADE=1 bash -s' < alcusa-admin-bootstrap.sh`, then restart the service.
+- Move to a newer Node 24: root session only (2.1): `NODE_UPGRADE=1 /usr/local/sbin/alcusa-admin-bootstrap`, then restart the service.
 
 ### 11.3 Deploy / update
 
@@ -270,7 +315,7 @@ It swaps `current`, restarts and health-checks. Data (DB, `shared/`) is not roll
 
 Plus the Hostinger weekly snapshots. **Backups are on the same disk**: they cover mistakes, not loss of the VPS. For production add an off-box copy (rclone/rsync to a second provider, encrypted with `age` or `gpg`) and a restore test. RPO today is 24 h; RTO is "re-run bootstrap + release + restore" (about 30 min).
 
-Restore (DB): `zcat /var/backups/alcusa/alcusa_dev-<ts>.sql.gz | sudo mariadb --protocol=socket -uroot` (the dump includes `CREATE DATABASE`/`USE`; accounts and grants are not in it, they come from bootstrap + `release`). Restore (files): `sudo tar -C /var/www/alcusa/dev -xzf /var/backups/alcusa/dev-shared-<ts>.tar.gz`, then `sudo chown -R alcusa:www-data /var/www/alcusa/dev/shared`.
+Restore (DB, root session, see 2.1): `zcat /var/backups/alcusa/alcusa_dev-<ts>.sql.gz | mariadb --protocol=socket -uroot` (the dump includes `CREATE DATABASE`/`USE`; accounts and grants are not in it, they come from bootstrap + `release`). Restore (files): `sudo tar -C /var/www/alcusa/dev -xzf /var/backups/alcusa/dev-shared-<ts>.tar.gz`, then `sudo chown -R alcusa:www-data /var/www/alcusa/dev/shared`.
 
 ### 11.7 Production: what changes (not done yet)
 
