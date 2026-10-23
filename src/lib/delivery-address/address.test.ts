@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getZoneFee } from '@engine/pricing/zoneFee';
 import { DEPARTAMENTOS } from '@content/elSalvadorTerritory';
-import { ZONE_OPTIONS, zoneOptionLabel } from '@content/deliveryZones';
+import { ZONE_OPTIONS } from '@content/deliveryZones';
 import {
   ADDRESS_MSG,
   applyAddressField,
@@ -82,22 +82,27 @@ describe('validateAddress', () => {
 });
 
 describe('dropdown de zonas', () => {
-  it('opciones en orden de la tabla, con precio, sin "Otra zona"', () => {
+  it('opciones en orden de la tabla, solo nombre (sin precio), sin "Otra zona"', () => {
     const labels = ZONE_OPTIONS.map((o) => o.label);
-    expect(labels[0]).toBe('San Salvador (zona metropolitana) — Incluido');
-    expect(labels[1]).toBe('Santa Tecla — Incluido');
-    expect(labels[2]).toBe('San Marcos — $25.00');
-    expect(labels[labels.length - 1]).toBe('Ciudad Arce — $85.00');
+    expect(labels[0]).toBe('San Salvador (zona metropolitana)');
+    expect(labels[1]).toBe('Santa Tecla');
+    expect(labels[2]).toBe('San Marcos');
+    expect(labels[labels.length - 1]).toBe('Ciudad Arce');
     expect(labels).not.toContain('Otra zona — envío por confirmar');
     expect(ZONE_OPTIONS).toHaveLength(23);
+    for (const l of labels) expect(l).not.toMatch(/\$|Incluido|—/);
   });
 
-  it('cada opcion con tarifa trae el monto exacto de la tabla', () => {
+  it('el precio no se muestra en la etiqueta pero cada opcion conserva su tarifa exacta de la tabla', () => {
     for (const o of ZONE_OPTIONS.slice(0, -1)) {
       const fee = getZoneFee(o.value);
       expect(fee).toBeDefined();
-      expect(zoneOptionLabel(o.value)).toContain(fee === 0 ? 'Incluido' : `$${(fee ?? 0).toFixed(2)}`);
+      expect(o.label).not.toMatch(/\$|Incluido/);
     }
+    expect(getZoneFee('San Salvador')).toBe(0);
+    expect(getZoneFee('San Marcos')).toBe(25);
+    expect(getZoneFee('Soyapango')).toBe(40);
+    expect(getZoneFee('Ciudad Arce')).toBe(85);
     expect(getZoneFee('otro')).toBeUndefined();
   });
 
