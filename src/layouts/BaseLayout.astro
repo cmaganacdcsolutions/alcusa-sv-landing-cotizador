@@ -3,6 +3,7 @@ import '@styles/global.css';
 import '@styles/motion-transition.css';
 // Unico archivo de la tipografia display que se precarga (latin, eje opsz): evita el salto de swap en el H1 sin
 // sumar peso a la ruta critica. El resto de subconjuntos carga bajo demanda por unicode-range.
+import { OG_IMAGE_PATH, SITE_NAME, absoluteUrl, canonicalPath, serializeJsonLd, siteUrl } from '../lib/seo';
 import displayFontLatin from '@fontsource-variable/fraunces/files/fraunces-latin-opsz-normal.woff2?url';
 
 interface Props {
@@ -10,11 +11,14 @@ interface Props {
   description: string;
   /** Paginas sin valor para buscadores (p. ej. borradores). */
   noindex?: boolean;
+  /** Datos estructurados (schema.org) como bloque de datos, no script ejecutable. */
+  jsonLd?: Record<string, unknown>;
 }
 
-const { title, description, noindex = false } = Astro.props;
-const siteUrl = import.meta.env.PUBLIC_SITE_URL ?? 'https://alcusasv.com';
-const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
+const { title, description, noindex = false, jsonLd } = Astro.props;
+const base = siteUrl();
+const canonicalUrl = absoluteUrl(canonicalPath(Astro.url.pathname), base);
+const ogImage = absoluteUrl(OG_IMAGE_PATH, base);
 ---
 
 <!doctype html>
@@ -31,8 +35,19 @@ const canonicalUrl = new URL(Astro.url.pathname, siteUrl);
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="es_SV" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Puertas y ventanas de aluminio y vidrio instaladas por Alcusa" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    {jsonLd && <script type="application/ld+json" set:html={serializeJsonLd(jsonLd)} />}
     <script is:inline>
       // Motion 02 E5: solo home -> cotizador por navegacion nueva (no atras/adelante, no recarga), sin ?motion=off y sin reduce.
       (function () {

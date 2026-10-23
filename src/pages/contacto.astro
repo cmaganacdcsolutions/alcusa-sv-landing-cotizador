@@ -9,15 +9,30 @@ import Footer from '@components/Footer.astro';
 ---
 
 <BaseLayout
-  title="Contacto | ALCUSA"
-  description="Escríbenos por WhatsApp, llámanos o visita nuestro taller de aluminio y vidrio en Ciudad Merliot, El Salvador."
+  title="Contacto y ubicación | Alcusa, Ciudad Merliot, El Salvador"
+  description="Contacta a Alcusa por WhatsApp, teléfono o correo, o visita nuestro taller de aluminio y vidrio en Calle El Pedregal, Ciudad Merliot, El Salvador."
 >
   <Navbar />
 
   <main id="main" tabindex="-1">
+    <h1 class="seo-h1">Contacto Alcusa</h1>
     <Contacto />
     <Visitanos />
   </main>
 
   <Footer />
 </BaseLayout>
+
+<style>
+  .seo-h1 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

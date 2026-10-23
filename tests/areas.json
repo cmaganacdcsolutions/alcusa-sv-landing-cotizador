@@ -4,6 +4,7 @@
   "specs": {
     "catalog-upcoming.spec.ts": ["home"],
     "a11y.spec.ts": ["home", "cotizador"],
+    "seo.spec.ts": ["home", "cotizador", "contacto", "layout"],
     "bg-diagonal.spec.ts": ["home", "contacto", "layout"],
     "catalogo-deeplink.spec.ts": ["catalogo", "cotizador"],
     "catalogo-imagenes.spec.ts": ["catalogo", "layout"],
