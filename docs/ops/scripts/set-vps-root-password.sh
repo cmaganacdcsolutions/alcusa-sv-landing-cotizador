@@ -17,7 +17,11 @@ if [ -z "${HOSTINGER_API_TOKEN:-}" ]; then
   read -rsp "Pega el token de la API de Hostinger y presiona Enter (no se vera nada en pantalla): " HOSTINGER_API_TOKEN
   echo
 fi
+# Al pegar en la consola de Windows el Enter puede dejar un \r pegado al token: un \r dentro
+# del header Authorization corrompe la peticion y la API responde 400 sin cuerpo.
+HOSTINGER_API_TOKEN="${HOSTINGER_API_TOKEN//[$'\r\n\t ']/}"
 [ -n "$HOSTINGER_API_TOKEN" ] || { echo "No se recibio ningun token." >&2; exit 1; }
+echo "Token recibido (${#HOSTINGER_API_TOKEN} caracteres)."
 umask 077
 mkdir -p "$(dirname "$OUT")"
 if [ -e "$OUT" ]; then
