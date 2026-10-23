@@ -75,12 +75,15 @@ test.describe('cotizador — direccion de entrega', () => {
     await expect(page.locator('label[for="addr-zona"]')).toHaveText('Ubicación / zona de cobertura');
     const labels = await page.locator('#addr-zona option').allTextContents();
     expect(labels[0]).toBe('Elige tu zona');
-    expect(labels[1]).toBe('San Salvador (zona metropolitana) — Incluido');
-    expect(labels[2]).toBe('Santa Tecla — Incluido');
-    expect(labels[3]).toBe('San Marcos — $25.00');
-    expect(labels).toContain('Soyapango — $40.00');
-    expect(labels[labels.length - 1]).toBe('Ciudad Arce — $85.00');
+    expect(labels[1]).toBe('San Salvador (zona metropolitana)');
+    expect(labels[2]).toBe('Santa Tecla');
+    expect(labels[3]).toBe('San Marcos');
+    expect(labels).toContain('Soyapango');
+    expect(labels[labels.length - 1]).toBe('Ciudad Arce');
     expect(labels.join('|')).not.toMatch(/Otra zona/);
+    // El flete no se muestra en el selector (se sigue cobrando en el total).
+    for (const l of labels) expect(l).not.toContain('$');
+    expect(labels.join('|')).not.toMatch(/Incluido/);
     await expect(page.locator('#addr-zona option[value="otro"]')).toHaveCount(0);
     // 8 zonas que antes eran inalcanzables (colonias/puntos de referencia) ahora se pueden elegir.
     for (const z of ['Planes de Renderos', 'Redondel Integración', 'Paseo del Prado', 'San Bartolo', 'Altavista', 'Ciudad Versalles', 'Lourdes', 'Desvío de Opico']) {

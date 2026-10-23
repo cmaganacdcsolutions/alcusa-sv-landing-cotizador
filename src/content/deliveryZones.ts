@@ -51,20 +51,14 @@ export function zoneDisplayName(zone: string): string {
   return ZONE_DISPLAY_NAME[zone] ?? zone;
 }
 
-/** Etiqueta del dropdown: nombre + precio de envio ("Incluido" cuando es $0). */
-export function zoneOptionLabel(zone: string): string {
-  const fee = ZONE_FEES[zone] ?? 0;
-  return `${zoneDisplayName(zone)} — ${fee === 0 ? 'Incluido' : `$${fee.toFixed(2)}`}`;
-}
-
 export interface ZoneOption {
   value: string;
   label: string;
 }
 
-/** Opciones del dropdown, en el orden de la tabla (precio ascendente). */
+/** Opciones del dropdown: solo el nombre de la zona (el flete se cobra en el total, no se muestra aqui). Orden de la tabla. */
 export const ZONE_OPTIONS: readonly ZoneOption[] = [
-  ...Object.keys(ZONE_FEES).map((z) => ({ value: z, label: zoneOptionLabel(z) })),
+  ...Object.keys(ZONE_FEES).map((z) => ({ value: z, label: zoneDisplayName(z) })),
 ];
 
 export function isKnownZone(zone: string): boolean {
