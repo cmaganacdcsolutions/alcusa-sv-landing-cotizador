@@ -13,7 +13,11 @@ VM_ID="${VM_ID:-2021291}"
 API="https://developers.hostinger.com/api/vps/v1/virtual-machines/${VM_ID}/root-password"
 OUT="${HOME}/.alcusa/vps-root.txt"
 
-if [ -z "${HOSTINGER_API_TOKEN:-}" ]; then
+if [ "${1:-}" = "--clipboard" ]; then
+  # Copia el token (Ctrl+C) antes de correr. Se lee de /dev/clipboard (Git Bash) y se vacia el portapapeles.
+  HOSTINGER_API_TOKEN="$(cat /dev/clipboard 2>/dev/null || true)"
+  printf '' > /dev/clipboard 2>/dev/null || true
+elif [ -z "${HOSTINGER_API_TOKEN:-}" ]; then
   read -rsp "Pega el token de la API de Hostinger y presiona Enter (no se vera nada en pantalla): " HOSTINGER_API_TOKEN
   echo
 fi
@@ -22,6 +26,11 @@ fi
 HOSTINGER_API_TOKEN="${HOSTINGER_API_TOKEN//[$'\r\n\t ']/}"
 [ -n "$HOSTINGER_API_TOKEN" ] || { echo "No se recibio ningun token." >&2; exit 1; }
 echo "Token recibido (${#HOSTINGER_API_TOKEN} caracteres)."
+if [ "${#HOSTINGER_API_TOKEN}" -lt 20 ]; then
+  echo "Ese token es demasiado corto: no se pego bien (Ctrl+V en esta consola no pega en un prompt oculto)." >&2
+  echo "Copia el token con Ctrl+C y corre:  bash docs/ops/scripts/set-vps-root-password.sh --clipboard" >&2
+  exit 1
+fi
 umask 077
 mkdir -p "$(dirname "$OUT")"
 if [ -e "$OUT" ]; then
