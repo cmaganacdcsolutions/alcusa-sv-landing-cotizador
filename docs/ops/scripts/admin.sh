@@ -303,6 +303,7 @@ for r in $(ls -1 "$base/releases" 2>/dev/null | sort); do if [ "$r" = "$cur" ]; 
 echo "service: $(systemctl is-active "$svc" 2>/dev/null) (enabled: $(systemctl is-enabled "$svc" 2>/dev/null))"
 echo "loopback $health_label: $(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "http://127.0.0.1:$port$health_path")"
 if [ -f "$base/current/dist/cli/promos-status.js" ]; then cd "$base/current" && as_app dist/cli/promos-status.js; fi
+if [ "$svc" = alcusa-admin-prod ]; then echo "admin accounts: $(sudo -n /usr/local/sbin/alcusa-prod-admins 2>&1)"; fi
 REMOTE
   } | remote 'bash -s'
   log "HTTPS probes ($BASE_URL)"
