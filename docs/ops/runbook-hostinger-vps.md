@@ -48,10 +48,10 @@ sudo -n <allowlisted command>                        # deploy has an sudo ALLOWL
 | root | `/usr/local/sbin/alcusa-backup.sh`, `ls -l /var/backups/alcusa`, `/usr/local/sbin/alcusa-admin-bootstrap` (root-owned copy, no arguments) |
 | alcusa | `/usr/local/bin/node --env-file=/etc/alcusa/dev-api.env dist/cli/create-admin.js *`, `.../import-promos.js *`, `.../promos-status.js` (run from `/opt/alcusa/dev/current`) |
 
-Release dirs, `current` symlinks and `/var/www/alcusa` are owned by `deploy`, so `deploy.sh` needs no sudo at all. `admin-dev.sh` needs only the `systemctl restart`, `journalctl -n 25` and `sudo -u alcusa node ...` lines above.
+Release dirs, `current` symlinks and `/var/www/alcusa` are owned by `deploy`, so `deploy.sh` needs no sudo at all. `admin.sh <dev|prod>` needs only the `systemctl restart`, `journalctl -n 25` and `sudo -u alcusa node ...` lines above.
 
 What changed for operations:
-- `admin-dev.sh bootstrap` and `sudo -n bash -s < alcusa-admin-bootstrap.sh` no longer work (`bash -s` would be root). Run `ssh -t deploy@... 'sudo /usr/local/sbin/alcusa-admin-bootstrap'`. The root-owned copy is refreshed only from a root session (hPanel Browser terminal, section 2): copy the script over it, `chmod 755`. `NODE_UPGRADE=1` also needs a root session.
+- `admin.sh dev bootstrap` and `sudo -n bash -s < alcusa-admin-bootstrap.sh` no longer work (`bash -s` would be root). Run `ssh -t deploy@... 'sudo /usr/local/sbin/alcusa-admin-bootstrap'`. The root-owned copy is refreshed only from a root session (hPanel Browser terminal, section 2): copy the script over it, `chmod 755`. `NODE_UPGRADE=1` also needs a root session.
 - Editing nginx vhosts/snippets (for example the noindex removal in section 9), restoring the DB (11.6) and changing sudoers need a **root session** through the hPanel Browser terminal (set a root password first, see Break-glass). This is deliberate: write access to nginx config or `mariadb -uroot` is root-equivalent.
 - Residual risk: `deploy` can still run JS as the unprivileged `alcusa` user (it owns the release dirs), which gives the app's DB account. It cannot reach root, the MariaDB root account or the nginx config.
 
@@ -229,7 +229,7 @@ Production is currently `noindex` because prices are not yet approved.
 
 Live on `https://dev.alcusasv.com/ops-dev/` since 2026-10-07, behind the dev basic auth (same server-level `auth_basic` as the site). Production is **not** provisioned yet (see 11.7).
 
-Scripts (Git Bash, from `03-dev/docs/ops/scripts/`): `alcusa-admin-bootstrap.sh` (runs on the VPS as root) and `admin-dev.sh` (runs on your machine).
+Scripts (Git Bash, from `03-dev/docs/ops/scripts/`): `alcusa-admin-bootstrap.sh` (runs on the VPS as root) and `admin.sh <dev|prod>` (runs on your machine; `admin-dev.sh` is a shim for `admin.sh dev`).
 
 ### 11.1 Layout
 
@@ -249,28 +249,28 @@ nginx specifics of the admin locations: `Host` is forwarded untouched (the app's
 ### 11.2 Provision (once, then any time the script changes)
 
 ```bash
-bash 03-dev/docs/ops/scripts/admin-dev.sh bootstrap
+bash 03-dev/docs/ops/scripts/admin.sh dev bootstrap
 # same thing without the wrapper:
 ssh deploy@179.236.251.239 'sudo -n /usr/local/sbin/alcusa-admin-bootstrap'   # root-owned copy, see 2.1
 ```
 
 Idempotent: existing env files and passwords are kept, config files are rewritten only when their content changes, nginx is reloaded only after `nginx -t` passes (if it fails, the vhost is restored from the backup and the script stops). It also installs the daily backup (11.6). It never touches DNS, the prod vhost, basic auth or noindex.
 
-- Rotate the DB passwords: delete both files in `/etc/alcusa/`, re-run bootstrap (it runs `ALTER USER` and writes new files), then `admin-dev.sh release` or `sudo systemctl restart alcusa-admin-dev`.
+- Rotate the DB passwords: delete both files in `/etc/alcusa/`, re-run bootstrap (it runs `ALTER USER` and writes new files), then `admin.sh dev release` or `sudo systemctl restart alcusa-admin-dev`.
 - Move to a newer Node 24: root session only (2.1): `NODE_UPGRADE=1 /usr/local/sbin/alcusa-admin-bootstrap`, then restart the service.
 
 ### 11.3 Deploy / update
 
 ```bash
 export PATH="/c/Users/carlo/AppData/Roaming/fnm/node-versions/v24.21.0/installation:$PATH"   # Node 24 locally
-bash 03-dev/docs/ops/scripts/admin-dev.sh release     # default source: ../03-dev-wt/admin-v1/server (override: ADMIN_SERVER_DIR)
-bash 03-dev/docs/ops/scripts/admin-dev.sh status      # releases, service, promos:status, HTTPS probes
+bash 03-dev/docs/ops/scripts/admin.sh dev release     # source: <this repo>/server (override: ADMIN_SERVER_DIR; never a sibling worktree)
+bash 03-dev/docs/ops/scripts/admin.sh dev status      # releases, service, promos:status, HTTPS probes
 ```
 
 `release` builds with tsup (bundles `admin-server` and the `cli/*` entries; `splitting:false` is required because `src/db/paths.ts` resolves `db/` relative to `dist/cli/<x>.js`), uploads, runs `npm ci --omit=dev` on the VPS, then `migrate.js` and `grants.js` with the migrate env, switches `current` atomically, restarts, and polls `127.0.0.1:4500/ops-dev/login`. If the health check fails it switches back to the previous release by itself and exits non-zero.
 
 - Migrations run **before** the switch: write them expand/contract so the previous release still works with the new schema (rollback does not undo migrations).
-- `admin-dev.sh seed [site-dir]` is for first load or re-sync from the site's `src/content/promotions.json` and `public/images/promos/*.webp` (default `../03-dev-wt/assets-oficiales`). It uploads to a temp dir, runs the importer `--dry-run`, then for real with `--allow-production --publish`, and prints `promos:status`. It is an idempotent upsert; once the admin is in use, **do not re-seed casually**, it would overwrite edits made in the panel.
+- `admin.sh dev seed [site-dir]` (dev only; `admin.sh prod seed` is refused) is for first load or re-sync from the site's `src/content/promotions.json` and `public/images/promos/*.webp` (default `../03-dev-wt/assets-oficiales`). It uploads to a temp dir, runs the importer `--dry-run`, then for real with `--allow-production --publish`, and prints `promos:status`. It is an idempotent upsert; once the admin is in use, **do not re-seed casually**, it would overwrite edits made in the panel.
 - Check the state any time (as the service user, read-only): `ssh deploy@179.236.251.239 'cd /opt/alcusa/dev/current && sudo -n -u alcusa node --env-file=/etc/alcusa/dev-api.env dist/cli/promos-status.js'`.
 
 ### 11.4 Create the admin account (you, in a TTY)
@@ -296,8 +296,8 @@ The single dev account is `alcusa`. Failed logins no longer lock the account (th
 ### 11.5 Rollback
 
 ```bash
-bash 03-dev/docs/ops/scripts/admin-dev.sh rollback            # previous release
-bash 03-dev/docs/ops/scripts/admin-dev.sh rollback <release>  # a folder name under /opt/alcusa/dev/releases
+bash 03-dev/docs/ops/scripts/admin.sh dev rollback            # previous release
+bash 03-dev/docs/ops/scripts/admin.sh dev rollback <release>  # a folder name under /opt/alcusa/dev/releases
 ```
 
 It swaps `current`, restarts and health-checks. Data (DB, `shared/`) is not rolled back. To undo bad content, restore from a backup (11.6) or fix it in the panel.
@@ -317,11 +317,29 @@ Plus the Hostinger weekly snapshots. **Backups are on the same disk**: they cove
 
 Restore (DB, root session, see 2.1): `zcat /var/backups/alcusa/alcusa_dev-<ts>.sql.gz | mariadb --protocol=socket -uroot` (the dump includes `CREATE DATABASE`/`USE`; accounts and grants are not in it, they come from bootstrap + `release`). Restore (files): `sudo tar -C /var/www/alcusa/dev -xzf /var/backups/alcusa/dev-shared-<ts>.tar.gz`, then `sudo chown -R alcusa:www-data /var/www/alcusa/dev/shared`.
 
-### 11.7 Production: what changes (not done yet)
+### 11.7 Production: usage and what changes
+
+`admin.sh prod <subcommand>` (same script as dev; constants in its header `case`): unit `alcusa-admin-prod`, `/opt/alcusa/prod`, loopback port 4501, env files `/etc/alcusa/prod-{api,migrate}.env`, health `http://127.0.0.1:4501/api/health` (path-independent: the admin path is secret and `deploy` cannot read `prod-api.env`), base URL `https://alcusasv.com`, separate basic-auth file `~/.alcusa/prod-admin-basic.txt`. `admin.sh prod config` prints the resolved values without touching the server.
+
+```bash
+export ADMIN_SERVER_DIR="<03-dev>/server"          # always explicit for the cutover; default is this repo's server/
+bash docs/ops/scripts/admin.sh prod config           # constants, no ssh
+bash docs/ops/scripts/admin.sh prod release          # gate + build + upload + npm ci --ignore-scripts + migrate + switch + health
+bash docs/ops/scripts/admin.sh prod clone-promos     # one-off: dev's published promos + media -> prod (before go-live)
+bash docs/ops/scripts/admin.sh prod status           # ALCUSA_PROD_ADMIN_PATH (local secret) enables the admin probes
+bash docs/ops/scripts/admin.sh prod rollback         # previous release, or: sudo systemctl stop alcusa-admin-prod
+```
+
+- **Release gate (SEC-023, fatal, nothing is uploaded):** a modified or untracked file under `server/`; HEAD different from the commit of the dev release (override with `ALCUSA_EXPECTED_COMMIT=<sha>`); `npm audit --omit=dev --audit-level=high` with findings (`ALCUSA_SKIP_AUDIT=1` only with a waiver in chat; the audit output path is printed for the release note). The local build uses `npm ci --ignore-scripts`; the VPS runs `npm ci --omit=dev --ignore-scripts` (no production dependency needs an install script; `esbuild`/`fsevents` are dev-only; canary on dev with `ALCUSA_IGNORE_SCRIPTS=1`).
+- **Absolute CLI paths (SEC-021):** in prod every CLI runs as `sudo -n -u alcusa /usr/local/bin/node --env-file=/etc/alcusa/prod-api.env /opt/alcusa/prod/current/dist/cli/<cli>.js ...`; the sudoers lines must match that text.
+- **`clone-promos`:** checks dev `generated_at` and `borradores=0 archivadas=0` (fatal otherwise; `ALCUSA_CLONE_EXPECT_GENERATED_AT` pins the timestamp, `ALCUSA_CLONE_FORCE=1` overrides), stages dev's `shared/data/promotions.json` and `shared/media/promos/*.webp` under `/var/tmp/alcusa-seed.XXXXXX`, runs the importer `--dry-run`, then `--allow-production --site-public-dir <stage>/public --publish`, compares prod's `promos:status` lines and the `-600/-900` media hashes with dev, and removes the stage. Dev is never written. Re-run it (idempotent upsert) only before go-live: afterwards the prod panel owns the data.
+- `admin.sh prod seed` and `admin.sh prod bootstrap` are refused (seed would overwrite panel edits; prod provisioning is `alcusa-prod-root.sh`, section 2.1).
+
+What else changes in prod:
 
 - **Random admin path.** In prod `ADMIN_BASE_PATH` must be a secret random segment generated on the VPS (`/ops-$(openssl rand -hex 12)`), kept in the root-only env file and given to the admin out of band; never commit it, never put it in a ticket. In dev `/ops-dev` is fixed because the dev site is already behind basic auth.
 - Prod has no basic auth, so the admin locations need their own second layer: an `allow`/`deny` IP allowlist answering 404 (Addendum 1, item 8) and/or a dedicated `auth_basic` file on the admin locations, plus a fail2ban jail on the login 401/429 lines.
-- Separate DB `alcusa_prod`, accounts, env files `/etc/alcusa/prod-*.env`, unit `alcusa-admin-prod`, `/opt/alcusa/prod`, `/var/www/alcusa/prod/shared`. The script constants are dev-only: generalise `ENV_NAME` and the vhost anchor, and review the paths before running it for prod. Do it at the production cutover (section 8), together with the header and noindex rules of that section.
+- Separate DB `alcusa_prod`, accounts, env files `/etc/alcusa/prod-*.env`, unit `alcusa-admin-prod`, `/opt/alcusa/prod`, `/var/www/alcusa/prod/shared`. `admin.sh` is generalised (see above); the vhost anchor and the header/noindex rules are part of the production cutover (section 8).
 - `SECRETS_KEY` and `IP_HASH_PEPPER` are required by the quotes API in production (`loadConfig`) but not by the admin v1.0 entry point, so the dev env does not carry them. Generate them (`openssl rand -base64 32`) when the quotes API is deployed.
 
 ### 11.8 Open points from ADR-014 Addendum 1
