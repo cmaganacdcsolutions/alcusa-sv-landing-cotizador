@@ -34,6 +34,19 @@ async function addRectaThenLoop(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
 }
 
+// Adds Cabina en L as the 2nd item and lands on Resumen. Every Siguiente waits for the heading of the
+// step it navigates FROM first: under CPU load a click that fires before the step has rendered hits the
+// previous step's identical "Siguiente" button (a race only a machine can win; a person sees the step).
+async function addCornerAndGoToResumen(page: Page): Promise<void> {
+  await pickProduct(page, 'l');
+  await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
+  await page.getByRole('button', { name: 'Siguiente' }).click();
+  await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
+  await page.getByRole('button', { name: 'Siguiente' }).click();
+  await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+  await expect(page.locator('.summary-item')).toHaveCount(2);
+}
+
 test.describe('cotizador cart — S7 multi-item resumen', () => {
   test('adding a 2nd product (Cabina en L) shows 2 rows, ONE transport line, and the correct total', async ({
     page,
@@ -58,14 +71,6 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     // 258 (recta) + 444 (corner) + 40 (Soyapango, ONCE) = 742 — never 40x2.
     await expect(page.getByTestId('resumen-total-value')).toHaveText('$742.00');
 
-    const waLink = (await textOnlyWaLink(page));
-    const href = await waLink.getAttribute('href');
-    const decoded = decodeURIComponent(href!.split('?text=')[1]);
-    expect(decoded).toContain('1. Puerta de baño recta');
-    expect(decoded).toContain('2. Cabina en L');
-    expect(decoded).toContain('Transporte: $40.00');
-    expect(decoded).toContain('Total estimado: $742.00');
-
     // Quitar the recta row — only Cabina en L (+ its $40 transport) remains.
     await page.getByRole('button', { name: 'Quitar Puerta de baño recta' }).click();
     await expect(page.locator('.summary-item')).toHaveCount(1);
@@ -73,16 +78,28 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     await expect(page.getByTestId('resumen-total-value')).toHaveText('$484.00');
   });
 
+  // Split from the totals test above: one test = one flow, so neither approaches the 30 s per-test cap
+  // when the machine is loaded (the combined test took ~21 s on an idle machine).
+  test('the 2-item WhatsApp message lists both products, ONE transport line and the total', async ({ page }) => {
+    await addRectaThenLoop(page);
+    await addCornerAndGoToResumen(page);
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$742.00');
+
+    const waLink = (await textOnlyWaLink(page));
+    const href = await waLink.getAttribute('href');
+    const decoded = decodeURIComponent(href!.split('?text=')[1]);
+    expect(decoded).toContain('1. Puerta de baño recta');
+    expect(decoded).toContain('2. Cabina en L');
+    expect(decoded).toContain('Transporte: $40.00');
+    expect(decoded).toContain('Total estimado: $742.00');
+  });
+
   test('sf-cot-s7gaps gap 1 — desktop Editar on item 1 updates it in place (same row order)', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only affordance, desktop-05-cotizador-resumen.dc.html');
     await addRectaThenLoop(page);
-    await pickProduct(page, 'l');
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
-    await expect(page.locator('.summary-item')).toHaveCount(2);
+    await addCornerAndGoToResumen(page);
 
     // Item 1 (recta) is the first row — its Editar takes us to Medidas with
     // the recta fields loaded (not Cabina en L's).
@@ -92,6 +109,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
 
     await page.locator('#ancho').fill('150');
     await page.getByRole('button', { name: 'Siguiente' }).click(); // -> Precio
+    await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await page.getByRole('button', { name: 'Siguiente' }).click(); // zoneDecided -> straight to Resumen
 
     await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
@@ -109,11 +127,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     page,
   }) => {
     await addRectaThenLoop(page);
-    await pickProduct(page, 'l');
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-
-    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    await addCornerAndGoToResumen(page);
     const resumenTotal = await page.getByTestId('resumen-total-value').textContent();
     expect(resumenTotal).toBe('$742.00');
 
@@ -139,6 +153,7 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     // (state/persist.ts, key alcusa-cotizador-wizard) restores them, so the zone is already decided
     // and "Siguiente" from Precio goes straight to Resumen without asking for the address again.
     await pickProduct(page, 'l');
+    await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
     await page.getByRole('button', { name: 'Siguiente' }).click();

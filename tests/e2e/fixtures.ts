@@ -58,7 +58,7 @@ export async function pickProduct(page: Page, which: keyof typeof PICKS): Promis
   const [cat, type, finish] = PICKS[which] as readonly [string, string, string?];
   const typeBtn = page.getByRole('button', { name: new RegExp('^' + type) });
   await expect(async () => {
-    await page.getByRole('button', { name: new RegExp('^' + cat) }).click();
+    await page.getByRole('button', { name: new RegExp('^' + cat) }).click({ timeout: 4000 });
     await expect(typeBtn).toBeVisible({ timeout: 1500 });
   }).toPass();
   await typeBtn.click();
