@@ -152,7 +152,7 @@ Owner for SEC-018..022, 024-026, 028-030: senior-infrastructure. SEC-023: senior
 
 Scope: `docs/ops/scripts/alcusa-prod-root.sh` (373 lines by `wc -l`), `docs/ops/scripts/set-vps-root-password.sh`, plan stages B/E, runbook lines. Method: full read of both scripts plus read-only SSH as `deploy` (pinned `docs/ops/known_hosts`) to confirm facts. No server change, no secret read.
 
-**Integrity:** `sha256sum` = `a3485e966ab043c08c5e41dedef4745a8ca367ef23f7cc5b363f5745e5f6f32f`, identical to the claim; 0 CR bytes.
+**Integrity:** `sha256sum` = `a3485e966ab043c08c5e41dedef4745a8ca367ef23f7cc5b363f5745e5f6f32f` (run 1 text, superseded: see "As executed" below; the script that finally ran is `ada0248788455d0a69bc970ca01ac6d6e48008577ffc1db7d788c59d15f9d9d5`); 0 CR bytes.
 
 ### Verdict for executing the root script with this exact hash: GO (conditional on the procedural pre-checks below; no script edit required)
 
@@ -162,19 +162,20 @@ No Critical/High. New findings SEC-031..036 are Low/Medium and none requires cha
 
 | ID | Status | Evidence / note |
 |---|---|---|
-| SEC-018 | Verified (static) | Root password never in chat/argv: generated locally to `~/.alcusa/vps-root.txt` (umask 077); token and password only inside the `curl -K -` stdin config; failure deletes the file and redacts the body. Residuals SEC-034/035 (procedure). |
-| SEC-019 | Verified (static), Low residual SEC-032 | Hand-traced the regex on the 3 sample lines: line 1 (`- ops [`) matches rule 1; line 2 (user `-`) is rejected by `(?!- )`; line 3 (429) matches rule 2. Gives `2 matched, 1 missed`, which is the format fail2ban 1.0.2 (live) prints. Assertion and the `File list` poll are fatal. `limit_req_status 429` is in the proxy snippet (confirmed live), so 429s reach the admin log. The real run is the proof (L7). |
+| SEC-018 | Verified (static); live: root re-locked, `passwd -S` = `L`, confirmed by the user after the handover | Root password never in chat/argv: generated locally to `~/.alcusa/vps-root.txt` (umask 077); token and password only inside the `curl -K -` stdin config; failure deletes the file and redacts the body. Residuals SEC-034/035 (procedure). |
+| SEC-019 | Verified (live, run 2) after a fix; Low residual SEC-032 | My static hand-trace was WRONG: it kept `\[[^\]]+\]` but fail2ban strips the timestamp before applying the failregex, so the bracket group is empty and matched 0/3 sample lines. Run 1 therefore stopped at R6 (R1-R5 OK). Fix (commit b2ae3c7): `\[[^\]]*\]`, verified on the box 2/3 (user `-` rejected by design). The assertion did its job (fatal). A live ban has NOT been proven yet (only `fail2ban-regex`). |
 | SEC-020 | Verified (static + live fact) | Diffed the live `sudo -n -l` list (29 entries) against the new 91+92 contents: the only live entry absent from new is `/usr/sbin/nginx -T`; the unsafe certbot line (`RM_C`) is byte-identical to live, so the `Fxq` checks are not vacuous. `sudo -l` output is not wrapped (identical with and without TTY), so `flat()` is reliable. Order correct: `visudo -cf` then install then `visudo -c`, dead-man timer (name matches the stop target) armed before the 91 swap, restore on mismatch. Nit SEC-033. |
-| SEC-021 | Accepted-risk (pending user) | See residual below. |
+| SEC-021 | CLOSED 2026-10-22 | Deploy key `~/.ssh/id_ed25519` now has a passphrase (aes256-ctr/bcrypt), loaded through ssh-agent with a TTL. Cosmetic: the server `authorized_keys` line still carries the old personal-email comment (no action). |
 | SEC-022 | Verified (static); deviation ACCEPTED | Better than `-m`: a wildcard certbot sudo rule is root-equivalent (`--pre-hook`). `update_account` runs as root once, email regex-validated, env var, quoted. Remaining allowlisted certbot line is exact; `show_account` prints only account URL and e-mail. Requires an existing ACME account (dev cert exists). Omitting `CERTBOT_EMAIL` only WARNs, so it must be pasted. Gate stays plan E0. |
 | SEC-023 | Open (not in this re-test) | `admin.sh`, devops; gates (b) only. |
-| SEC-024 | Accepted-risk (pending user) | IPv6 /128 granularity; mitigated by secret path + 24-char secret. |
+| SEC-024 | Accepted by user, close-by 2026-10-29 | IPv6 /128 granularity; mitigated by secret path + 24-char secret. Plan: `post-cutover-followups-2026-10-23.md`. |
 | SEC-025 | Verified (static) | Separate files, plaintext before hash, matching pair re-issue, `.tmp`+`mv`, `$HO` 0700. See SEC-036. |
 | SEC-026 | Verified (static) | `grep -R` follows the sites-enabled symlinks; live only `alcusa-dev.conf` has 443 listens, no `default_server`. `nginx.conf` main file not covered (unreadable to me, low). |
+| SEC-004 | CLOSED 2026-10-22 | Dev basic-auth rotated (new 200, old 401). Local `.bak` copy still pending deletion by the user. |
 | SEC-027 | Partially | Plan lines 78-81 now check old-refused/new-accepted via `curl -K -`; git-history exposure of the leaked value not re-read. Gates (c). |
-| SEC-028 | Accepted-risk (pending user) | Report-Only, deadline 2026-10-29. |
+| SEC-028 | Accepted by user, close-by 2026-10-29 | Report-Only. Sweep and enforce plan: `post-cutover-followups-2026-10-23.md`. |
 | SEC-029 | Verified (plan text) | E3 carries the check; live L6. |
-| SEC-030 | Partially / accepted until F4 | R8 covers dev+prod; same disk, unencrypted, restore untested. |
+| SEC-030 | Accepted by user, close-by 2026-10-29 | R8 covers dev+prod; same disk, unencrypted, restore untested. Plan: `post-cutover-followups-2026-10-23.md`. |
 
 ### Answers to the specific questions
 
@@ -190,7 +191,7 @@ No Critical/High. New findings SEC-031..036 are Low/Medium and none requires cha
 ### New findings
 
 - **SEC-031 · Low (Medium if deploy is hostile during the run) · infra.** Root `install -d` follows deploy-planted symlinks. deploy owns `/var/www/alcusa/prod`, so it can pre-create `shared` (or `shared/data|media|media/promos`) as a symlink; R1 `install -d -m 2755 -o alcusa -g www-data "$SH" ...` then chowns the TARGET (e.g. `/usr/local/sbin` becomes alcusa-owned, alcusa replaces `alcusa-backup.sh`, which deploy runs as root). Live today: `/var/www/alcusa/prod` has only `current` and `releases`, nothing planted. Optional patch before R1: `for d in /var/www/alcusa/prod "$SH" "$SH/data" "$SH/media" "$SH/media/promos" "$OPT"; do [[ ! -L $d ]] || { echo "symlink at $d" >&2; exit 1; }; done`. Without a hash change: run `ls -la /var/www/alcusa/prod /opt/alcusa` right before the paste. Acceptance: no symlink before; L16 after.
-- **SEC-032 · Low · infra.** fail2ban evasion by crafted basic-auth username: `\S+` fails on a username containing a space, and user `-` (or starting `- `) counts as anonymous, so neither rule fires. `limit_req` (60 r/m, login 5 r/m), 24-char secret and secret path still hold. Patch next revision: rule 1 `^<HOST> - (?!- \[).+? \[[^\]]+\] "[A-Z]+ \S+ HTTP/[0-9.]+" 401(?: |$)`; rule 2 `^<HOST> - .+? \[[^\]]+\] "[A-Z]+ \S+ HTTP/[0-9.]+" 429(?: |$)`; the 3-line sample assertion stays valid.
+- **SEC-032 · Low · infra.** fail2ban evasion by crafted basic-auth username: `\S+` fails on a username containing a space, and user `-` (or starting `- `) counts as anonymous, so neither rule fires. `limit_req` (60 r/m, login 5 r/m), 24-char secret and secret path still hold. Patch next revision: rule 1 `^<HOST> - (?!- \[).+? \[[^\]]*\] "[A-Z]+ \S+ HTTP/[0-9.]+" 401(?: |$)`; rule 2 `^<HOST> - .+? \[[^\]]*\] "[A-Z]+ \S+ HTTP/[0-9.]+" 429(?: |$)`; the 3-line sample assertion stays valid.
 - **SEC-033 · Low · infra.** `/var/tmp/sudoers-ok` marker in a world-writable sticky dir: deploy can create it in the window and neutralise the dead-man restore, or plant a symlink that makes the later `touch` fail. Use `"$BK/sudoers-ok"` in the script and the restore helper.
 - **SEC-034 · Medium (procedural) · Foreman/user.** Hostile-deploy harvesting of the `su -` password. Before pasting, in the deploy session: `who` (only yours), `ls -la ~; ls -d ~/bin ~/.local/bin` (absent), `type -a su` (only `/usr/bin/su`), `alias | grep -w su` (empty), `wc -l ~/.ssh/authorized_keys` (1), sha256 of `/home/deploy/handoff/alcusa-prod-root.sh` equals the pin. Invoke `/usr/bin/su -` by absolute path.
 - **SEC-035 · Low (procedural) · user.** `clip < ~/.alcusa/vps-root.txt` leaves the password in clipboard history (Win+V): clear it. After R9 succeeds, `shred -u ~/.alcusa/vps-root.txt` (the setter script also refuses to run while it exists).
@@ -223,4 +224,12 @@ No Critical/High. New findings SEC-031..036 are Low/Medium and none requires cha
 - L17 (new) deploy-key policy decision (passphrase/agent or accepted) recorded for SEC-021.
 
 ### Handoff (re-test)
-Owners: SEC-031/032/033/036 senior-infrastructure (optional patches, Low); SEC-034 Foreman/user (procedure); SEC-035 user. Accept: SEC-021, 024, 028. Still pending elsewhere: SEC-023 (devops, gates b), SEC-027 (Foreman, gates c). Verdict (a), hash `a3485e96...f32f`: GO.
+Owners: SEC-031/032/033/036 senior-infrastructure (optional patches, Low); SEC-034 Foreman/user (procedure); SEC-035 user. Accept: SEC-021, 024, 028. Still pending elsewhere: SEC-023 (devops, gates b), SEC-027 (Foreman, gates c). Verdict (a), hash `a3485e96...f32f` (run 1; superseded by `ada02487...d9d5`, run 2): GO.
+
+## As executed (2026-10-22) and live state
+
+- **Script hashes.** Run 1: `a3485e96...` (R1-R5 OK, R6 failed, see SEC-019). Run 2, the one that completed: sha256 `ada0248788455d0a69bc970ca01ac6d6e48008577ffc1db7d788c59d15f9d9d5` (commit b2ae3c7 changed the failregex bracket group `+` to `*`). References above to `a3485e96` are historical.
+- **SEC-018** closed: root re-locked (`passwd -S` = `L`), confirmed by the user. **SEC-035** closed: handover files shredded, clipboard cleared, `~/.alcusa/vps-root.txt` does not exist. **SEC-021** closed (see table). **SEC-004** closed (local `.bak` deletion pending, user).
+- **Live (Foreman-verified):** Let's Encrypt cert apex+www (expires 2027-01-21, auto-renew); http to https 301; www to apex 301; HSTS `max-age=31536000` (no subdomains); CSP Report-Only; legacy Wix 301s; unknown SNI rejected; dev 401 without auth. Admin prod: 1 admin (`alcusa`), jail `alcusa-admin` 0 failed / 0 banned.
+- **Not proven:** a live fail2ban ban (only `fail2ban-regex` in stage B). Deliberately not tested from the user's IP.
+- **Open, accepted by the user, close-by 2026-10-29:** SEC-024, SEC-028, SEC-030. Closure plans in `docs/security/post-cutover-followups-2026-10-23.md`.
