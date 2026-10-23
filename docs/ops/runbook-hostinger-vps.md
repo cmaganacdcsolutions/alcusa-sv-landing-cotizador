@@ -41,8 +41,8 @@ sudo -n <allowlisted command>                        # deploy has an sudo ALLOWL
 | Runs as | Allowed (exact arguments; `*` only where shown) |
 |---|---|
 | root | `systemctl restart\|start\|stop alcusa-admin-dev`, `systemctl status alcusa-admin-dev --no-pager`, `systemctl reload nginx` |
-| root | `nginx -t`, `nginx -T`, `tee /etc/nginx/htpasswd/alcusa-dev` (dev basic-auth hash, via stdin) |
-| root | `certbot renew`, `certbot renew --dry-run`, `certbot certificates`, and the exact cutover `certbot --nginx -d alcusasv.com -d www.alcusasv.com --redirect --non-interactive --agree-tos --register-unsafely-without-email` |
+| root | `nginx -t` (NOT `-T`: it prints the secret prod admin path; removed 2026-10-22, SEC-020), `tee /etc/nginx/htpasswd/alcusa-dev` (dev basic-auth hash, via stdin) |
+| root | `certbot renew`, `certbot renew --dry-run`, `certbot certificates`, and the exact cutover `certbot --nginx -d alcusasv.com -d www.alcusasv.com --redirect --non-interactive --agree-tos` (no e-mail flag: the account e-mail is registered once as root with `certbot update_account`, SEC-022; `--register-unsafely-without-email` was removed 2026-10-22), `certbot show_account` |
 | root | `journalctl -u alcusa-admin-dev -n 25 --no-pager`, `... -u alcusa-admin-dev --since today --no-pager`, `... -u nginx -u ssh -u fail2ban --since today --no-pager` (always with `--no-pager`: a pager is a shell escape) |
 | root | `ufw status [verbose]`, `fail2ban-client status [sshd]`, `fail2ban-client set sshd unbanip *` |
 | root | `/usr/local/sbin/alcusa-backup.sh`, `ls -l /var/backups/alcusa`, `/usr/local/sbin/alcusa-admin-bootstrap` (root-owned copy, no arguments) |
@@ -188,7 +188,7 @@ Hard rules:
    `nslookup alcusasv.com 8.8.8.8`, `nslookup alcusasv.com 1.1.1.1`, `nslookup www.alcusasv.com 8.8.8.8`.
 5. Issue the prod certificate (both names, with HTTP→HTTPS redirect):
    ```bash
-   ssh deploy@179.236.251.239 'sudo certbot --nginx -d alcusasv.com -d www.alcusasv.com --redirect --non-interactive --agree-tos --register-unsafely-without-email && sudo nginx -t && sudo certbot renew --dry-run'
+   ssh deploy@179.236.251.239 'sudo certbot --nginx -d alcusasv.com -d www.alcusasv.com --redirect --non-interactive --agree-tos && sudo nginx -t && sudo certbot renew --dry-run'
    ```
 6. Verify:
    - `curl -I https://alcusasv.com` → 200, valid certificate.
