@@ -240,8 +240,9 @@ cat >/etc/fail2ban/filter.d/alcusa-admin.conf <<'EOF'
 [Definition]
 # 401 with a supplied (non '-') basic-auth user = bad credentials or bad admin login; any 429 = rate-limit abuse.
 # The first challenge of a browser (user '-') is NOT counted.
-failregex = ^<HOST> - (?!- )\S+ \[[^\]]+\] "[A-Z]+ \S+ HTTP/[0-9.]+" 401(?: |$)
-            ^<HOST> - \S+ \[[^\]]+\] "[A-Z]+ \S+ HTTP/[0-9.]+" 429(?: |$)
+# fail2ban strips the matched timestamp before applying failregex, so the brackets arrive empty: [^\]]* (not +).
+failregex = ^<HOST> - (?!- )\S+ \[[^\]]*\] "[A-Z]+ \S+ HTTP/[0-9.]+" 401(?: |$)
+            ^<HOST> - \S+ \[[^\]]*\] "[A-Z]+ \S+ HTTP/[0-9.]+" 429(?: |$)
 ignoreregex =
 EOF
 cat >/etc/fail2ban/jail.d/alcusa-admin.local <<'EOF'
