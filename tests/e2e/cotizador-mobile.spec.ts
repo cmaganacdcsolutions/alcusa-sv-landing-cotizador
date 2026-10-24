@@ -116,12 +116,17 @@ test.describe('cotizador mobile — Resumen table no overflow (sf-cot-mobile ite
     });
   }
 
-  test('the summary-item shows only "Quitar" (no separate "Editar"), per the boards', async ({ page }, testInfo) => {
+  test('the summary-item shows "Editar" and "Quitar" with >=44px touch targets (mobile-edit-1024)', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'ios390', 'markup assertion, device-independent');
     await toResumen(page);
     const row = page.locator('.summary-item').first();
     await expect(row.getByRole('button', { name: /Quitar/ })).toBeVisible();
-    await expect(row.getByRole('button', { name: /Editar/ })).toHaveCount(0);
+    const edit = row.getByRole('button', { name: /^Editar / });
+    await expect(edit).toBeVisible();
+    for (const btn of [edit, row.getByRole('button', { name: /Quitar/ })]) {
+      const box = await btn.boundingBox();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
   });
 });
 

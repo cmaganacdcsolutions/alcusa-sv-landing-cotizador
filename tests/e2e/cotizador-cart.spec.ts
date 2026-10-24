@@ -94,10 +94,9 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     expect(decoded).toContain('Total estimado: $742.00');
   });
 
-  test('sf-cot-s7gaps gap 1 — desktop Editar on item 1 updates it in place (same row order)', async ({
+  test('sf-cot-s7gaps gap 1 / mobile-edit-1024 — Editar (all viewports) on item 1 updates it in place (same row order)', async ({
     page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== 'desktop1920', 'desktop-only affordance, desktop-05-cotizador-resumen.dc.html');
+  }) => {
     await addRectaThenLoop(page);
     await addCornerAndGoToResumen(page);
 
@@ -121,6 +120,33 @@ test.describe('cotizador cart — S7 multi-item resumen', () => {
     await expect(rows.nth(1)).toContainText('Cabina en L');
     // 328 (recta 150cm natural/claro) + 444 (corner) + 40 (Soyapango) = 812.
     await expect(page.getByTestId('resumen-total-value')).toHaveText('$812.00');
+  });
+
+  test('mobile-edit-1024 — Editar the only item keeps ONE row, recalculates the total, then Quitar still works', async ({
+    page,
+  }) => {
+    await addRectaThenLoop(page);
+    await addCornerAndGoToResumen(page);
+    await page.getByRole('button', { name: 'Quitar Cabina en L' }).click();
+    await expect(page.locator('.summary-item')).toHaveCount(1);
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$298.00');
+
+    await page.getByRole('button', { name: 'Editar Puerta de baño recta' }).click();
+    await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
+    await expect(page.locator('#ancho')).toHaveValue('110');
+    await page.locator('#ancho').fill('150');
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+    await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
+    await page.getByRole('button', { name: 'Siguiente' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+    await expect(page.locator('.summary-item')).toHaveCount(1);
+    await expect(page.locator('.summary-item').first()).toContainText('1.50 × 1.85 m');
+    // 328 (recta 150cm) + 40 (Soyapango) = 368.
+    await expect(page.getByTestId('resumen-total-value')).toHaveText('$368.00');
+
+    await page.getByRole('button', { name: 'Quitar Puerta de baño recta' }).click();
+    await expect(page.locator('.summary-item')).toHaveCount(0);
   });
 
   test('sf-cot-s7gaps gap 2 — "Cambiar" zone with 2 items shows the whole-order breakdown, total matches Resumen', async ({
