@@ -90,7 +90,9 @@ Script: `03-dev/docs/ops/scripts/deploy.sh` (Git Bash on Windows, or any bash).
 
 ```bash
 cd "03-dev"
-npm run build                                   # produces dist/
+# prod (until the B3/B6 backend is deployed the quote API MUST be mock; see docs/ops/prod-cutover-plan-2026-10-22.md):
+PUBLIC_SITE_URL=https://alcusasv.com PUBLIC_QUOTE_API=mock npm run build   # produces dist/
+# dev: PUBLIC_QUOTE_API=mock PUBLIC_QUOTE_FIXTURES=1 npm run build  (FIXTURES=1 keeps the sample folios; never in prod)
 bash docs/ops/scripts/deploy.sh dev  dist       # dev
 bash docs/ops/scripts/deploy.sh prod dist       # prod (asks you to type 'prod')
 bash docs/ops/scripts/deploy.sh dev  --list     # releases, * = current

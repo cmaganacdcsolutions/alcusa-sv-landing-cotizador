@@ -72,11 +72,13 @@ describe('http QuoteClient (GET /api/quotes/{code})', () => {
 
 describe('resolveQuoteApiMode', () => {
   it('defecto: mock en dev/test, http en prod; el env manda', () => {
-    expect(resolveQuoteApiMode(undefined, false)).toBe('mock');
-    expect(resolveQuoteApiMode(undefined, true)).toBe('http');
-    expect(resolveQuoteApiMode('mock', true)).toBe('mock');
-    expect(resolveQuoteApiMode('http', false)).toBe('http');
-    expect(resolveQuoteApiMode('otro', true)).toBe('http');
+    expect(resolveQuoteApiMode(undefined)).toBe('mock');
+    // Prod sin env NO cae en http (bug 2026-10-22): mock hasta que exista el backend.
+    expect(resolveQuoteApiMode(undefined)).toBe('mock');
+    expect(resolveQuoteApiMode('mock')).toBe('mock');
+    expect(resolveQuoteApiMode('http')).toBe('http');
+    expect(resolveQuoteApiMode('otro')).toBe('mock');
+    expect(resolveQuoteApiMode('http')).toBe('http');
   });
 });
 
