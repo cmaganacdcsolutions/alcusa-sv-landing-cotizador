@@ -310,9 +310,10 @@
    link + `it.remove` button, wrapped in one `gap: 4px` action group). */
 .summary-item__footer {
   display: flex;
+  flex-wrap: wrap; /* BUG-1024-03: precio + Editar + Quitar no caben en una linea a 360-390 */
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: 0 var(--space-3);
   margin-top: 4px;
 }
 
@@ -327,7 +328,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-right: -10px;
+  margin-left: -10px; /* alinea el texto de Editar con el borde del cuerpo cuando baja de linea */
   flex-shrink: 0;
 }
 
@@ -491,6 +492,7 @@
   /* sf-cot-s7gaps gap 1 — desktop-05-cotizador-resumen.dc.html ~L83-85. */
   .summary-item__actions {
     gap: 4px;
+    margin-left: 0;
     margin-right: -12px;
   }
 
