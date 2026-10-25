@@ -34,7 +34,7 @@ export interface Step4ResumenProps {
   // cart item back into it, or falling back to step 0 if the cart empties
   // too); any other id removes that committed cart item.
   onRemoveItem: (id: string) => void;
-  // sf-cot-s7gaps gap 1 — desktop-only "Editar" (desktop-05-cotizador-
+  // sf-cot-s7gaps gap 1 — "Editar" (desktop; mobile since mobile-edit-1024) (desktop-05-cotizador-
   // resumen.dc.html ~L84), drawn for every row like the board (uniform
   // `sc-for` loop, no special-case for the in-progress item): jumps to
   // Medidas with that item's fields loaded into the editable slot.
@@ -56,8 +56,7 @@ export interface Step4ResumenProps {
 // (current or committed). One row per cart item regardless of product —
 // a ventana item's several repeatable panes are summarized into its own
 // single row here (buildLineItem's rowCount summary), matching the boards'
-// "Quitar" contract of one action per item (cotizador-mobile.spec.ts:
-// "no separate Editar" per row). The WhatsApp message still expands a
+// one-row-per-item contract ("Editar" + "Quitar" per row, desktop and mobile). The WhatsApp message still expands a
 // ventana item into one line per pane (existing S6 granularity) via
 // buildOrderMessageItems.
 export default function Step4Resumen({
@@ -199,10 +198,8 @@ export default function Step4Resumen({
                   {item.requiresQuote ? 'Por WhatsApp' : `$${item.subtotal.toFixed(2)}`}
                 </span>
                 <div className="summary-item__actions">
-                  {/* desktop-05-cotizador-resumen.dc.html ~L84 — desktop-only
-                     "Editar", mobile boards (ios-05/android-05) draw only
-                     "Quitar"; cotizador-mobile.spec.ts asserts no Editar
-                     below 1024px. */}
+                  {/* "Editar" en todos los anchos (desktop-05 ~L84; en mobile
+                     lo pidio el usuario, mobile-edit-1024). */}
                   <button
                     type="button"
                     className="summary-item__edit"

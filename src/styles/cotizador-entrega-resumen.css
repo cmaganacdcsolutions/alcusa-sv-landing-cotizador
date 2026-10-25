@@ -304,9 +304,9 @@
 /* sf-cot-mobile item 3 — rebuilt 1:1 from ios-05/android-05's per-item
    `sc-for` row: name, then up to two detail lines, then a price+"Quitar"
    footer row (`margin-top: 4px`, space-between). The mobile boards draw
-   ONLY "Quitar" — no "Editar" — below 1024px (cotizador-mobile.spec.ts).
-   sf-cot-s7gaps gap 1 adds `.summary-item__edit` back for desktop only,
-   1:1 from desktop-05-cotizador-resumen.dc.html ~L83-85 (its `it.editLabel`
+   ONLY "Quitar" below 1024px; mobile-edit-1024 (pedido del usuario, bug de
+   prod) adds `.summary-item__edit` on mobile too, same flow as desktop.
+   sf-cot-s7gaps gap 1 added it for desktop, 1:1 from desktop-05-cotizador-resumen.dc.html ~L83-85 (its `it.editLabel`
    link + `it.remove` button, wrapped in one `gap: 4px` action group). */
 .summary-item__footer {
   display: flex;
@@ -332,9 +332,21 @@
 }
 
 .summary-item__edit {
-  /* desktop-only (see the 1024px override below); board: min-height 40px,
-     padding 0 12px, radius 10px, 15px/700 #073b92, gap 6px. */
-  display: none;
+  /* mobile-edit-1024: visible on mobile, 44px touch target, primary navy;
+     the 1024px override below sets the desktop board metrics (40px). */
+  min-height: 44px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--font-size-body-sm-mobile);
+  font-weight: var(--font-weight-body-bold);
+  color: var(--color-primary);
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .summary-item__remove {
