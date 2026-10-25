@@ -116,6 +116,41 @@ test.describe('cotizador mobile — Resumen table no overflow (sf-cot-mobile ite
     });
   }
 
+  // BUG-1024-03: with Editar + Quitar + price the footer overflowed the row (360: +44px, 390: +14px).
+  for (const width of [390, 360]) {
+    for (const count of [1, 2]) {
+      test(`footer + Editar/Quitar stay inside the row at ${width}px with ${count} product(s)`, async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name !== 'ios390', 'viewport is overridden below — no need to run this 3x per device project');
+        await page.setViewportSize({ width, height: 800 });
+        await toResumen(page);
+        if (count === 2) {
+          await page.getByRole('button', { name: 'Agregar otro producto' }).click();
+          await expect(page.getByRole('heading', { name: 'Elige tu producto' })).toBeVisible();
+          await pickProduct(page, 'l');
+          await expect(page.getByRole('heading', { name: 'Medidas y acabado' })).toBeVisible();
+          await page.getByRole('button', { name: 'Siguiente' }).click();
+          await expect(page.getByRole('heading', { name: 'Precio estimado' })).toBeVisible();
+          await page.getByRole('button', { name: 'Siguiente' }).click();
+          await expect(page.getByRole('heading', { name: 'Resumen de tu cotización' })).toBeVisible();
+        }
+        const rows = page.locator('.summary-item');
+        await expect(rows).toHaveCount(count);
+        for (let i = 0; i < count; i++) {
+          const row = rows.nth(i);
+          const rowBox = (await row.boundingBox())!;
+          const footer = row.locator('.summary-item__footer');
+          const [sw, cw] = await footer.evaluate((el) => [el.scrollWidth, el.clientWidth]);
+          expect(sw, `footer scrollWidth row ${i}`).toBeLessThanOrEqual(cw);
+          for (const name of [/^Editar /, /^Quitar /]) {
+            const box = (await row.getByRole('button', { name }).boundingBox())!;
+            expect(box.x + box.width, `${name} right edge row ${i}`).toBeLessThanOrEqual(rowBox.x + rowBox.width + 0.5);
+            expect(box.height).toBeGreaterThanOrEqual(44);
+          }
+        }
+      });
+    }
+  }
+
   test('the summary-item shows "Editar" and "Quitar" with >=44px touch targets (mobile-edit-1024)', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'ios390', 'markup assertion, device-independent');
     await toResumen(page);
