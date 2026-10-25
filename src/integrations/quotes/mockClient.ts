@@ -97,7 +97,18 @@ function build(code: string, createdAt: Date, expired: boolean, items: QuoteLoad
   };
 }
 
-export function createMockQuoteClient(opts: { now?: () => Date; latencyMs?: number } = {}): QuoteClient {
+/**
+ * Los folios de muestra (mockCodes) solo se pueden cargar fuera de produccion. Un build de prod
+ * (import.meta.env.PROD) los apaga salvo PUBLIC_QUOTE_FIXTURES=1 (lo usa solo el build del e2e).
+ */
+export function mockFixturesEnabled(isProd: boolean, flag: string | undefined): boolean {
+  return !isProd || flag === '1';
+}
+
+export function createMockQuoteClient(
+  opts: { now?: () => Date; latencyMs?: number; fixtures?: boolean } = {},
+): QuoteClient {
+  const fixtures = opts.fixtures ?? mockFixturesEnabled(import.meta.env.PROD, import.meta.env.PUBLIC_QUOTE_FIXTURES);
   const now = opts.now ?? ((): Date => new Date());
   const latency = opts.latencyMs ?? 350;
   return {
@@ -111,6 +122,7 @@ export function createMockQuoteClient(opts: { now?: () => Date; latencyMs?: numb
       });
       const saved = loadMockQuote(code, now());
       if (saved) return saved;
+      if (!fixtures) throw new QuoteLoadFailure('not_found');
       const c = mockCodes(now());
       const fresh = daysAgo(now(), 2);
       switch (code) {

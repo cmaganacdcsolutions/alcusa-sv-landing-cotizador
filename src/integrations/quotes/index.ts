@@ -1,14 +1,15 @@
 // Seleccion del adaptador: PUBLIC_QUOTE_API = mock | http.
-// Defecto: mock en dev/test, http en builds de produccion (import.meta.env.PROD).
+// Defecto: mock SIEMPRE (dev, test y produccion) mientras no exista el backend B3/B6 desplegado:
+// un build de prod sin PUBLIC_QUOTE_API jamas debe quedar en http por omision (bug 2026-10-22: todo folio
+// salia como contingencia y "Cargar cotizacion" fallaba). http solo con PUBLIC_QUOTE_API=http explicito.
 import type { QuoteClient } from './types';
 import { createHttpQuoteClient } from './httpClient';
 import { createMockQuoteClient } from './mockClient';
 
 export type QuoteApiMode = 'mock' | 'http';
 
-export function resolveQuoteApiMode(raw: string | undefined, isProd: boolean): QuoteApiMode {
-  if (raw === 'mock' || raw === 'http') return raw;
-  return isProd ? 'http' : 'mock';
+export function resolveQuoteApiMode(raw: string | undefined): QuoteApiMode {
+  return raw === 'http' ? 'http' : 'mock';
 }
 
 export function createQuoteClient(mode: QuoteApiMode): QuoteClient {
@@ -16,6 +17,6 @@ export function createQuoteClient(mode: QuoteApiMode): QuoteClient {
 }
 
 export function getQuoteClient(): QuoteClient {
-  return createQuoteClient(resolveQuoteApiMode(import.meta.env.PUBLIC_QUOTE_API, import.meta.env.PROD));
+  return createQuoteClient(resolveQuoteApiMode(import.meta.env.PUBLIC_QUOTE_API));
 }
 export * from './types';
