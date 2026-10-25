@@ -47,6 +47,8 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
 
   const parsed = normalizeQuoteCode(value);
   const valid = parsed.ok;
+  // BUG-1025-03: un folio de contingencia tecleado tambien se puede enviar (run() muestra su mensaje, nunca consulta).
+  const submittable = valid || (!parsed.ok && parsed.reason === 'contingency');
   const loading = phase.kind === 'loading';
   const limited = retryLeft > 0;
 
@@ -127,9 +129,9 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
   const problem = phase.kind === 'error' ? phase.problem : null;
   const inputError =
     problem === 'incomplete' || problem === 'check' || problem === 'not_found' || problem === 'offline' || problem === 'server';
-  const liveText =
+  const errorText =
     loading
-      ? C.loadingLive
+      ? ''
       : problem === 'incomplete'
         ? C.incomplete
         : problem === 'check'
@@ -177,7 +179,7 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
             className="qrow"
             onSubmit={(e) => {
               e.preventDefault();
-              if (valid && !loading && !limited) void run(value);
+              if (submittable && !loading && !limited) void run(value);
             }}
             noValidate
           >
@@ -195,7 +197,7 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
                 placeholder={C.placeholder}
                 value={value}
                 disabled={loading || limited}
-                aria-describedby="qc-help qc-live"
+                aria-describedby="qc-help qc-alert"
                 aria-invalid={inputError || undefined}
                 onChange={(e) => {
                   setValue(groupQuoteInput(e.target.value));
@@ -204,11 +206,19 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
                 onFocus={() => inputRef.current?.scrollIntoView({ block: 'center' })}
                 onBlur={onBlur}
               />
-              <div id="qc-live" aria-live="polite">
-                {liveText && (
-                  <p className={`qm${loading ? ' qm--info' : ''}${problem === 'offline' || problem === 'server' ? '' : ''}`}>
-                    {!loading && (problem === 'not_found' ? <IconQuoteSearch /> : problem === 'offline' ? <IconQuoteOffline /> : <IconQuoteAlert />)}
-                    <span>{liveText}</span>
+              {/* BUG-1025-02: dos regiones vivas siempre montadas. status = progreso; alert = error/aviso (un solo anuncio). */}
+              <div id="qc-live" role="status">
+                {loading && (
+                  <p className="qm qm--info">
+                    <span>{C.loadingLive}</span>
+                  </p>
+                )}
+              </div>
+              <div id="qc-alert" role="alert">
+                {errorText && (
+                  <p className="qm">
+                    {problem === 'not_found' ? <IconQuoteSearch /> : problem === 'offline' ? <IconQuoteOffline /> : <IconQuoteAlert />}
+                    <span>{errorText}</span>
                   </p>
                 )}
                 {warn && (
@@ -221,7 +231,7 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
             </div>
             {problem === 'offline' || problem === 'server' ? (
               <div className="qbtns">
-                <button type="submit" className="bt bp" disabled={!valid}>{C.retry}</button>
+                <button type="submit" className="bt bp" disabled={!submittable}>{C.retry}</button>
                 <button type="button" className="bt bs" onClick={() => { setValue(''); setPhase({ kind: 'idle' }); inputRef.current?.focus(); }}>
                   {C.startNew}
                 </button>
@@ -229,7 +239,7 @@ export default function QuoteLoadBlock({ hasItems, autoFolio = null, onLoad, cli
             ) : (
               <div className="qbtns">
                 {problem === 'contingency' && waLink}
-                <button type="submit" className={`bt ${valid && !loading && !limited ? 'bp' : 'bd'}`} disabled={!valid || loading || limited}>
+                <button type="submit" className={`bt ${submittable && !loading && !limited ? 'bp' : 'bd'}`} disabled={!submittable || loading || limited}>
                   {loading && <IconQuoteSpinner />}
                   {loading ? C.loadingCta : C.cta}
                 </button>
